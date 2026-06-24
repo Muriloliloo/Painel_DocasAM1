@@ -198,6 +198,27 @@
       gap: 8px;
     }
 
+    .auth-badge {
+      min-width: 132px;
+      min-height: 44px;
+      display: grid;
+      place-items: center;
+      border: 1px solid rgba(255,255,255,.12);
+      border-radius: 7px 7px 0 0;
+      background: linear-gradient(180deg, #0f426b, #082642);
+      color: #fff;
+      padding: 6px 14px;
+      text-transform: uppercase;
+      font: 900 12px/1.15 "Segoe UI", Arial, sans-serif;
+      cursor: pointer;
+      text-align: center;
+    }
+
+    .auth-badge strong {
+      color: #ffd21c;
+      font-size: 13px;
+    }
+
     .actions button.test-mode.active {
       background: linear-gradient(180deg, #ffd84a, #f2a900);
       color: #061f36;
@@ -210,6 +231,18 @@
       color: #061f36;
       border-color: #ffd84a;
       box-shadow: inset 0 -2px 0 rgba(0,0,0,.14), 0 0 0 2px rgba(255,216,74,.18);
+    }
+
+    .app.reader-mode .admin-only {
+      opacity: .46;
+      pointer-events: none;
+      filter: grayscale(.35);
+    }
+
+    .app.reader-mode input,
+    .app.reader-mode textarea,
+    .app.reader-mode select {
+      pointer-events: none;
     }
 
     .view-switch {
@@ -525,6 +558,108 @@
     }
 
     .pdf-drawer.open { display: block; }
+
+    .login-modal {
+      position: fixed;
+      inset: 0;
+      z-index: 80;
+      display: none;
+      place-items: center;
+      background: rgba(2, 12, 22, .62);
+      padding: 24px;
+    }
+
+    .login-modal.open { display: grid; }
+
+    .login-card {
+      width: min(430px, 100%);
+      border-radius: 12px;
+      overflow: hidden;
+      background: #f5f9fc;
+      border: 1px solid rgba(255,255,255,.6);
+      box-shadow: 0 26px 90px rgba(0,0,0,.45);
+    }
+
+    .login-card header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 15px 18px;
+      background: linear-gradient(180deg, #08375d, #062642);
+      color: #fff;
+    }
+
+    .login-card h2 {
+      margin: 0;
+      text-transform: uppercase;
+      font: 950 18px "Segoe UI", Arial, sans-serif;
+    }
+
+    .login-card .close-login {
+      width: 34px;
+      height: 34px;
+      border: 0;
+      border-radius: 8px;
+      background: transparent;
+      color: #fff;
+      font: 950 26px/1 "Segoe UI", Arial, sans-serif;
+      cursor: pointer;
+    }
+
+    .login-body {
+      display: grid;
+      gap: 12px;
+      padding: 18px;
+    }
+
+    .login-body label {
+      display: grid;
+      gap: 6px;
+      color: #062642;
+      text-transform: uppercase;
+      font: 900 12px "Segoe UI", Arial, sans-serif;
+    }
+
+    .login-body input {
+      width: 100%;
+      height: 42px;
+      border: 1px solid #b8c7d4;
+      border-radius: 8px;
+      padding: 0 12px;
+      background: #fff;
+      font: 800 15px "Segoe UI", Arial, sans-serif;
+    }
+
+    .login-actions {
+      display: flex;
+      gap: 10px;
+      padding: 0 18px 18px;
+    }
+
+    .login-actions button {
+      flex: 1;
+      min-height: 42px;
+      border: 1px solid #0a385e;
+      border-radius: 8px;
+      background: #fff;
+      color: #062642;
+      text-transform: uppercase;
+      font: 950 13px "Segoe UI", Arial, sans-serif;
+      cursor: pointer;
+    }
+
+    .login-actions .primary {
+      background: linear-gradient(180deg, #08375d, #062642);
+      color: #fff;
+    }
+
+    .login-message {
+      min-height: 20px;
+      padding: 0 18px 16px;
+      color: #c00012;
+      font: 800 12px "Segoe UI", Arial, sans-serif;
+    }
 
     .pdf-drawer header {
       display: flex;
@@ -1394,7 +1529,7 @@
       * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
       body { background: #fff; display: block; }
       .app { width: 200mm; height: auto !important; min-height: 0 !important; display: block !important; overflow: visible !important; border: 0; box-shadow: none; }
-      .actions, .drawer, .pdf-drawer, .final-countdown-alert { display: none !important; }
+      .actions, .drawer, .pdf-drawer, .login-modal, .final-countdown-alert { display: none !important; }
       .topbar {
         height: 17mm;
         grid-template-columns: 42mm minmax(0, 1fr) 42mm;
@@ -1433,7 +1568,7 @@
         <div class="top-metrics">
           <span>Total rotas</span>
           <strong class="metric-value small" id="totalRotasTopo"></strong>
-          <button class="metric-edit" id="metricEditBtn" type="button" title="Editar dados">✎</button>
+          <button class="metric-edit admin-only" id="metricEditBtn" type="button" title="Editar dados">✎</button>
           <span>▣ Data:</span>
           <strong class="date-pill" id="dataTopo"></strong>
         </div>
@@ -1444,9 +1579,10 @@
     <section class="toolbar">
       <div class="tabs" id="tabs"></div>
       <div class="actions">
-        <button id="testTimerBtn" class="test-mode" type="button">Modo teste</button>
+        <button id="authBtn" class="auth-badge" type="button"><span>Firebase</span><strong>Local</strong></button>
+        <button id="testTimerBtn" class="test-mode admin-only" type="button">Modo teste</button>
         <button id="toggleTimersBtn" class="timer-toggle" type="button">Cronômetro</button>
-        <button id="editBtn" type="button">Editar dados</button>
+        <button id="editBtn" class="admin-only" type="button">Editar dados</button>
         <button id="printBtn" type="button">PDF</button>
       </div>
     </section>
@@ -1494,9 +1630,9 @@
               <textarea id="massRoutes" placeholder="Cole as rotas aqui. Se deixar vazio, aplica em todas as pendentes desta onda."></textarea>
             </label>
             <button id="copyPendingRoutes" class="secondary" type="button">Selecionar rotas</button>
-            <button id="applyMassReason" type="button">Aplicar motivo</button>
-            <button id="clearMarkedReasons" class="secondary" type="button">Limpar ticados</button>
-            <button id="clearAllReasons" class="secondary" type="button">Limpar todos</button>
+            <button id="applyMassReason" class="admin-only" type="button">Aplicar motivo</button>
+            <button id="clearMarkedReasons" class="secondary admin-only" type="button">Limpar ticados</button>
+            <button id="clearAllReasons" class="secondary admin-only" type="button">Limpar todos</button>
           </div>
           <table class="data-table">
             <thead>
@@ -1526,9 +1662,9 @@
             <table class="data-table">
               <thead><tr><th colspan="4">Atualização de rota real</th></tr></thead>
               <tbody>
-                <tr><td>Meta OOT %</td><td colspan="3"><input id="metaOotInput" type="number" min="0" max="100" step="0.01"></td></tr>
-                <tr><td>AM0 Onda 1 Planejado</td><td><input data-extra="AM0" data-field="planejado" type="number" min="0"></td><td>Expedido</td><td><input data-extra="AM0" data-field="expedido" type="number" min="0"></td></tr>
-                <tr><td>AMDE Onda 1 Planejado</td><td><input data-extra="AMDE" data-field="planejado" type="number" min="0"></td><td>Expedido</td><td><input data-extra="AMDE" data-field="expedido" type="number" min="0"></td></tr>
+                <tr><td>Meta OOT %</td><td colspan="3"><input class="admin-only" id="metaOotInput" type="number" min="0" max="100" step="0.01"></td></tr>
+                <tr><td>AM0 Onda 1 Planejado</td><td><input class="admin-only" data-extra="AM0" data-field="planejado" type="number" min="0"></td><td>Expedido</td><td><input class="admin-only" data-extra="AM0" data-field="expedido" type="number" min="0"></td></tr>
+                <tr><td>AMDE Onda 1 Planejado</td><td><input class="admin-only" data-extra="AMDE" data-field="planejado" type="number" min="0"></td><td>Expedido</td><td><input class="admin-only" data-extra="AMDE" data-field="expedido" type="number" min="0"></td></tr>
                 <tr><td>Rotas planejadas</td><td colspan="3" id="lossPlanned">0</td></tr>
                 <tr><td>Rotas expedidas</td><td colspan="3" id="lossShipped">0</td></tr>
                 <tr><td>Rotas perdidas</td><td colspan="3" id="lossDelay">0</td></tr>
@@ -1579,9 +1715,9 @@
       </div>
     </section>
     <div class="drawer-actions">
-      <button id="exampleBtn" type="button">Exemplo</button>
-      <button id="clearBtn" type="button">Limpar</button>
-      <button class="primary" id="applyBtn" type="button">Aplicar</button>
+      <button id="exampleBtn" class="admin-only" type="button">Exemplo</button>
+      <button id="clearBtn" class="admin-only" type="button">Limpar</button>
+      <button class="primary admin-only" id="applyBtn" type="button">Aplicar</button>
     </div>
   </aside>
 
@@ -1606,6 +1742,29 @@
     </div>
   </aside>
 
+  <div class="login-modal" id="loginModal" aria-label="Login Firebase">
+    <div class="login-card">
+      <header>
+        <h2>Acesso do painel</h2>
+        <button class="close-login" id="closeLoginBtn" type="button" aria-label="Fechar">×</button>
+      </header>
+      <div class="login-body">
+        <label>E-mail
+          <input id="loginEmail" type="email" autocomplete="username">
+        </label>
+        <label>Senha
+          <input id="loginPassword" type="password" autocomplete="current-password">
+        </label>
+      </div>
+      <div class="login-actions">
+        <button class="primary" id="loginBtn" type="button">Entrar</button>
+        <button id="logoutBtn" type="button">Sair</button>
+      </div>
+      <div class="login-message" id="loginMessage"></div>
+    </div>
+  </div>
+
+  <script src="firebase-config.js"></script>
   <script src="ondas-dados.js"></script>
   <script>
     const storageKey = "ondas-dados";
@@ -1636,6 +1795,19 @@
     }
     let currentWave = data.ondas[0] || "Onda 1";
     let currentView = "docas";
+    let cloudState = {
+      enabled: false,
+      ready: false,
+      role: "admin",
+      user: null,
+      db: null,
+      auth: null,
+      docRef: null,
+      unsubscribe: null,
+      applyingRemote: false,
+      savingRemote: false,
+      tools: {}
+    };
 
     const columns = ["onda", "idRota", "rota", "rotaOriginal", "doca", "transportadora", "placa", "tipoVeiculo", "tipoRota", "tipoArea", "spr", "cluster"];
     const aliases = {
@@ -1680,6 +1852,43 @@
       "Atraso sistemico"
     ];
     const allowedWaves = ["Onda 1", "Onda 2", "Onda 3", "Onda 4", "Onda 5"];
+
+    function firebaseConfigured() {
+      const config = window.FIREBASE_APP_CONFIG || {};
+      return Boolean(window.FIREBASE_ENABLED)
+        && config.apiKey
+        && config.projectId
+        && !String(config.apiKey).includes("COLE_AQUI")
+        && !String(config.projectId).includes("COLE_AQUI");
+    }
+
+    function isAdmin() {
+      return !cloudState.enabled || cloudState.role === "admin";
+    }
+
+    function roleLabel() {
+      if (!cloudState.enabled) return "Local";
+      if (!cloudState.user) return "Entrar";
+      return cloudState.role === "admin" ? "Admin" : "Leitor";
+    }
+
+    function updateAuthBadge() {
+      const button = document.getElementById("authBtn");
+      if (!button) return;
+      const top = cloudState.enabled ? (cloudState.user?.email || "Firebase") : "Firebase";
+      button.innerHTML = `<span>${top}</span><strong>${roleLabel()}</strong>`;
+      document.querySelector(".app")?.classList.toggle("reader-mode", cloudState.enabled && !isAdmin());
+      document.querySelectorAll(".admin-only").forEach(element => {
+        element.disabled = cloudState.enabled && !isAdmin();
+      });
+    }
+
+    function requireAdminAction() {
+      if (isAdmin()) return true;
+      document.getElementById("loginMessage").textContent = "Seu acesso está como leitor. Entre com um usuário administrador para editar.";
+      document.getElementById("loginModal").classList.add("open");
+      return false;
+    }
 
     function sanitizeWaves(values = []) {
       const present = new Set((values || []).map(wave => waveLabel(wave)).filter(wave => allowedWaves.includes(wave)));
@@ -2287,6 +2496,23 @@
 
     function saveData() {
       localStorage.setItem(storageKey, JSON.stringify(data));
+      saveDataToCloud();
+    }
+
+    async function saveDataToCloud() {
+      if (!cloudState.ready || !cloudState.docRef || !isAdmin() || cloudState.applyingRemote || cloudState.savingRemote) return;
+      try {
+        cloudState.savingRemote = true;
+        await cloudState.tools.setDoc(cloudState.docRef, {
+          payload: data,
+          updatedAt: cloudState.tools.serverTimestamp(),
+          updatedBy: cloudState.user?.email || "sistema"
+        }, { merge: true });
+      } catch (error) {
+        console.warn("Falha ao sincronizar com Firebase:", error);
+      } finally {
+        cloudState.savingRemote = false;
+      }
     }
 
     function justificationSentence(row) {
@@ -2659,7 +2885,7 @@
             <td>${row.transportadora || ""}</td>
             <td>${row.doca || ""}</td>
             <td>
-              <select data-route="${key}">
+              <select class="admin-only" data-route="${key}" ${isAdmin() ? "" : "disabled"}>
                 <option value=""></option>
                 ${motivos.map(motivo => `<option value="${motivo}" ${motivo === selected ? "selected" : ""}>${motivo}</option>`).join("")}
               </select>
@@ -2685,6 +2911,7 @@
     }
 
     function applyMassJustification() {
+      if (!requireAdminAction()) return;
       const motivo = document.getElementById("massReason")?.value || "";
       if (!motivo) return;
       const typedRoutes = new Set(normalize(document.getElementById("massRoutes")?.value || "")
@@ -2726,6 +2953,7 @@
     }
 
     function clearMarkedJustifications() {
+      if (!requireAdminAction()) return;
       const checked = Array.from(document.querySelectorAll("[data-clear-route]:checked")).map(input => input.dataset.clearRoute);
       if (!checked.length) return;
       checked.forEach(route => delete data.justificativas[route]);
@@ -2736,6 +2964,7 @@
     }
 
     function clearAllCurrentJustifications() {
+      if (!requireAdminAction()) return;
       pendingRows(currentWave, true).forEach(row => {
         delete data.justificativas[routeKey(row.rota)];
       });
@@ -2861,9 +3090,11 @@
       renderGrid();
       renderPrintTable();
       renderViews();
+      updateAuthBadge();
     }
 
     function openDrawer() {
+      if (!requireAdminAction()) return;
       document.getElementById("totalRotasInput").value = data.totalRotas || data.extracao.length || "";
       document.getElementById("dataInput").value = data.data || "";
       document.getElementById("extracaoPaste").value = toPaste(data.extracao);
@@ -2878,12 +3109,133 @@
       document.getElementById("pdfDrawer").classList.add("open");
     }
 
+    async function resolveUserRole(user) {
+      const admins = (window.FIREBASE_ADMIN_EMAILS || []).map(email => routeKey(email));
+      if (admins.includes(routeKey(user?.email))) return "admin";
+      try {
+        const userRef = cloudState.tools.doc(cloudState.db, "usuarios", user.uid);
+        const userSnap = await cloudState.tools.getDoc(userRef);
+        const role = userSnap.exists() ? normalize(userSnap.data()?.role).toLowerCase() : "";
+        return role === "admin" ? "admin" : "leitor";
+      } catch {
+        return "leitor";
+      }
+    }
+
+    function applyRemotePayload(payload) {
+      if (!payload) return;
+      cloudState.applyingRemote = true;
+      data = { ...JSON.parse(JSON.stringify(originalData)), ...payload };
+      data.docas = Math.max(Number(data.docas || 0), Number(originalData.docas || 92));
+      data.horarios = { ...(data.horarios || {}), ...(originalData.horarios || {}) };
+      data.justificativas = data.justificativas || {};
+      data.carregamentoInicio = data.carregamentoInicio || {};
+      data.carregamentoFim = data.carregamentoFim || {};
+      data.ciclosExtras = { ...(originalData.ciclosExtras || {}), ...(data.ciclosExtras || {}) };
+      data.ondas = sanitizeWaves(data.ondas);
+      currentWave = data.ondas.some(wave => waveLabel(wave) === waveLabel(currentWave)) ? currentWave : data.ondas[0];
+      localStorage.setItem(storageKey, JSON.stringify(data));
+      render();
+      cloudState.applyingRemote = false;
+    }
+
+    function subscribePanel() {
+      if (cloudState.unsubscribe) cloudState.unsubscribe();
+      cloudState.unsubscribe = cloudState.tools.onSnapshot(cloudState.docRef, snapshot => {
+        if (!snapshot.exists()) {
+          if (isAdmin()) saveDataToCloud();
+          return;
+        }
+        const payload = snapshot.data()?.payload;
+        if (payload) applyRemotePayload(payload);
+      }, error => console.warn("Falha ao ouvir Firebase:", error));
+    }
+
+    async function initializeFirebase() {
+      cloudState.enabled = firebaseConfigured();
+      updateAuthBadge();
+      if (!cloudState.enabled) return;
+      try {
+        const [appModule, authModule, firestoreModule] = await Promise.all([
+          import("https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js"),
+          import("https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js"),
+          import("https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js")
+        ]);
+        const app = appModule.initializeApp(window.FIREBASE_APP_CONFIG);
+        cloudState.auth = authModule.getAuth(app);
+        cloudState.db = firestoreModule.getFirestore(app);
+        cloudState.tools = {
+          signInWithEmailAndPassword: authModule.signInWithEmailAndPassword,
+          signOut: authModule.signOut,
+          onAuthStateChanged: authModule.onAuthStateChanged,
+          doc: firestoreModule.doc,
+          getDoc: firestoreModule.getDoc,
+          setDoc: firestoreModule.setDoc,
+          onSnapshot: firestoreModule.onSnapshot,
+          serverTimestamp: firestoreModule.serverTimestamp
+        };
+        const panel = window.FIREBASE_PANEL_DOC || {};
+        cloudState.docRef = cloudState.tools.doc(cloudState.db, panel.collection || "paineis", panel.document || "docas-am1");
+        cloudState.tools.onAuthStateChanged(cloudState.auth, async user => {
+          cloudState.user = user;
+          cloudState.role = user ? await resolveUserRole(user) : "leitor";
+          cloudState.ready = Boolean(user);
+          updateAuthBadge();
+          if (user) subscribePanel();
+          if (!user && cloudState.unsubscribe) {
+            cloudState.unsubscribe();
+            cloudState.unsubscribe = null;
+          }
+          render();
+        });
+      } catch (error) {
+        cloudState.enabled = false;
+        cloudState.ready = false;
+        console.warn("Firebase não iniciou:", error);
+        updateAuthBadge();
+      }
+    }
+
+    async function loginFirebase() {
+      if (!cloudState.enabled) {
+        document.getElementById("loginMessage").textContent = "Firebase ainda não está ligado no firebase-config.js.";
+        return;
+      }
+      const email = normalize(document.getElementById("loginEmail").value);
+      const password = document.getElementById("loginPassword").value;
+      if (!email || !password) {
+        document.getElementById("loginMessage").textContent = "Preencha e-mail e senha.";
+        return;
+      }
+      try {
+        await cloudState.tools.signInWithEmailAndPassword(cloudState.auth, email, password);
+        document.getElementById("loginMessage").textContent = "";
+        document.getElementById("loginModal").classList.remove("open");
+      } catch (error) {
+        document.getElementById("loginMessage").textContent = "Login não autorizado. Confira e-mail e senha.";
+      }
+    }
+
+    async function logoutFirebase() {
+      if (!cloudState.enabled || !cloudState.auth) return;
+      await cloudState.tools.signOut(cloudState.auth);
+    }
+
     document.getElementById("editBtn").addEventListener("click", openDrawer);
+    document.getElementById("authBtn").addEventListener("click", () => {
+      document.getElementById("loginModal").classList.add("open");
+    });
+    document.getElementById("closeLoginBtn").addEventListener("click", () => {
+      document.getElementById("loginModal").classList.remove("open");
+    });
+    document.getElementById("loginBtn").addEventListener("click", loginFirebase);
+    document.getElementById("logoutBtn").addEventListener("click", logoutFirebase);
     document.getElementById("copyPendingRoutes").addEventListener("click", copyPendingRoutesToMass);
     document.getElementById("applyMassReason").addEventListener("click", applyMassJustification);
     document.getElementById("clearMarkedReasons").addEventListener("click", clearMarkedJustifications);
     document.getElementById("clearAllReasons").addEventListener("click", clearAllCurrentJustifications);
     document.getElementById("testTimerBtn").addEventListener("click", () => {
+      if (!requireAdminAction()) return;
       data.modoTesteCronometro = !data.modoTesteCronometro;
       saveData();
       render();
@@ -2918,6 +3270,7 @@
       });
     });
     document.getElementById("exampleBtn").addEventListener("click", () => {
+      if (!requireAdminAction()) return;
       data = JSON.parse(JSON.stringify(originalData));
       currentWave = data.ondas[0];
       document.getElementById("extracaoPaste").value = toPaste(data.extracao);
@@ -2926,10 +3279,12 @@
       render();
     });
     document.getElementById("clearBtn").addEventListener("click", () => {
+      if (!requireAdminAction()) return;
       document.getElementById("extracaoPaste").value = "";
       document.getElementById("basePaste").value = "";
     });
     document.getElementById("applyBtn").addEventListener("click", () => {
+      if (!requireAdminAction()) return;
       const nextExtracao = parsePaste(document.getElementById("extracaoPaste").value);
       const nextBase = parseBasePaste(document.getElementById("basePaste").value);
       syncLoadingStarts(nextBase);
@@ -2952,6 +3307,7 @@
     });
 
     render();
+    initializeFirebase();
     setInterval(() => {
       document.getElementById("footerUpdate").textContent = `${data.data || ""} ${currentTimeLabel()}`.trim();
       renderStats();
