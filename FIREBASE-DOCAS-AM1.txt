@@ -29,11 +29,11 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     match /paineis/{painelId} {
-      allow read: if request.auth != null;
+      allow read: if true;
       allow write: if request.auth != null
         && request.auth.token.email in [
-          "gestor@empresa.com",
-          "admin@empresa.com"
+          "murilo.costajesus@gmail.com",
+          "ext_mudacost@mercadolivre.com"
         ];
     }
 
@@ -47,6 +47,6 @@ service cloud.firestore {
 Como funciona:
 
 - Sem Firebase ligado, o painel continua salvando no próprio navegador.
-- Com Firebase ligado, o administrador edita e todos os computadores atualizam ao vivo.
+- Com Firebase ligado, todos os computadores atualizam ao vivo mesmo sem login.
 - Administrador: edita dados, base, justificativas, metas e limpeza.
 - Leitor: visualiza o painel e PDFs, sem editar.

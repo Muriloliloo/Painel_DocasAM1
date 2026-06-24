@@ -199,7 +199,7 @@
     }
 
     .auth-badge {
-      min-width: 132px;
+      min-width: 86px;
       min-height: 44px;
       display: grid;
       place-items: center;
@@ -207,16 +207,20 @@
       border-radius: 7px 7px 0 0;
       background: linear-gradient(180deg, #0f426b, #082642);
       color: #fff;
-      padding: 6px 14px;
+      padding: 6px 12px;
       text-transform: uppercase;
-      font: 900 12px/1.15 "Segoe UI", Arial, sans-serif;
+      font: 950 14px/1.1 "Segoe UI", Arial, sans-serif;
       cursor: pointer;
       text-align: center;
     }
 
+    .auth-badge span {
+      display: none;
+    }
+
     .auth-badge strong {
       color: #ffd21c;
-      font-size: 13px;
+      font-size: 14px;
     }
 
     .actions button.test-mode.active {
@@ -1875,7 +1879,8 @@
     function updateAuthBadge() {
       const button = document.getElementById("authBtn");
       if (!button) return;
-      const top = cloudState.enabled ? (cloudState.user?.email || "Firebase") : "Firebase";
+      const top = cloudState.enabled ? (cloudState.user?.email || "Entrar no Firebase") : "Modo local";
+      button.title = top;
       button.innerHTML = `<span>${top}</span><strong>${roleLabel()}</strong>`;
       document.querySelector(".app")?.classList.toggle("reader-mode", cloudState.enabled && !isAdmin());
       document.querySelectorAll(".admin-only").forEach(element => {
@@ -3153,6 +3158,7 @@
 
     async function initializeFirebase() {
       cloudState.enabled = firebaseConfigured();
+      if (cloudState.enabled) cloudState.role = "leitor";
       updateAuthBadge();
       if (!cloudState.enabled) return;
       try {
@@ -3176,16 +3182,12 @@
         };
         const panel = window.FIREBASE_PANEL_DOC || {};
         cloudState.docRef = cloudState.tools.doc(cloudState.db, panel.collection || "paineis", panel.document || "docas-am1");
+        cloudState.ready = true;
+        subscribePanel();
         cloudState.tools.onAuthStateChanged(cloudState.auth, async user => {
           cloudState.user = user;
           cloudState.role = user ? await resolveUserRole(user) : "leitor";
-          cloudState.ready = Boolean(user);
           updateAuthBadge();
-          if (user) subscribePanel();
-          if (!user && cloudState.unsubscribe) {
-            cloudState.unsubscribe();
-            cloudState.unsubscribe = null;
-          }
           render();
         });
       } catch (error) {
