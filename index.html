@@ -35,9 +35,9 @@
     }
 
     .app {
-      width: 1810px;
-      max-width: none;
-      min-width: 1810px;
+      width: 100vw;
+      max-width: 1810px;
+      min-width: 0;
       height: min(100vh, 860px);
       min-height: 0;
       display: grid;
@@ -52,13 +52,13 @@
     }
 
     .topbar {
-      height: 66px;
+      height: 62px;
       display: grid;
-      grid-template-columns: 310px 1fr 310px;
+      grid-template-columns: clamp(190px, 17vw, 270px) minmax(0, 1fr) clamp(180px, 16vw, 260px);
       align-items: center;
       background: linear-gradient(180deg, #ffdf28, #ffc400);
       border-bottom: 2px solid #d8a900;
-      padding: 0 26px;
+      padding: 0 18px;
     }
 
     .brand-logo {
@@ -68,8 +68,8 @@
     }
 
     .brand-dhl {
-      width: 218px;
-      height: 58px;
+      width: 205px;
+      height: 54px;
       justify-self: start;
     }
 
@@ -140,17 +140,17 @@
     }
 
     .brand-ml {
-      width: 198px;
-      height: 58px;
+      width: 188px;
+      height: 54px;
       justify-self: end;
     }
 
     .toolbar {
       display: grid;
       grid-template-columns: 1fr auto;
-      gap: 14px;
+      gap: 8px;
       align-items: center;
-      padding: 5px 18px;
+      padding: 5px 14px;
       background: linear-gradient(180deg, #082e4e, #061f36);
       border-bottom: 2px solid #173f63;
     }
@@ -169,9 +169,9 @@
       background: linear-gradient(180deg, #0b3558, #061f36);
       color: #fff;
       min-width: 144px;
-      min-height: 44px;
-      padding: 6px 20px;
-      font: 850 15px "Segoe UI", Arial, sans-serif;
+      min-height: 40px;
+      padding: 5px 14px;
+      font: 850 14px "Segoe UI", Arial, sans-serif;
       text-transform: uppercase;
       cursor: pointer;
     }
@@ -198,23 +198,23 @@
 
     .actions {
       display: flex;
-      gap: 6px;
+      gap: 5px;
       align-items: center;
     }
 
     .actions button {
-      min-width: 112px;
-      min-height: 36px;
-      padding: 4px 12px;
+      min-width: 96px;
+      min-height: 32px;
+      padding: 3px 10px;
       border-radius: 5px;
-      font-size: 13px;
+      font-size: 12px;
       line-height: 1.05;
       white-space: nowrap;
     }
 
     .auth-badge {
-      min-width: 72px;
-      min-height: 36px;
+      min-width: 66px;
+      min-height: 32px;
       display: grid;
       place-items: center;
       border: 1px solid rgba(255,255,255,.12);
@@ -223,7 +223,7 @@
       color: #fff;
       padding: 4px 10px;
       text-transform: uppercase;
-      font: 950 13px/1.05 "Segoe UI", Arial, sans-serif;
+      font: 950 12px/1.05 "Segoe UI", Arial, sans-serif;
       cursor: pointer;
       text-align: center;
     }
@@ -234,7 +234,7 @@
 
     .auth-badge strong {
       color: #ffd21c;
-      font-size: 13px;
+      font-size: 12px;
     }
 
     .actions button.test-mode.active {
@@ -402,7 +402,7 @@
       display: grid;
       width: calc(100% - 28px);
       grid-template-columns: repeat(10, minmax(0, 1fr));
-      gap: 3px 12px;
+      gap: 3px 8px;
       padding: 5px 14px 4px;
       margin: 0 0 4px;
       background:
@@ -460,11 +460,11 @@
       min-width: 0;
       width: 100%;
       color: currentColor;
-      font: 950 15px/1.05 "Segoe UI", Arial, sans-serif;
+      font: 950 14px/1.05 "Segoe UI", Arial, sans-serif;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-      padding: 7px 6px 12px 33px;
+      padding: 7px 5px 12px 30px;
       text-align: center;
     }
 
@@ -493,11 +493,24 @@
 
     .slot.timer-hidden .route {
       padding-bottom: 7px;
-      font-size: 18px;
+      font-size: 16px;
     }
 
     .slot.timer-hidden .dock-number {
-      font-size: 20px;
+      font-size: 18px;
+    }
+
+    @media (max-width: 920px) {
+      body {
+        display: block;
+        overflow-x: auto;
+      }
+
+      .app {
+        width: 1180px;
+        max-width: none;
+        min-width: 1180px;
+      }
     }
 
     .pending .dock-number,
@@ -1598,7 +1611,7 @@
       <div class="tabs" id="tabs"></div>
       <div class="actions">
         <button id="authBtn" class="auth-badge" type="button"><span>Firebase</span><strong>Local</strong></button>
-        <button id="testTimerBtn" class="test-mode admin-only" type="button">Modo teste</button>
+        <button id="testTimerBtn" class="test-mode admin-only" type="button">Teste</button>
         <button id="toggleTimersBtn" class="timer-toggle" type="button">Cronômetro</button>
         <button id="editBtn" class="admin-only" type="button">Editar dados</button>
         <button id="printBtn" type="button">PDF</button>
@@ -3098,7 +3111,7 @@
       document.getElementById("dataTopo").textContent = data.data || "";
       const testButton = document.getElementById("testTimerBtn");
       testButton.classList.toggle("active", Boolean(data.modoTesteCronometro));
-      testButton.textContent = data.modoTesteCronometro ? "Teste ligado" : "Modo teste";
+      testButton.textContent = "Teste";
       const timersButton = document.getElementById("toggleTimersBtn");
       timersButton.classList.toggle("active", !data.ocultarCronometros);
       timersButton.textContent = "Cronômetro";
