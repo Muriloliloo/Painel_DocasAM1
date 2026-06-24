@@ -25,16 +25,19 @@
       margin: 0;
       min-height: 100vh;
       display: grid;
-      place-items: center;
+      place-items: start center;
       background: #080f16;
       font-family: "Segoe UI", Arial, sans-serif;
       color: #111;
       -webkit-font-smoothing: antialiased;
       text-rendering: geometricPrecision;
+      overflow: auto;
     }
 
     .app {
-      width: min(100vw, 1810px);
+      width: 1810px;
+      max-width: none;
+      min-width: 1810px;
       height: min(100vh, 860px);
       min-height: 0;
       display: grid;
@@ -195,21 +198,32 @@
 
     .actions {
       display: flex;
-      gap: 8px;
+      gap: 6px;
+      align-items: center;
+    }
+
+    .actions button {
+      min-width: 112px;
+      min-height: 36px;
+      padding: 4px 12px;
+      border-radius: 5px;
+      font-size: 13px;
+      line-height: 1.05;
+      white-space: nowrap;
     }
 
     .auth-badge {
-      min-width: 86px;
-      min-height: 44px;
+      min-width: 72px;
+      min-height: 36px;
       display: grid;
       place-items: center;
       border: 1px solid rgba(255,255,255,.12);
-      border-radius: 7px 7px 0 0;
+      border-radius: 5px;
       background: linear-gradient(180deg, #0f426b, #082642);
       color: #fff;
-      padding: 6px 12px;
+      padding: 4px 10px;
       text-transform: uppercase;
-      font: 950 14px/1.1 "Segoe UI", Arial, sans-serif;
+      font: 950 13px/1.05 "Segoe UI", Arial, sans-serif;
       cursor: pointer;
       text-align: center;
     }
@@ -220,7 +234,7 @@
 
     .auth-badge strong {
       color: #ffd21c;
-      font-size: 14px;
+      font-size: 13px;
     }
 
     .actions button.test-mode.active {
