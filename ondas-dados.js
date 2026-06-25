@@ -12,10 +12,10 @@ window.ONDAS_DADOS = {
   ondas: ["Onda 1", "Onda 2", "Onda 3", "Onda 4", "Onda 5"],
   horarios: {
     "Onda 1": { inicio: "08:30", fim: "09:22" },
-    "Onda 2": { inicio: "09:22", fim: "10:07" },
-    "Onda 3": { inicio: "10:07", fim: "10:52" },
-    "Onda 4": { inicio: "10:52", fim: "11:22" },
-    "Onda 5": { inicio: "11:22", fim: "11:52" }
+    "Onda 2": { inicio: "09:15", fim: "10:07" },
+    "Onda 3": { inicio: "10:00", fim: "10:52" },
+    "Onda 4": { inicio: "10:45", fim: "11:22" },
+    "Onda 5": { inicio: "11:15", fim: "11:52" }
   },
   extracao: [
     { onda: "Onda 1", idRota: "5,01E+16", rota: "W3_AM101", rotaOriginal: "AM101_1", doca: "1", transportadora: "BASEPEX ENCOM", placa: "", tipoVeiculo: "Veículo de Passeio", tipoRota: "", tipoArea: "Risco - Comercial", spr: "1", cluster: "SSP15_Overmorrow" },

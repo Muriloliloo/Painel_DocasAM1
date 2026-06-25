@@ -1558,35 +1558,91 @@
     @page { size: A4 portrait; margin: 5mm; }
     @media print {
       * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-      body { background: #fff; display: block; }
-      .app { width: 200mm; height: auto !important; min-height: 0 !important; display: block !important; overflow: visible !important; border: 0; box-shadow: none; }
+      html, body {
+        width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        overflow: visible !important;
+        background: #fff;
+        display: block;
+      }
+      .app {
+        width: 188mm !important;
+        max-width: 188mm !important;
+        min-width: 0 !important;
+        height: auto !important;
+        min-height: 0 !important;
+        display: block !important;
+        overflow: visible !important;
+        border: 0;
+        border-radius: 0;
+        box-shadow: none;
+        margin: 0 auto !important;
+      }
       .actions, .drawer, .pdf-drawer, .login-modal, .final-countdown-alert { display: none !important; }
       .topbar {
-        height: 17mm;
-        grid-template-columns: 42mm minmax(0, 1fr) 42mm;
-        gap: 4mm;
-        padding: 0 5mm;
+        width: 100% !important;
+        height: 16mm;
+        grid-template-columns: 38mm minmax(0, 1fr) 38mm;
+        gap: 3mm;
+        padding: 0 3mm;
+        overflow: hidden;
       }
       .toolbar, .view-switch, .panel-view { display: none !important; }
       .stats, .legend, .footer-strip { display: none !important; }
       .wave-title { margin: 0; }
       .dock-grid { display: none !important; }
-      .brand-dhl, .brand-ml { width: 40mm; height: 14mm; object-fit: contain; }
+      .brand-dhl, .brand-ml { width: 36mm; height: 13mm; object-fit: contain; }
       h1 {
-        font-size: 15pt;
+        font-size: 13pt;
         line-height: 1;
         white-space: nowrap;
         letter-spacing: 0;
+        max-width: 100%;
+        overflow: hidden;
+        text-overflow: ellipsis;
       }
       .top-metrics { display: none; }
-      .print-table-wrap { display: block !important; padding: 2mm 0 0; max-width: none; }
-      .print-wave { break-inside: auto; page-break-inside: auto; margin: 0 0 5mm; }
+      .print-table-wrap {
+        display: block !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        padding: 2mm 0 0;
+        margin: 0 !important;
+        overflow: visible !important;
+      }
+      .print-wave,
+      .print-final-summary,
+      .print-impact-panel,
+      .print-closure-message {
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box;
+        overflow: hidden;
+      }
+      .print-wave { break-inside: auto; page-break-inside: auto; margin: 0 0 4mm; }
       .print-wave:first-child { margin-top: 0; }
-      .print-wave h3 { margin: 0 0 2mm; font: 950 14pt "Segoe UI", Arial, sans-serif; color: #e30613; }
+      .print-wave h3 { margin: 0 0 2mm; font: 950 12pt "Segoe UI", Arial, sans-serif; color: #e30613; }
       .print-impact-grid { grid-template-columns: 1fr; gap: 3mm; padding: 3mm; }
       .print-kpi-grid { grid-template-columns: 1fr; }
-      .print-table { font-size: 10px; }
-      .print-table th, .print-table td { padding: 3px 5px; }
+      .print-table,
+      .print-final-summary table,
+      .print-mini-table table {
+        width: 100% !important;
+        max-width: 100% !important;
+        table-layout: fixed;
+        font-size: 8.5px;
+      }
+      .print-table th,
+      .print-table td,
+      .print-final-summary th,
+      .print-final-summary td,
+      .print-mini-table th,
+      .print-mini-table td {
+        padding: 2px 3px;
+        overflow-wrap: anywhere;
+        word-break: break-word;
+      }
     }
   </style>
 </head>
@@ -1865,6 +1921,9 @@
     const motivos = [
       "Falta de veículo",
       "Atraso operacional",
+      "Atraso operacional (Falta de buffer)",
+      "Atraso operacional (Falta de LH)",
+      "Atraso operacional (Equipe realizando auditorias)",
       "Problema na doca",
       "Falta de motorista",
       "Excesso de volume",
@@ -2278,11 +2337,6 @@
       uniqueRows.forEach(row => {
         const key = routeKey(row.rota);
         const start = Number(data.carregamentoInicio[key] || 0);
-        const end = Number(data.carregamentoFim[key] || 0);
-        if (key && !isExpedida(row.status) && start && end && end - start <= 1500) {
-          delete data.carregamentoFim[key];
-          changed = true;
-        }
         if (key && isExpedida(row.status)) {
           if (!data.carregamentoFim[key]) {
             data.carregamentoFim[key] = now;
@@ -2292,12 +2346,12 @@
       });
       data.extracao.forEach(row => {
         const key = routeKey(row.rota);
-        if (!key || !active.has(key) || data.carregamentoFim[key] || data.modoTesteCronometro) return;
+        if (!key || !active.has(key) || data.carregamentoFim[key]) return;
         if (isWaveClosed(row.onda)) {
           const start = Number(data.carregamentoInicio[key] || 0);
           const waveEnd = waveEndTimestamp(row.onda);
-          if (waveEnd && start && start < waveEnd) {
-            data.carregamentoFim[key] = waveEnd;
+          if (waveEnd && start) {
+            data.carregamentoFim[key] = start <= waveEnd ? waveEnd : start;
             changed = true;
           }
         }
@@ -2326,9 +2380,8 @@
       const start = Number(data.carregamentoInicio?.[key] || 0);
       if (!start) return 0;
       const explicitEnd = Number(data.carregamentoFim?.[key] || 0);
-      const waveEnd = wave && isWaveClosed(wave) && !data.modoTesteCronometro ? waveEndTimestamp(wave) : null;
-      const endCandidates = [explicitEnd, waveEnd].filter(value => Number(value) > 0 && Number(value) >= start);
-      const end = endCandidates.length ? Math.min(...endCandidates) : Date.now();
+      const waveEnd = wave && isWaveClosed(wave) ? waveEndTimestamp(wave) : null;
+      const end = explicitEnd || (waveEnd ? Math.max(start, waveEnd) : Date.now());
       return Math.max(0, Math.floor((end - start) / 1000));
     }
 
