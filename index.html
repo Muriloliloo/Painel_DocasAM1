@@ -1582,8 +1582,10 @@
       .actions, .drawer, .pdf-drawer, .login-modal, .final-countdown-alert { display: none !important; }
       .topbar {
         width: 100% !important;
-        height: 16mm;
-        grid-template-columns: 38mm minmax(0, 1fr) 38mm;
+        height: 18mm;
+        min-height: 18mm;
+        grid-template-columns: 36mm minmax(0, 1fr) 36mm;
+        align-items: center;
         gap: 3mm;
         padding: 0 3mm;
         overflow: hidden;
@@ -1592,15 +1594,31 @@
       .stats, .legend, .footer-strip { display: none !important; }
       .wave-title { margin: 0; }
       .dock-grid { display: none !important; }
-      .brand-dhl, .brand-ml { width: 36mm; height: 13mm; object-fit: contain; }
+      .brand-logo,
+      .brand-dhl,
+      .brand-ml {
+        width: 34mm !important;
+        max-width: 34mm !important;
+        height: 13mm !important;
+        max-height: 13mm !important;
+        object-fit: contain !important;
+        object-position: center !important;
+        display: block !important;
+      }
+      .brand-dhl { justify-self: start; }
+      .brand-ml { justify-self: end; }
+      .title-wrap {
+        min-width: 0 !important;
+        overflow: hidden !important;
+      }
       h1 {
-        font-size: 13pt;
-        line-height: 1;
-        white-space: nowrap;
+        font-size: 12.5pt;
+        line-height: 1.04;
+        white-space: normal;
         letter-spacing: 0;
         max-width: 100%;
         overflow: hidden;
-        text-overflow: ellipsis;
+        text-overflow: clip;
       }
       .top-metrics { display: none; }
       .print-table-wrap {
@@ -1642,6 +1660,33 @@
         padding: 2px 3px;
         overflow-wrap: anywhere;
         word-break: break-word;
+      }
+      #printRows.print-docas-medium .print-wave h3 {
+        margin: 0 0 3mm;
+        font-size: 14pt;
+      }
+      #printRows.print-docas-medium .print-table {
+        font-size: 10pt;
+      }
+      #printRows.print-docas-medium .print-table th,
+      #printRows.print-docas-medium .print-table td {
+        height: 7mm;
+        padding: 1.8mm 2mm;
+      }
+      #printRows.print-docas-large .print-wave h3 {
+        margin: 0 0 4mm;
+        font-size: 16pt;
+      }
+      #printRows.print-docas-large .print-table {
+        font-size: 11.5pt;
+      }
+      #printRows.print-docas-large .print-table th,
+      #printRows.print-docas-large .print-table td {
+        height: 10mm;
+        padding: 2.2mm 2.5mm;
+      }
+      #printRows.print-docas-large .print-table th {
+        font-size: 10.5pt;
       }
     }
   </style>
@@ -1856,10 +1901,18 @@
   <script>
     const storageKey = "ondas-dados";
     const originalData = JSON.parse(JSON.stringify(window.ONDAS_DADOS));
+    const horariosOficiais = {
+      "Onda 1": { inicio: "08:30", fim: "09:22" },
+      "Onda 2": { inicio: "09:15", fim: "10:07" },
+      "Onda 3": { inicio: "10:00", fim: "10:52" },
+      "Onda 4": { inicio: "10:45", fim: "11:22" },
+      "Onda 5": { inicio: "11:15", fim: "11:52" }
+    };
     const savedData = JSON.parse(localStorage.getItem(storageKey) || "null");
     let data = savedData ? { ...originalData, ...savedData } : JSON.parse(JSON.stringify(originalData));
     data.docas = Math.max(Number(data.docas || 0), Number(originalData.docas || 92));
-    data.horarios = { ...(data.horarios || {}), ...(originalData.horarios || {}) };
+    originalData.horarios = { ...(originalData.horarios || {}), ...horariosOficiais };
+    data.horarios = { ...(data.horarios || {}), ...(originalData.horarios || {}), ...horariosOficiais };
     data.justificativas = data.justificativas || {};
     data.carregamentoInicio = data.carregamentoInicio || {};
     data.carregamentoFim = data.carregamentoFim || {};
@@ -2337,6 +2390,11 @@
       uniqueRows.forEach(row => {
         const key = routeKey(row.rota);
         const start = Number(data.carregamentoInicio[key] || 0);
+        const end = Number(data.carregamentoFim[key] || 0);
+        if (key && data.modoTesteCronometro && !isExpedida(row.status) && start && end && end - start <= 1500) {
+          delete data.carregamentoFim[key];
+          changed = true;
+        }
         if (key && isExpedida(row.status)) {
           if (!data.carregamentoFim[key]) {
             data.carregamentoFim[key] = now;
@@ -2346,7 +2404,7 @@
       });
       data.extracao.forEach(row => {
         const key = routeKey(row.rota);
-        if (!key || !active.has(key) || data.carregamentoFim[key]) return;
+        if (!key || !active.has(key) || data.carregamentoFim[key] || data.modoTesteCronometro) return;
         if (isWaveClosed(row.onda)) {
           const start = Number(data.carregamentoInicio[key] || 0);
           const waveEnd = waveEndTimestamp(row.onda);
@@ -2380,7 +2438,7 @@
       const start = Number(data.carregamentoInicio?.[key] || 0);
       if (!start) return 0;
       const explicitEnd = Number(data.carregamentoFim?.[key] || 0);
-      const waveEnd = wave && isWaveClosed(wave) ? waveEndTimestamp(wave) : null;
+      const waveEnd = wave && isWaveClosed(wave) && !data.modoTesteCronometro ? waveEndTimestamp(wave) : null;
       const end = explicitEnd || (waveEnd ? Math.max(start, waveEnd) : Date.now());
       return Math.max(0, Math.floor((end - start) / 1000));
     }
@@ -2885,11 +2943,13 @@
     function renderPrintTable(type = "docas", waves = data.ondas || [], range = {}) {
       const start = Number(range.start || 0);
       const end = Number(range.end || 0);
+      let docasRowCount = 0;
       const waveSections = waves.map(wave => {
         const rows = rowsForWave(wave)
           .filter(row => dockInRange(row, start, end))
           .slice()
           .sort((a, b) => Number(a.doca || 0) - Number(b.doca || 0));
+        if (type === "docas") docasRowCount += rows.length;
         if (type === "justificativas") {
           const justified = rows.filter(row => data.justificativas[routeKey(row.rota)]);
           const reasonSummary = justificationSummaryLines(wave, true);
@@ -2949,7 +3009,11 @@
       const closureIntro = type === "fechamento"
         ? `${renderFinalWaveSummary()}<section class="print-wave print-closure-message"><div class="closure-message">${renderClosureMessageHtml()}</div></section>${renderPrintClosureImpactSummary(waves, start, end)}`
         : "";
-      document.getElementById("printRows").innerHTML = closureIntro + waveSections;
+      const printRows = document.getElementById("printRows");
+      printRows.className = type === "docas" && docasRowCount > 0
+        ? (docasRowCount <= 14 ? "print-docas-large" : docasRowCount <= 28 ? "print-docas-medium" : "")
+        : "";
+      printRows.innerHTML = closureIntro + waveSections;
     }
 
     function renderJustifications() {
@@ -3212,7 +3276,7 @@
       cloudState.applyingRemote = true;
       data = { ...JSON.parse(JSON.stringify(originalData)), ...payload };
       data.docas = Math.max(Number(data.docas || 0), Number(originalData.docas || 92));
-      data.horarios = { ...(data.horarios || {}), ...(originalData.horarios || {}) };
+      data.horarios = { ...(data.horarios || {}), ...(originalData.horarios || {}), ...horariosOficiais };
       data.justificativas = data.justificativas || {};
       data.carregamentoInicio = data.carregamentoInicio || {};
       data.carregamentoFim = data.carregamentoFim || {};
