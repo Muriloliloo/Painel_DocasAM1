@@ -1992,6 +1992,7 @@
       "Falta de equipe",
       "Atraso giro anterior, (ADUANA, VOLUMOSO)",
       "Morosidade no carregamento",
+      "Atraso sistêmico (Pacotes vinculados a rota)",
       "Atraso sistemico"
     ];
     const allowedWaves = ["Onda 1", "Onda 2", "Onda 3", "Onda 4", "Onda 5"];
@@ -2928,7 +2929,7 @@
         </div>
       `).join("");
       return `
-        <div class="closure-message-title"><span>Fechamento AM 3.0</span><strong>${totalPct}</strong></div>
+        <div class="closure-message-title"><span>FECHAMENTO OOT (AM 3.0)</span><strong>${totalPct}</strong></div>
         <div class="closure-message-section">
           <h4>Impactos expedição AM</h4>
           ${waveMessageRows}
@@ -3101,26 +3102,59 @@
       }
     }
 
+    function flashActionButton(buttonId, text, fallbackText) {
+      const button = document.getElementById(buttonId);
+      if (!button) return;
+      button.textContent = text;
+      setTimeout(() => { button.textContent = fallbackText; }, 1500);
+    }
+
+    function hasJustification(route) {
+      const key = routeKey(route);
+      return Object.keys(data.justificativas || {}).some(savedKey => routeKey(savedKey) === key);
+    }
+
+    function deleteJustification(route) {
+      const key = routeKey(route);
+      Object.keys(data.justificativas || {}).forEach(savedKey => {
+        if (routeKey(savedKey) === key) delete data.justificativas[savedKey];
+      });
+    }
+
     function clearMarkedJustifications() {
       if (!requireAdminAction()) return;
       const checked = Array.from(document.querySelectorAll("[data-clear-route]:checked")).map(input => input.dataset.clearRoute);
-      if (!checked.length) return;
-      checked.forEach(route => delete data.justificativas[route]);
+      if (!checked.length) {
+        flashActionButton("clearMarkedReasons", "Marque rotas", "Limpar ticados");
+        return;
+      }
+      checked.forEach(deleteJustification);
       saveData();
       renderJustifications();
       renderClosure();
       renderPrintTable();
+      flashActionButton("clearMarkedReasons", "Limpo", "Limpar ticados");
     }
 
     function clearAllCurrentJustifications() {
       if (!requireAdminAction()) return;
-      pendingRows(currentWave, true).forEach(row => {
-        delete data.justificativas[routeKey(row.rota)];
-      });
+      const visibleRows = Array.from(document.querySelectorAll("#justificationRows select[data-route]"))
+        .map(select => select.dataset.route)
+        .filter(route => route && hasJustification(route));
+      const waveRows = pendingRows(currentWave, true)
+        .map(row => row.rota)
+        .filter(route => route && hasJustification(route));
+      const routesToClear = Array.from(new Set([...visibleRows, ...waveRows].map(routeKey)));
+      if (!routesToClear.length) {
+        flashActionButton("clearAllReasons", "Nada para limpar", "Limpar todos");
+        return;
+      }
+      routesToClear.forEach(deleteJustification);
       saveData();
       renderJustifications();
       renderClosure();
       renderPrintTable();
+      flashActionButton("clearAllReasons", "Tudo limpo", "Limpar todos");
     }
 
     function bindSummaryInputs() {
