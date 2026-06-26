@@ -1946,6 +1946,7 @@
       unsubscribe: null,
       applyingRemote: false,
       savingRemote: false,
+      pendingRemoteSave: false,
       tools: {}
     };
 
@@ -2644,11 +2645,16 @@
     }
 
     async function saveDataToCloud() {
-      if (!cloudState.ready || !cloudState.docRef || !isAdmin() || cloudState.applyingRemote || cloudState.savingRemote) return;
+      if (!cloudState.ready || !cloudState.docRef || !isAdmin() || cloudState.applyingRemote) return;
+      if (cloudState.savingRemote) {
+        cloudState.pendingRemoteSave = true;
+        return;
+      }
       try {
         cloudState.savingRemote = true;
+        cloudState.pendingRemoteSave = false;
         await cloudState.tools.setDoc(cloudState.docRef, {
-          payload: data,
+          payload: JSON.parse(JSON.stringify(data)),
           updatedAt: cloudState.tools.serverTimestamp(),
           updatedBy: cloudState.user?.email || "sistema"
         }, { merge: true });
@@ -2656,6 +2662,10 @@
         console.warn("Falha ao sincronizar com Firebase:", error);
       } finally {
         cloudState.savingRemote = false;
+        if (cloudState.pendingRemoteSave) {
+          cloudState.pendingRemoteSave = false;
+          saveDataToCloud();
+        }
       }
     }
 
@@ -3333,6 +3343,7 @@
           return;
         }
         const payload = snapshot.data()?.payload;
+        if (cloudState.savingRemote) return;
         if (payload) applyRemotePayload(payload);
       }, error => console.warn("Falha ao ouvir Firebase:", error));
     }
