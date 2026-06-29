@@ -1176,6 +1176,21 @@
       white-space: nowrap;
     }
 
+    .closure-message-shipped {
+      flex-basis: 100%;
+      width: max-content;
+      max-width: 100%;
+      margin-top: -2px;
+      padding: 3px 8px;
+      border-radius: 999px;
+      background: linear-gradient(180deg, #fff7cf, #ffe07a);
+      border: 1px solid #e5bd2c;
+      color: #061f36;
+      font: 900 11px "Segoe UI", Arial, sans-serif;
+      text-transform: uppercase;
+      box-shadow: inset 0 -1px 0 rgba(0,0,0,.12);
+    }
+
     .closure-message-reasons {
       flex-basis: 100%;
       display: flex;
@@ -2657,7 +2672,7 @@
           payload: JSON.parse(JSON.stringify(data)),
           updatedAt: cloudState.tools.serverTimestamp(),
           updatedBy: cloudState.user?.email || "sistema"
-        });
+        }, { merge: true });
       } catch (error) {
         console.warn("Falha ao sincronizar com Firebase:", error);
       } finally {
@@ -2924,10 +2939,13 @@
           const clean = line.replace(/^0+/, "").replace(" - ", "-").toUpperCase();
           return `<span>${clean}</span>`;
         }).join("");
+        const shipped = operationalShippedRows(wave);
+        const shippedText = `${shipped} ${shipped === 1 ? "rota expedida" : "rotas expedidas"}`;
         return `
           <div class="closure-message-wave">
             <b>${displayWave(wave).replace("ONDA 0", "Onda ").replace("ONDA ", "Onda ")} -</b>
             <strong>${compactPercent(formatPercent(wavePercent(wave)))}</strong>
+            <span class="closure-message-shipped">${shippedText}</span>
             ${motivoChips ? `<div class="closure-message-reasons">${motivoChips}</div>` : ""}
           </div>
         `;
