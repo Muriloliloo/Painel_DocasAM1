@@ -2649,7 +2649,22 @@
     }
 
 
+    function normalizeJustificationStore() {
+      const cleaned = {};
+      Object.entries(data.justificativas || {}).forEach(([route, motivo]) => {
+        const key = routeKey(route);
+        if (key && motivo) cleaned[key] = motivo;
+      });
+      data.justificativas = cleaned;
+    }
+
+    function getJustification(route) {
+      const key = routeKey(route);
+      return Object.entries(data.justificativas || {}).find(([savedKey]) => routeKey(savedKey) === key)?.[1] || "";
+    }
+
     function saveData() {
+      normalizeJustificationStore();
       if (!cloudState.applyingRemote) {
         data.syncRevision = Date.now();
         cloudState.lastLocalSaveAt = data.syncRevision;
@@ -2667,11 +2682,15 @@
       try {
         cloudState.savingRemote = true;
         cloudState.pendingRemoteSave = false;
+        normalizeJustificationStore();
+        // Nao usar merge aqui: com merge, campos apagados dentro de payload.justificativas
+        // podem continuar no Firestore. Gravando o documento inteiro, os motivos limpos
+        // somem tambem do banco de dados e dos outros computadores.
         await cloudState.tools.setDoc(cloudState.docRef, {
           payload: JSON.parse(JSON.stringify(data)),
           updatedAt: cloudState.tools.serverTimestamp(),
           updatedBy: cloudState.user?.email || "sistema"
-        }, { merge: true });
+        });
       } catch (error) {
         console.warn("Falha ao sincronizar com Firebase:", error);
       } finally {
@@ -2684,7 +2703,7 @@
     }
 
     function justificationSentence(row) {
-      const motivo = data.justificativas[routeKey(row.rota)] || "";
+      const motivo = getJustification(row.rota);
       return motivo
         ? `A rota ${row.rota} da ${waveLabel(row.onda)}, transportadora ${row.transportadora || "-"}, programada para a doca ${row.doca}, foi impactada por ${motivo}.`
         : "";
@@ -2693,7 +2712,7 @@
     function justificationSummaryLines(wave, includeOpen = false) {
       const counts = {};
       pendingRows(wave, includeOpen).forEach(row => {
-        const motivo = data.justificativas[routeKey(row.rota)] || "";
+        const motivo = getJustification(row.rota);
         if (!motivo) return;
         counts[motivo] = (counts[motivo] || 0) + 1;
       });
@@ -2824,7 +2843,7 @@
         .filter(row => dockInRange(row, start, end))
         .map(row => ({
           ...row,
-          motivo: data.justificativas[routeKey(row.rota)] || "Sem justificativa"
+          motivo: getJustification(row.rota) || "Sem justificativa"
         })));
     }
 
@@ -2927,7 +2946,7 @@
       const waveMessageRows = visibleWaves.map(wave => {
         const counts = {};
         pendingRows(wave, true).forEach(row => {
-          const motivo = data.justificativas[routeKey(row.rota)] || "";
+          const motivo = getJustification(row.rota);
           if (motivo) counts[motivo] = (counts[motivo] || 0) + 1;
         });
         const summary = Object.entries(counts)
@@ -2979,7 +2998,7 @@
           .sort((a, b) => Number(a.doca || 0) - Number(b.doca || 0));
         if (type === "docas") docasRowCount += rows.length;
         if (type === "justificativas") {
-          const justified = rows.filter(row => data.justificativas[routeKey(row.rota)]);
+          const justified = rows.filter(row => getJustification(row.rota));
           const reasonSummary = justificationSummaryLines(wave, true);
           const reasonSummaryHtml = reasonSummary === "#N/A"
             ? "<span>Sem motivos contabilizados nesta onda.</span>"
@@ -2995,7 +3014,7 @@
                 <thead><tr><th>Onda</th><th>Doca</th><th>Rota</th><th>Transportadora</th><th>Motivo</th></tr></thead>
                 <tbody>
                   ${justified.length
-                    ? justified.map(row => `<tr><td class="wave-cell">${waveLabel(row.onda)}</td><td>${row.doca || ""}</td><td>${row.rota || ""}</td><td>${cleanTransportadora(row.transportadora) || ""}</td><td>${data.justificativas[routeKey(row.rota)] || ""}</td></tr>`).join("")
+                    ? justified.map(row => `<tr><td class="wave-cell">${waveLabel(row.onda)}</td><td>${row.doca || ""}</td><td>${row.rota || ""}</td><td>${cleanTransportadora(row.transportadora) || ""}</td><td>${getJustification(row.rota)}</td></tr>`).join("")
                     : `<tr><td colspan="5">Sem justificativas cadastradas nesta onda.</td></tr>`}
                 </tbody>
               </table>
@@ -3011,7 +3030,7 @@
                 <thead><tr><th>Onda</th><th>Doca</th><th>Rota</th><th>Transportadora</th><th>Justificativa</th></tr></thead>
                 <tbody>
                   ${pending.length
-                    ? pending.map(row => `<tr><td class="wave-cell">${waveLabel(row.onda)}</td><td>${row.doca || ""}</td><td>${row.rota || ""}</td><td>${cleanTransportadora(row.transportadora) || ""}</td><td>${data.justificativas[routeKey(row.rota)] || ""}</td></tr>`).join("")
+                    ? pending.map(row => `<tr><td class="wave-cell">${waveLabel(row.onda)}</td><td>${row.doca || ""}</td><td>${row.rota || ""}</td><td>${cleanTransportadora(row.transportadora) || ""}</td><td>${getJustification(row.rota)}</td></tr>`).join("")
                     : `<tr><td colspan="5">Sem impactos pendentes nesta onda.</td></tr>`}
                   <tr><th colspan="5">Resumo de motivos</th></tr>
                   <tr><td colspan="5">${justificationSummaryLines(wave, true).replace(/\n/g, "<br>")}</td></tr>
@@ -3053,7 +3072,7 @@
       }
       document.getElementById("justificationRows").innerHTML = rows.length ? rows.map(row => {
         const key = routeKey(row.rota);
-        const selected = data.justificativas[key] || "";
+        const selected = getJustification(row.rota);
         return `
           <tr data-just-route="${key}">
             <td>${selected ? `<input class="clear-check" type="checkbox" data-clear-route="${key}">` : ""}</td>
@@ -3111,7 +3130,7 @@
       const button = document.getElementById("copyPendingRoutes");
       const routes = Array.from(new Set(pendingRows(currentWave, true)
         .map(row => routeKey(row.rota))
-        .filter(route => route && !data.justificativas[route])));
+        .filter(route => route && !getJustification(route))));
       textarea.value = routes.join("\n");
       textarea.focus();
       textarea.select();
@@ -3179,6 +3198,8 @@
         flashActionButton("clearMarkedReasons", "Nada para limpar", "Limpar ticados");
         return;
       }
+      document.getElementById("massReason").value = "";
+      document.getElementById("massRoutes").value = "";
       refreshJustificationViews();
       flashActionButton("clearMarkedReasons", "Limpo", "Limpar ticados");
     }
@@ -3202,6 +3223,8 @@
         flashActionButton("clearAllReasons", "Nada para limpar", "Limpar todos");
         return;
       }
+      document.getElementById("massReason").value = "";
+      document.getElementById("massRoutes").value = "";
       refreshJustificationViews();
       flashActionButton("clearAllReasons", "Tudo limpo", "Limpar todos");
     }
@@ -3270,13 +3293,13 @@
         ${(data.ondas || []).map(wave => {
           const pendingImpactRows = pendingRows(wave, true);
           const lineItems = pendingImpactRows.map(row => {
-            const motivo = data.justificativas[routeKey(row.rota)];
+            const motivo = getJustification(row.rota);
             return `${row.rota} | ${row.transportadora || "-"}${motivo ? ` | ${motivo}` : ""}`;
           });
           const lines = lineItems.map(item => `<span class="closure-line">${item}</span>`).join("") || `<span class="closure-empty">Sem impactos pendentes nesta onda.</span>`;
           const reasonCounts = {};
           pendingImpactRows.forEach(row => {
-            const motivo = data.justificativas[routeKey(row.rota)] || "";
+            const motivo = getJustification(row.rota);
             if (motivo) reasonCounts[motivo] = (reasonCounts[motivo] || 0) + 1;
           });
           const reasonSummary = Object.entries(reasonCounts)
@@ -3365,6 +3388,7 @@
       data.docas = Math.max(Number(data.docas || 0), Number(originalData.docas || 92));
       data.horarios = { ...(data.horarios || {}), ...(originalData.horarios || {}), ...horariosOficiais };
       data.justificativas = data.justificativas || {};
+      normalizeJustificationStore();
       data.carregamentoInicio = data.carregamentoInicio || {};
       data.carregamentoFim = data.carregamentoFim || {};
       data.ciclosExtras = { ...(originalData.ciclosExtras || {}), ...(data.ciclosExtras || {}) };
