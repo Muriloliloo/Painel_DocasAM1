@@ -1178,17 +1178,11 @@
 
     .closure-message-shipped {
       flex-basis: 100%;
-      width: max-content;
-      max-width: 100%;
-      margin-top: -2px;
-      padding: 3px 8px;
-      border-radius: 999px;
-      background: linear-gradient(180deg, #fff7cf, #ffe07a);
-      border: 1px solid #e5bd2c;
+      display: block;
+      margin-top: -1px;
       color: #061f36;
-      font: 900 11px "Segoe UI", Arial, sans-serif;
+      font: 900 12px "Segoe UI", Arial, sans-serif;
       text-transform: uppercase;
-      box-shadow: inset 0 -1px 0 rgba(0,0,0,.12);
     }
 
     .closure-message-reasons {
@@ -1962,6 +1956,7 @@
       applyingRemote: false,
       savingRemote: false,
       pendingRemoteSave: false,
+      lastLocalSaveAt: 0,
       tools: {}
     };
 
@@ -2655,6 +2650,10 @@
 
 
     function saveData() {
+      if (!cloudState.applyingRemote) {
+        data.syncRevision = Date.now();
+        cloudState.lastLocalSaveAt = data.syncRevision;
+      }
       localStorage.setItem(storageKey, JSON.stringify(data));
       saveDataToCloud();
     }
@@ -3144,9 +3143,14 @@
 
     function deleteJustification(route) {
       const key = routeKey(route);
+      let changed = false;
       Object.keys(data.justificativas || {}).forEach(savedKey => {
-        if (routeKey(savedKey) === key) delete data.justificativas[savedKey];
+        if (routeKey(savedKey) === key) {
+          delete data.justificativas[savedKey];
+          changed = true;
+        }
       });
+      return changed;
     }
 
     function refreshJustificationViews() {
@@ -3167,23 +3171,37 @@
         flashActionButton("clearMarkedReasons", "Marque rotas", "Limpar ticados");
         return;
       }
-      routesToClear.forEach(deleteJustification);
+      let changed = false;
+      routesToClear.forEach(route => {
+        if (deleteJustification(route)) changed = true;
+      });
+      if (!changed) {
+        flashActionButton("clearMarkedReasons", "Nada para limpar", "Limpar ticados");
+        return;
+      }
       refreshJustificationViews();
       flashActionButton("clearMarkedReasons", "Limpo", "Limpar ticados");
     }
 
     function clearAllCurrentJustifications() {
       if (!requireAdminAction()) return;
-      const visibleRows = Array.from(document.querySelectorAll("#justificationRows select[data-route]"))
-        .filter(select => normalize(select.value))
-        .map(select => select.dataset.route || select.closest("[data-just-route]")?.dataset.justRoute)
-        .filter(Boolean);
-      const routesToClear = Array.from(new Set(visibleRows.map(routeKey)));
+      const routesToClear = Array.from(new Set(
+        pendingRows(currentWave, true)
+          .map(row => routeKey(row.rota))
+          .filter(route => route && hasJustification(route))
+      ));
       if (!routesToClear.length) {
         flashActionButton("clearAllReasons", "Nada para limpar", "Limpar todos");
         return;
       }
-      routesToClear.forEach(deleteJustification);
+      let changed = false;
+      routesToClear.forEach(route => {
+        if (deleteJustification(route)) changed = true;
+      });
+      if (!changed) {
+        flashActionButton("clearAllReasons", "Nada para limpar", "Limpar todos");
+        return;
+      }
       refreshJustificationViews();
       flashActionButton("clearAllReasons", "Tudo limpo", "Limpar todos");
     }
@@ -3338,6 +3356,10 @@
 
     function applyRemotePayload(payload) {
       if (!payload) return;
+      const incomingRevision = Number(payload.syncRevision || 0);
+      const currentRevision = Number(data.syncRevision || 0);
+      const recentLocalSave = cloudState.lastLocalSaveAt && Date.now() - cloudState.lastLocalSaveAt < 8000;
+      if (recentLocalSave && incomingRevision && currentRevision && incomingRevision < currentRevision) return;
       cloudState.applyingRemote = true;
       data = { ...JSON.parse(JSON.stringify(originalData)), ...payload };
       data.docas = Math.max(Number(data.docas || 0), Number(originalData.docas || 92));
