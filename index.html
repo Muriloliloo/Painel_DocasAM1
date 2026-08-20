@@ -3,7 +3,25 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Controle de Ondas</title>
+  <title>Controle de Docas - SSP15 São Vicente</title>
+  <script>
+    window.tailwind = window.tailwind || {};
+    window.tailwind.config = {
+      prefix: "tw-",
+      corePlugins: { preflight: false },
+      theme: {
+        extend: {
+          colors: {
+            ootNavy: "#063354",
+            ootPanel: "#e8f0f7",
+            ootLine: "#cbd7e3",
+            ootYellow: "#ffc928"
+          }
+        }
+      }
+    };
+  </script>
+  <script src="https://cdn.tailwindcss.com"></script>
   <style>
     :root {
       --yellow: #ffd200;
@@ -190,6 +208,48 @@
       white-space: nowrap;
     }
 
+    /* Seletor unico de onda: substitui as cinco abas de ondas. */
+    .wave-selector {
+      width: min(100%, 300px);
+      min-width: 250px;
+      height: 42px;
+      display: grid;
+      align-content: center;
+      gap: 2px;
+      padding: 5px 10px 6px;
+      border: 1px solid rgba(255,255,255,.25);
+      border-radius: 6px;
+      background: linear-gradient(180deg, #0b3558, #061f36);
+      color: #fff;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.12);
+    }
+
+    .wave-selector-label {
+      color: #ffd200;
+      font: 950 10px/1 "Segoe UI", Arial, sans-serif;
+      text-transform: uppercase;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .wave-selector select {
+      width: 100%;
+      min-width: 0;
+      border: 0;
+      outline: 0;
+      background: transparent;
+      color: #fff;
+      font: 950 14px/1 "Segoe UI", Arial, sans-serif;
+      text-transform: uppercase;
+      cursor: pointer;
+    }
+
+    .wave-selector option {
+      background: #fff;
+      color: #001b35;
+      font-weight: 900;
+    }
     .tabs button.active {
       background: var(--red);
       background: linear-gradient(180deg, #174d79, #092944);
@@ -223,7 +283,7 @@
       color: #fff;
       padding: 4px 10px;
       text-transform: uppercase;
-      font: 950 12px/1.05 "Segoe UI", Arial, sans-serif;
+      font: 950 11px/1.05 "Segoe UI", Arial, sans-serif;
       cursor: pointer;
       text-align: center;
     }
@@ -291,24 +351,40 @@
 
     .stats {
       width: calc(100% - 28px);
-      display: flex;
-      align-items: center;
-      gap: 20px;
+      display: grid;
+      grid-template-columns: minmax(210px, 1.4fr) minmax(82px, .72fr) minmax(82px, .72fr) minmax(92px, .82fr) minmax(104px, .9fr) minmax(96px, .82fr) minmax(92px, .8fr) minmax(100px, .86fr) minmax(96px, .82fr) minmax(132px, 1fr);
+      align-items: stretch;
+      gap: 0;
       margin: 6px 14px 0;
-      padding: 7px 16px;
-      background: linear-gradient(180deg, #063b66, #031d34);
-      border: 1px solid rgba(255,255,255,.2);
-      border-radius: 5px;
-      color: #fff;
-      box-shadow: 0 8px 18px rgba(6, 38, 66, .18);
+      padding: 12px 10px;
+      background: linear-gradient(180deg, #ffffff 0%, #f8fbfe 100%);
+      border: 1px solid #cfd9e5;
+      border-radius: 5px 5px 0 0;
+      color: #061b35;
+      box-shadow: 0 5px 13px rgba(5, 25, 48, .12);
+    }
+
+    .report-title {
+      min-width: 0;
+      display: grid;
+      align-content: center;
+      gap: 5px;
+      padding: 0 14px 0 10px;
+      border-right: 1px solid #dce5ef;
+      text-transform: uppercase;
+    }
+
+    .report-title strong {
+      color: #060b12;
+      font: 950 20px/1 "Arial Black", "Segoe UI Black", Arial, sans-serif;
+      letter-spacing: 0;
+      white-space: nowrap;
     }
 
     .wave-stat {
-      padding-right: 18px;
-      border-right: 2px solid rgba(255,255,255,.45);
-      color: #fff;
-      font: 950 26px/1 "Segoe UI", Arial, sans-serif;
-      text-transform: uppercase;
+      color: #0a5a96;
+      font: 900 11px/1 "Segoe UI", Arial, sans-serif;
+      letter-spacing: 0;
       white-space: nowrap;
     }
 
@@ -319,47 +395,68 @@
 
     .stat {
       min-width: 0;
-      display: flex;
-      align-items: baseline;
-      gap: 7px;
+      display: grid;
+      place-items: center;
+      align-content: center;
+      gap: 5px;
+      padding: 0 10px;
       background: transparent;
-      padding: 0 12px 0 0;
-      border-right: 2px solid rgba(255,255,255,.45);
+      border-right: 1px solid #dce5ef;
       box-shadow: none;
+      text-align: center;
     }
 
     .stat span {
       display: block;
-      color: #dbe7f2;
-      font-size: 16px;
+      color: #071d39;
+      font-size: 11px;
       font-weight: 950;
-      text-transform: none;
+      line-height: 1;
+      text-transform: uppercase;
+      white-space: nowrap;
     }
 
     .stat strong {
       display: block;
-      color: var(--yellow);
-      font: 950 18px/1 "Segoe UI", Arial, sans-serif;
+      color: #071d39;
+      font: 950 26px/1 "Segoe UI", Arial, sans-serif;
+      letter-spacing: 0;
+      white-space: nowrap;
     }
 
-    .status-legend {
-      margin-left: auto;
-      display: flex;
-      align-items: center;
-      gap: 22px;
-      color: #e9f2fa;
-      font: 950 13px "Segoe UI", Arial, sans-serif;
-      text-transform: uppercase;
+    .stat.preview strong,
+    .stat.customs strong {
+      color: #ff7900;
+    }
+
+    .stat.guard strong {
+      color: #006dff;
+    }
+
+    .stat.loaded strong {
+      color: #00a651;
+    }
+
+    .stat.pending-count strong {
+      color: #ee0014;
     }
 
     .countdown {
+      border-right: 0;
+      border-radius: 5px;
+      background: linear-gradient(180deg, #0b3558, #051b31);
+      color: #fff;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.12);
+    }
+
+    .countdown span {
       color: #fff;
     }
 
     .countdown strong {
       color: #ffd200;
+      font-size: 25px;
     }
-
     .legend {
       display: none;
       gap: 18px;
@@ -399,20 +496,50 @@
     }
 
     .dock-grid {
-      display: grid;
+      display: flex;
       width: calc(100% - 28px);
-      grid-template-columns: repeat(10, minmax(0, 1fr));
-      gap: 3px 8px;
-      padding: 5px 14px 4px;
+      min-height: 0;
+      gap: 7px;
+      padding: 8px 14px 6px;
       margin: 0 0 4px;
       background:
         radial-gradient(circle at 50% 0%, rgba(255,255,255,.72), transparent 34%),
-        linear-gradient(180deg, #dfe8f1 0%, #cbd7e3 100%);
+        linear-gradient(180deg, #f9fbfd 0%, #dce6ef 100%);
       border-bottom: 0;
       overflow: hidden;
-      align-content: start;
+      align-items: stretch;
     }
 
+    .dock-block {
+      min-width: 0;
+      display: flex;
+      gap: 5px;
+      flex: 1 1 0;
+    }
+
+    .dock-block.block-1 {
+      flex: .92 1 0;
+    }
+
+    .dock-block.block-2 {
+      flex: 1.2 1 0;
+    }
+
+    .dock-block.block-3 {
+      flex: 2.12 1 0;
+    }
+
+    .dock-column {
+      min-width: 0;
+      display: grid;
+      grid-template-rows: repeat(7, minmax(0, 1fr));
+      gap: 5px;
+      flex: 1 1 0;
+    }
+
+    .dock-spacer {
+      min-height: 0;
+    }
     .slot {
       min-height: 39px;
       position: relative;
@@ -460,11 +587,11 @@
       min-width: 0;
       width: 100%;
       color: currentColor;
-      font: 950 14px/1.05 "Segoe UI", Arial, sans-serif;
+      font: 950 11px/1.05 "Segoe UI", Arial, sans-serif;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-      padding: 7px 5px 12px 30px;
+      padding: 7px 4px 12px 20px;
       text-align: center;
     }
 
@@ -523,6 +650,12 @@
       text-shadow: 0 1px 0 rgba(0,0,0,.22);
     }
 
+    [hidden] { display: none !important; }
+
+    [hidden] { display: none !important; }
+
+    [hidden] { display: none !important; }
+
     .footer-strip {
       height: 36px;
       display: grid;
@@ -558,6 +691,930 @@
       padding: 0 14px;
     }
 
+
+    /* Aba Docas no modelo operacional original. */
+    .side-rail {
+      display: none;
+    }
+
+    .docas-mode {
+      width: 100vw;
+      max-width: none;
+      height: 100vh;
+      border-radius: 0;
+      grid-template-rows: 12px 60px auto 0 0 minmax(0, 1fr) auto;
+      background: #e8f0f7;
+    }
+
+    .docas-mode .topbar {
+      height: 12px;
+      min-height: 12px;
+      padding: 0;
+      background: #ffd200;
+      border: 0;
+      overflow: hidden;
+    }
+
+    .docas-mode .topbar > * {
+      display: none;
+    }
+
+    .docas-mode .toolbar {
+      height: 60px;
+      display: grid;
+      grid-template-columns: auto minmax(420px, 1fr) auto;
+      gap: 10px;
+      align-items: center;
+      padding: 0 10px 0 0;
+      background: #061f36;
+      border-bottom: 2px solid #143756;
+    }
+
+    .docas-mode .tabs {
+      width: auto;
+      height: auto;
+      flex-wrap: nowrap;
+      align-self: center;
+      overflow: visible;
+    }
+
+    .docas-mode .wave-selector {
+      width: clamp(260px, 15vw, 330px);
+      height: 42px;
+      border-radius: 4px;
+      border-color: rgba(255,255,255,.72);
+      border-bottom: 4px solid #ffd200;
+      background: #082642;
+    }
+
+    .docas-mode .wave-selector select {
+      font-size: clamp(12px, .74vw, 15px);
+    }
+
+    .docas-mode .view-switch {
+      justify-self: center;
+    }
+    .docas-mode .tabs button {
+      min-width: 148px;
+      height: 60px;
+      min-height: 60px;
+      border: 0;
+      border-right: 1px solid rgba(255,255,255,.12);
+      border-radius: 0;
+      background: #082642;
+      color: #fff;
+      padding: 7px 12px 5px;
+      font: 950 16px/1 "Segoe UI", Arial, sans-serif;
+      box-shadow: none;
+    }
+
+    .docas-mode .tabs button.active {
+      background: #082642;
+      box-shadow: inset 0 -4px 0 #ffd200;
+    }
+
+    .docas-mode .tab-time {
+      color: #fff;
+      font-size: 12px;
+      font-weight: 950;
+    }
+
+    .docas-mode .view-switch {
+      align-self: center;
+      justify-self: start;
+      display: flex;
+      gap: 8px;
+      padding: 0;
+      background: transparent;
+      border: 0;
+    }
+
+    .docas-mode .view-switch button {
+      min-width: 165px;
+      height: 38px;
+      border: 1px solid rgba(255,255,255,.72);
+      border-radius: 4px;
+      background: #fff;
+      color: #001b35;
+      font: 950 14px/1 "Segoe UI", Arial, sans-serif;
+      box-shadow: none;
+    }
+
+    .docas-mode .view-switch button.active {
+      background: #063354;
+      color: #fff;
+      border: 2px solid #fff;
+    }
+
+    .docas-mode .actions {
+      justify-self: end;
+      gap: 6px;
+      padding-right: 0;
+    }
+
+    .docas-mode .actions button,
+    .docas-mode .auth-badge {
+      min-width: 86px;
+      height: 38px;
+      min-height: 38px;
+      border: 1px solid rgba(255,255,255,.38);
+      border-radius: 5px;
+      background: #082642;
+      color: #fff;
+      padding: 0 14px;
+      font: 950 14px/1 "Segoe UI", Arial, sans-serif;
+      box-shadow: none;
+    }
+
+    .docas-mode .auth-badge span {
+      display: none;
+    }
+
+    .docas-mode .auth-badge strong {
+      color: #fff;
+      font-size: 14px;
+    }
+
+    .docas-mode .side-rail {
+      position: absolute;
+      left: 0;
+      top: 72px;
+      bottom: 36px;
+      width: 76px;
+      z-index: 6;
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      gap: 15px;
+      padding: 26px 0 14px;
+      background: #062642;
+      border-right: 1px solid #0c3a60;
+    }
+
+    .docas-mode .side-rail button {
+      display: grid;
+      place-items: center;
+      gap: 5px;
+      min-height: 48px;
+      border: 0;
+      border-left: 4px solid transparent;
+      background: transparent;
+      color: #fff;
+      font: 950 12px/1.05 "Segoe UI", Arial, sans-serif;
+      text-align: center;
+      cursor: default;
+    }
+
+    .docas-mode .side-rail button.active {
+      color: #ffd200;
+      border-left-color: #ffd200;
+    }
+
+    .docas-mode .rail-icon {
+      display: block;
+      font: 950 22px/1 "Segoe UI", Arial, sans-serif;
+    }
+
+    .docas-mode .stats {
+      width: calc(100% - 106px);
+      height: 76px;
+      margin: 8px 22px 0 84px;
+      padding: 7px 12px;
+      grid-template-columns: minmax(315px, 2.3fr) repeat(8, minmax(118px, 1fr)) minmax(102px, .8fr);
+      background: #fff;
+      border: 1px solid #bdcfdf;
+      border-radius: 6px;
+      box-shadow: none;
+    }
+
+    .docas-mode .report-title {
+      padding-left: 16px;
+      border-right: 1px solid #d7e0e9;
+    }
+
+    .docas-mode .report-title strong {
+      font-size: 26px;
+      letter-spacing: .2px;
+    }
+
+    .docas-mode .wave-stat {
+      color: #0a5a96;
+      font-size: 12px;
+    }
+
+    .docas-mode .stat {
+      padding: 0 12px;
+      border-right: 1px solid #d7e0e9;
+    }
+
+    .docas-mode .stat span {
+      color: #001b35;
+      font-size: 13px;
+      font-weight: 950;
+    }
+
+    .docas-mode .stat strong {
+      font-size: 26px;
+      color: #001b35;
+    }
+
+    .docas-mode .stat.preview strong,
+    .docas-mode .stat.customs strong { color: #ff7900; }
+    .docas-mode .stat.guard strong { color: #006dff; }
+    .docas-mode .stat.loaded strong { color: #00a651; }
+    .docas-mode .stat.pending-count strong { color: #e30613; }
+
+    .docas-mode .countdown {
+      align-self: center;
+      height: 52px;
+      border: 0;
+      border-radius: 4px;
+      background: #062642;
+      color: #fff;
+      padding: 4px 4px;
+    }
+
+    .docas-mode .countdown span {
+      color: #fff;
+      font-size: 12px;
+      text-transform: none;
+    }
+
+    .docas-mode .countdown strong {
+      color: #ffd200;
+      font-size: 26px;
+    }
+
+    .docas-mode .wave-title,
+    .docas-mode .final-countdown-alert {
+      display: none !important;
+    }
+
+    .docas-mode .dock-grid {
+      width: calc(100% - 118px);
+      height: calc(100vh - 252px);
+      max-height: 618px;
+      min-height: 510px;
+      margin: 8px 22px 50px 96px;
+      padding: 0;
+      gap: 28px;
+      background: transparent;
+      overflow: hidden;
+      align-items: stretch;
+    }
+
+    .docas-mode .dock-block {
+      display: flex;
+      gap: 8px;
+      min-width: 0;
+    }
+
+    .docas-mode .dock-block.block-1 { flex: 2 1 0; }
+    .docas-mode .dock-block.block-2 { flex: 4 1 0; }
+    .docas-mode .dock-block.block-3 { flex: 6 1 0; }
+
+    .docas-mode .dock-column {
+      display: grid;
+      grid-template-rows: repeat(7, minmax(0, 1fr));
+      gap: 8px;
+      min-width: 0;
+    }
+
+    .docas-mode .slot {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      padding: 6px 5px 4px;
+      overflow: hidden;
+      background: #fff;
+      color: #001b35;
+      border: 1px solid #ccd9e5;
+      border-radius: 5px;
+      box-shadow: 0 2px 7px rgba(15, 39, 67, .14);
+      text-align: center;
+    }
+
+    .docas-mode .slot::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 0;
+      right: 0;
+      height: 5px;
+      background: #c6ced7;
+    }
+
+    .docas-mode .slot.status-pending::before { background: #e30613; }
+    .docas-mode .slot.status-loaded::before { background: #00a651; }
+    .docas-mode .slot.status-customs::before { background: #ff8500; }
+    .docas-mode .slot.status-guard::before { background: #006dff; }
+    .docas-mode .slot.status-free::before { background: #c6ced7; }
+
+    .docas-mode .slot.pending,
+    .docas-mode .slot.loaded,
+    .docas-mode .slot.attention {
+      background: #fff;
+      border-color: #ccd9e5;
+      min-height: 0;
+    }
+
+    .docas-mode .dock-number {
+      position: absolute;
+      top: 8px;
+      left: 7px;
+      color: #001b35;
+      font: 950 9px/1 "Segoe UI", Arial, sans-serif;
+      text-shadow: none;
+    }
+
+    .docas-mode .dock-card-head {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      min-height: 11px;
+      margin: 0 0 1px;
+      overflow: hidden;
+    }
+
+    .docas-mode .dock-number-inline {
+      flex: 0 0 auto;
+      color: #000;
+      font: 950 10px/1 "Segoe UI", Arial, sans-serif;
+    }
+
+    .docas-mode .dock-person {
+      flex: 1 1 auto;
+      min-width: 0;
+      overflow: hidden;
+      color: #000;
+      font: 950 9px/1 "Segoe UI", Arial, sans-serif;
+      text-align: left;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
+
+    .docas-mode .dock-carrier-top {
+      display: block;
+      margin: 1px 4px 1px 16px;
+      overflow: hidden;
+      color: #001b35;
+      font: 950 8px/1 "Segoe UI", Arial, sans-serif;
+      text-transform: uppercase;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
+
+    .docas-mode .route {
+      width: auto;
+      padding: 0;
+      color: #001b35;
+      font: 950 15px/.95 "Arial Black", "Segoe UI Black", "Segoe UI", Arial, sans-serif;
+      text-align: center;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      text-shadow: none;
+    }
+
+    .docas-mode .dock-minutes,
+    .docas-mode .dock-carrier-bottom,
+    .docas-mode .dock-extra-line {
+      color: #001b35;
+      font: 850 8px/1 "Segoe UI", Arial, sans-serif;
+      text-transform: uppercase;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .docas-mode .dock-status {
+      margin-top: 1px;
+      font: 950 8px/1 "Segoe UI", Arial, sans-serif;
+      text-transform: uppercase;
+    }
+
+    .docas-mode .dock-carrier-bottom {
+      margin-top: 1px;
+      color: #000;
+      font: 850 9px/1 "Segoe UI", Arial, sans-serif;
+      text-transform: none;
+    }
+
+    .docas-mode .dock-footer-line {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 6px;
+      min-height: 10px;
+      margin-top: auto;
+      color: #000;
+      font: 850 9px/1 "Segoe UI", Arial, sans-serif;
+      white-space: nowrap;
+    }
+
+    .docas-mode .dock-footer-line strong {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      font: 950 9px/1 "Segoe UI", Arial, sans-serif;
+    }
+
+    .docas-mode .status-pending .dock-status { color: #e30613; }
+    .docas-mode .status-loaded .dock-status { color: #00a651; }
+    .docas-mode .status-customs .dock-status { color: #ff7900; }
+    .docas-mode .status-guard .dock-status { color: #006dff; }
+
+    .docas-mode .dock-free {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      padding-top: 5px;
+      color: #001b35;
+      font: 950 10px/1 "Segoe UI", Arial, sans-serif;
+      text-transform: uppercase;
+    }
+
+    .docas-mode .load-timer {
+      position: static;
+      display: inline-block;
+      min-width: 0;
+      margin-top: 1px;
+      padding: 0;
+      background: transparent;
+      color: #001b35;
+      border: 0;
+      box-shadow: none;
+      font: 850 8px/1 "Segoe UI", Arial, sans-serif;
+      letter-spacing: 0;
+    }
+
+    .docas-mode .legend {
+      position: absolute;
+      left: 96px;
+      right: 22px;
+      bottom: 39px;
+      z-index: 4;
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      height: 28px;
+      padding: 0 0 0 1px;
+      color: #001b35;
+      font: 950 14px/1 "Segoe UI", Arial, sans-serif;
+      text-transform: uppercase;
+    }
+
+    .dot.customs { background: #ff8500; }
+    .dot.guard { background: #006dff; }
+    .dot.free { background: #c6ced7; }
+
+    .docas-mode .footer-strip {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 8;
+    }
+    /* Docas responsivas para HD, Full HD, 4K e navegadores Android. */
+    .app.docas-mode {
+      --docas-topbar-h: 12px;
+      --docas-toolbar-h: 60px;
+      --docas-rail-w: clamp(70px, 4vw, 84px);
+      --docas-side-gap: clamp(12px, 1.15vw, 24px);
+      --docas-grid-gap: clamp(14px, 1.45vw, 32px);
+      --docas-card-gap: clamp(4px, .45vw, 9px);
+      --docas-stats-h: 76px;
+      --docas-footer-h: 36px;
+      --docas-grid-offset: 252px;
+      --docas-route-font: clamp(12px, .9vw, 21px);
+      --docas-name-font: clamp(8px, .56vw, 12px);
+      --docas-small-font: clamp(7px, .47vw, 11px);
+      --docas-footer-font: clamp(8px, .52vw, 12px);
+      height: 100vh;
+      height: 100dvh;
+      min-height: 640px;
+      grid-template-rows: var(--docas-topbar-h) var(--docas-toolbar-h) auto 0 0 minmax(0, 1fr) auto;
+      overflow: hidden;
+    }
+
+    .docas-mode .toolbar {
+      height: var(--docas-toolbar-h);
+      grid-template-columns: auto minmax(420px, 1fr) auto;
+      gap: 10px;
+      overflow: hidden;
+    }
+
+    .docas-mode .tabs {
+      min-width: 0;
+      width: auto;
+      height: auto;
+      align-self: center;
+      overflow: visible;
+    }
+
+    .docas-mode .wave-selector {
+      width: clamp(260px, 15vw, 330px);
+      height: 42px;
+      border-radius: 4px;
+      border-color: rgba(255,255,255,.72);
+      border-bottom: 4px solid #ffd200;
+      background: #082642;
+    }
+
+    .docas-mode .wave-selector select {
+      font-size: clamp(12px, .74vw, 15px);
+    }
+
+    .docas-mode .view-switch {
+      justify-self: center;
+    }
+    .docas-mode .tabs button {
+      flex: 1 1 0;
+      min-width: 0;
+      height: var(--docas-toolbar-h);
+      min-height: var(--docas-toolbar-h);
+      padding-inline: clamp(6px, .62vw, 12px);
+      font-size: clamp(12px, .78vw, 17px);
+      overflow: hidden;
+    }
+
+    .docas-mode .tabs button > span,
+    .docas-mode .tab-time,
+    .docas-mode .view-switch button,
+    .docas-mode .actions button,
+    .docas-mode .auth-badge strong {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .docas-mode .tab-time {
+      font-size: clamp(10px, .62vw, 13px);
+    }
+
+    .docas-mode .view-switch button {
+      min-width: clamp(142px, 8.7vw, 176px);
+      height: clamp(32px, 2vw, 38px);
+      padding-inline: clamp(8px, .7vw, 14px);
+      font-size: clamp(12px, .72vw, 15px);
+    }
+
+    .docas-mode .actions button,
+    .docas-mode .auth-badge {
+      min-width: clamp(74px, 5vw, 96px);
+      height: clamp(32px, 2vw, 38px);
+      min-height: clamp(32px, 2vw, 38px);
+      padding-inline: clamp(8px, .72vw, 14px);
+      font-size: clamp(11px, .68vw, 14px);
+    }
+
+    .docas-mode .side-rail {
+      top: calc(var(--docas-topbar-h) + var(--docas-toolbar-h));
+      bottom: var(--docas-footer-h);
+      width: var(--docas-rail-w);
+      gap: clamp(7px, .78vw, 15px);
+      padding-top: clamp(12px, 1.35vw, 26px);
+    }
+
+    .docas-mode .side-rail button {
+      min-height: clamp(38px, 3vw, 50px);
+      font-size: clamp(10px, .64vw, 12px);
+    }
+
+    .docas-mode .rail-icon {
+      font-size: clamp(18px, 1.2vw, 23px);
+    }
+
+    .docas-mode .stats {
+      width: calc(100% - var(--docas-rail-w) - (var(--docas-side-gap) * 2));
+      height: var(--docas-stats-h);
+      margin: clamp(5px, .42vw, 8px) var(--docas-side-gap) 0 calc(var(--docas-rail-w) + var(--docas-side-gap));
+      padding: clamp(5px, .42vw, 8px) clamp(8px, .65vw, 14px);
+      grid-template-columns: minmax(clamp(220px, 16vw, 330px), 2.25fr) repeat(8, minmax(clamp(72px, 6vw, 122px), 1fr)) minmax(clamp(88px, 6.3vw, 116px), .86fr);
+      overflow: hidden;
+    }
+
+    .docas-mode .report-title {
+      padding-left: clamp(8px, .85vw, 18px);
+    }
+
+    .docas-mode .report-title strong {
+      font-size: clamp(20px, 1.45vw, 31px);
+      line-height: .95;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .docas-mode .wave-stat,
+    .docas-mode .stat span {
+      font-size: clamp(10px, .62vw, 14px);
+    }
+
+    .docas-mode .stat {
+      padding-inline: clamp(5px, .62vw, 12px);
+      overflow: hidden;
+    }
+
+    .docas-mode .stat strong {
+      font-size: clamp(20px, 1.45vw, 34px);
+      line-height: .95;
+    }
+
+    .docas-mode .countdown {
+      height: clamp(44px, 3vw, 56px);
+      min-width: 0;
+    }
+
+    .docas-mode .countdown span {
+      font-size: clamp(10px, .58vw, 13px);
+    }
+
+    .docas-mode .countdown strong {
+      font-size: clamp(22px, 1.45vw, 34px);
+    }
+
+    .docas-mode .dock-grid {
+      width: calc(100% - var(--docas-rail-w) - (var(--docas-side-gap) * 2));
+      height: calc(100vh - var(--docas-grid-offset));
+      height: calc(100dvh - var(--docas-grid-offset));
+      max-height: none;
+      min-height: 0;
+      margin: clamp(5px, .42vw, 8px) var(--docas-side-gap) 50px calc(var(--docas-rail-w) + var(--docas-side-gap));
+      gap: var(--docas-grid-gap);
+      overflow: hidden;
+    }
+
+    .docas-mode .dock-block,
+    .docas-mode .dock-column {
+      gap: var(--docas-card-gap);
+    }
+
+    .docas-mode .slot {
+      justify-content: flex-start;
+      padding: clamp(4px, .42vw, 7px) clamp(3px, .34vw, 6px) clamp(3px, .3vw, 5px);
+      contain: layout paint;
+    }
+
+    .docas-mode .slot::before {
+      height: clamp(4px, .28vw, 7px);
+    }
+
+    .docas-mode .slot * {
+      min-width: 0;
+      max-width: 100%;
+    }
+
+    .docas-mode .dock-card-head {
+      flex: 0 0 auto;
+      width: 100%;
+      height: clamp(10px, .72vw, 14px);
+      min-height: 0;
+      gap: clamp(3px, .28vw, 5px);
+      margin: 0 0 clamp(0px, .12vw, 2px);
+    }
+
+    .docas-mode .dock-number,
+    .docas-mode .dock-number-inline {
+      font-size: clamp(8px, .56vw, 12px);
+      line-height: 1;
+    }
+
+    .docas-mode .dock-person {
+      font-size: var(--docas-name-font);
+      line-height: 1;
+    }
+
+    .docas-mode .route,
+    .docas-mode .slot.timer-hidden .route,
+    .docas-mode .slot.loaded .route,
+    .docas-mode .slot.attention .route {
+      flex: 0 0 auto;
+      width: 100%;
+      min-height: 0;
+      margin: 0;
+      padding: 0;
+      font-size: var(--docas-route-font);
+      line-height: 1.08;
+      padding-bottom: 1px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .docas-mode .dock-minutes,
+    .docas-mode .dock-status,
+    .docas-mode .dock-carrier-bottom,
+    .docas-mode .dock-extra-line,
+    .docas-mode .load-timer {
+      flex: 0 0 auto;
+      height: auto;
+      min-height: 0;
+      margin-top: clamp(0px, .12vw, 2px);
+      font-size: var(--docas-small-font);
+      line-height: 1;
+    }
+
+    .docas-mode .dock-status {
+      font-weight: 950;
+    }
+
+    .docas-mode .dock-carrier-bottom {
+      font-size: clamp(7px, .5vw, 12px);
+      line-height: 1;
+    }
+
+    .docas-mode .dock-footer-line {
+      flex: 0 0 auto;
+      width: 100%;
+      min-height: clamp(8px, .55vw, 12px);
+      gap: clamp(3px, .35vw, 7px);
+      margin-top: auto;
+      font-size: var(--docas-footer-font);
+      line-height: 1;
+      overflow: hidden;
+    }
+
+    .docas-mode .dock-footer-line strong {
+      font-size: var(--docas-footer-font);
+      line-height: 1;
+    }
+
+    .docas-mode .dock-free {
+      padding-inline: 4px;
+      font-size: clamp(8px, .58vw, 13px);
+      line-height: 1;
+      text-align: center;
+    }
+
+    .docas-mode .legend {
+      left: calc(var(--docas-rail-w) + var(--docas-side-gap));
+      right: var(--docas-side-gap);
+      gap: clamp(10px, 1.2vw, 24px);
+      font-size: clamp(12px, .72vw, 15px);
+      overflow: hidden;
+    }
+
+    .docas-mode .footer-strip {
+      height: var(--docas-footer-h);
+      font-size: clamp(11px, .72vw, 15px);
+    }
+
+    @media (min-width: 2560px) {
+      .app.docas-mode {
+        --docas-toolbar-h: 72px;
+        --docas-rail-w: 92px;
+        --docas-stats-h: 92px;
+        --docas-grid-offset: 300px;
+        --docas-route-font: clamp(18px, .66vw, 26px);
+        --docas-name-font: clamp(12px, .38vw, 15px);
+        --docas-small-font: clamp(11px, .34vw, 14px);
+        --docas-footer-font: clamp(11px, .36vw, 15px);
+      }
+
+      .docas-mode .toolbar {
+        grid-template-columns: auto minmax(560px, 1fr) auto;
+      }
+    }
+
+    @media (max-width: 1650px) {
+      .app.docas-mode {
+        --docas-toolbar-h: 60px;
+        --docas-rail-w: 72px;
+        --docas-side-gap: 12px;
+        --docas-grid-gap: 18px;
+        --docas-card-gap: 6px;
+        --docas-stats-h: 66px;
+        --docas-grid-offset: 238px;
+        --docas-route-font: clamp(11px, .82vw, 15px);
+        --docas-name-font: clamp(7px, .52vw, 10px);
+        --docas-small-font: clamp(6.5px, .48vw, 8.5px);
+        --docas-footer-font: clamp(7px, .52vw, 9px);
+      }
+
+      .docas-mode .toolbar {
+        grid-template-columns: auto minmax(420px, 1fr) auto;
+        grid-template-rows: none;
+        gap: 8px;
+        padding: 0 8px;
+      }
+
+      .docas-mode .tabs {
+        grid-column: 1;
+        grid-row: 1;
+        height: auto;
+      }
+
+      .docas-mode .wave-selector {
+        width: 260px;
+        height: 40px;
+      }
+
+      .docas-mode .tabs button {
+        height: 50px;
+        min-height: 50px;
+        font-size: clamp(12px, .94vw, 14px);
+      }
+
+      .docas-mode .tab-time {
+        font-size: 10px;
+      }
+
+      .docas-mode .view-switch {
+        grid-column: 2;
+        grid-row: 1;
+        justify-self: center;
+      }
+
+      .docas-mode .actions {
+        grid-column: 3;
+        grid-row: 1;
+        align-self: center;
+      }
+
+      .docas-mode .view-switch button {
+        min-width: 145px;
+        height: 32px;
+        font-size: 12px;
+      }
+
+      .docas-mode .actions button,
+      .docas-mode .auth-badge {
+        min-width: 76px;
+        height: 32px;
+        min-height: 32px;
+        padding-inline: 8px;
+        font-size: 11px;
+      }
+
+      .docas-mode .stats {
+        grid-template-columns: minmax(235px, 2.1fr) repeat(8, minmax(62px, 1fr)) minmax(80px, .85fr);
+      }
+
+      .docas-mode .report-title strong {
+        font-size: clamp(17px, 1.28vw, 21px);
+      }
+
+      .docas-mode .stat strong {
+        font-size: clamp(19px, 1.55vw, 24px);
+      }
+
+      .docas-mode .countdown strong {
+        font-size: clamp(20px, 1.6vw, 25px);
+      }
+
+      .docas-mode .legend {
+        bottom: 36px;
+        height: 26px;
+      }
+    }
+
+    @media (max-width: 1280px) {
+      html,
+      body {
+        width: 100%;
+        min-width: 1180px;
+      }
+
+      body {
+        display: block;
+        place-items: start;
+        justify-items: start;
+        align-items: start;
+        overflow: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      .app.docas-mode {
+        width: 1180px;
+        min-width: 1180px;
+        margin-left: 0;
+        margin-right: 0;
+      }
+    }
+
+    @media (max-height: 760px) {
+      .app.docas-mode {
+        --docas-stats-h: 60px;
+        --docas-grid-offset: 258px;
+        --docas-route-font: clamp(10.5px, .76vw, 13px);
+        --docas-name-font: clamp(7px, .46vw, 9px);
+        --docas-small-font: 6.5px;
+        --docas-footer-font: 7px;
+      }
+
+      .docas-mode .slot {
+        padding-block: 3px 2px;
+      }
+
+      .docas-mode .dock-card-head {
+        height: 9px;
+      }
+
+      .docas-mode .dock-footer-line {
+        min-height: 8px;
+      }
+    }
     .drawer {
       position: absolute;
       inset: 148px 6px 18px auto;
@@ -883,7 +1940,7 @@
       background: linear-gradient(180deg, #10b765, #008f49);
     }
 
-    textarea {
+    .paste-box textarea {
       width: 100%;
       min-height: 188px;
       resize: none;
@@ -924,6 +1981,197 @@
     .drawer .primary {
       background: #fff;
       color: #111;
+    }
+    /* Editor de Dados no formato modal do painel original. */
+    .drawer {
+      position: fixed;
+      top: max(4px, env(safe-area-inset-top));
+      left: max(2px, calc((100vw - min(100vw, 1810px)) / 2 + 2px));
+      right: auto;
+      bottom: auto;
+      width: min(586px, calc(100vw - 8px));
+      max-height: calc(100dvh - 8px);
+      height: min(760px, calc(100dvh - 8px));
+      display: none;
+      grid-template-rows: 40px auto auto minmax(0, 1fr) auto;
+      z-index: 70;
+      overflow: hidden;
+      background: #f8fafc;
+      border: 1px solid #cdd9e4;
+      border-radius: 4px;
+      box-shadow: 0 22px 70px rgba(0, 0, 0, .42);
+    }
+
+    .drawer.open {
+      display: grid;
+    }
+
+    .drawer header {
+      min-height: 40px;
+      padding: 0 16px;
+      background: #063354;
+      border-bottom: 1px solid #092f4f;
+    }
+
+    .drawer h2 {
+      color: #fff;
+      font: 950 20px/1 "Arial Black", "Segoe UI Black", "Segoe UI", Arial, sans-serif;
+      letter-spacing: 0;
+    }
+
+    .drawer header button {
+      width: 30px;
+      height: 30px;
+      border-radius: 4px;
+      color: #fff;
+      font: 950 30px/1 "Segoe UI", Arial, sans-serif;
+    }
+
+    .paste-help {
+      padding: 15px 17px 17px;
+      background: #fff;
+      color: #111;
+      font: 850 12px/1.35 "Segoe UI", Arial, sans-serif;
+    }
+
+    .paste-help strong {
+      margin-bottom: 9px;
+      color: #063354;
+      font: 950 15px/1 "Segoe UI", Arial, sans-serif;
+      text-transform: uppercase;
+    }
+
+    .summary-fields {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      padding: 0 16px 37px;
+      background: #fff;
+    }
+
+    .summary-fields label {
+      gap: 7px;
+      color: #063354;
+      font: 950 12px/1 "Segoe UI", Arial, sans-serif;
+      text-transform: uppercase;
+    }
+
+    .summary-fields input {
+      height: 34px;
+      border: 1px solid #ccd7e2;
+      border-radius: 5px;
+      background: #fff;
+      color: #000;
+      padding: 0 10px;
+      font: 900 15px/1 "Segoe UI", Arial, sans-serif;
+    }
+
+    .paste-area {
+      display: grid;
+      grid-template-rows: minmax(188px, 1fr) minmax(188px, 1fr);
+      gap: 22px;
+      min-height: 0;
+      overflow: auto;
+      padding: 0 16px 13px;
+      background: #fff;
+    }
+
+    .paste-box {
+      min-height: 188px;
+      grid-template-rows: 27px minmax(0, 1fr);
+      border: 1px solid #d2dce6;
+      border-radius: 5px;
+      background: #fff;
+      box-shadow: none;
+    }
+
+    .paste-box label {
+      height: 27px;
+      padding: 0 12px;
+      background: #e00012;
+      color: #fff;
+      font: 950 14px/1 "Segoe UI", Arial, sans-serif;
+      text-transform: uppercase;
+    }
+
+    .paste-box.base label {
+      background: #0aa65a;
+    }
+
+    .paste-box textarea {
+      height: 100%;
+      min-height: 0;
+      border: 0;
+      border-top: 1px solid #e4e9ef;
+      background: #fff;
+      color: #000;
+      resize: none;
+      overflow: auto;
+      white-space: pre;
+      padding: 46px 16px 10px;
+      font: 12px/1.25 Consolas, "Courier New", monospace;
+      outline: none;
+    }
+
+    .paste-box textarea:focus,
+    .summary-fields input:focus {
+      box-shadow: inset 0 0 0 2px rgba(6, 51, 84, .18);
+    }
+
+    .drawer-actions {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      padding: 13px 16px 14px;
+      background: #f7f9fb;
+      border-top: 1px solid #d9e1e8;
+    }
+
+    .drawer-actions button,
+    .drawer .primary {
+      width: 100%;
+      min-width: 0;
+      height: 44px;
+      min-height: 44px;
+      padding: 0 14px;
+      border: 1px solid #d2dce6;
+      border-radius: 6px;
+      background: #fff;
+      color: #111;
+      box-shadow: none;
+      font: 950 13px/1 "Segoe UI", Arial, sans-serif;
+      text-transform: uppercase;
+    }
+
+    @media (max-width: 640px) {
+      .drawer {
+        inset: max(4px, env(safe-area-inset-top)) 4px auto 4px;
+        width: auto;
+        max-height: calc(100dvh - 8px);
+      }
+
+      .summary-fields,
+      .drawer-actions {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-height: 620px) {
+      .summary-fields {
+        padding-bottom: 14px;
+      }
+
+      .paste-area {
+        grid-template-rows: minmax(126px, 1fr) minmax(126px, 1fr);
+        gap: 14px;
+      }
+
+      .paste-box {
+        min-height: 126px;
+      }
+
+      .paste-box textarea {
+        padding-top: 24px;
+      }
     }
 
     .print-table-wrap {
@@ -1306,6 +2554,639 @@
       font-weight: 850;
     }
 
+
+
+    /* Modo relatorio: Justificativas e Fechamento sem elementos da aba Docas. */
+    .report-mode {
+      width: 100vw;
+      max-width: none;
+      height: 100vh;
+      border-radius: 0;
+      grid-template-rows: auto auto minmax(0, 1fr);
+      background: #e8f0f7;
+    }
+
+    .report-mode .toolbar {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 8px 14px;
+      align-items: center;
+      padding: 5px 14px 0;
+    }
+
+    .report-mode .tabs {
+      grid-column: 1;
+      grid-row: 1;
+      min-width: 0;
+      flex-wrap: nowrap;
+      overflow: hidden;
+    }
+
+    .report-mode .wave-selector {
+      width: min(270px, 100%);
+      min-width: 220px;
+    }
+    .report-mode .tabs button {
+      min-width: 158px;
+    }
+
+    .report-mode .actions {
+      grid-column: 2;
+      grid-row: 1;
+      justify-self: end;
+      width: auto;
+    }
+
+    .report-mode .view-switch {
+      grid-column: 1 / -1;
+      grid-row: 2;
+      margin: 0 -14px;
+      padding: 6px 14px 8px;
+      border-top: 1px solid rgba(255,255,255,.09);
+      border-bottom: 1px solid #d7dee6;
+    }
+
+    /* Dropdown proprio de onda para clique em toda a aba. */
+    .toolbar {
+      position: relative;
+      z-index: 20;
+    }
+
+    .tabs .wave-picker {
+      position: relative;
+      width: min(100%, 300px);
+      min-width: 250px;
+      z-index: 35;
+    }
+
+    .tabs .wave-selector,
+    .docas-mode .tabs .wave-selector,
+    .report-mode .tabs .wave-selector {
+      all: unset;
+      box-sizing: border-box;
+      width: 100%;
+      min-width: 0;
+      height: 42px;
+      display: grid;
+      align-content: center;
+      gap: 2px;
+      padding: 5px 10px 6px;
+      border: 1px solid rgba(255,255,255,.72);
+      border-bottom: 4px solid #ffd200;
+      border-radius: 5px;
+      background: #082642;
+      color: #fff;
+      cursor: pointer;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.12);
+    }
+
+    .tabs .wave-selector-label {
+      color: #ffd200;
+      font: 950 10px/1 "Segoe UI", Arial, sans-serif;
+      text-transform: uppercase;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .tabs .wave-selector-value {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      color: #fff;
+      font: 950 14px/1 "Segoe UI", Arial, sans-serif;
+      text-transform: uppercase;
+      white-space: nowrap;
+      overflow: hidden;
+    }
+
+    .tabs .wave-selector-text {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .tabs .wave-selector-arrow {
+      flex: 0 0 auto;
+      color: #fff;
+      font-size: 13px;
+      line-height: 1;
+    }
+
+    .tabs .wave-menu {
+      position: absolute;
+      left: 0;
+      top: calc(100% + 5px);
+      width: 100%;
+      display: grid;
+      overflow: hidden;
+      border: 1px solid #8ea6ba;
+      border-radius: 6px;
+      background: #fff;
+      box-shadow: 0 14px 34px rgba(0, 18, 38, .28);
+      z-index: 90;
+    }
+
+    .tabs .wave-menu[hidden] {
+      display: none !important;
+    }
+
+    .tabs .wave-option,
+    .docas-mode .tabs .wave-option,
+    .report-mode .tabs .wave-option {
+      all: unset;
+      box-sizing: border-box;
+      min-width: 0;
+      min-height: 0;
+      display: block;
+      padding: 9px 10px;
+      border-bottom: 1px solid #d7e0e9;
+      background: #fff;
+      color: #001b35;
+      font: 950 13px/1.05 "Segoe UI", Arial, sans-serif;
+      text-transform: uppercase;
+      cursor: pointer;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .tabs .wave-option:last-child {
+      border-bottom: 0;
+    }
+
+    .tabs .wave-option:hover,
+    .tabs .wave-option:focus,
+    .tabs .wave-option.active {
+      background: #063354;
+      color: #fff;
+    }
+
+    .docas-mode .toolbar,
+    .report-mode .toolbar,
+    .docas-mode .tabs,
+    .report-mode .tabs {
+      overflow: visible;
+    }
+
+    .docas-mode .tabs .wave-picker {
+      width: clamp(260px, 15vw, 330px);
+    }
+
+    .docas-mode .tabs .wave-selector,
+    .report-mode .tabs .wave-selector {
+      height: 40px;
+    }
+    .report-mode .side-rail,
+    .report-mode .stats,
+    .report-mode .legend,
+    .report-mode .wave-title,
+    .report-mode .dock-grid,
+    .report-mode .final-countdown-alert,
+    .report-mode .footer-strip {
+      display: none !important;
+    }
+
+    .report-mode .tailwind-mode.panel-view {
+      height: 100%;
+      max-height: none;
+      min-height: 0;
+      padding: 10px 12px;
+      overflow: auto;
+    }
+
+    /* Tailwind mode: Justificativas e Fechamento seguem o layout original anterior. */
+    .tailwind-mode.panel-view {
+      padding: 10px 12px;
+      background: #e8f0f7;
+      max-height: calc(100vh - 285px);
+      overflow: auto;
+      color: #001b35;
+      font-family: "Segoe UI", Arial, sans-serif;
+    }
+
+    .tailwind-mode .tw-original-grid {
+      display: grid;
+      grid-template-columns: minmax(820px, 2fr) minmax(360px, .92fr);
+      gap: 16px;
+      align-items: start;
+      min-width: 1180px;
+    }
+
+    .tailwind-mode .tw-original-card {
+      background: #fff;
+      border: 1px solid #c6d3df;
+      border-radius: 6px;
+      overflow: hidden;
+      box-shadow: none;
+    }
+
+    .tailwind-mode .tw-original-title,
+    .tailwind-mode .panel-card h3.tw-original-title {
+      height: 57px;
+      display: flex;
+      align-items: center;
+      margin: 0;
+      padding: 0 20px;
+      background: #063354;
+      color: #fff;
+      font: 950 22px/1 "Arial Black", "Segoe UI Black", "Segoe UI", Arial, sans-serif;
+      text-transform: uppercase;
+      letter-spacing: .2px;
+    }
+
+    .tailwind-mode .summary-card .tw-original-title {
+      justify-content: center;
+      text-align: center;
+    }
+
+    #justificativasView .bulk-justification {
+      display: grid;
+      grid-template-columns: minmax(260px, .78fr) minmax(360px, 1fr) repeat(4, minmax(118px, .42fr));
+      gap: 10px;
+      align-items: end;
+      min-width: 1100px;
+      margin: 0;
+      padding: 14px 16px;
+      background: #e8f0f7;
+      border: 0;
+      border-bottom: 1px solid #c6d3df;
+      border-radius: 0;
+    }
+
+    #justificativasView .bulk-justification label {
+      display: grid;
+      gap: 7px;
+      color: #063354;
+      font: 950 16px/1.1 "Segoe UI", Arial, sans-serif;
+      text-transform: uppercase;
+    }
+
+    #justificativasView .bulk-justification select,
+    #justificativasView .bulk-justification textarea {
+      width: 100%;
+      height: 46px;
+      min-height: 46px;
+      border: 1px solid #9eb4c6;
+      border-radius: 6px;
+      background: #fff;
+      color: #001b35;
+      padding: 8px 10px;
+      font: 800 16px/1.22 "Segoe UI", Arial, sans-serif;
+      box-shadow: none;
+    }
+
+    #justificativasView .bulk-justification textarea {
+      height: 65px;
+      resize: vertical;
+      color: #6b6f75;
+    }
+
+    #justificativasView .bulk-justification button {
+      height: 54px;
+      border-radius: 6px;
+      border: 0;
+      background: #063354;
+      color: #fff;
+      padding: 0 14px;
+      font: 950 16px/1.14 "Segoe UI", Arial, sans-serif;
+      text-transform: uppercase;
+      cursor: pointer;
+      box-shadow: none;
+      white-space: normal;
+    }
+
+    #justificativasView .bulk-justification button.secondary {
+      background: #d7e3ef;
+      color: #063354;
+      border: 1px solid #9eb4c6;
+    }
+
+    #justificativasView .tw-table-wrap {
+      max-height: calc(100vh - 410px);
+      overflow: auto;
+      background: #fff;
+    }
+
+    #justificativasView .summary-card .tw-summary-scroll {
+      max-height: calc(100vh - 356px);
+      overflow: auto;
+      background: #fff;
+    }
+
+    #justificativasView .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: auto;
+      background: #fff;
+      color: #000;
+      font: 800 16px/1.2 "Segoe UI", Arial, sans-serif;
+    }
+
+    #justificativasView .tw-table-wrap .data-table {
+      min-width: 1170px;
+    }
+
+    #justificativasView .data-table th,
+    #justificativasView .data-table td {
+      border: 1px solid #ccd6df;
+      padding: 10px 10px;
+      text-align: center;
+      vertical-align: middle;
+      background: #fff;
+    }
+
+    #justificativasView .data-table th {
+      position: sticky;
+      top: 0;
+      z-index: 1;
+      height: 43px;
+      background: #e9eef3;
+      color: #001b35;
+      font: 950 16px/1.05 "Segoe UI", Arial, sans-serif;
+      text-transform: uppercase;
+    }
+
+    #justificativasView .data-table td {
+      height: 64px;
+    }
+
+    #justificativasView .tw-table-wrap th:nth-child(1),
+    #justificativasView .tw-table-wrap td:nth-child(1) { width: 84px; }
+    #justificativasView .tw-table-wrap th:nth-child(2),
+    #justificativasView .tw-table-wrap td:nth-child(2) { width: 72px; }
+    #justificativasView .tw-table-wrap th:nth-child(3),
+    #justificativasView .tw-table-wrap td:nth-child(3) { width: 110px; }
+    #justificativasView .tw-table-wrap th:nth-child(4),
+    #justificativasView .tw-table-wrap td:nth-child(4) { width: 190px; }
+    #justificativasView .tw-table-wrap th:nth-child(5),
+    #justificativasView .tw-table-wrap td:nth-child(5) { width: 72px; }
+    #justificativasView .tw-table-wrap th:nth-child(6),
+    #justificativasView .tw-table-wrap td:nth-child(6) { width: 255px; }
+    #justificativasView .tw-table-wrap th:nth-child(7),
+    #justificativasView .tw-table-wrap td:nth-child(7) { min-width: 460px; }
+
+    #justificativasView .data-table select {
+      width: 100%;
+      min-width: 0;
+      height: 40px;
+      border: 1px solid #c1ccd6;
+      border-radius: 999px;
+      background: #eef2f5;
+      color: #000;
+      padding: 0 10px;
+      font: 800 16px "Segoe UI", Arial, sans-serif;
+    }
+
+    #justificativasView .clear-check {
+      width: 42px;
+      height: 42px;
+      border: 1px solid #777;
+      border-radius: 4px;
+      accent-color: #063354;
+    }
+
+    #justificativasView .justification-text {
+      min-width: 460px;
+      max-width: 620px;
+      text-align: left !important;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: clip;
+      font-weight: 700;
+    }
+
+    #justificativasView .summary-card .data-table th,
+    #justificativasView .summary-card .data-table td {
+      height: 64px;
+      padding: 10px 8px;
+      font-size: 16px;
+      font-weight: 850;
+    }
+
+    #justificativasView .summary-card .data-table th {
+      height: 58px;
+      font-weight: 950;
+    }
+
+    #justificativasView .summary-card .data-table tfoot th,
+    #justificativasView .summary-card .data-table tfoot td {
+      background: #f3f7fb;
+      font-weight: 950;
+    }
+
+    #justificativasView .loss-panel {
+      display: none;
+    }
+
+    #fechamentoView .closure-layout {
+      display: grid;
+      grid-template-columns: minmax(780px, 920px) minmax(330px, 350px);
+      gap: 16px;
+      align-items: start;
+      justify-content: start;
+      min-width: 1140px;
+    }
+
+    #fechamentoView .closure {
+      display: grid;
+      gap: 6px;
+      width: 100%;
+      max-width: none;
+    }
+
+    #fechamentoView .closure-head {
+      height: 38px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 12px;
+      border-radius: 6px;
+      background: #063354;
+      color: #fff;
+      box-shadow: none;
+      font: 950 16px/1 "Arial Black", "Segoe UI Black", "Segoe UI", Arial, sans-serif;
+      text-transform: uppercase;
+    }
+
+    #fechamentoView .closure-head strong,
+    #fechamentoView .closure-message-title strong {
+      min-width: 86px;
+      height: 28px;
+      display: inline-grid;
+      place-items: center;
+      border-radius: 999px;
+      background: linear-gradient(180deg, #ffd84a, #f4b000);
+      color: #001b35;
+      box-shadow: inset 0 -2px 0 rgba(0,0,0,.12);
+      font: 950 16px/1 "Segoe UI", Arial, sans-serif;
+    }
+
+    #fechamentoView .closure-block {
+      background: #fff;
+      border: 1px solid #c6d3df;
+      border-radius: 6px;
+      overflow: hidden;
+      box-shadow: none;
+    }
+
+    #fechamentoView .closure-title {
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 12px;
+      background: #e7eff7;
+      color: #001b35;
+      font: 950 15px/1 "Segoe UI", Arial, sans-serif;
+      text-transform: uppercase;
+    }
+
+    #fechamentoView .closure-title strong {
+      color: #ee0014;
+      font-size: 16px;
+    }
+
+    #fechamentoView .closure-list {
+      min-height: 28px;
+      max-height: none;
+      padding: 6px 12px;
+      background: #fff;
+      color: #001b35;
+      font: 900 10px/1.12 "Segoe UI", Arial, sans-serif;
+      white-space: pre-line;
+    }
+
+    #fechamentoView .closure-list.dense {
+      columns: auto;
+    }
+
+    #fechamentoView .closure-line {
+      display: block;
+      break-inside: avoid;
+      page-break-inside: avoid;
+    }
+
+    #fechamentoView .closure-reasons {
+      display: none;
+    }
+
+    #fechamentoView .closure-message {
+      width: 350px;
+      background: #edf4fb;
+      color: #001b35;
+      border: 1px solid #c6d3df;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: none;
+      font: 900 13px/1.28 "Segoe UI", Arial, sans-serif;
+    }
+
+    #fechamentoView .closure-message-title {
+      height: 49px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 0 12px;
+      background: #063354;
+      color: #fff;
+      font: 950 15px/1.1 "Arial Black", "Segoe UI Black", "Segoe UI", Arial, sans-serif;
+      text-transform: uppercase;
+    }
+
+
+    .app.reader-mode #justificativasView .bulk-justification .admin-only {
+      opacity: 1;
+      filter: none;
+    }
+
+    .app.reader-mode #justificativasView .bulk-justification .admin-only:not(.secondary) {
+      background: #063354;
+      color: #fff;
+    }
+
+    #fechamentoView .closure-message-title span {
+      min-width: 0;
+      white-space: nowrap;
+      font-size: 13.5px;
+      letter-spacing: 0;
+    }
+    #fechamentoView .closure-message-section {
+      padding: 10px 12px;
+      border-bottom: 1px solid #d1dde8;
+    }
+
+    #fechamentoView .closure-message-section h4 {
+      margin: 0 0 10px;
+      color: #ee0014;
+      font: 950 13px "Segoe UI", Arial, sans-serif;
+      text-transform: uppercase;
+    }
+
+    #fechamentoView .closure-message-wave {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 7px;
+      padding: 8px 0 10px;
+      border-top: 1px solid #d5e0ea;
+    }
+
+    #fechamentoView .closure-message-wave:first-of-type {
+      border-top: 0;
+    }
+
+    #fechamentoView .closure-message-wave b,
+    #fechamentoView .closure-message-extra span {
+      color: #001b35;
+      font: 950 14px "Segoe UI", Arial, sans-serif;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    #fechamentoView .closure-message-wave strong {
+      color: #ee0014;
+      font: 950 15px "Segoe UI", Arial, sans-serif;
+      white-space: nowrap;
+    }
+
+    #fechamentoView .closure-message-shipped {
+      flex-basis: 100%;
+      color: #001b35;
+      font: 950 12px "Segoe UI", Arial, sans-serif;
+      text-transform: uppercase;
+    }
+
+    #fechamentoView .closure-message-reasons {
+      flex-basis: 100%;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      margin-top: 2px;
+    }
+
+    #fechamentoView .closure-message-reasons span {
+      padding: 3px 7px;
+      border-radius: 999px;
+      background: #fff;
+      border: 1px solid #d1dbe5;
+      color: #001b35;
+      font: 950 11px "Segoe UI", Arial, sans-serif;
+      text-transform: uppercase;
+    }
+
+    #fechamentoView .closure-message-extra {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 8px 0;
+      border-top: 1px solid #d5e0ea;
+      color: #001b35;
+      font: 950 13px "Segoe UI", Arial, sans-serif;
+      text-transform: uppercase;
+    }
     .print-table {
       width: 100%;
       border-collapse: collapse;
@@ -1716,89 +3597,101 @@
       </div>
       <img class="brand-logo brand-ml" src="assets/logo-mercado-livre.png" alt="Mercado Livre">
     </header>
-
     <section class="toolbar">
       <div class="tabs" id="tabs"></div>
+      <section class="view-switch" aria-label="Navegação do painel">
+        <button class="active" type="button" data-view="docas">Painel de Docas</button>
+        <button type="button" data-view="justificativas">Justificativas</button>
+        <button type="button" data-view="fechamento">Fechamento</button>
+      </section>
       <div class="actions">
         <button id="authBtn" class="auth-badge" type="button"><span>Firebase</span><strong>Local</strong></button>
         <button id="testTimerBtn" class="test-mode admin-only" type="button">Teste</button>
-        <button id="toggleTimersBtn" class="timer-toggle" type="button">Cronômetro</button>
+        <button id="toggleTimersBtn" class="timer-toggle" type="button" hidden aria-hidden="true">Cronômetro</button>
         <button id="editBtn" class="admin-only" type="button">Editar dados</button>
         <button id="printBtn" type="button">PDF</button>
       </div>
     </section>
-
-    <section class="view-switch" aria-label="Navegação do painel">
-      <button class="active" type="button" data-view="docas">Painel de Docas</button>
-      <button type="button" data-view="justificativas">Justificativas</button>
-      <button type="button" data-view="fechamento">Fechamento</button>
-    </section>
-
-    <section class="stats">
-      <div class="wave-stat" id="waveStatLabel">ONDA 01</div>
-      <div class="stat"><span>Rotas:</span><strong id="totalRoutes">0</strong></div>
-      <div class="stat"><span>Docas:</span><strong id="occupiedDocks">0</strong></div>
-      <div class="stat"><span>Carregadas</span><strong id="loadedRoutes">0</strong></div>
-      <div class="stat"><span>Pendentes</span><strong id="pendingRoutes">0</strong></div>
+    <aside class="side-rail" aria-label="Menu operacional da aba docas">
+      <button class="active" type="button"><span class="rail-icon">▦</span><span>Overview</span></button>
+      <button type="button"><span class="rail-icon">▤</span><span>Docas</span></button>
+      <button type="button"><span class="rail-icon">⌁</span><span>Rotas</span></button>
+      <button type="button"><span class="rail-icon">◴</span><span>Históricos</span></button>
+      <button type="button"><span class="rail-icon">!</span><span>Alertas</span></button>
+      <button type="button"><span class="rail-icon">□</span><span>Relatórios</span></button>
+      <button type="button"><span class="rail-icon">⚙</span><span>Config.</span></button>
+      <button type="button"><span class="rail-icon">?</span><span>Ajuda</span></button>
+    </aside>    <section class="stats">
+      <div class="report-title"><strong>REPORTE OOT 3.0</strong><span class="wave-stat" id="waveStatLabel">ONDA 01</span></div>
+      <div class="stat"><span>Início</span><strong id="waveStartTime">08H30</strong></div>
+      <div class="stat"><span>Término</span><strong id="waveEndTime">09H22</strong></div>
+      <div class="stat preview"><span>Prévia</span><strong id="previewPercent">0,0%</strong></div>
+      <div class="stat"><span>Qtde rotas</span><strong id="totalRoutes">0</strong></div>
+      <div class="stat guard"><span>Guardando</span><strong id="guardingRoutes">0</strong></div>
+      <div class="stat loaded"><span>Expedida</span><strong id="loadedRoutes">0</strong></div>
+      <div class="stat customs"><span>Em aduana</span><strong id="occupiedDocks">0</strong></div>
+      <div class="stat pending-count"><span>Pendentes</span><strong id="pendingRoutes">0</strong></div>
       <div class="stat countdown"><span>Tempo restante</span><strong id="remainingTime">--:--</strong></div>
-      <div class="status-legend">
-        <span><i class="dot loaded"></i>Carregada</span>
-        <span><i class="dot pending"></i>Pendente</span>
-      </div>
     </section>
 
     <div class="final-countdown-alert" id="finalCountdownAlert" aria-live="assertive" hidden></div>
 
     <div class="legend">
-      <span><i class="dot pending"></i>Planejada, não carregada</span>
-      <span><i class="dot loaded"></i>Carregada na Base</span>
-      <span><i class="dot empty"></i>Doca vazia</span>
+      <span><i class="dot customs"></i>Em aduana</span>
+      <span><i class="dot pending"></i>Pendente</span>
+      <span><i class="dot guard"></i>Guardando</span>
+      <span><i class="dot loaded"></i>Expedida</span>
+      <span><i class="dot free"></i>Docas livres</span>
     </div>
 
     <h2 class="wave-title" id="waveTitle"></h2>
     <section class="dock-grid" id="dockGrid" aria-label="Docas por onda"></section>
-    <section class="panel-view" id="justificativasView" aria-label="Justificativas de pendências">
-      <div class="panel-grid">
-        <div class="panel-card">
-          <h3>Justificativas pendentes</h3>
-          <div class="bulk-justification">
-            <label>Motivo em massa
-              <select id="massReason">
+    <section class="panel-view tailwind-mode tw-scope tw-bg-[#e8f0f7] tw-p-3" id="justificativasView" aria-label="Justificativas de pendências">
+      <div class="tw-original-grid tw-grid tw-grid-cols-[minmax(820px,2fr)_minmax(360px,.9fr)] tw-gap-4 tw-items-start">
+        <div class="panel-card tw-original-card tw-overflow-hidden tw-rounded-md tw-border tw-border-[#c7d3df] tw-bg-white">
+          <h3 class="tw-original-title tw-flex tw-h-14 tw-items-center tw-bg-[#063354] tw-px-5 tw-text-[22px] tw-font-black tw-uppercase tw-text-white">Justificativas pendentes</h3>
+          <div class="bulk-justification tw-grid tw-items-end tw-gap-3 tw-bg-[#e8f0f7] tw-p-4">
+            <label class="tw-grid tw-gap-2 tw-text-[16px] tw-font-black tw-uppercase tw-text-[#063354]">Motivo em massa
+              <select id="massReason" class="tw-h-11 tw-rounded-md tw-border tw-border-[#9eb4c6] tw-bg-white tw-px-3">
                 <option value=""></option>
               </select>
             </label>
-            <label>Rotas específicas (opcional)
-              <textarea id="massRoutes" placeholder="Cole as rotas aqui. Se deixar vazio, aplica em todas as pendentes desta onda."></textarea>
+            <label class="tw-grid tw-gap-2 tw-text-[16px] tw-font-black tw-uppercase tw-text-[#063354]">Rotas específicas (opcional)
+              <textarea id="massRoutes" class="tw-h-16 tw-rounded-md tw-border tw-border-[#9eb4c6] tw-bg-white tw-p-3" placeholder="Cole as rotas aqui. Se deixar vazio, aplica em todas as pendentes desta onda."></textarea>
             </label>
-            <button id="copyPendingRoutes" class="secondary" type="button">Selecionar rotas</button>
-            <button id="applyMassReason" class="admin-only" type="button">Aplicar motivo</button>
-            <button id="clearMarkedReasons" class="secondary admin-only" type="button">Limpar ticados</button>
-            <button id="clearAllReasons" class="secondary admin-only" type="button">Limpar todos</button>
+            <button id="copyPendingRoutes" class="secondary tw-h-14 tw-rounded-md tw-border tw-border-[#9eb4c6] tw-bg-[#d8e5f0] tw-px-4 tw-text-[14px] tw-font-black tw-uppercase tw-text-[#063354]" type="button">Selecionar rotas</button>
+            <button id="applyMassReason" class="admin-only tw-h-14 tw-rounded-md tw-bg-[#063354] tw-px-4 tw-text-[14px] tw-font-black tw-uppercase tw-text-white" type="button">Aplicar motivo</button>
+            <button id="clearMarkedReasons" class="secondary admin-only tw-h-14 tw-rounded-md tw-border tw-border-[#9eb4c6] tw-bg-[#d8e5f0] tw-px-4 tw-text-[14px] tw-font-black tw-uppercase tw-text-[#063354]" type="button">Limpar ticados</button>
+            <button id="clearAllReasons" class="secondary admin-only tw-h-14 tw-rounded-md tw-border tw-border-[#9eb4c6] tw-bg-[#d8e5f0] tw-px-4 tw-text-[14px] tw-font-black tw-uppercase tw-text-[#063354]" type="button">Limpar todos</button>
           </div>
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th>Limpar</th>
-                <th>Onda</th>
-                <th>Rota</th>
-                <th>Transportadora</th>
-                <th>Doca</th>
-                <th>Motivo</th>
-                <th>Justificativa</th>
-              </tr>
-            </thead>
-            <tbody id="justificationRows"></tbody>
-          </table>
+          <div class="tw-table-wrap tw-overflow-auto">
+            <table class="data-table tw-w-full tw-border-collapse tw-bg-white tw-text-center tw-text-[16px] tw-font-bold">
+              <thead>
+                <tr>
+                  <th>Limpar</th>
+                  <th>Onda</th>
+                  <th>Rota</th>
+                  <th>Transportadora</th>
+                  <th>Doca</th>
+                  <th>Motivo</th>
+                  <th>Justificativa</th>
+                </tr>
+              </thead>
+              <tbody id="justificationRows"></tbody>
+            </table>
+          </div>
         </div>
-        <div class="panel-card summary-card">
-          <h3>Resumo por onda</h3>
-          <table class="data-table">
-            <thead>
-              <tr><th>Ciclo</th><th>Onda</th><th>Planejado</th><th>Expedido</th><th>Delay</th><th>OOT</th><th>Posso perder</th></tr>
-            </thead>
-            <tbody id="summaryRows"></tbody>
-            <tfoot id="summaryFoot"></tfoot>
-          </table>
+        <div class="panel-card summary-card tw-original-card tw-overflow-hidden tw-rounded-md tw-border tw-border-[#c7d3df] tw-bg-white">
+          <h3 class="tw-original-title tw-flex tw-h-14 tw-items-center tw-justify-center tw-bg-[#063354] tw-px-5 tw-text-center tw-text-[22px] tw-font-black tw-uppercase tw-text-white">Resumo por onda</h3>
+          <div class="tw-summary-scroll tw-overflow-auto">
+            <table class="data-table tw-w-full tw-border-collapse tw-bg-white tw-text-center tw-text-[16px] tw-font-bold">
+              <thead>
+                <tr><th>Ciclo</th><th>Onda</th><th>Planejado</th><th>Expedido</th><th>Delay</th><th>OOT</th><th>Posso perder</th></tr>
+              </thead>
+              <tbody id="summaryRows"></tbody>
+              <tfoot id="summaryFoot"></tfoot>
+            </table>
+          </div>
           <div class="loss-panel">
             <table class="data-table">
               <thead><tr><th colspan="4">Atualização de rota real</th></tr></thead>
@@ -1816,10 +3709,10 @@
         </div>
       </div>
     </section>
-    <section class="panel-view" id="fechamentoView" aria-label="Fechamento de onda">
-      <div class="closure-layout">
-        <div class="closure" id="closureContent"></div>
-        <div class="closure-message" id="closureMessage"></div>
+    <section class="panel-view tailwind-mode tw-scope tw-bg-[#e8f0f7] tw-p-3" id="fechamentoView" aria-label="Fechamento de onda">
+      <div class="closure-layout tw-grid tw-grid-cols-[minmax(780px,920px)_minmax(330px,350px)] tw-gap-4 tw-items-start">
+        <div class="closure tw-grid tw-gap-1.5" id="closureContent"></div>
+        <div class="closure-message tw-overflow-hidden tw-rounded-lg tw-border tw-border-[#c7d3df] tw-bg-[#edf4fb]" id="closureMessage"></div>
       </div>
     </section>
     <section class="print-table-wrap" aria-label="Tabela para PDF">
@@ -1960,11 +3853,13 @@
       tools: {}
     };
 
-    const columns = ["onda", "idRota", "rota", "rotaOriginal", "doca", "transportadora", "placa", "tipoVeiculo", "tipoRota", "tipoArea", "spr", "cluster"];
+    const columns = ["onda", "idRota", "rota", "rotaOriginal", "doca", "repLog", "transportadora", "placa", "tipoVeiculo", "tipoRota", "tipoArea", "spr", "pacotes", "cluster"];
     const aliases = {
       onda: "onda",
       "id da rota": "idRota",
       "id rota": "idRota",
+      "rota e veículo": "rota",
+      "rota e veiculo": "rota",
       "rota otimizada": "rota",
       rota: "rota",
       "rota original": "rotaOriginal",
@@ -1979,8 +3874,60 @@
       "tipo de rota": "tipoRota",
       "tipo de área": "tipoArea",
       "tipo de area": "tipoArea",
+      status: "status",
+      situação: "status",
+      situacao: "status",
+      "status base": "status",
+      "situação base": "status",
+      "situacao base": "status",
+      estado: "status",
+      "tempo de auditoria": "auditTime",
+      "tempo auditoria": "auditTime",
+      auditoria: "auditTime",
+      unidades: "aduanaUnidades",
+      "unidades bipadas": "aduanaBipadas",
+      "unidades corretas": "aduanaBipadas",
+      corretas: "aduanaBipadas",
       spr: "spr",
-      cluster: "cluster"
+      pacote: "pacotes",
+      pacotes: "pacotes",
+      "qtd pacotes": "pacotes",
+      "qtd. pacotes": "pacotes",
+      qtd_pacotes: "pacotes",
+      "qtde pacotes": "pacotes",
+      "quantidade pacotes": "pacotes",
+      "quantidade de pacotes": "pacotes",
+      packages: "pacotes",
+      volume: "pacotes",
+      volumes: "pacotes",
+      cluster: "cluster",
+      rep: "repLog",
+      log: "repLog",
+      "rep log": "repLog",
+      "rep/log": "repLog",
+      representante: "repLog",
+      "nome rep": "repLog",
+      "nome do rep": "repLog",
+      "nome log": "repLog",
+      "nome do log": "repLog",
+      "log nome": "repLog",
+      "nome logístico": "repLog",
+      "nome logistico": "repLog",
+      "operador log": "repLog",
+      "operador logistico": "repLog",
+      "operador logístico": "repLog",
+      "nome operador": "repLog",
+      "log name": "repLog",
+      "representante log": "repLog",
+      "representante/log": "repLog",
+      responsavel: "repLog",
+      responsável: "repLog",
+      logistico: "repLog",
+      logístico: "repLog",
+      operador: "repLog",
+      motorista: "repLog",
+      driver: "repLog",
+      nome: "repLog"
     };
     const motivos = [
       "Falta de veículo",
@@ -2021,6 +3968,10 @@
       return !cloudState.enabled || cloudState.role === "admin";
     }
 
+    function canEditData() {
+      return !cloudState.enabled || !cloudState.user || cloudState.role === "admin";
+    }
+
     function roleLabel() {
       if (!cloudState.enabled) return "Local";
       if (!cloudState.user) return "Entrar";
@@ -2033,14 +3984,14 @@
       const top = cloudState.enabled ? (cloudState.user?.email || "Entrar no Firebase") : "Modo local";
       button.title = top;
       button.innerHTML = `<span>${top}</span><strong>${roleLabel()}</strong>`;
-      document.querySelector(".app")?.classList.toggle("reader-mode", cloudState.enabled && !isAdmin());
+      document.querySelector(".app")?.classList.toggle("reader-mode", cloudState.enabled && !canEditData());
       document.querySelectorAll(".admin-only").forEach(element => {
-        element.disabled = cloudState.enabled && !isAdmin();
+        element.disabled = cloudState.enabled && !canEditData();
       });
     }
 
     function requireAdminAction() {
-      if (isAdmin()) return true;
+      if (canEditData()) return true;
       document.getElementById("loginMessage").textContent = "Seu acesso está como leitor. Entre com um usuário administrador para editar.";
       document.getElementById("loginModal").classList.add("open");
       return false;
@@ -2053,6 +4004,10 @@
 
     function normalize(value) {
       return String(value || "").trim();
+    }
+
+    function plainText(value) {
+      return normalize(value).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
     }
 
     function routeKey(value) {
@@ -2073,11 +4028,37 @@
     }
 
     function isExpedida(value) {
-      return /\bexpedid[ao]\b/i.test(normalize(value));
+      return /\bexpedid[ao]\b/.test(plainText(value));
+    }
+
+    function normalizeBaseStatus(value) {
+      const text = plainText(value);
+      if (!text) return "";
+      if (/\bexpedid[ao]\b/.test(text)) return "Expedida";
+      if (/carregando|guardando|\bguard\b|\baguardando\b/.test(text)) return "Guardando";
+      if (/aduana|aduaneir|alfandeg|em andamento|processo/.test(text)) return "Em aduana";
+      if (/pendente|delay|atras/.test(text)) return "Pendente";
+      return "";
+    }
+
+    function baseStatusPriority(value) {
+      return {
+        Expedida: 4,
+        "Em aduana": 3,
+        Guardando: 2,
+        Pendente: 1
+      }[normalizeBaseStatus(value)] || 0;
+    }
+
+    function mergeBaseStatus(currentStatus, nextStatus) {
+      const current = normalizeBaseStatus(currentStatus);
+      const next = normalizeBaseStatus(nextStatus);
+      if (baseStatusPriority(next) > baseStatusPriority(current)) return next;
+      return current || next || normalize(currentStatus) || normalize(nextStatus) || "";
     }
 
     function rowStatus(row = []) {
-      return row.find(cell => isExpedida(cell)) ? "Expedida" : "";
+      return row.map(normalizeBaseStatus).find(Boolean) || "";
     }
 
     function waveLabel(value) {
@@ -2165,13 +4146,68 @@
       return `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}:${String(now.getSeconds()).padStart(2, "0")}`;
     }
 
+    function parseDelimitedRows(text, delimiter = "\t") {
+      const source = String(text || "").replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+      const rows = [];
+      let row = [];
+      let cell = "";
+      let quoted = false;
+
+      for (let index = 0; index < source.length; index += 1) {
+        const char = source[index];
+        const next = source[index + 1];
+        if (quoted) {
+          if (char === '"' && next === '"') {
+            cell += '"';
+            index += 1;
+          } else if (char === '"') {
+            quoted = false;
+          } else {
+            cell += char;
+          }
+          continue;
+        }
+        if (char === '"') {
+          quoted = true;
+          continue;
+        }
+        if (char === delimiter) {
+          row.push(normalize(cell));
+          cell = "";
+          continue;
+        }
+        if (char === "\n") {
+          row.push(normalize(cell));
+          if (row.some(value => normalize(value))) rows.push(row);
+          row = [];
+          cell = "";
+          continue;
+        }
+        cell += char;
+      }
+
+      row.push(normalize(cell));
+      if (row.some(value => normalize(value))) rows.push(row);
+      return rows;
+    }
+
     function splitRows(text) {
-      return normalize(text)
+      const source = String(text || "").trim();
+      if (!source) return [];
+      if (source.includes("\t")) return parseDelimitedRows(source, "\t");
+      return source
         .split(/\r?\n/)
-        .map(line => line.split("\t").length > 1 ? line.split("\t") : line.split(";"))
+        .map(line => line.split(";"))
         .filter(row => row.some(cell => normalize(cell)));
     }
 
+    function headerInfo(rows = []) {
+      for (let index = 0; index < rows.length; index += 1) {
+        const mappedHeader = headerMap(rows[index]);
+        if (mappedHeader && mappedHeader.filter(Boolean).length >= 2) return { mappedHeader, headerIndex: index };
+      }
+      return { mappedHeader: null, headerIndex: -1 };
+    }
     function headerMap(row) {
       const mapped = row.map(cell => aliases[normalize(cell).toLowerCase()] || "");
       return mapped.some(Boolean) ? mapped : null;
@@ -2200,9 +4236,50 @@
     }
 
     function isBaseProcessText(value) {
-      return /minuto|aduana|carregando|motorista|esperando|processo|expedid[ao]/i.test(normalize(value));
+      return Boolean(normalizeBaseStatus(value)) || /minuto|motorista|esperando|andamento/i.test(normalize(value));
     }
 
+    function firstNonEmptyLine(value) {
+      return normalize(value).split(/\n+/).map(normalize).filter(Boolean)[0] || "";
+    }
+
+    function extractDriverDetails(value) {
+      const lines = normalize(value).split(/\n+/).map(normalize).filter(Boolean);
+      const first = lines[0] || "";
+      const last = lines[lines.length - 1] || "";
+      const parts = last.includes("|") ? last.split("|").map(normalize) : [];
+      return {
+        motorista: first,
+        transportadora: parts[0] || "",
+        placa: parts[1] || ""
+      };
+    }
+
+    function correctUnits(value) {
+      const text = normalize(value);
+      const correct = text.match(/(\d+)\s+corretas?/i);
+      if (correct) return correct[1];
+      const number = text.match(/^\d+$/)?.[0];
+      return number || "";
+    }
+
+    function normalizeAuditTime(value) {
+      return normalize(value).replace(/\s+/g, " ");
+    }
+
+    function enrichBaseItem(item = {}) {
+      const driver = extractDriverDetails(item.motorista || "");
+      item.rota = routeToken(item.rota) || item.rota || "";
+      item.repLog = firstNonEmptyLine(item.repLog || "");
+      item.motorista = firstNonEmptyLine(item.motorista || driver.motorista || "");
+      item.transportadora = item.transportadora || driver.transportadora || "";
+      item.placa = item.placa || driver.placa || "";
+      item.auditTime = normalizeAuditTime(item.auditTime || item.tempoAuditoria || "");
+      item.aduanaUnidades = normalize(item.aduanaUnidades || "");
+      item.aduanaBipadas = correctUnits(item.aduanaBipadas || item.aduanaUnidades || "");
+      item.status = normalizeBaseStatus(item.status) || normalize(item.status);
+      return item;
+    }
     function lastStandaloneDock(row = []) {
       const docks = row
         .map(normalize)
@@ -2260,6 +4337,8 @@
         rotaOriginal: item.rotaOriginal || "",
         doca,
         transportadora,
+        repLog: item.repLog || "",
+        pacotes: item.pacotes || "",
         placa: item.placa || "",
         tipoVeiculo: item.tipoVeiculo || "",
         tipoRota: item.tipoRota || "",
@@ -2272,8 +4351,8 @@
     function parsePaste(text) {
       const rows = splitRows(text);
       if (!rows.length) return [];
-      const mappedHeader = headerMap(rows[0]);
-      const body = mappedHeader ? rows.slice(1) : rows;
+      const { mappedHeader, headerIndex } = headerInfo(rows);
+      const body = mappedHeader ? rows.slice(headerIndex + 1) : rows;
       const parsed = body
         .map(row => parseLooseExtractionRow(row, mappedHeader))
         .filter(item => item && item.onda && item.rota && item.doca);
@@ -2283,14 +4362,14 @@
     function parseBasePaste(text) {
       const rows = splitRows(text);
       if (!rows.length) return [];
-      const mappedHeader = headerMap(rows[0]);
-      const body = mappedHeader ? rows.slice(1) : rows;
+      const { mappedHeader, headerIndex } = headerInfo(rows);
+      const body = mappedHeader ? rows.slice(headerIndex + 1) : rows;
       const parsed = body.map(row => {
         const item = {};
         const loose = row.some(looksLikeWave) ? parseLooseExtractionRow(row, mappedHeader) : null;
         if (!mappedHeader && row.length === 1) {
           item.rota = routeToken(row[0]) || row[0];
-          item.status = rowStatus(row);
+          item.status = rowStatus(row) || (routeToken(row[0]) || looksLikeRoute(row[0]) ? "Expedida" : "");
         } else if (!mappedHeader) {
           const line = row.join("\t");
           const route = routeToken(line);
@@ -2299,19 +4378,20 @@
           item.onda = loose?.onda || (waveIndex >= 0 ? waveLabel(row[waveIndex]) : "");
           item.rota = route || (routeIndex >= 0 ? row[routeIndex] : row[0]);
           item.doca = loose?.doca || lastStandaloneDock(row);
-          item.status = rowStatus(row);
+          item.status = rowStatus(row) || (row.length <= 2 && (routeToken(row[0]) || looksLikeRoute(row[0])) ? "Expedida" : "");
           item.transportadora = loose?.transportadora || row.find((cell, index) => ![waveIndex, routeIndex].includes(index) && normalize(cell) && !looksLikeDock(cell) && !routeToken(cell) && !isBaseProcessText(cell)) || "";
         } else {
           row.forEach((cell, index) => {
-            const key = mappedHeader ? mappedHeader[index] : columns[index];
+            const key = mappedHeader[index];
             if (key) item[key] = normalize(cell);
           });
           item.onda = item.onda || loose?.onda || "";
           item.rota = routeToken(item.rota) || loose?.rota || item.rota || routeToken(row.join("\t"));
           item.doca = item.doca || loose?.doca || lastStandaloneDock(row);
           item.transportadora = item.transportadora || loose?.transportadora || "";
-          item.status = rowStatus(row);
+          item.status = normalizeBaseStatus(item.status) || rowStatus(row) || normalize(item.status);
         }
+        enrichBaseItem(item);
         return {
           onda: item.onda ? waveLabel(item.onda) : "",
           idRota: item.idRota || "",
@@ -2319,32 +4399,51 @@
           rotaOriginal: item.rotaOriginal || "",
           doca: item.doca || "",
           transportadora: item.transportadora || "",
+          repLog: item.repLog || "",
+          motorista: item.motorista || "",
+          auditTime: item.auditTime || "",
+          aduanaUnidades: item.aduanaUnidades || "",
+          aduanaBipadas: item.aduanaBipadas || "",
+          pacotes: item.pacotes || "",
           placa: item.placa || "",
           tipoVeiculo: item.tipoVeiculo || "",
           tipoRota: item.tipoRota || "",
           tipoArea: item.tipoArea || "",
           spr: item.spr || "",
           cluster: item.cluster || "",
-          status: item.status || ""
+          status: normalizeBaseStatus(item.status) || item.status || ""
         };
       }).filter(item => item.rota);
       return uniqueBaseRows(parsed);
     }
-
     function toPaste(rows) {
-      const header = ["Onda", "ID da Rota", "Rota otimizada", "Rota original", "Doca", "Transportadora", "Placa", "Tipo de veículo", "Tipo de rota", "Tipo de área", "SPR", "Cluster"];
+      const header = ["Onda", "ID da Rota", "Rota otimizada", "Rota original", "Doca", "Rep/Log", "Transportadora", "Placa", "Tipo de veículo", "Tipo de rota", "Tipo de área", "SPR", "Pacotes", "Cluster"];
       return [header.join("\t"), ...rows.map(row => columns.map(key => row[key] || "").join("\t"))].join("\n");
     }
 
     function toBasePaste(rows) {
-      return uniqueBaseRows(rows).map(row => {
+      const uniqueRows = uniqueBaseRows(rows);
+      const hasAduanaDetails = uniqueRows.some(row => row.repLog || row.auditTime || row.aduanaBipadas || row.motorista || row.placa);
+      if (hasAduanaDetails) {
+        const header = ["Rota", "Estado", "Tempo de auditoria", "Unidades bipadas", "Doca", "Rep de aduana", "Transportadora", "Placa"];
+        return [header.join("\t"), ...uniqueRows.map(row => [
+          row.rota || "",
+          row.status || "",
+          row.auditTime || "",
+          row.aduanaBipadas || "",
+          row.doca || "",
+          row.repLog || "",
+          row.transportadora || "",
+          row.placa || ""
+        ].join("\t"))].join("\n");
+      }
+      return uniqueRows.map(row => {
         const parts = [row.rota || ""];
         if (row.status) parts.push(row.status);
         if (row.doca) parts.push(row.doca);
         return parts.filter(Boolean).join("\t");
       }).filter(Boolean).join("\n");
     }
-
     function uniqueBaseRows(rows = []) {
       const byRoute = new Map();
       rows.forEach(row => {
@@ -2362,13 +4461,15 @@
           rotaOriginal: current.rotaOriginal || row.rotaOriginal || "",
           doca: current.doca || row.doca || "",
           transportadora: current.transportadora || row.transportadora || "",
+          repLog: current.repLog || row.repLog || "",
+          pacotes: current.pacotes || row.pacotes || "",
           placa: current.placa || row.placa || "",
           tipoVeiculo: current.tipoVeiculo || row.tipoVeiculo || "",
           tipoRota: current.tipoRota || row.tipoRota || "",
           tipoArea: current.tipoArea || row.tipoArea || "",
           spr: current.spr || row.spr || "",
           cluster: current.cluster || row.cluster || "",
-          status: isExpedida(current.status) || isExpedida(row.status) ? "Expedida" : (current.status || row.status || "")
+          status: mergeBaseStatus(current.status, row.status)
         });
       });
       return Array.from(byRoute.values());
@@ -2724,20 +4825,277 @@
 
     function renderTabs() {
       const tabs = document.getElementById("tabs");
-      tabs.innerHTML = "";
-      data.ondas.forEach(wave => {
-        const button = document.createElement("button");
-        button.type = "button";
-        button.className = waveLabel(wave) === waveLabel(currentWave) ? "active" : "";
-        button.innerHTML = `<span>${displayWave(wave)}</span><small class="tab-time">${waveTime(wave)}</small>`;
-        button.addEventListener("click", () => {
-          currentWave = wave;
-          render();
-        });
-        tabs.appendChild(button);
+      if (!tabs) return;
+      const waves = data.ondas || [];
+      if (!waves.length) {
+        tabs.innerHTML = "";
+        return;
+      }
+      const activeIndex = Math.max(0, waves.findIndex(wave => waveLabel(wave) === waveLabel(currentWave)));
+      const activeWave = waves[activeIndex] || waves[0];
+      const activeText = `${displayWave(activeWave)} - ${waveTime(activeWave)}`;
+      tabs.innerHTML = `
+        <div class="wave-picker" id="wavePicker">
+          <button class="wave-selector" id="waveSelect" type="button" aria-haspopup="listbox" aria-expanded="false">
+            <span class="wave-selector-label">Onda ativa</span>
+            <span class="wave-selector-value"><span class="wave-selector-text">${escapeHtml(activeText)}</span><span class="wave-selector-arrow" aria-hidden="true">⌄</span></span>
+          </button>
+          <div class="wave-menu" id="waveMenu" role="listbox" aria-label="Selecionar onda" hidden>
+            ${waves.map((wave, index) => {
+              const selected = index === activeIndex;
+              const label = `${displayWave(wave)} - ${waveTime(wave)}`;
+              return `<button class="wave-option ${selected ? "active" : ""}" type="button" role="option" aria-selected="${selected}" data-wave-index="${index}">${escapeHtml(label)}</button>`;
+            }).join("")}
+          </div>
+        </div>
+      `;
+      const picker = document.getElementById("wavePicker");
+      const trigger = document.getElementById("waveSelect");
+      const menu = document.getElementById("waveMenu");
+      let outsideHandler = null;
+      const closeMenu = () => {
+        if (!menu || !trigger) return;
+        menu.hidden = true;
+        picker?.classList.remove("open");
+        trigger.setAttribute("aria-expanded", "false");
+        if (outsideHandler) {
+          document.removeEventListener("pointerdown", outsideHandler);
+          outsideHandler = null;
+        }
+      };
+      const openMenu = () => {
+        if (!menu || !trigger) return;
+        menu.hidden = false;
+        picker?.classList.add("open");
+        trigger.setAttribute("aria-expanded", "true");
+        outsideHandler = event => {
+          if (!picker?.contains(event.target)) closeMenu();
+        };
+        setTimeout(() => document.addEventListener("pointerdown", outsideHandler), 0);
+      };
+      const chooseWave = index => {
+        const selectedWave = waves[index];
+        if (!selectedWave) return;
+        currentWave = selectedWave;
+        closeMenu();
+        render();
+      };
+      trigger?.addEventListener("click", event => {
+        event.stopPropagation();
+        if (menu?.hidden) openMenu();
+        else closeMenu();
+      });
+      trigger?.addEventListener("keydown", event => {
+        if (["Enter", " ", "ArrowDown"].includes(event.key)) {
+          event.preventDefault();
+          openMenu();
+          menu?.querySelector(".wave-option.active, .wave-option")?.focus();
+        }
+        if (event.key === "Escape") closeMenu();
+      });
+      menu?.addEventListener("click", event => {
+        const option = event.target.closest("[data-wave-index]");
+        if (!option) return;
+        chooseWave(Number(option.dataset.waveIndex));
+      });
+      menu?.addEventListener("keydown", event => {
+        const options = Array.from(menu.querySelectorAll(".wave-option"));
+        const current = Math.max(0, options.indexOf(document.activeElement));
+        if (event.key === "Escape") {
+          event.preventDefault();
+          closeMenu();
+          trigger?.focus();
+        }
+        if (["ArrowDown", "ArrowUp"].includes(event.key)) {
+          event.preventDefault();
+          const next = event.key === "ArrowDown" ? (current + 1) % options.length : (current - 1 + options.length) % options.length;
+          options[next]?.focus();
+        }
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          document.activeElement?.click();
+        }
       });
     }
 
+
+
+    const dockLayoutBlocks = [
+      [[1, 2, 3, 4, 5, 6, 7], [8, 9, 10, 11, 12, 13, 14]],
+      [[18, 19, 20, 21, 22, 23, 24], [25, 26, 27, 28, 29, 30, 31], [32, 33, 34, 35, 36, 37, 38], [39, 40, 41, 42, 43, 44, 45]],
+      [[51, 52, 53, 54, 55, 56, 57], [58, 59, 60, 61, 62, 63, 64], [65, 66, 67, 68, 69, 70, 71], [72, 73, 74, 75, 76, 77, 78], [79, 80, 81, 82, 83, 84, 85], [86, 87, 88, 89, 90, 91, 92]]
+    ];
+
+    function formatMetricHour(value) {
+      return normalize(value).replace(":", "H").toUpperCase() || "--";
+    }
+
+    function baseDetailsByRoute() {
+      const map = new Map();
+      uniqueBaseRows(data.base).forEach(row => {
+        const key = routeKey(row.rota);
+        if (key) map.set(key, row);
+      });
+      return map;
+    }
+
+    function mergeRouteBaseDetails(row = {}, baseMap = baseDetailsByRoute()) {
+      const base = baseMap.get(routeKey(row.rota)) || {};
+      return {
+        ...row,
+        ...base,
+        onda: row.onda || base.onda || "",
+        rota: row.rota || base.rota || "",
+        doca: row.doca || base.doca || "",
+        transportadora: base.transportadora || row.transportadora || "",
+        spr: row.spr || base.spr || "",
+        pacotes: row.pacotes || base.pacotes || "",
+        cluster: row.cluster || base.cluster || ""
+      };
+    }
+
+    function baseStatusByRoute() {
+      const map = new Map();
+      uniqueBaseRows(data.base).forEach(row => {
+        const key = routeKey(row.rota);
+        if (key) map.set(key, normalizeBaseStatus(row.status) || normalize(row.status));
+      });
+      return map;
+    }
+
+    function routeDockState(row, loaded, shipped, statusMap) {
+      const key = routeKey(row.rota);
+      if (!key || !loaded.has(key)) return "pending";
+      const status = normalizeBaseStatus(statusMap.get(key));
+      if (status === "Pendente") return "pending";
+      if (status === "Guardando") return "guard";
+      if (status === "Em aduana") return "customs";
+      if (status === "Expedida" || shipped.has(key)) return "loaded";
+      return "customs";
+    }
+
+    function dockStatusLabel(state) {
+      return {
+        pending: "Pendente",
+        loaded: "Expedida",
+        customs: "Em aduana",
+        guard: "Guardando"
+      }[state] || "Docas livres";
+    }
+
+    function dockStatusClass(state) {
+      return {
+        pending: "status-pending pending",
+        loaded: "status-loaded loaded",
+        customs: "status-customs attention",
+        guard: "status-guard"
+      }[state] || "status-free";
+    }
+
+    function dockMinuteLabel(row, key) {
+      const auditTime = normalize(row?.auditTime || "");
+      if (auditTime) return auditTime;
+      const seconds = key ? elapsedSeconds(key, row?.onda || currentWave) : 0;
+      if (seconds) {
+        const minutes = Math.max(1, Math.floor(seconds / 60));
+        return `${minutes} ${minutes === 1 ? "minuto" : "minutos"}`;
+      }
+      const dock = Number(String(row?.doca || "").replace(/\D/g, "")) || 1;
+      const minutes = Math.max(1, (dock % 11) + 1);
+      return `${minutes} minutos`;
+    }
+
+    function dockSlotCounts(wave) {
+      const rows = rowsForWave(wave);
+      const loaded = loadedKeys();
+      const shipped = expedidaKeys();
+      const statusMap = baseStatusByRoute();
+      return rows.reduce((acc, row) => {
+        const state = routeDockState(row, loaded, shipped, statusMap);
+        acc[state] = (acc[state] || 0) + 1;
+        return acc;
+      }, { pending: 0, loaded: 0, customs: 0, guard: 0 });
+    }
+
+    function escapeHtml(value) {
+      return normalize(value).replace(/[&<>"']/g, char => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#39;"
+      }[char]));
+    }
+
+    function firstWords(value, count = 2) {
+      return normalize(value)
+        .replace(/[._-]+/g, " ")
+        .split(/\s+/)
+        .filter(Boolean)
+        .slice(0, count)
+        .join(" ");
+    }
+
+    function routePersonName(row = {}) {
+      return firstWords(row.repLog || row.rep || row.log || row.representante || row.motorista || row.nome || "", 2);
+    }
+
+    function firstCarrierName(value) {
+      return firstWords(cleanTransportadora(value), 1);
+    }
+
+    function numericLabel(value) {
+      const match = normalize(value).match(/\d+/);
+      return match ? Number(match[0]) : null;
+    }
+
+    function dockPackageLabel(row = {}) {
+      const total = numericLabel(row.spr || row.pacotes || row.qtdPacotes || row.quantidadePacotes || row.quantidade || row.volumes);
+      const scanned = numericLabel(row.aduanaBipadas);
+      if (total !== null && scanned !== null) return `${Math.max(0, total - scanned)}/${total}`;
+      return normalize(row.pacotes || row.qtdPacotes || row.quantidadePacotes || row.quantidade || row.volumes || row.spr || "");
+    }
+
+    function compactElapsedLabel(key, wave) {
+      const seconds = key ? elapsedSeconds(key, wave) : 0;
+      if (!seconds) return "";
+      const minutes = Math.max(1, Math.floor(seconds / 60));
+      return `${minutes} min.`;
+    }
+
+    function createDockSlot(dock, rows, loaded, shipped = expedidaKeys(), statusMap = baseStatusByRoute(), baseMap = baseDetailsByRoute()) {
+      const displayRows = rows.map(row => mergeRouteBaseDetails(row, baseMap));
+      const primary = displayRows[0];
+      const key = primary ? routeKey(primary.rota) : "";
+      const state = primary ? routeDockState(primary, loaded, shipped, statusMap) : "free";
+      const statusLabel = dockStatusLabel(state);
+      const carrier = cleanTransportadora(primary?.transportadora || "") || "-";
+      const carrierShort = firstCarrierName(carrier) || "-";
+      const personName = routePersonName(primary || {});
+      const routeText = displayRows.map(row => row.rota).filter(Boolean).join(" / ");
+      const personHtml = personName ? `<span class="dock-person">${escapeHtml(personName)}</span>` : "";
+      const footerTimer = !data.ocultarCronometros && key && loaded.has(key) ? compactElapsedLabel(key, currentWave) : "";
+      const packages = primary ? dockPackageLabel(primary) : "";
+      const slot = document.createElement("div");
+      slot.className = `slot doca-card ${dockStatusClass(state)} ${rows.length > 1 ? "duplicate" : ""} ${data.ocultarCronometros ? "timer-hidden" : ""}`;
+      slot.title = rows.length ? displayRows.map(row => `${row.rota} | Doca ${row.doca} | ${routePersonName(row) || "Sem rep/log"} | ${row.auditTime || "Sem tempo de auditoria"} | ${row.aduanaBipadas ? `${row.aduanaBipadas} bipadas` : "Sem bipagem"} | ${dockPackageLabel(row) || "Sem pacotes"}`).join("\n") : `Doca ${dock} livre`;
+      if (!primary) {
+        slot.innerHTML = `
+          <div class="dock-number">${dock}</div>
+          <div class="dock-free">Docas livres</div>
+        `;
+        return slot;
+      }
+      slot.innerHTML = `
+        <div class="dock-card-head"><span class="dock-number-inline">${dock}</span>${personHtml}</div>
+        <div class="route">${escapeHtml(routeText)}</div>
+        <div class="dock-minutes">${escapeHtml(dockMinuteLabel(primary, key))}</div>
+        <div class="dock-status">${escapeHtml(statusLabel)}</div>
+        <div class="dock-carrier-bottom">${escapeHtml(carrierShort)}</div>
+        <div class="dock-footer-line"><span>${escapeHtml(footerTimer)}</span><strong>${escapeHtml(packages)}</strong></div>
+      `;
+      return slot;
+    }
     function renderPdfWaveOptions() {
       const box = document.getElementById("pdfWaveOptions");
       if (!box) return;
@@ -2756,45 +5114,58 @@
       if (syncLoadingStarts()) saveData();
       const map = routeByDock(currentWave);
       const loaded = loadedKeys();
+      const shipped = expedidaKeys();
+      const statusMap = baseStatusByRoute();
+      const baseMap = baseDetailsByRoute();
+      const maxDock = Number(data.docas || 92);
       grid.innerHTML = "";
 
-      for (let dock = 1; dock <= Number(data.docas || 92); dock += 1) {
-        const rows = map.get(dock) || [];
-        const routeText = rows.map(row => row.rota).join(" / ");
-        const isLoaded = rows.some(row => loaded.has(routeKey(row.rota)));
-        const loadedRow = rows.find(row => loaded.has(routeKey(row.rota)));
-        const loadedKey = loadedRow ? routeKey(loadedRow.rota) : "";
-        const timer = !data.ocultarCronometros && loadedKey ? elapsedLabel(loadedKey, currentWave) : "";
-        const isAttention = loadedKey && elapsedSeconds(loadedKey, currentWave) >= 30 * 60;
-        const slot = document.createElement("div");
-        slot.className = `slot ${rows.length ? (isLoaded ? (isAttention ? "attention" : "loaded") : "pending") : ""} ${rows.length > 1 ? "duplicate" : ""} ${data.ocultarCronometros ? "timer-hidden" : ""}`;
-        slot.title = rows.map(row => `${row.rota} | Doca ${row.doca} | ${row.transportadora || ""}`).join("\n");
-        slot.innerHTML = `
-          <div class="dock-number">${dock}</div>
-          <div class="route">${routeText}</div>
-          ${timer ? `<div class="load-timer">${timer}</div>` : ""}
-        `;
-        grid.appendChild(slot);
-      }
-    }
+      dockLayoutBlocks.forEach((block, blockIndex) => {
+        const blockEl = document.createElement("div");
+        blockEl.className = `dock-block block-${blockIndex + 1}`;
 
+        block.forEach(column => {
+          const columnEl = document.createElement("div");
+          columnEl.className = "dock-column";
+
+          column.forEach(dock => {
+            if (!dock || dock > maxDock) {
+              const spacer = document.createElement("div");
+              spacer.className = "dock-spacer";
+              spacer.setAttribute("aria-hidden", "true");
+              columnEl.appendChild(spacer);
+              return;
+            }
+            columnEl.appendChild(createDockSlot(dock, map.get(dock) || [], loaded, shipped, statusMap, baseMap));
+          });
+
+          blockEl.appendChild(columnEl);
+        });
+
+        grid.appendChild(blockEl);
+      });
+    }
     function renderStats() {
       const rows = rowsForWave(currentWave);
-      const loaded = loadedKeys();
-      const loadedCount = rows.filter(row => loaded.has(routeKey(row.rota))).length;
-      const occupied = new Set(rows.map(row => row.doca).filter(Boolean)).size;
-      const pending = Math.max(0, rows.length - loadedCount);
-      const loadedPercent = rows.length ? (loadedCount / rows.length) * 100 : 0;
-      const pendingPercent = rows.length ? (pending / rows.length) * 100 : 0;
+      const counts = dockSlotCounts(currentWave);
+      const shippedCount = counts.loaded || 0;
+      const customsCount = counts.customs || 0;
+      const guardCount = counts.guard || 0;
+      const pending = counts.pending || 0;
+      const previewPercent = rows.length ? (shippedCount / rows.length) * 100 : 0;
+      const time = parseWaveTime(currentWave) || {};
       document.getElementById("waveStatLabel").textContent = displayWave(currentWave);
+      document.getElementById("waveStartTime").textContent = formatMetricHour(time.inicio);
+      document.getElementById("waveEndTime").textContent = formatMetricHour(time.fim);
+      document.getElementById("previewPercent").textContent = `${previewPercent.toFixed(1).replace(".", ",")}%`;
       document.getElementById("totalRoutes").textContent = rows.length;
-      document.getElementById("loadedRoutes").textContent = `${loadedCount} (${loadedPercent.toFixed(1).replace(".", ",")}%)`;
-      document.getElementById("pendingRoutes").textContent = `${pending} (${pendingPercent.toFixed(1).replace(".", ",")}%)`;
-      document.getElementById("occupiedDocks").textContent = occupied;
+      document.getElementById("guardingRoutes").textContent = guardCount;
+      document.getElementById("loadedRoutes").textContent = shippedCount;
+      document.getElementById("occupiedDocks").textContent = customsCount;
+      document.getElementById("pendingRoutes").textContent = pending;
       document.getElementById("remainingTime").textContent = remainingWaveTime(currentWave);
       renderFinalCountdownAlert(rows.length);
     }
-
     function renderFinalCountdownAlert(routeCount = rowsForWave(currentWave).length) {
       const alert = document.getElementById("finalCountdownAlert");
       if (!alert) return;
@@ -3074,22 +5445,22 @@
         const key = routeKey(row.rota);
         const selected = getJustification(row.rota);
         return `
-          <tr data-just-route="${key}">
-            <td>${selected ? `<input class="clear-check" type="checkbox" data-clear-route="${key}">` : ""}</td>
-            <td>${waveLabel(row.onda)}</td>
-            <td>${row.rota || ""}</td>
-            <td>${row.transportadora || ""}</td>
-            <td>${row.doca || ""}</td>
-            <td>
-              <select class="admin-only" data-route="${key}" ${isAdmin() ? "" : "disabled"}>
+          <tr class="tw-h-16 tw-bg-white tw-text-center tw-font-bold" data-just-route="${key}">
+            <td class="tw-w-20">${selected ? `<input class="clear-check tw-h-10 tw-w-10 tw-rounded tw-border tw-border-slate-500" type="checkbox" data-clear-route="${key}">` : ""}</td>
+            <td class="tw-w-20 tw-font-extrabold">${waveLabel(row.onda)}</td>
+            <td class="tw-w-28 tw-font-extrabold">${row.rota || ""}</td>
+            <td class="tw-w-48 tw-font-extrabold">${row.transportadora || ""}</td>
+            <td class="tw-w-16 tw-font-extrabold">${row.doca || ""}</td>
+            <td class="tw-w-64">
+              <select class="admin-only tw-h-10 tw-w-full tw-rounded-full tw-border tw-border-slate-300 tw-bg-slate-100 tw-px-3 tw-font-bold" data-route="${key}" ${canEditData() ? "" : "disabled"}>
                 <option value=""></option>
                 ${motivos.map(motivo => `<option value="${motivo}" ${motivo === selected ? "selected" : ""}>${motivo}</option>`).join("")}
               </select>
             </td>
-            <td class="justification-text">${justificationSentence(row)}</td>
+            <td class="justification-text tw-text-left tw-font-semibold">${justificationSentence(row)}</td>
           </tr>
         `;
-      }).join("") : `<tr><td colspan="7">Nenhuma rota pendente nesta onda.</td></tr>`;
+      }).join("") : `<tr class="tw-h-16"><td colspan="7">Nenhuma rota pendente nesta onda.</td></tr>`;
 
       document.querySelectorAll("#justificationRows select").forEach(select => {
         select.addEventListener("change", event => {
@@ -3105,7 +5476,6 @@
         });
       });
     }
-
     function applyMassJustification() {
       if (!requireAdminAction()) return;
       const motivo = document.getElementById("massReason")?.value || "";
@@ -3262,15 +5632,14 @@
         const planned = plannedRows(wave).length;
         const shipped = shippedRows(wave).length;
         const delay = Math.max(0, planned - shipped);
-        return `<tr><td>AM1</td><td>${displayWave(wave)}</td><td>${planned}</td><td>${shipped}</td><td>${delay}</td><td>${formatPercent(planned ? shipped / planned * 100 : 0)}</td><td>${lossBudget.get(waveLabel(wave)) || 0}</td></tr>`;
+        return `<tr class="tw-h-16 tw-bg-white"><td>AM1</td><td>${displayWave(wave)}</td><td>${planned}</td><td>${shipped}</td><td>${delay}</td><td>${formatPercent(planned ? shipped / planned * 100 : 0)}</td><td>${lossBudget.get(waveLabel(wave)) || 0}</td></tr>`;
       }).join("") + extraRows().map(row => {
-        return `<tr><td>${row.ciclo}</td><td>ONDA 01</td><td>${row.planned}</td><td>${row.shipped}</td><td>${row.delay}</td><td>${formatPercent(row.planned ? row.shipped / row.planned * 100 : 0)}</td><td>-</td></tr>`;
+        return `<tr class="tw-h-16 tw-bg-white"><td>${row.ciclo}</td><td>ONDA 01</td><td>${row.planned}</td><td>${row.shipped}</td><td>${row.delay}</td><td>${formatPercent(row.planned ? row.shipped / row.planned * 100 : 0)}</td><td>-</td></tr>`;
       }).join("");
       const { planned: totalPlanned, shipped: totalShipped, delay: totalDelay } = summaryTotals();
-      const am1 = am1Totals();
       const am1Real = realTimeAm1Totals();
       const allowedAm1Loss = totalAllowedAm1Loss();
-      document.getElementById("summaryFoot").innerHTML = `<tr><th colspan="2">Total geral</th><th>${totalPlanned}</th><th>${totalShipped}</th><th>${totalDelay}</th><th>${formatPercent(totalPlanned ? totalShipped / totalPlanned * 100 : 0)}</th><th>${allowedAm1Loss}</th></tr>`;
+      document.getElementById("summaryFoot").innerHTML = `<tr class="tw-h-14 tw-bg-slate-100"><th colspan="2">Total geral</th><th>${totalPlanned}</th><th>${totalShipped}</th><th>${totalDelay}</th><th>${formatPercent(totalPlanned ? totalShipped / totalPlanned * 100 : 0)}</th><th>${allowedAm1Loss}</th></tr>`;
       document.getElementById("lossPlanned").textContent = am1Real.planned;
       document.getElementById("lossShipped").textContent = am1Real.shipped;
       document.getElementById("lossDelay").textContent = am1Real.delay;
@@ -3283,51 +5652,42 @@
       });
       bindSummaryInputs();
     }
-
     function renderClosure() {
       const { planned: totalPlanned, shipped: totalShipped } = summaryTotals();
       const totalPct = formatPercent(totalPlanned ? totalShipped / totalPlanned * 100 : 0);
       document.getElementById("closureContent").innerHTML = `
-        <div class="closure-head"><span>Fechamento AM</span><strong>${totalPct}</strong></div>
-        <div class="closure-head"><span>Impactos expedição</span><strong>AM</strong></div>
+        <div class="closure-head tw-flex tw-h-10 tw-items-center tw-justify-between tw-rounded-md tw-bg-[#063354] tw-px-3 tw-text-white"><span>Fechamento AM</span><strong>${totalPct}</strong></div>
+        <div class="closure-head tw-flex tw-h-10 tw-items-center tw-justify-between tw-rounded-md tw-bg-[#063354] tw-px-3 tw-text-white"><span>Impactos expedição</span><strong>AM</strong></div>
         ${(data.ondas || []).map(wave => {
           const pendingImpactRows = pendingRows(wave, true);
           const lineItems = pendingImpactRows.map(row => {
             const motivo = getJustification(row.rota);
             return `${row.rota} | ${row.transportadora || "-"}${motivo ? ` | ${motivo}` : ""}`;
           });
-          const lines = lineItems.map(item => `<span class="closure-line">${item}</span>`).join("") || `<span class="closure-empty">Sem impactos pendentes nesta onda.</span>`;
-          const reasonCounts = {};
-          pendingImpactRows.forEach(row => {
-            const motivo = getJustification(row.rota);
-            if (motivo) reasonCounts[motivo] = (reasonCounts[motivo] || 0) + 1;
-          });
-          const reasonSummary = Object.entries(reasonCounts)
-            .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], "pt-BR", { sensitivity: "base" }))
-            .map(([motivo, count]) => `${String(count).padStart(2, "0")} - ${motivo}`)
-            .join("\n") || "#N/A";
+          const lines = lineItems.map(item => `<span class="closure-line tw-block">${item}</span>`).join("") || `<span class="closure-empty tw-font-bold tw-text-slate-500">Sem impactos pendentes nesta onda.</span>`;
           return `
-            <div class="closure-block">
-              <div class="closure-title"><span>${displayWave(wave)} - %</span><strong>${formatPercent(wavePercent(wave))}</strong></div>
+            <div class="closure-block tw-overflow-hidden tw-rounded-md tw-border tw-border-[#c6d3df] tw-bg-white">
+              <div class="closure-title tw-flex tw-h-8 tw-items-center tw-justify-between tw-bg-[#e7eff7] tw-px-3"><span>${displayWave(wave)} - %</span><strong>${formatPercent(wavePercent(wave))}</strong></div>
               <div class="closure-list ${lineItems.length > 10 ? "dense" : ""}">${lines}</div>
-              <div class="closure-reasons ${reasonSummary === "#N/A" ? "empty" : ""}">${reasonSummary === "#N/A" ? "Sem motivos contabilizados." : reasonSummary}</div>
             </div>
           `;
         }).join("")}
       `;
       document.getElementById("closureMessage").innerHTML = renderClosureMessageHtml();
     }
-
     function renderViews() {
+      const app = document.querySelector(".app");
+      app?.classList.toggle("docas-mode", currentView === "docas");
+      app?.classList.toggle("report-mode", currentView !== "docas");
       document.querySelectorAll("[data-view]").forEach(button => button.classList.toggle("active", button.dataset.view === currentView));
-      document.getElementById("dockGrid").style.display = currentView === "docas" ? "grid" : "none";
+      document.getElementById("dockGrid").style.display = currentView === "docas" ? "flex" : "none";
+      document.querySelector(".legend")?.classList.toggle("active", currentView === "docas");
       document.getElementById("justificativasView").classList.toggle("active", currentView === "justificativas");
       document.getElementById("fechamentoView").classList.toggle("active", currentView === "fechamento");
       renderJustifications();
       renderSummary();
       renderClosure();
     }
-
     function render() {
       document.getElementById("titulo").textContent = data.titulo;
       document.getElementById("totalRotasTopo").textContent = data.totalRotas || data.extracao.length || "";
@@ -3336,6 +5696,8 @@
       testButton.classList.toggle("active", Boolean(data.modoTesteCronometro));
       testButton.textContent = "Teste";
       const timersButton = document.getElementById("toggleTimersBtn");
+      timersButton.hidden = true;
+      timersButton.setAttribute("aria-hidden", "true");
       timersButton.classList.toggle("active", !data.ocultarCronometros);
       timersButton.textContent = "Cronômetro";
       document.getElementById("footerUpdate").textContent = `${data.data || ""} ${currentTimeLabel()}`.trim();
@@ -3354,9 +5716,8 @@
       document.getElementById("dataInput").value = data.data || "";
       document.getElementById("extracaoPaste").value = toPaste(data.extracao);
       document.getElementById("basePaste").value = toBasePaste(data.base);
-      document.getElementById("basePaste").placeholder = "Cole aqui as rotas carregadas. Pode ser só a rota ou tabela com rota/status/tempo/doca.";
+      document.getElementById("basePaste").placeholder = "Cole as rotas da Base com status. Expedida fica verde; Aduana fica laranja; Carregando/Guardando fica azul.";
       document.getElementById("drawer").classList.add("open");
-      document.querySelector(".app").classList.add("editor-open");
     }
 
     function openPdfDrawer() {
@@ -3580,3 +5941,11 @@
   </script>
 </body>
 </html>
+
+
+
+
+
+
+
+
