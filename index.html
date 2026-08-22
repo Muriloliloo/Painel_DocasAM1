@@ -5953,7 +5953,9 @@
         document.getElementById("showLoginPassword").checked = false;
         document.getElementById("loginModal").classList.remove("open");
       } catch (error) {
-        document.getElementById("loginMessage").textContent = "Login não autorizado. Confira e-mail e senha.";
+        console.error("Firebase login error:", error);
+        document.getElementById("loginMessage").textContent =
+          `${error?.code || "erro"} - ${error?.message || "Falha no login"}`;
       }
     }
 
@@ -6097,6 +6099,8 @@
   </script>
 </body>
 </html>
+
+
 
 
 
