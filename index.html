@@ -3657,6 +3657,142 @@
       font-weight: 950 !important;
     }
 
+  
+    /* =========================================================
+       PAINEL DE DOCAS — refinamento visual e microinterações
+       ========================================================= */
+
+    .docas-mode .stats {
+      background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%) !important;
+      border-color: #d1dce7 !important;
+      border-radius: 10px !important;
+      box-shadow: 0 7px 22px rgba(9, 42, 70, .10) !important;
+      overflow: hidden;
+      animation: painelStatsIn .42s ease-out both;
+    }
+
+    .docas-mode .report-title strong {
+      font-family: "Segoe UI Variable Display", "Segoe UI", Arial, sans-serif !important;
+      font-weight: 900 !important;
+      letter-spacing: -.5px !important;
+      color: #071d39 !important;
+    }
+
+    .docas-mode .wave-stat {
+      font-family: "Segoe UI Variable Text", "Segoe UI", Arial, sans-serif !important;
+      font-weight: 800 !important;
+      letter-spacing: .15px;
+    }
+
+    .docas-mode .stat span,
+    .docas-mode .countdown span {
+      font-family: "Segoe UI Variable Text", "Segoe UI", Arial, sans-serif !important;
+      font-weight: 800 !important;
+      letter-spacing: .1px;
+    }
+
+    .docas-mode .stat strong,
+    .docas-mode .countdown strong {
+      font-family: "Segoe UI Variable Display", "Segoe UI", Arial, sans-serif !important;
+      font-weight: 900 !important;
+      letter-spacing: -.45px;
+      transition: transform .18s ease, filter .18s ease;
+    }
+
+    .docas-mode .stat:hover strong,
+    .docas-mode .countdown:hover strong {
+      transform: translateY(-1px) scale(1.035);
+      filter: saturate(1.08);
+    }
+
+    /* Tempo restante sem caixa azul: apenas título e caracteres */
+    .docas-mode .countdown {
+      align-self: stretch !important;
+      height: auto !important;
+      min-height: 0 !important;
+      padding: 0 8px !important;
+      border: 0 !important;
+      border-radius: 0 !important;
+      background: transparent !important;
+      box-shadow: none !important;
+      color: #071d39 !important;
+    }
+
+    .docas-mode .countdown span {
+      color: #071d39 !important;
+      text-transform: uppercase !important;
+      font-size: 11px !important;
+    }
+
+    .docas-mode .countdown strong {
+      color: #071d39 !important;
+      font-size: 27px !important;
+      text-shadow: none !important;
+    }
+
+    /* Cards com resposta visual sutil para a página não parecer estática */
+    .docas-mode .slot {
+      transition:
+        transform .18s ease,
+        box-shadow .18s ease,
+        border-color .18s ease,
+        background-color .18s ease !important;
+      animation: dockCardIn .32s ease-out both;
+    }
+
+    .docas-mode .slot:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 7px 17px rgba(15, 39, 67, .18) !important;
+      border-color: #afc4d6 !important;
+      z-index: 2;
+    }
+
+    .docas-mode .slot::before {
+      transition: height .18s ease, filter .18s ease;
+    }
+
+    .docas-mode .slot:hover::before {
+      height: 6px;
+      filter: saturate(1.12);
+    }
+
+    .docas-mode .dock-number-inline,
+    .docas-mode .dock-number {
+      transition: transform .18s ease;
+    }
+
+    .docas-mode .slot:hover .dock-number-inline,
+    .docas-mode .slot:hover .dock-number {
+      transform: scale(1.08);
+      transform-origin: left top;
+    }
+
+    /* Entrada escalonada para dar vida ao grid sem exagero */
+    .docas-mode .dock-column:nth-child(2n) .slot { animation-delay: .025s; }
+    .docas-mode .dock-column:nth-child(3n) .slot { animation-delay: .05s; }
+
+    @keyframes painelStatsIn {
+      from { opacity: 0; transform: translateY(-5px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes dockCardIn {
+      from { opacity: .7; transform: translateY(3px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .docas-mode .stats,
+      .docas-mode .slot {
+        animation: none !important;
+      }
+      .docas-mode .slot,
+      .docas-mode .stat strong,
+      .docas-mode .countdown strong {
+        transition: none !important;
+      }
+    }
+
   </style>
 </head>
 <body>
@@ -5135,7 +5271,7 @@
     ];
 
     function formatMetricHour(value) {
-      return normalize(value).replace(":", "H").toUpperCase() || "--";
+      return normalize(value) || "--";
     }
 
     function baseDetailsByRoute() {
