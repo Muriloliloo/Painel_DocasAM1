@@ -3668,7 +3668,6 @@
       border-radius: 10px !important;
       box-shadow: 0 7px 22px rgba(9, 42, 70, .10) !important;
       overflow: hidden;
-      animation: painelStatsIn .42s ease-out both;
     }
 
     .docas-mode .report-title strong {
@@ -3737,7 +3736,6 @@
         box-shadow .18s ease,
         border-color .18s ease,
         background-color .18s ease !important;
-      animation: dockCardIn .32s ease-out both;
     }
 
     .docas-mode .slot:hover {
@@ -3766,26 +3764,10 @@
       transform: scale(1.08);
       transform-origin: left top;
     }
-
-    /* Entrada escalonada para dar vida ao grid sem exagero */
-    .docas-mode .dock-column:nth-child(2n) .slot { animation-delay: .025s; }
-    .docas-mode .dock-column:nth-child(3n) .slot { animation-delay: .05s; }
-
-    @keyframes painelStatsIn {
-      from { opacity: 0; transform: translateY(-5px); }
-      to   { opacity: 1; transform: translateY(0); }
-    }
-
-    @keyframes dockCardIn {
-      from { opacity: .7; transform: translateY(3px); }
       to   { opacity: 1; transform: translateY(0); }
     }
 
     @media (prefers-reduced-motion: reduce) {
-      .docas-mode .stats,
-      .docas-mode .slot {
-        animation: none !important;
-      }
       .docas-mode .slot,
       .docas-mode .stat strong,
       .docas-mode .countdown strong {
