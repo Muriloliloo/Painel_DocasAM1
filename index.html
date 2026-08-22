@@ -3932,7 +3932,18 @@
       "status base": "status",
       "situação base": "status",
       "situacao base": "status",
-      estado: "status",
+      estado: "estadoAduana",
+      "estado da aduana": "estadoAduana",
+      "estado aduana": "estadoAduana",
+      processo: "processo",
+      "tempo do processo": "tempoProcesso",
+      "tempo de processo": "tempoProcesso",
+      "tempo processo": "tempoProcesso",
+      "tempo total": "tempoTotal",
+      "rep de aduana": "repLog",
+      "rep da aduana": "repLog",
+      "representante de aduana": "repLog",
+      "representante da aduana": "repLog",
       "tempo de auditoria": "auditTime",
       "tempo auditoria": "auditTime",
       auditoria: "auditTime",
@@ -3977,8 +3988,8 @@
       logistico: "repLog",
       logístico: "repLog",
       operador: "repLog",
-      motorista: "repLog",
-      driver: "repLog",
+      motorista: "motorista",
+      driver: "motorista",
       nome: "repLog"
     };
     const motivos = [
@@ -4339,7 +4350,11 @@
       item.auditTime = normalizeAuditTime(item.auditTime || item.tempoAuditoria || "");
       item.aduanaUnidades = normalize(item.aduanaUnidades || "");
       item.aduanaBipadas = correctUnits(item.aduanaBipadas || item.aduanaUnidades || "");
-      item.status = normalizeBaseStatus(item.status) || normalize(item.status);
+      item.processo = normalize(item.processo || "");
+      item.tempoProcesso = normalize(item.tempoProcesso || "");
+      item.tempoTotal = normalize(item.tempoTotal || "");
+      item.estadoAduana = normalize(item.estadoAduana || "");
+      item.status = normalizeBaseStatus(item.processo) || normalizeBaseStatus(item.status) || normalize(item.status);
       return item;
     }
     function lastStandaloneDock(row = []) {
@@ -4451,7 +4466,7 @@
           item.rota = routeToken(item.rota) || loose?.rota || item.rota || routeToken(row.join("\t"));
           item.doca = item.doca || loose?.doca || lastStandaloneDock(row);
           item.transportadora = item.transportadora || loose?.transportadora || "";
-          item.status = normalizeBaseStatus(item.status) || rowStatus(row) || normalize(item.status);
+          item.status = normalizeBaseStatus(item.processo) || normalizeBaseStatus(item.status) || rowStatus(row.filter((cell, index) => mappedHeader[index] !== "estadoAduana")) || normalize(item.status);
         }
         enrichBaseItem(item);
         return {
@@ -4466,6 +4481,10 @@
           auditTime: item.auditTime || "",
           aduanaUnidades: item.aduanaUnidades || "",
           aduanaBipadas: item.aduanaBipadas || "",
+          estadoAduana: item.estadoAduana || "",
+          processo: item.processo || "",
+          tempoProcesso: item.tempoProcesso || "",
+          tempoTotal: item.tempoTotal || "",
           pacotes: item.pacotes || "",
           placa: item.placa || "",
           tipoVeiculo: item.tipoVeiculo || "",
@@ -4570,13 +4589,22 @@
     function isAduanaDetailRow(row = {}) {
       return normalizeBaseStatus(row.status) === "Em aduana"
         || Boolean(normalize(row.repLog) || normalize(row.motorista) || normalize(row.auditTime)
-          || normalize(row.aduanaUnidades) || normalize(row.aduanaBipadas));
+          || normalize(row.aduanaUnidades) || normalize(row.aduanaBipadas) || normalize(row.estadoAduana));
     }
 
     function rebuildConsolidatedBase(extractionRows = data.extracao || []) {
       data.baseOperacional = onlyPlannedBaseRows(data.baseOperacional || [], extractionRows);
       data.baseAduana = onlyPlannedBaseRows(data.baseAduana || [], extractionRows);
-      data.base = mergeLatestBaseRows(data.baseOperacional, data.baseAduana);
+      const aduanaDetailsOnly = (data.baseAduana || []).map(row => ({
+        ...row,
+        // A Aduana complementa a rota, mas não substitui o processo/tempo operacional.
+        status: "",
+        processo: "",
+        tempoProcesso: "",
+        tempoTotal: "",
+        doca: ""
+      }));
+      data.base = mergeLatestBaseRows(data.baseOperacional, aduanaDetailsOnly);
       data.base = onlyPlannedBaseRows(data.base, extractionRows);
       return data.base;
     }
@@ -4590,7 +4618,13 @@
     }
 
     function loadedKeys() {
-      return new Set(uniqueBaseRows(data.base).map(row => routeKey(row.rota)).filter(Boolean));
+      return new Set(uniqueBaseRows(data.base)
+        .filter(row => {
+          const status = normalizeBaseStatus(row.status || row.processo || "");
+          return status === "Guardando" || status === "Em aduana" || status === "Expedida";
+        })
+        .map(row => routeKey(row.rota))
+        .filter(Boolean));
     }
 
     function expedidaKeys() {
@@ -4603,12 +4637,33 @@
     function syncLoadingStarts(rows = data.base) {
       const now = Date.now();
       let changed = false;
-      const active = new Set(uniqueBaseRows(rows).map(row => routeKey(row.rota)).filter(Boolean));
+      const uniqueRows = uniqueBaseRows(rows);
+      const active = new Set(uniqueRows
+        .filter(row => {
+          const status = normalizeBaseStatus(row.status || row.processo || "");
+          return status === "Guardando" || status === "Em aduana" || status === "Expedida";
+        })
+        .map(row => routeKey(row.rota))
+        .filter(Boolean));
       data.carregamentoInicio = data.carregamentoInicio || {};
       data.carregamentoFim = data.carregamentoFim || {};
-      const uniqueRows = uniqueBaseRows(rows);
+
+      // Rota sem processo/status operacional continua pendente.
+      // Também remove cronômetro iniciado indevidamente em colagens antigas.
+      uniqueRows.forEach(row => {
+        const key = routeKey(row.rota);
+        if (!key || active.has(key)) return;
+        if (data.carregamentoInicio[key]) {
+          delete data.carregamentoInicio[key];
+          changed = true;
+        }
+        if (data.carregamentoFim[key]) {
+          delete data.carregamentoFim[key];
+          changed = true;
+        }
+      });
+
       active.forEach(key => {
-        const row = uniqueRows.find(item => routeKey(item.rota) === key);
         if (!data.carregamentoInicio[key]) {
           data.carregamentoInicio[key] = now;
           changed = true;
@@ -5060,7 +5115,7 @@
         ...base,
         onda: row.onda || base.onda || "",
         rota: row.rota || base.rota || "",
-        doca: row.doca || base.doca || "",
+        doca: base.doca || row.doca || "",
         transportadora: base.transportadora || row.transportadora || "",
         spr: row.spr || base.spr || "",
         pacotes: row.pacotes || base.pacotes || "",
@@ -5085,7 +5140,8 @@
       if (status === "Guardando") return "guard";
       if (status === "Em aduana") return "customs";
       if (status === "Expedida" || shipped.has(key)) return "loaded";
-      return "customs";
+      // Sem processo/status reconhecido: permanece pendente (vermelho).
+      return "pending";
     }
 
     function dockStatusLabel(state) {
@@ -5107,16 +5163,14 @@
     }
 
     function dockMinuteLabel(row, key) {
-      const auditTime = normalize(row?.auditTime || "");
-      if (auditTime) return auditTime;
+      const totalTime = normalize(row?.tempoTotal || "");
+      if (totalTime && totalTime !== "-") return totalTime;
       const seconds = key ? elapsedSeconds(key, row?.onda || currentWave) : 0;
       if (seconds) {
         const minutes = Math.max(1, Math.floor(seconds / 60));
         return `${minutes} ${minutes === 1 ? "minuto" : "minutos"}`;
       }
-      const dock = Number(String(row?.doca || "").replace(/\D/g, "")) || 1;
-      const minutes = Math.max(1, (dock % 11) + 1);
-      return `${minutes} minutos`;
+      return "-";
     }
 
     function dockSlotCounts(wave) {
@@ -5164,10 +5218,12 @@
     }
 
     function dockPackageLabel(row = {}) {
-      const total = numericLabel(row.spr || row.pacotes || row.qtdPacotes || row.quantidadePacotes || row.quantidade || row.volumes);
-      const scanned = numericLabel(row.aduanaBipadas);
-      if (total !== null && scanned !== null) return `${Math.max(0, total - scanned)}/${total}`;
-      return normalize(row.pacotes || row.qtdPacotes || row.quantidadePacotes || row.quantidade || row.volumes || row.spr || "");
+      const spr = numericLabel(row.spr || row.pacotes || row.qtdPacotes || row.quantidadePacotes || row.quantidade || row.volumes);
+      const corretas = numericLabel(row.aduanaBipadas);
+      if (spr !== null && corretas !== null) return `${spr}/${corretas}`;
+      if (spr !== null) return `${spr}/-`;
+      if (corretas !== null) return `-/${corretas}`;
+      return "";
     }
 
     function compactElapsedLabel(key, wave) {
@@ -5182,17 +5238,17 @@
       const primary = displayRows[0];
       const key = primary ? routeKey(primary.rota) : "";
       const state = primary ? routeDockState(primary, loaded, shipped, statusMap) : "free";
-      const statusLabel = dockStatusLabel(state);
+      const statusLabel = normalize(primary?.processo || "") || dockStatusLabel(state);
       const carrier = cleanTransportadora(primary?.transportadora || "") || "-";
       const carrierShort = firstCarrierName(carrier) || "-";
       const personName = routePersonName(primary || {});
       const routeText = displayRows.map(row => row.rota).filter(Boolean).join(" / ");
       const personHtml = personName ? `<span class="dock-person">${escapeHtml(personName)}</span>` : "";
-      const footerTimer = !data.ocultarCronometros && key && loaded.has(key) ? compactElapsedLabel(key, currentWave) : "";
+      const footerTimer = normalize(primary?.auditTime || "");
       const packages = primary ? dockPackageLabel(primary) : "";
       const slot = document.createElement("div");
       slot.className = `slot doca-card ${dockStatusClass(state)} ${rows.length > 1 ? "duplicate" : ""} ${data.ocultarCronometros ? "timer-hidden" : ""}`;
-      slot.title = rows.length ? displayRows.map(row => `${row.rota} | Doca ${row.doca} | ${routePersonName(row) || "Sem rep/log"} | ${row.auditTime || "Sem tempo de auditoria"} | ${row.aduanaBipadas ? `${row.aduanaBipadas} bipadas` : "Sem bipagem"} | ${dockPackageLabel(row) || "Sem pacotes"}`).join("\n") : `Doca ${dock} livre`;
+      slot.title = rows.length ? displayRows.map(row => `${row.rota} | Doca ${row.doca} | ${routePersonName(row) || "Sem rep/log"} | ${row.auditTime || "Sem tempo de auditoria"} | ${row.aduanaBipadas ? `${row.aduanaBipadas} corretas` : "Sem unidades corretas"} | ${dockPackageLabel(row) || "Sem pacotes"}`).join("\n") : `Doca ${dock} livre`;
       if (!primary) {
         slot.innerHTML = `
           <div class="dock-number">${dock}</div>
@@ -6099,8 +6155,6 @@
   </script>
 </body>
 </html>
-
-
 
 
 
