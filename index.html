@@ -3015,6 +3015,30 @@
       font-weight: 950;
     }
 
+    #justificativasView .summary-edit-input {
+      width: 72px;
+      height: 34px;
+      padding: 3px 6px;
+      border: 2px solid #0b5b91;
+      border-radius: 5px;
+      background: #fff8cf;
+      color: #001b35;
+      font: 950 16px/1 "Segoe UI", Arial, sans-serif;
+      text-align: center;
+      outline: none;
+    }
+
+    #justificativasView .summary-edit-input:focus {
+      border-color: #f2a900;
+      box-shadow: 0 0 0 2px rgba(242,169,0,.18);
+    }
+
+    .app.reader-mode #justificativasView .summary-edit-input {
+      border-color: transparent;
+      background: transparent;
+      box-shadow: none;
+    }
+
     #justificativasView .loss-panel {
       display: none;
     }
@@ -5804,7 +5828,16 @@
         const delay = Math.max(0, planned - shipped);
         return `<tr class="tw-h-16 tw-bg-white"><td>AM1</td><td>${displayWave(wave)}</td><td>${planned}</td><td>${shipped}</td><td>${delay}</td><td>${formatPercent(planned ? shipped / planned * 100 : 0)}</td><td>${lossBudget.get(waveLabel(wave)) || 0}</td></tr>`;
       }).join("") + extraRows().map(row => {
-        return `<tr class="tw-h-16 tw-bg-white"><td>${row.ciclo}</td><td>ONDA 01</td><td>${row.planned}</td><td>${row.shipped}</td><td>${row.delay}</td><td>${formatPercent(row.planned ? row.shipped / row.planned * 100 : 0)}</td><td>-</td></tr>`;
+        const cycle = escapeHtml(row.ciclo);
+        return `<tr class="tw-h-16 tw-bg-white">
+          <td>${cycle}</td>
+          <td>ONDA 01</td>
+          <td><input class="summary-edit-input admin-only" data-extra="${cycle}" data-field="planejado" type="number" min="0" step="1" value="${row.planned}" aria-label="${cycle} planejado"></td>
+          <td><input class="summary-edit-input admin-only" data-extra="${cycle}" data-field="expedido" type="number" min="0" step="1" value="${row.shipped}" aria-label="${cycle} expedido"></td>
+          <td>${row.delay}</td>
+          <td>${formatPercent(row.planned ? row.shipped / row.planned * 100 : 0)}</td>
+          <td>-</td>
+        </tr>`;
       }).join("");
       const { planned: totalPlanned, shipped: totalShipped, delay: totalDelay } = summaryTotals();
       const am1Real = realTimeAm1Totals();
