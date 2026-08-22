@@ -3775,6 +3775,300 @@
       }
     }
 
+  
+    /* =========================================================
+       HISTÓRICO POR ROTA
+       ========================================================= */
+    .docas-mode .slot[data-route-key] {
+      cursor: pointer;
+    }
+
+    .docas-mode .slot[data-route-key]:focus-visible {
+      outline: 3px solid #1b74d1;
+      outline-offset: 2px;
+    }
+
+    .route-history-modal {
+      position: fixed;
+      inset: 0;
+      z-index: 5000;
+      display: none;
+      align-items: stretch;
+      justify-content: flex-end;
+    }
+
+    .route-history-modal.open {
+      display: flex;
+    }
+
+    .route-history-backdrop {
+      position: absolute;
+      inset: 0;
+      background: rgba(2, 18, 33, .58);
+      backdrop-filter: blur(2px);
+    }
+
+    .route-history-panel {
+      position: relative;
+      z-index: 1;
+      width: min(1180px, 94vw);
+      height: 100vh;
+      display: grid;
+      grid-template-rows: auto auto minmax(0, 1fr);
+      background: #eef4f9;
+      color: #061f36;
+      box-shadow: -18px 0 55px rgba(0, 18, 35, .3);
+      overflow: hidden;
+    }
+
+    .route-history-header {
+      min-height: 82px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      padding: 14px 20px;
+      background: linear-gradient(180deg, #0b416b, #063354);
+      color: #fff;
+      border-bottom: 4px solid #ffd200;
+    }
+
+    .route-history-header div {
+      display: grid;
+      gap: 4px;
+    }
+
+    .route-history-header span {
+      font: 800 12px/1 "Segoe UI", Arial, sans-serif;
+      text-transform: uppercase;
+      color: #c8dceb;
+      letter-spacing: .45px;
+    }
+
+    .route-history-header strong {
+      font: 950 25px/1.05 "Segoe UI Variable Display", "Segoe UI", Arial, sans-serif;
+      letter-spacing: -.4px;
+    }
+
+    .route-history-header button {
+      width: 42px;
+      height: 42px;
+      border: 1px solid rgba(255,255,255,.25);
+      border-radius: 10px;
+      background: rgba(255,255,255,.08);
+      color: #fff;
+      font: 800 30px/1 Arial, sans-serif;
+      cursor: pointer;
+    }
+
+    .route-history-tools {
+      display: grid;
+      grid-template-columns: minmax(240px, 360px) minmax(240px, 420px);
+      gap: 12px;
+      padding: 12px 18px;
+      background: #fff;
+      border-bottom: 1px solid #cad8e4;
+    }
+
+    .route-history-tools label {
+      display: grid;
+      gap: 5px;
+    }
+
+    .route-history-tools label > span {
+      color: #31526d;
+      font: 900 11px/1 "Segoe UI", Arial, sans-serif;
+      text-transform: uppercase;
+    }
+
+    .route-history-tools select,
+    .route-history-tools input {
+      height: 38px;
+      border: 1px solid #a8bdcf;
+      border-radius: 7px;
+      background: #f9fcff;
+      color: #062642;
+      padding: 0 11px;
+      font: 850 14px "Segoe UI", Arial, sans-serif;
+      outline: none;
+    }
+
+    .route-history-content {
+      overflow: auto;
+      padding: 16px 18px 28px;
+    }
+
+    .route-history-summary {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(120px, 1fr));
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+
+    .route-history-kpi {
+      min-height: 72px;
+      display: grid;
+      align-content: center;
+      gap: 5px;
+      padding: 10px 12px;
+      border: 1px solid #c8d7e3;
+      border-radius: 8px;
+      background: #fff;
+      box-shadow: 0 3px 9px rgba(8, 39, 66, .06);
+    }
+
+    .route-history-kpi span {
+      color: #557188;
+      font: 850 10px/1.1 "Segoe UI", Arial, sans-serif;
+      text-transform: uppercase;
+    }
+
+    .route-history-kpi strong {
+      overflow: hidden;
+      color: #061f36;
+      font: 950 15px/1.15 "Segoe UI", Arial, sans-serif;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .route-history-timeline,
+    .route-history-events {
+      margin-top: 12px;
+      border: 1px solid #c7d6e2;
+      border-radius: 9px;
+      background: #fff;
+      overflow: hidden;
+      box-shadow: 0 4px 13px rgba(7, 36, 63, .06);
+    }
+
+    .route-history-timeline h3,
+    .route-history-events-title {
+      margin: 0;
+      min-height: 42px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 14px;
+      background: #063354;
+      color: #fff;
+      font: 950 14px/1 "Segoe UI", Arial, sans-serif;
+      text-transform: uppercase;
+    }
+
+    .route-history-events-title h3 {
+      margin: 0;
+      font: inherit;
+    }
+
+    .route-history-events-title span {
+      color: #ffd200;
+      font-size: 11px;
+    }
+
+    .route-history-phases {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1px;
+      background: #d5e0e9;
+    }
+
+    .route-history-phase {
+      min-height: 118px;
+      display: grid;
+      grid-template-rows: auto 1fr;
+      background: #fff;
+    }
+
+    .route-history-phase h4 {
+      margin: 0;
+      padding: 9px 12px;
+      color: #063354;
+      background: #edf4fa;
+      border-bottom: 1px solid #d5e0e9;
+      font: 950 13px/1 "Segoe UI", Arial, sans-serif;
+      text-transform: uppercase;
+    }
+
+    .route-history-phase-body {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      align-content: center;
+      padding: 11px 12px;
+    }
+
+    .route-history-phase-body div {
+      display: grid;
+      gap: 4px;
+    }
+
+    .route-history-phase-body span {
+      color: #698096;
+      font: 800 10px/1 "Segoe UI", Arial, sans-serif;
+      text-transform: uppercase;
+    }
+
+    .route-history-phase-body strong {
+      color: #061f36;
+      font: 950 14px/1.1 "Segoe UI", Arial, sans-serif;
+    }
+
+    .route-history-table-wrap {
+      overflow: auto;
+      max-height: 390px;
+    }
+
+    .route-history-table {
+      width: 100%;
+      min-width: 1180px;
+      border-collapse: collapse;
+      font: 750 11px/1.25 "Segoe UI", Arial, sans-serif;
+    }
+
+    .route-history-table th,
+    .route-history-table td {
+      padding: 8px 9px;
+      border-right: 1px solid #d9e3eb;
+      border-bottom: 1px solid #d9e3eb;
+      text-align: left;
+      vertical-align: top;
+    }
+
+    .route-history-table th {
+      position: sticky;
+      top: 0;
+      z-index: 1;
+      background: #eaf2f8;
+      color: #173b59;
+      font-weight: 950;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .route-history-table tbody tr:hover td {
+      background: #f4f9fd;
+    }
+
+    .route-history-empty {
+      grid-column: 1 / -1;
+      padding: 24px;
+      text-align: center;
+      color: #627d91;
+      font-weight: 800;
+    }
+
+    @media (max-width: 980px) {
+      .route-history-summary {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+      .route-history-phases {
+        grid-template-columns: 1fr;
+      }
+      .route-history-tools {
+        grid-template-columns: 1fr;
+      }
+    }
+
   </style>
 </head>
 <body>
@@ -3811,7 +4105,7 @@
     <aside class="side-rail" aria-label="Menu operacional da aba docas">
       <button class="active" type="button"><span class="rail-icon">▦</span><span>Overview</span></button>
       <button type="button"><span class="rail-icon">▤</span><span>Docas</span></button>
-      <button type="button"><span class="rail-icon">⌁</span><span>Rotas</span></button>
+      <button id="routeHistoryBtn" type="button" title="Consultar histórico por rota"><span class="rail-icon">⌁</span><span>Rotas</span></button>
       <button type="button"><span class="rail-icon">◴</span><span>Históricos</span></button>
       <button type="button"><span class="rail-icon">!</span><span>Alertas</span></button>
       <button type="button"><span class="rail-icon">□</span><span>Relatórios</span></button>
@@ -3831,6 +4125,66 @@
     </section>
 
     <div class="final-countdown-alert" id="finalCountdownAlert" aria-live="assertive" hidden></div>
+
+    <div class="route-history-modal" id="routeHistoryModal" aria-hidden="true">
+      <div class="route-history-backdrop" data-close-route-history></div>
+      <section class="route-history-panel" role="dialog" aria-modal="true" aria-labelledby="routeHistoryTitle">
+        <header class="route-history-header">
+          <div>
+            <span>Histórico operacional da rota</span>
+            <strong id="routeHistoryTitle">Selecione uma rota</strong>
+          </div>
+          <button id="closeRouteHistoryBtn" type="button" aria-label="Fechar">×</button>
+        </header>
+
+        <div class="route-history-tools">
+          <label>
+            <span>Rota</span>
+            <select id="routeHistorySelect"></select>
+          </label>
+          <label class="route-history-search">
+            <span>Buscar rota</span>
+            <input id="routeHistorySearch" type="search" placeholder="Ex.: VT12_AM1">
+          </label>
+        </div>
+
+        <div class="route-history-content">
+          <section class="route-history-summary" id="routeHistorySummary"></section>
+
+          <section class="route-history-timeline">
+            <h3>Linha do tempo</h3>
+            <div class="route-history-phases" id="routeHistoryPhases"></div>
+          </section>
+
+          <section class="route-history-events">
+            <div class="route-history-events-title">
+              <h3>Atualizações registradas</h3>
+              <span id="routeHistoryEventCount">0 registros</span>
+            </div>
+            <div class="route-history-table-wrap">
+              <table class="route-history-table">
+                <thead>
+                  <tr>
+                    <th>Data/Hora</th>
+                    <th>Fonte</th>
+                    <th>Processo/Estado</th>
+                    <th>Tempo proc.</th>
+                    <th>Tempo total</th>
+                    <th>Rep/Log</th>
+                    <th>Motorista</th>
+                    <th>Transportadora</th>
+                    <th>Doca</th>
+                    <th>Pacotes</th>
+                  </tr>
+                </thead>
+                <tbody id="routeHistoryTableBody"></tbody>
+              </table>
+            </div>
+          </section>
+        </div>
+      </section>
+    </div>
+
 
     <div class="legend">
       <span><i class="dot customs"></i>Em aduana</span>
@@ -5405,6 +5759,12 @@
       const packages = primary ? dockPackageLabel(primary) : "";
       const slot = document.createElement("div");
       slot.className = `slot doca-card ${dockStatusClass(state)} ${rows.length > 1 ? "duplicate" : ""} ${data.ocultarCronometros ? "timer-hidden" : ""}`;
+      if (primary?.rota) {
+        slot.dataset.routeKey = routeKey(primary.rota);
+        slot.tabIndex = 0;
+        slot.setAttribute("role", "button");
+        slot.setAttribute("aria-label", `Abrir histórico da rota ${primary.rota}`);
+      }
       slot.title = rows.length ? displayRows.map(row => `${row.rota} | Doca ${row.doca} | ${routePersonName(row) || "Sem rep/log"} | ${row.auditTime || "Sem tempo de auditoria"} | ${row.aduanaBipadas ? `${row.aduanaBipadas} corretas` : "Sem unidades corretas"} | ${dockPackageLabel(row) || "Sem pacotes"}`).join("\n") : `Doca ${dock} livre`;
       if (!primary) {
         slot.innerHTML = `
@@ -5423,6 +5783,231 @@
       `;
       return slot;
     }
+
+    function formatHistoryDate(value) {
+      if (!value) return "--";
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) return "--";
+      return date.toLocaleString("pt-BR", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit"
+      });
+    }
+
+    function routeHistoryRows(route) {
+      const key = routeKey(route);
+      return (Array.isArray(data.baseHistorico) ? data.baseHistorico : [])
+        .filter(row => routeKey(row.rota) === key)
+        .slice()
+        .sort((a, b) => new Date(a.atualizadoEm || 0) - new Date(b.atualizadoEm || 0));
+    }
+
+    function routeCurrentDetails(route) {
+      const key = routeKey(route);
+      const extraction = (data.extracao || []).find(row => routeKey(row.rota) === key) || {};
+      const operational = uniqueBaseRows(data.baseOperacional || []).find(row => routeKey(row.rota) === key) || {};
+      const customs = uniqueBaseRows(data.baseAduana || []).find(row => routeKey(row.rota) === key) || {};
+      const consolidated = uniqueBaseRows(data.base || []).find(row => routeKey(row.rota) === key) || {};
+      return {
+        ...extraction,
+        ...consolidated,
+        ...operational,
+        repLog: customs.repLog || consolidated.repLog || operational.repLog || extraction.repLog || "",
+        motorista: customs.motorista || operational.motorista || consolidated.motorista || "",
+        auditTime: customs.auditTime || consolidated.auditTime || "",
+        aduanaBipadas: customs.aduanaBipadas || consolidated.aduanaBipadas || "",
+        estadoAduana: customs.estadoAduana || "",
+        transportadora: operational.transportadora || customs.transportadora || extraction.transportadora || "",
+        placa: operational.placa || customs.placa || consolidated.placa || "",
+        doca: extraction.doca || operational.doca || consolidated.doca || ""
+      };
+    }
+
+    function historyStatus(row = {}) {
+      return normalizeBaseStatus(row.processo || row.status)
+        || (/conclu/i.test(normalize(row.estadoAduana)) ? "Aduana concluída" : "")
+        || normalize(row.estadoAduana)
+        || normalize(row.processo)
+        || normalize(row.status)
+        || "--";
+    }
+
+    function firstHistoryTime(rows, predicate) {
+      const row = rows.find(predicate);
+      return row?.atualizadoEm || null;
+    }
+
+    function routeLifecycleTimes(route, rows = routeHistoryRows(route)) {
+      const key = routeKey(route);
+
+      const aduanaStart = firstHistoryTime(rows, row =>
+        row.fonte === "aduana" &&
+        (
+          normalizeBaseStatus(row.status) === "Em aduana" ||
+          /andamento|aduana/i.test(normalize(row.estadoAduana)) ||
+          normalize(row.repLog) ||
+          normalize(row.auditTime)
+        )
+      );
+
+      let aduanaEnd = firstHistoryTime(rows, row =>
+        row.fonte === "aduana" && /conclu|finaliz|encerr/i.test(normalize(row.estadoAduana))
+      );
+      if (!aduanaEnd && aduanaStart) {
+        aduanaEnd = firstHistoryTime(rows, row =>
+          new Date(row.atualizadoEm || 0) > new Date(aduanaStart) &&
+          row.fonte === "operacional" &&
+          ["Guardando", "Expedida"].includes(normalizeBaseStatus(row.processo || row.status))
+        );
+      }
+
+      const historyLoadStart = firstHistoryTime(rows, row =>
+        row.fonte === "operacional" && normalizeBaseStatus(row.processo || row.status) === "Guardando"
+      );
+      const loadingStart = Number(data.carregamentoInicio?.[key] || 0) || (historyLoadStart ? new Date(historyLoadStart).getTime() : 0);
+
+      const historyLoadEnd = firstHistoryTime(rows, row =>
+        row.fonte === "operacional" && normalizeBaseStatus(row.processo || row.status) === "Expedida"
+      );
+      const loadingEnd = Number(data.carregamentoFim?.[key] || 0) || (historyLoadEnd ? new Date(historyLoadEnd).getTime() : 0);
+
+      // A Base atual registra "Expedida" como ocorrência final.
+      // Se não houver um evento separado de início/fim de expedição, mostramos o que é realmente conhecido.
+      const expeditionEnd = historyLoadEnd ? new Date(historyLoadEnd).getTime() : 0;
+      const expeditionStart = firstHistoryTime(rows, row =>
+        row.fonte === "operacional" &&
+        /expedi[cç][aã]o inici|iniciando expedi/i.test(plainText(row.processo || row.status))
+      );
+      const expeditionStartMs = expeditionStart ? new Date(expeditionStart).getTime() : 0;
+
+      return {
+        aduanaStart: aduanaStart ? new Date(aduanaStart).getTime() : 0,
+        aduanaEnd: aduanaEnd ? new Date(aduanaEnd).getTime() : 0,
+        loadingStart,
+        loadingEnd,
+        expeditionStart: expeditionStartMs,
+        expeditionEnd
+      };
+    }
+
+    function routeHistoryPhase(title, start, end) {
+      return `
+        <article class="route-history-phase">
+          <h4>${escapeHtml(title)}</h4>
+          <div class="route-history-phase-body">
+            <div><span>Início</span><strong>${escapeHtml(start ? formatHistoryDate(start) : "--")}</strong></div>
+            <div><span>Término</span><strong>${escapeHtml(end ? formatHistoryDate(end) : "--")}</strong></div>
+          </div>
+        </article>
+      `;
+    }
+
+    function allHistoryRoutes() {
+      const routes = new Map();
+      (data.extracao || []).forEach(row => {
+        const key = routeKey(row.rota);
+        if (key) routes.set(key, row.rota);
+      });
+      (data.baseHistorico || []).forEach(row => {
+        const key = routeKey(row.rota);
+        if (key && !routes.has(key)) routes.set(key, row.rota);
+      });
+      return Array.from(routes.values()).sort((a, b) => a.localeCompare(b, "pt-BR", { numeric: true }));
+    }
+
+    function populateRouteHistorySelect(selectedRoute = "") {
+      const select = document.getElementById("routeHistorySelect");
+      if (!select) return;
+      const routes = allHistoryRoutes();
+      const selectedKey = routeKey(selectedRoute);
+      select.innerHTML = routes.map(route =>
+        `<option value="${escapeHtml(route)}" ${routeKey(route) === selectedKey ? "selected" : ""}>${escapeHtml(route)}</option>`
+      ).join("");
+    }
+
+    function renderRouteHistory(route) {
+      const key = routeKey(route);
+      if (!key) return;
+      const details = routeCurrentDetails(route);
+      const rows = routeHistoryRows(route);
+      const lifecycle = routeLifecycleTimes(route, rows);
+
+      document.getElementById("routeHistoryTitle").textContent = details.rota || route;
+      populateRouteHistorySelect(details.rota || route);
+
+      const packages = details.pacotes || details.spr || "--";
+      document.getElementById("routeHistorySummary").innerHTML = [
+        ["Rota", details.rota || route],
+        ["Doca", details.doca || "--"],
+        ["Motorista", details.motorista || "--"],
+        ["Rep / Log", routePersonName(details) || "--"],
+        ["Transportadora", details.transportadora || "--"],
+        ["Placa", details.placa || "--"],
+        ["Pacotes / SPR", packages],
+        ["Corretas", details.aduanaBipadas || "--"],
+        ["Processo atual", details.processo || normalizeBaseStatus(details.status) || "--"],
+        ["Tempo processo", details.tempoProcesso || "--"],
+        ["Tempo total", details.tempoTotal || "--"],
+        ["Tempo auditoria", details.auditTime || "--"]
+      ].map(([label, value]) => `
+        <div class="route-history-kpi">
+          <span>${escapeHtml(label)}</span>
+          <strong title="${escapeHtml(value)}">${escapeHtml(value)}</strong>
+        </div>
+      `).join("");
+
+      document.getElementById("routeHistoryPhases").innerHTML = [
+        routeHistoryPhase("Aduana", lifecycle.aduanaStart, lifecycle.aduanaEnd),
+        routeHistoryPhase("Carregamento", lifecycle.loadingStart, lifecycle.loadingEnd),
+        routeHistoryPhase("Expedição", lifecycle.expeditionStart, lifecycle.expeditionEnd)
+      ].join("");
+
+      document.getElementById("routeHistoryEventCount").textContent =
+        `${rows.length} ${rows.length === 1 ? "registro" : "registros"}`;
+
+      const tbody = document.getElementById("routeHistoryTableBody");
+      tbody.innerHTML = rows.length ? rows.slice().reverse().map(row => `
+        <tr>
+          <td>${escapeHtml(formatHistoryDate(row.atualizadoEm))}</td>
+          <td>${escapeHtml(row.fonte === "aduana" ? "Aduana" : "Operacional")}</td>
+          <td>${escapeHtml(historyStatus(row))}</td>
+          <td>${escapeHtml(row.tempoProcesso || "--")}</td>
+          <td>${escapeHtml(row.tempoTotal || "--")}</td>
+          <td>${escapeHtml(routePersonName(row) || "--")}</td>
+          <td>${escapeHtml(row.motorista || "--")}</td>
+          <td>${escapeHtml(row.transportadora || "--")}</td>
+          <td>${escapeHtml(row.doca || details.doca || "--")}</td>
+          <td>${escapeHtml(row.pacotes || row.spr || "--")}</td>
+        </tr>
+      `).join("") : `<tr><td colspan="10" class="route-history-empty">Ainda não existem atualizações históricas registradas para esta rota.</td></tr>`;
+    }
+
+    function openRouteHistory(route = "") {
+      const routes = allHistoryRoutes();
+      const selected = route || routes[0] || "";
+      if (!selected) {
+        alert("Ainda não há rotas cadastradas para consulta.");
+        return;
+      }
+      const modal = document.getElementById("routeHistoryModal");
+      modal.classList.add("open");
+      modal.setAttribute("aria-hidden", "false");
+      document.body.style.overflow = "hidden";
+      renderRouteHistory(selected);
+    }
+
+    function closeRouteHistory() {
+      const modal = document.getElementById("routeHistoryModal");
+      modal.classList.remove("open");
+      modal.setAttribute("aria-hidden", "true");
+      document.body.style.overflow = "";
+    }
+
+
     function renderPdfWaveOptions() {
       const box = document.getElementById("pdfWaveOptions");
       if (!box) return;
@@ -6227,6 +6812,39 @@
       saveData();
       render();
     });
+
+    document.getElementById("routeHistoryBtn")?.addEventListener("click", () => openRouteHistory());
+    document.getElementById("closeRouteHistoryBtn")?.addEventListener("click", closeRouteHistory);
+    document.querySelector("[data-close-route-history]")?.addEventListener("click", closeRouteHistory);
+    document.getElementById("routeHistorySelect")?.addEventListener("change", event => {
+      if (event.target.value) renderRouteHistory(event.target.value);
+    });
+    document.getElementById("routeHistorySearch")?.addEventListener("input", event => {
+      const query = plainText(event.target.value);
+      if (!query) return;
+      const route = allHistoryRoutes().find(item => plainText(item).includes(query));
+      if (route) renderRouteHistory(route);
+    });
+    document.getElementById("dockGrid")?.addEventListener("click", event => {
+      const card = event.target.closest(".slot[data-route-key]");
+      if (!card) return;
+      const route = allHistoryRoutes().find(item => routeKey(item) === card.dataset.routeKey);
+      if (route) openRouteHistory(route);
+    });
+    document.getElementById("dockGrid")?.addEventListener("keydown", event => {
+      if (!["Enter", " "].includes(event.key)) return;
+      const card = event.target.closest(".slot[data-route-key]");
+      if (!card) return;
+      event.preventDefault();
+      const route = allHistoryRoutes().find(item => routeKey(item) === card.dataset.routeKey);
+      if (route) openRouteHistory(route);
+    });
+    document.addEventListener("keydown", event => {
+      if (event.key === "Escape" && document.getElementById("routeHistoryModal")?.classList.contains("open")) {
+        closeRouteHistory();
+      }
+    });
+
     document.getElementById("metricEditBtn").addEventListener("click", openDrawer);
     document.getElementById("closeBtn").addEventListener("click", () => {
       document.getElementById("drawer").classList.remove("open");
