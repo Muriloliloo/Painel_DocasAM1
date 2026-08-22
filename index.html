@@ -4069,6 +4069,183 @@
       }
     }
 
+  
+    /* Opções extras do exportador PDF */
+    .pdf-extra-options {
+      display: grid;
+      gap: 8px;
+      margin-top: 2px;
+    }
+
+    .pdf-option {
+      display: grid;
+      grid-template-columns: 22px minmax(0, 1fr);
+      align-items: start;
+      gap: 9px;
+      padding: 10px 11px;
+      border: 1px solid #cedae5;
+      border-radius: 7px;
+      background: #f8fbfe;
+      cursor: pointer;
+    }
+
+    .pdf-option input {
+      width: 18px;
+      height: 18px;
+      margin: 1px 0 0;
+      accent-color: #0b5fa5;
+      cursor: pointer;
+    }
+
+    .pdf-option span {
+      display: grid;
+      gap: 3px;
+      min-width: 0;
+    }
+
+    .pdf-option b {
+      color: #062642;
+      font: 900 12px/1.05 "Segoe UI", Arial, sans-serif;
+      text-transform: uppercase;
+    }
+
+    .pdf-option small {
+      color: #637a8e;
+      font: 700 10px/1.25 "Segoe UI", Arial, sans-serif;
+    }
+
+    .pdf-hybrid-section {
+      margin-top: 4mm;
+      border: 1px solid #e6b400;
+      border-radius: 5px;
+      overflow: hidden;
+      break-inside: avoid;
+      page-break-inside: avoid;
+    }
+
+    .pdf-hybrid-section h4 {
+      margin: 0;
+      padding: 5px 8px;
+      background: #ffd200;
+      color: #062642;
+      font: 950 11px/1 "Segoe UI", Arial, sans-serif;
+      text-transform: uppercase;
+    }
+
+    .pdf-hybrid-badge {
+      display: inline-block;
+      padding: 2px 6px;
+      border-radius: 999px;
+      background: #fff0a6;
+      color: #674d00;
+      font-size: 9px;
+      font-weight: 950;
+      white-space: nowrap;
+    }
+
+    /* O próprio exportador ganha uma prévia escura quando a opção é marcada */
+    .pdf-drawer.dark-preview {
+      background: #0e1b28;
+      border-color: #29465f;
+      color: #f4f8fc;
+    }
+
+    .pdf-drawer.dark-preview .pdf-body {
+      color: #f4f8fc;
+    }
+
+    .pdf-drawer.dark-preview .pdf-option,
+    .pdf-drawer.dark-preview .pdf-range label,
+    .pdf-drawer.dark-preview .pdf-waves label {
+      background: #13283a;
+      border-color: #35536b;
+      color: #f4f8fc;
+    }
+
+    .pdf-drawer.dark-preview .pdf-option b {
+      color: #fff;
+    }
+
+    .pdf-drawer.dark-preview .pdf-option small {
+      color: #a9c0d1;
+    }
+
+    .pdf-drawer.dark-preview input {
+      background: #091522;
+      color: #fff;
+      border-color: #3a5c75;
+    }
+
+    @media print {
+      body.print-dark-mode,
+      body.print-dark-mode .app,
+      body.print-dark-mode .print-table-wrap {
+        background: #08131e !important;
+        color: #f3f7fb !important;
+      }
+
+      body.print-dark-mode .topbar {
+        background: #0b2032 !important;
+        border-color: #27455c !important;
+      }
+
+      body.print-dark-mode h1 {
+        color: #ffd200 !important;
+      }
+
+      body.print-dark-mode .print-wave h3 {
+        color: #ffd200 !important;
+      }
+
+      body.print-dark-mode .print-table,
+      body.print-dark-mode .print-final-summary table,
+      body.print-dark-mode .print-mini-table table {
+        background: #0d1c29 !important;
+        color: #f5f8fb !important;
+      }
+
+      body.print-dark-mode .print-table th,
+      body.print-dark-mode .print-final-summary th,
+      body.print-dark-mode .print-mini-table th {
+        background: #17334a !important;
+        color: #fff !important;
+        border-color: #36566d !important;
+      }
+
+      body.print-dark-mode .print-table td,
+      body.print-dark-mode .print-final-summary td,
+      body.print-dark-mode .print-mini-table td {
+        background: #0d1c29 !important;
+        color: #f5f8fb !important;
+        border-color: #29475e !important;
+      }
+
+      body.print-dark-mode .print-table .wave-cell {
+        background: #5f4610 !important;
+        color: #ffe16a !important;
+      }
+
+      body.print-dark-mode .print-reason-summary,
+      body.print-dark-mode .print-impact-panel,
+      body.print-dark-mode .print-final-summary,
+      body.print-dark-mode .print-closure-message,
+      body.print-dark-mode .pdf-hybrid-section {
+        border-color: #35556d !important;
+        background: #0d1c29 !important;
+        color: #fff !important;
+      }
+
+      body.print-dark-mode .pdf-hybrid-section h4 {
+        background: #ffd200 !important;
+        color: #071826 !important;
+      }
+
+      body.print-dark-mode .pdf-hybrid-badge {
+        background: #5b4812 !important;
+        color: #ffe16a !important;
+      }
+    }
+
   </style>
 </head>
 <body>
@@ -4321,6 +4498,24 @@
       <div class="pdf-range">
         <label>De <input id="pdfDockStart" type="number" min="1" max="92" placeholder="1"></label>
         <label>Até <input id="pdfDockEnd" type="number" min="1" max="92" placeholder="92"></label>
+      </div>
+
+      <strong>Opções do PDF</strong>
+      <div class="pdf-extra-options">
+        <label class="pdf-option">
+          <input id="pdfIncludeHybrid" type="checkbox" checked>
+          <span>
+            <b>Incluir rotas híbridas</b>
+            <small>Busca automaticamente na Extração das ondas selecionadas.</small>
+          </span>
+        </label>
+        <label class="pdf-option">
+          <input id="pdfDarkMode" type="checkbox">
+          <span>
+            <b>Modo escuro</b>
+            <small>Gera o relatório com fundo escuro e contraste para leitura.</small>
+          </span>
+        </label>
       </div>
     </div>
     <div class="pdf-actions">
@@ -6099,6 +6294,83 @@
       return true;
     }
 
+
+    function isHybridRoute(row = {}) {
+      const values = [
+        row.tipoRota,
+        row.tipoVeiculo,
+        row.tipoArea,
+        row.transportadora,
+        row.rotaOriginal,
+        row.cluster
+      ].map(value => plainText(value || "")).join(" ");
+      return /hibrid/.test(values);
+    }
+
+    function selectedHybridRows(wave, start = 0, end = 0) {
+      const seen = new Set();
+      return (data.extracao || [])
+        .filter(row => waveLabel(row.onda) === waveLabel(wave))
+        .filter(isHybridRoute)
+        .filter(row => {
+          // Quando a híbrida tem doca, respeita o intervalo selecionado.
+          // Sem doca, continua entrando porque é uma rota híbrida planejada da onda.
+          const dock = Number(String(row.doca || "").replace(/\D/g, ""));
+          if (!dock) return true;
+          if (start && dock < start) return false;
+          if (end && dock > end) return false;
+          return true;
+        })
+        .filter(row => {
+          const key = routeKey(row.rota);
+          if (!key || seen.has(key)) return false;
+          seen.add(key);
+          return true;
+        })
+        .slice()
+        .sort((a, b) => Number(a.doca || 999) - Number(b.doca || 999) || String(a.rota).localeCompare(String(b.rota), "pt-BR"));
+    }
+
+    function renderHybridPrintSection(wave, start, end) {
+      if (!document.getElementById("pdfIncludeHybrid")?.checked) return "";
+      const hybridRows = selectedHybridRows(wave, start, end);
+      if (!hybridRows.length) return "";
+
+      return `
+        <div class="pdf-hybrid-section">
+          <h4>Rotas híbridas da ${escapeHtml(displayWave(wave))}</h4>
+          <table class="print-table">
+            <thead>
+              <tr>
+                <th>Onda</th>
+                <th>Doca</th>
+                <th>Rota</th>
+                <th>Transportadora</th>
+                <th>Tipo</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${hybridRows.map(row => `
+                <tr>
+                  <td class="wave-cell">${escapeHtml(waveLabel(row.onda))}</td>
+                  <td>${escapeHtml(row.doca || "--")}</td>
+                  <td>${escapeHtml(row.rota || "")}</td>
+                  <td>${escapeHtml(cleanTransportadora(row.transportadora) || "")}</td>
+                  <td><span class="pdf-hybrid-badge">HÍBRIDA</span></td>
+                </tr>
+              `).join("")}
+            </tbody>
+          </table>
+        </div>
+      `;
+    }
+
+    function applyPdfThemePreview() {
+      const dark = Boolean(document.getElementById("pdfDarkMode")?.checked);
+      document.getElementById("pdfDrawer")?.classList.toggle("dark-preview", dark);
+    }
+
+
     function selectedPrintWaves() {
       const checked = Array.from(document.querySelectorAll("[data-pdf-wave]:checked")).map(input => input.value);
       return checked.length ? checked : data.ondas || [];
@@ -6333,6 +6605,7 @@
                   : `<tr><td colspan="4">Sem rotas cadastradas nesta onda.</td></tr>`}
               </tbody>
             </table>
+            ${renderHybridPrintSection(wave, start, end)}
           </section>
         `;
       }).join("");
@@ -6646,6 +6919,7 @@
     function openPdfDrawer() {
       renderPdfWaveOptions();
       document.getElementById("pdfDrawer").classList.add("open");
+      applyPdfThemePreview();
     }
 
     async function resolveUserRole(user) {
@@ -6854,11 +7128,15 @@
     document.getElementById("closePdfBtn").addEventListener("click", () => {
       document.getElementById("pdfDrawer").classList.remove("open");
     });
+    document.getElementById("pdfDarkMode")?.addEventListener("change", applyPdfThemePreview);
     document.querySelectorAll("[data-print-type]").forEach(button => {
       button.addEventListener("click", () => {
+        const darkPdf = Boolean(document.getElementById("pdfDarkMode")?.checked);
+        document.body.classList.toggle("print-dark-mode", darkPdf);
         renderPrintTable(button.dataset.printType, selectedPrintWaves(), printDockRange());
         document.getElementById("pdfDrawer").classList.remove("open");
         window.print();
+        setTimeout(() => document.body.classList.remove("print-dark-mode"), 250);
       });
     });
     document.querySelectorAll("[data-view]").forEach(button => {
