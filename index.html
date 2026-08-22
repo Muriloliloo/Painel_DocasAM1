@@ -3783,8 +3783,12 @@
         <textarea id="extracaoPaste" spellcheck="false"></textarea>
       </div>
       <div class="paste-box base">
-        <label for="basePaste">Base (colar do Excel)</label>
+        <label for="basePaste">Base operacional (colar do Excel)</label>
         <textarea id="basePaste" spellcheck="false"></textarea>
+      </div>
+      <div class="paste-box base">
+        <label for="aduanaPaste">Base aduana (colar do Excel)</label>
+        <textarea id="aduanaPaste" spellcheck="false"></textarea>
       </div>
     </section>
     <div class="drawer-actions">
@@ -3860,6 +3864,10 @@
     originalData.horarios = { ...(originalData.horarios || {}), ...horariosOficiais };
     data.horarios = { ...(data.horarios || {}), ...(originalData.horarios || {}), ...horariosOficiais };
     data.justificativas = data.justificativas || {};
+    // Bloco 2: bases separadas, mantendo data.base como visão consolidada compatível.
+    data.baseOperacional = Array.isArray(data.baseOperacional) ? data.baseOperacional : (Array.isArray(data.base) ? data.base : []);
+    data.baseAduana = Array.isArray(data.baseAduana) ? data.baseAduana : [];
+    data.baseHistorico = Array.isArray(data.baseHistorico) ? data.baseHistorico : [];
     data.carregamentoInicio = data.carregamentoInicio || {};
     data.carregamentoFim = data.carregamentoFim || {};
     data.modoTesteCronometro = Boolean(data.modoTesteCronometro);
@@ -4527,6 +4535,58 @@
         });
       });
       return Array.from(byRoute.values());
+    }
+
+    function mergeLatestBaseRows(currentRows = [], incomingRows = []) {
+      const byRoute = new Map();
+      currentRows.forEach(row => {
+        const key = routeKey(row.rota);
+        if (key) byRoute.set(key, { ...row });
+      });
+      incomingRows.forEach(row => {
+        const key = routeKey(row.rota);
+        if (!key) return;
+        const previous = byRoute.get(key) || {};
+        // A ocorrência mais nova vence nos campos informados; campos ausentes são preservados.
+        const merged = { ...previous };
+        Object.entries(row).forEach(([field, value]) => {
+          if (normalize(value) !== "") merged[field] = value;
+        });
+        merged.rota = row.rota || previous.rota || "";
+        byRoute.set(key, merged);
+      });
+      return Array.from(byRoute.values());
+    }
+
+    function plannedRouteKeys(extractionRows = data.extracao || []) {
+      return new Set((extractionRows || []).map(row => routeKey(row.rota)).filter(Boolean));
+    }
+
+    function onlyPlannedBaseRows(rows = [], extractionRows = data.extracao || []) {
+      const planned = plannedRouteKeys(extractionRows);
+      return uniqueBaseRows(rows).filter(row => planned.has(routeKey(row.rota)));
+    }
+
+    function isAduanaDetailRow(row = {}) {
+      return normalizeBaseStatus(row.status) === "Em aduana"
+        || Boolean(normalize(row.repLog) || normalize(row.motorista) || normalize(row.auditTime)
+          || normalize(row.aduanaUnidades) || normalize(row.aduanaBipadas));
+    }
+
+    function rebuildConsolidatedBase(extractionRows = data.extracao || []) {
+      data.baseOperacional = onlyPlannedBaseRows(data.baseOperacional || [], extractionRows);
+      data.baseAduana = onlyPlannedBaseRows(data.baseAduana || [], extractionRows);
+      data.base = mergeLatestBaseRows(data.baseOperacional, data.baseAduana);
+      data.base = onlyPlannedBaseRows(data.base, extractionRows);
+      return data.base;
+    }
+
+    function appendBaseHistory(source, rows = []) {
+      const stamp = new Date().toISOString();
+      data.baseHistorico = Array.isArray(data.baseHistorico) ? data.baseHistorico : [];
+      rows.forEach(row => data.baseHistorico.push({ ...row, fonte: source, atualizadoEm: stamp }));
+      // Proteção simples para o localStorage/Firestore não crescer indefinidamente.
+      if (data.baseHistorico.length > 5000) data.baseHistorico = data.baseHistorico.slice(-5000);
     }
 
     function loadedKeys() {
@@ -5769,8 +5829,10 @@
       document.getElementById("totalRotasInput").value = data.totalRotas || data.extracao.length || "";
       document.getElementById("dataInput").value = data.data || "";
       document.getElementById("extracaoPaste").value = toPaste(data.extracao);
-      document.getElementById("basePaste").value = toBasePaste(data.base);
-      document.getElementById("basePaste").placeholder = "Cole as rotas da Base com status. Expedida fica verde; Aduana fica laranja; Carregando/Guardando fica azul.";
+      document.getElementById("basePaste").value = toBasePaste(data.baseOperacional || data.base || []);
+      document.getElementById("basePaste").placeholder = "Cole a atualização operacional. As rotas precisam existir na Extração.";
+      document.getElementById("aduanaPaste").value = toBasePaste(data.baseAduana || []);
+      document.getElementById("aduanaPaste").placeholder = "Cole a atualização da Aduana. A ocorrência mais recente completa/atualiza a rota.";
       document.getElementById("drawer").classList.add("open");
     }
 
@@ -5804,6 +5866,10 @@
       data.horarios = { ...(data.horarios || {}), ...(originalData.horarios || {}), ...horariosOficiais };
       data.justificativas = data.justificativas || {};
       normalizeJustificationStore();
+      data.baseOperacional = Array.isArray(data.baseOperacional) ? data.baseOperacional : (Array.isArray(data.base) ? data.base : []);
+      data.baseAduana = Array.isArray(data.baseAduana) ? data.baseAduana : [];
+      data.baseHistorico = Array.isArray(data.baseHistorico) ? data.baseHistorico : [];
+      rebuildConsolidatedBase(data.extracao || []);
       data.carregamentoInicio = data.carregamentoInicio || {};
       data.carregamentoFim = data.carregamentoFim || {};
       data.ciclosExtras = { ...(originalData.ciclosExtras || {}), ...(data.ciclosExtras || {}) };
@@ -5977,18 +6043,41 @@
     });
     document.getElementById("applyBtn").addEventListener("click", () => {
       if (!requireAdminAction()) return;
-      const nextExtracao = parsePaste(document.getElementById("extracaoPaste").value);
-      const nextBase = parseBasePaste(document.getElementById("basePaste").value);
-      syncLoadingStarts(nextBase);
+      const extractionText = document.getElementById("extracaoPaste").value;
+      const operationalText = document.getElementById("basePaste").value;
+      const aduanaText = document.getElementById("aduanaPaste").value;
+      const nextExtracao = parsePaste(extractionText);
+
+      // A Base nunca cria rota. Sem planejamento válido na Extração, nenhuma Base é aplicada.
+      if (!nextExtracao.length && (normalize(operationalText) || normalize(aduanaText))) {
+        alert("A Base depende da Extração. Cole/aplique primeiro um planejamento válido na Extração.");
+        return;
+      }
+
+      const incomingOperational = parseBasePaste(operationalText);
+      const incomingAduana = parseBasePaste(aduanaText).filter(isAduanaDetailRow);
+      const planned = plannedRouteKeys(nextExtracao);
+      const validOperational = incomingOperational.filter(row => planned.has(routeKey(row.rota)));
+      const validAduana = incomingAduana.filter(row => planned.has(routeKey(row.rota)));
+
+      data.baseOperacional = mergeLatestBaseRows(data.baseOperacional || data.base || [], validOperational);
+      data.baseAduana = mergeLatestBaseRows(data.baseAduana || [], validAduana);
+      appendBaseHistory("operacional", validOperational);
+      appendBaseHistory("aduana", validAduana);
+
       data = {
         ...data,
         totalRotas: normalize(document.getElementById("totalRotasInput").value),
         data: normalize(document.getElementById("dataInput").value),
         extracao: nextExtracao,
-        base: nextBase,
+        baseOperacional: data.baseOperacional,
+        baseAduana: data.baseAduana,
+        baseHistorico: data.baseHistorico,
         carregamentoInicio: data.carregamentoInicio,
         carregamentoFim: data.carregamentoFim
       };
+      rebuildConsolidatedBase(nextExtracao);
+      syncLoadingStarts(data.base);
       const waves = Array.from(new Set(nextExtracao.map(row => waveLabel(row.onda)).filter(wave => allowedWaves.includes(wave))));
       data.ondas = sanitizeWaves([...(originalData.ondas || []), ...waves]);
       currentWave = data.ondas.some(wave => waveLabel(wave) === waveLabel(currentWave)) ? currentWave : data.ondas[0];
