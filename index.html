@@ -4246,6 +4246,456 @@
       }
     }
 
+  
+    /* =========================================================
+       CORREÇÃO DE IMPRESSÃO PDF
+       - remove interface lateral/superior
+       - usa 100% da largura útil da página
+       - evita corte horizontal
+       ========================================================= */
+    @media print {
+      @page {
+        size: A4 landscape;
+        margin: 6mm;
+      }
+
+      html,
+      body {
+        width: 100% !important;
+        min-width: 0 !important;
+        height: auto !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        overflow: visible !important;
+        background: #fff !important;
+      }
+
+      .app {
+        width: 100% !important;
+        min-width: 0 !important;
+        max-width: none !important;
+        height: auto !important;
+        min-height: 0 !important;
+        display: block !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        border: 0 !important;
+        border-radius: 0 !important;
+        box-shadow: none !important;
+        overflow: visible !important;
+        background: transparent !important;
+      }
+
+      /* Esconde totalmente a interface do painel */
+      .topbar,
+      .toolbar,
+      .view-switch,
+      .stats,
+      .dock-grid,
+      .legend,
+      .footer-strip,
+      .rail,
+      .side-rail,
+      .left-rail,
+      nav,
+      aside,
+      .drawer,
+      .pdf-drawer,
+      .route-history-modal,
+      .final-countdown-alert,
+      .actions,
+      #drawer,
+      #pdfDrawer,
+      #routeHistoryModal {
+        display: none !important;
+        visibility: hidden !important;
+      }
+
+      /* Apenas conteúdo destinado à impressão */
+      .print-table-wrap,
+      #printTableWrap,
+      .print-content,
+      #printContent {
+        display: block !important;
+        width: 100% !important;
+        max-width: none !important;
+        min-width: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        overflow: visible !important;
+        position: static !important;
+      }
+
+      .print-wave {
+        width: 100% !important;
+        max-width: none !important;
+        margin: 0 0 5mm !important;
+        break-inside: avoid-page;
+        page-break-inside: avoid;
+      }
+
+      .print-wave h3 {
+        margin: 0 0 2mm !important;
+        padding: 0 !important;
+        font-size: 13pt !important;
+        line-height: 1.1 !important;
+      }
+
+      .print-table {
+        width: 100% !important;
+        table-layout: fixed !important;
+        border-collapse: collapse !important;
+        font-size: 8.5pt !important;
+      }
+
+      .print-table th,
+      .print-table td {
+        padding: 2.2mm 1.5mm !important;
+        overflow-wrap: anywhere !important;
+        word-break: break-word !important;
+        white-space: normal !important;
+      }
+
+      /* Larguras equilibradas para não cortar */
+      .print-table th:nth-child(1),
+      .print-table td:nth-child(1) {
+        width: 14% !important;
+      }
+
+      .print-table th:nth-child(2),
+      .print-table td:nth-child(2) {
+        width: 11% !important;
+      }
+
+      .print-table th:nth-child(3),
+      .print-table td:nth-child(3) {
+        width: 24% !important;
+      }
+
+      .print-table th:nth-child(4),
+      .print-table td:nth-child(4) {
+        width: 36% !important;
+      }
+
+      .print-table th:nth-child(5),
+      .print-table td:nth-child(5) {
+        width: 15% !important;
+      }
+
+      .pdf-hybrid-section {
+        width: 100% !important;
+        max-width: none !important;
+        margin: 4mm 0 0 !important;
+        break-inside: avoid-page !important;
+        page-break-inside: avoid !important;
+      }
+
+      .pdf-hybrid-section .print-table {
+        width: 100% !important;
+      }
+
+      /* Evita qualquer herança de largura da área de trabalho */
+      .editor-open .stats,
+      .editor-open .dock-grid,
+      .docas-mode .stats,
+      .docas-mode .dock-grid {
+        width: auto !important;
+      }
+    }
+
+  
+    /* =========================================================
+       MODO ESCURO GLOBAL — TODAS AS PÁGINAS, ABAS E MODAIS
+       ========================================================= */
+    .global-theme-toggle {
+      position: fixed;
+      right: 14px;
+      bottom: 38px;
+      z-index: 4500;
+      height: 38px;
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 0 12px;
+      border: 1px solid #31536d;
+      border-radius: 9px;
+      background: #062f4e;
+      color: #fff;
+      box-shadow: 0 5px 16px rgba(0, 20, 38, .2);
+      font: 900 11px/1 "Segoe UI", Arial, sans-serif;
+      cursor: pointer;
+    }
+
+    .global-theme-toggle:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 7px 18px rgba(0, 20, 38, .27);
+    }
+
+    .global-theme-toggle span:first-child {
+      font-size: 18px;
+      line-height: 1;
+    }
+
+    body.dark-mode {
+      color-scheme: dark;
+      background: #07111b !important;
+      color: #edf5fb !important;
+    }
+
+    body.dark-mode .app,
+    body.dark-mode main,
+    body.dark-mode .main,
+    body.dark-mode .content,
+    body.dark-mode .page,
+    body.dark-mode .workspace,
+    body.dark-mode .docas-mode {
+      background: #091722 !important;
+      color: #edf5fb !important;
+    }
+
+    body.dark-mode .topbar,
+    body.dark-mode .toolbar,
+    body.dark-mode .rail,
+    body.dark-mode .side-rail,
+    body.dark-mode .left-rail,
+    body.dark-mode nav {
+      background: #041c2d !important;
+      color: #fff !important;
+      border-color: #29475e !important;
+    }
+
+    body.dark-mode .toolbar button,
+    body.dark-mode .topbar button,
+    body.dark-mode .view-switch button,
+    body.dark-mode .rail button,
+    body.dark-mode nav button {
+      color: #f1f7fb !important;
+      border-color: #35546a !important;
+    }
+
+    body.dark-mode .toolbar button.active,
+    body.dark-mode .view-switch button.active,
+    body.dark-mode nav button.active {
+      background: #0c3b5d !important;
+      color: #fff !important;
+      border-color: #6b91ad !important;
+    }
+
+    body.dark-mode .stats,
+    body.dark-mode .stat,
+    body.dark-mode .stats > *,
+    body.dark-mode .panel,
+    body.dark-mode .card,
+    body.dark-mode .section-card,
+    body.dark-mode .summary-card {
+      background: #102230 !important;
+      color: #f2f7fb !important;
+      border-color: #304b60 !important;
+      box-shadow: 0 4px 13px rgba(0,0,0,.2) !important;
+    }
+
+    body.dark-mode .stats strong,
+    body.dark-mode .stats b,
+    body.dark-mode .stats span,
+    body.dark-mode .stats label {
+      color: inherit;
+    }
+
+    body.dark-mode .dock-grid {
+      background: #091722 !important;
+    }
+
+    body.dark-mode .slot,
+    body.dark-mode .doca-card {
+      background: #132735 !important;
+      color: #f5f8fb !important;
+      border-color: #36546a !important;
+      box-shadow: 0 3px 9px rgba(0,0,0,.2) !important;
+    }
+
+    body.dark-mode .slot *,
+    body.dark-mode .doca-card * {
+      text-shadow: none;
+    }
+
+    body.dark-mode .slot.dock-free,
+    body.dark-mode .slot.free {
+      background: #172a38 !important;
+      color: #b9cbd8 !important;
+    }
+
+    /* Mantém as cores operacionais reconhecíveis no escuro */
+    body.dark-mode .slot.expedida,
+    body.dark-mode .slot.status-expedida {
+      border-top-color: #14a96b !important;
+    }
+
+    body.dark-mode .slot.pendente,
+    body.dark-mode .slot.status-pendente {
+      border-top-color: #ff334d !important;
+    }
+
+    body.dark-mode .slot.aduana,
+    body.dark-mode .slot.status-aduana {
+      border-top-color: #ff981a !important;
+    }
+
+    body.dark-mode .slot.guardando,
+    body.dark-mode .slot.status-guardando {
+      border-top-color: #3287df !important;
+    }
+
+    body.dark-mode table,
+    body.dark-mode thead,
+    body.dark-mode tbody,
+    body.dark-mode tr {
+      color: #edf5fb;
+      border-color: #344e62 !important;
+    }
+
+    body.dark-mode table {
+      background: #10212e !important;
+    }
+
+    body.dark-mode th {
+      background: #17334a !important;
+      color: #fff !important;
+      border-color: #3c5a70 !important;
+    }
+
+    body.dark-mode td {
+      background: #10212e !important;
+      color: #edf5fb !important;
+      border-color: #304a5e !important;
+    }
+
+    body.dark-mode tbody tr:hover td {
+      background: #173043 !important;
+    }
+
+    body.dark-mode input,
+    body.dark-mode select,
+    body.dark-mode textarea {
+      background: #081824 !important;
+      color: #f3f7fa !important;
+      border-color: #3c5c73 !important;
+    }
+
+    body.dark-mode input::placeholder,
+    body.dark-mode textarea::placeholder {
+      color: #8299aa !important;
+    }
+
+    body.dark-mode .drawer,
+    body.dark-mode .drawer-panel,
+    body.dark-mode .editor-drawer,
+    body.dark-mode .pdf-drawer,
+    body.dark-mode .modal,
+    body.dark-mode .modal-card,
+    body.dark-mode .login-modal,
+    body.dark-mode .route-history-panel {
+      background: #0d1d29 !important;
+      color: #f3f7fb !important;
+      border-color: #36546a !important;
+    }
+
+    body.dark-mode .drawer-header,
+    body.dark-mode .modal-header,
+    body.dark-mode .route-history-header {
+      background: #063354 !important;
+      color: #fff !important;
+      border-color: #ffd200 !important;
+    }
+
+    body.dark-mode .drawer-body,
+    body.dark-mode .modal-body,
+    body.dark-mode .route-history-content,
+    body.dark-mode .route-history-tools,
+    body.dark-mode .route-history-summary,
+    body.dark-mode .route-history-timeline,
+    body.dark-mode .route-history-events {
+      background: #0d1d29 !important;
+      color: #f3f7fb !important;
+      border-color: #314d61 !important;
+    }
+
+    body.dark-mode .route-history-kpi,
+    body.dark-mode .route-history-phase,
+    body.dark-mode .route-history-phase-body {
+      background: #132735 !important;
+      color: #fff !important;
+      border-color: #345268 !important;
+    }
+
+    body.dark-mode .route-history-phase h4 {
+      background: #17354a !important;
+      color: #ffd200 !important;
+      border-color: #345268 !important;
+    }
+
+    body.dark-mode .route-history-kpi span,
+    body.dark-mode .route-history-phase-body span,
+    body.dark-mode .pdf-option small {
+      color: #a9bdcb !important;
+    }
+
+    body.dark-mode .route-history-kpi strong,
+    body.dark-mode .route-history-phase-body strong {
+      color: #fff !important;
+    }
+
+    body.dark-mode .pdf-option,
+    body.dark-mode .pdf-range label,
+    body.dark-mode .pdf-waves label {
+      background: #132735 !important;
+      color: #fff !important;
+      border-color: #36546a !important;
+    }
+
+    body.dark-mode .pdf-option b {
+      color: #fff !important;
+    }
+
+    body.dark-mode .justification-view,
+    body.dark-mode .closing-view,
+    body.dark-mode .report-view,
+    body.dark-mode .history-view,
+    body.dark-mode .alerts-view,
+    body.dark-mode .config-view,
+    body.dark-mode .help-view {
+      background: #091722 !important;
+      color: #edf5fb !important;
+    }
+
+    body.dark-mode h1,
+    body.dark-mode h2,
+    body.dark-mode h3,
+    body.dark-mode h4,
+    body.dark-mode h5,
+    body.dark-mode strong {
+      color: inherit;
+    }
+
+    body.dark-mode .footer-strip,
+    body.dark-mode footer {
+      background: #041c2d !important;
+      color: #dbe7ef !important;
+      border-color: #755e00 !important;
+    }
+
+    body.dark-mode .global-theme-toggle {
+      background: #ffd200;
+      color: #071826;
+      border-color: #ffd200;
+    }
+
+    /* Não imprime o botão de tema */
+    @media print {
+      .global-theme-toggle {
+        display: none !important;
+      }
+    }
+
   </style>
 </head>
 <body>
@@ -7215,6 +7665,48 @@
       if (currentView === "docas") renderGrid();
     }, 1000);
   </script>
+
+    <button id="globalThemeToggle" class="global-theme-toggle" type="button" title="Alternar modo claro/escuro" aria-label="Alternar modo claro/escuro">
+      <span id="globalThemeIcon">☾</span>
+      <span id="globalThemeLabel">ESCURO</span>
+    </button>
+
+<script>
+
+    function applyGlobalTheme(theme) {
+      const dark = theme === "dark";
+      document.body.classList.toggle("dark-mode", dark);
+      document.documentElement.classList.toggle("dark-mode", dark);
+
+      const icon = document.getElementById("globalThemeIcon");
+      const label = document.getElementById("globalThemeLabel");
+      if (icon) icon.textContent = dark ? "☀" : "☾";
+      if (label) label.textContent = dark ? "CLARO" : "ESCURO";
+
+      try {
+        localStorage.setItem("painel-global-theme", dark ? "dark" : "light");
+      } catch (_) {}
+    }
+
+    function initGlobalTheme() {
+      let saved = "light";
+      try {
+        saved = localStorage.getItem("painel-global-theme") || "light";
+      } catch (_) {}
+      applyGlobalTheme(saved);
+
+      document.getElementById("globalThemeToggle")?.addEventListener("click", () => {
+        applyGlobalTheme(document.body.classList.contains("dark-mode") ? "light" : "dark");
+      });
+    }
+
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", initGlobalTheme);
+    } else {
+      initGlobalTheme();
+    }
+
+</script>
 </body>
 </html>
 
