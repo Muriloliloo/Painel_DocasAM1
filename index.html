@@ -1719,6 +1719,45 @@
       font: 800 15px "Segoe UI", Arial, sans-serif;
     }
 
+    .login-show-password {
+      display: flex !important;
+      grid-template-columns: none !important;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 8px !important;
+      width: fit-content;
+      cursor: pointer;
+    }
+
+    .login-show-password input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      min-width: 18px;
+      padding: 0;
+      margin: 0;
+      accent-color: #0a385e;
+      cursor: pointer;
+    }
+
+    .login-show-password span {
+      line-height: 18px;
+    }
+
+    .login-session-status {
+      display: none;
+      margin: 0 18px 14px;
+      padding: 10px 12px;
+      border: 1px solid #b8c7d4;
+      border-radius: 8px;
+      background: #edf6ff;
+      color: #062642;
+      font: 800 12px "Segoe UI", Arial, sans-serif;
+    }
+
+    .login-session-status.visible {
+      display: block;
+    }
+
     .login-actions {
       display: flex;
       gap: 10px;
@@ -3789,7 +3828,12 @@
         <label>Senha
           <input id="loginPassword" type="password" autocomplete="current-password">
         </label>
+        <label class="login-show-password">
+          <input id="showLoginPassword" type="checkbox" aria-label="Mostrar senha">
+          <span>Mostrar senha</span>
+        </label>
       </div>
+      <div class="login-session-status" id="loginSessionStatus" role="status"></div>
       <div class="login-actions">
         <button class="primary" id="loginBtn" type="button">Entrar</button>
         <button id="logoutBtn" type="button">Sair</button>
@@ -3965,29 +4009,39 @@
     }
 
     function isAdmin() {
-      return !cloudState.enabled || cloudState.role === "admin";
+      return Boolean(cloudState.enabled && cloudState.user && cloudState.role === "admin");
     }
 
     function canEditData() {
-      return !cloudState.enabled || !cloudState.user || cloudState.role === "admin";
+      return isAdmin();
     }
 
     function roleLabel() {
-      if (!cloudState.enabled) return "Local";
-      if (!cloudState.user) return "Entrar";
-      return cloudState.role === "admin" ? "Admin" : "Leitor";
+      return isAdmin() ? "Admin" : "Leitor";
     }
 
     function updateAuthBadge() {
       const button = document.getElementById("authBtn");
       if (!button) return;
-      const top = cloudState.enabled ? (cloudState.user?.email || "Entrar no Firebase") : "Modo local";
-      button.title = top;
-      button.innerHTML = `<span>${top}</span><strong>${roleLabel()}</strong>`;
-      document.querySelector(".app")?.classList.toggle("reader-mode", cloudState.enabled && !canEditData());
+      const admin = isAdmin();
+      const top = admin ? (cloudState.user?.email || "Administrador") : "Acesso ao painel";
+      button.title = admin ? top : "Modo leitor — clique para acesso administrativo";
+      button.innerHTML = `<span>${admin ? top : "Painel"}</span><strong>${roleLabel()}</strong>`;
+      document.querySelector(".app")?.classList.toggle("reader-mode", !admin);
       document.querySelectorAll(".admin-only").forEach(element => {
-        element.disabled = cloudState.enabled && !canEditData();
+        element.disabled = !admin;
       });
+      const loginButton = document.getElementById("loginBtn");
+      const logoutButton = document.getElementById("logoutBtn");
+      const sessionStatus = document.getElementById("loginSessionStatus");
+      if (loginButton) loginButton.hidden = admin;
+      if (logoutButton) logoutButton.hidden = !admin;
+      if (sessionStatus) {
+        sessionStatus.textContent = admin
+          ? `Administrador conectado: ${cloudState.user?.email || "usuário autenticado"}`
+          : "";
+        sessionStatus.classList.toggle("visible", admin);
+      }
     }
 
     function requireAdminAction() {
@@ -5829,6 +5883,8 @@
       try {
         await cloudState.tools.signInWithEmailAndPassword(cloudState.auth, email, password);
         document.getElementById("loginMessage").textContent = "";
+        document.getElementById("loginPassword").type = "password";
+        document.getElementById("showLoginPassword").checked = false;
         document.getElementById("loginModal").classList.remove("open");
       } catch (error) {
         document.getElementById("loginMessage").textContent = "Login não autorizado. Confira e-mail e senha.";
@@ -5838,6 +5894,11 @@
     async function logoutFirebase() {
       if (!cloudState.enabled || !cloudState.auth) return;
       await cloudState.tools.signOut(cloudState.auth);
+      document.getElementById("loginPassword").value = "";
+      document.getElementById("loginPassword").type = "password";
+      document.getElementById("showLoginPassword").checked = false;
+      document.getElementById("loginMessage").textContent = "";
+      document.getElementById("loginModal").classList.remove("open");
     }
 
     document.getElementById("editBtn").addEventListener("click", openDrawer);
@@ -5845,10 +5906,16 @@
       document.getElementById("loginModal").classList.add("open");
     });
     document.getElementById("closeLoginBtn").addEventListener("click", () => {
+      document.getElementById("loginPassword").type = "password";
+      document.getElementById("showLoginPassword").checked = false;
       document.getElementById("loginModal").classList.remove("open");
     });
     document.getElementById("loginBtn").addEventListener("click", loginFirebase);
     document.getElementById("logoutBtn").addEventListener("click", logoutFirebase);
+    document.getElementById("showLoginPassword").addEventListener("change", event => {
+      const passwordInput = document.getElementById("loginPassword");
+      passwordInput.type = event.target.checked ? "text" : "password";
+    });
     document.getElementById("copyPendingRoutes").addEventListener("click", copyPendingRoutesToMass);
     document.getElementById("applyMassReason").addEventListener("click", applyMassJustification);
     document.getElementById("clearMarkedReasons").addEventListener("click", event => {
