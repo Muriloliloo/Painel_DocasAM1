@@ -2229,6 +2229,20 @@
       outline-offset: -3px;
     }
 
+    .paste-clear-status {
+      min-height: 32px;
+      display: flex;
+      align-items: center;
+      padding: 7px 16px;
+      background: #e8f7ef;
+      color: #075b35;
+      font: 900 12px/1.25 "Segoe UI", Arial, sans-serif;
+    }
+
+    .paste-clear-status:empty {
+      display: none;
+    }
+
     .paste-box textarea {
       height: 100%;
       min-height: 0;
@@ -5910,6 +5924,7 @@
         <textarea id="aduanaPaste" spellcheck="false"></textarea>
       </div>
     </section>
+    <div class="paste-clear-status" id="pasteClearStatus" role="status" aria-live="polite"></div>
     <div class="drawer-actions">
       <button id="exampleBtn" class="admin-only" type="button">Exemplo</button>
       <button class="primary admin-only" id="applyBtn" type="button">Aplicar</button>
@@ -8574,8 +8589,35 @@
       if (!allowedTargets.includes(targetId)) return false;
       const textarea = document.getElementById(targetId);
       if (!textarea) return false;
+
       textarea.value = "";
       textarea.dispatchEvent(new Event("input", { bubbles: true }));
+
+      if (targetId === "extracaoPaste") {
+        data.extracao = [];
+        data.base = [];
+        data.totalRotas = "0";
+        document.getElementById("totalRotasInput").value = "0";
+      } else if (targetId === "basePaste") {
+        data.baseOperacional = [];
+        data.baseHistorico = (data.baseHistorico || []).filter(row => row.fonte !== "operacional");
+        data.carregamentoInicio = {};
+        data.carregamentoFim = {};
+        rebuildConsolidatedBase(data.extracao || []);
+      } else {
+        data.baseAduana = [];
+        data.baseHistorico = (data.baseHistorico || []).filter(row => row.fonte !== "aduana");
+        rebuildConsolidatedBase(data.extracao || []);
+      }
+
+      const statusMessages = {
+        extracaoPaste: "Extração limpa. Painel atualizado.",
+        basePaste: "Base operacional limpa. Status das docas atualizados.",
+        aduanaPaste: "Base aduana limpa. Histórico da Aduana atualizado."
+      };
+      document.getElementById("pasteClearStatus").textContent = statusMessages[targetId];
+      saveData();
+      render();
       textarea.focus();
       return true;
     }
@@ -8589,6 +8631,7 @@
       document.getElementById("basePaste").placeholder = "Cole a atualização operacional. As rotas precisam existir na Extração.";
       document.getElementById("aduanaPaste").value = toBasePaste(data.baseAduana || [], "aduana");
       document.getElementById("aduanaPaste").placeholder = "Cole Processo e Tempo do processo da Aduana. Aceita Aduana em andamento, Contagem de pacotes e Em contagem.";
+      document.getElementById("pasteClearStatus").textContent = "";
       document.getElementById("drawer").classList.add("open");
     }
 
