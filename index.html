@@ -685,6 +685,59 @@
       color: #e30613;
     }
 
+    .footer-strip .footer-brands {
+      display: inline-flex;
+      align-items: center;
+      gap: clamp(5px, .45vw, 9px);
+      min-width: 0;
+      white-space: nowrap;
+    }
+
+    .footer-strip .footer-brand {
+      display: inline-flex;
+      align-items: center;
+      gap: clamp(4px, .35vw, 7px);
+      min-width: 0;
+    }
+
+    .footer-strip .footer-brand-logo {
+      display: block;
+      width: auto;
+      height: clamp(20px, 1.3vw, 24px);
+      object-fit: contain;
+      border: 1px solid rgba(112, 24, 14, .28);
+      border-radius: 4px;
+      background: #ffcf00;
+      box-shadow: 0 1px 3px rgba(4, 26, 46, .22);
+    }
+
+    .footer-strip .footer-brand-logo-dhl {
+      max-width: 58px;
+    }
+
+    .footer-strip .footer-brand-logo-ml {
+      max-width: 68px;
+    }
+
+    .footer-strip .footer-brand-name {
+      color: inherit;
+      font-size: clamp(9px, .58vw, 12px);
+      line-height: 1;
+    }
+
+    .footer-strip .footer-brand-divider {
+      width: 1px;
+      height: 20px;
+      flex: 0 0 1px;
+      background: rgba(133, 25, 14, .35);
+    }
+
+    @media (max-width: 1540px) {
+      .footer-strip .footer-brand-name {
+        display: none;
+      }
+    }
+
     .footer-separator {
       color: #fff;
       opacity: .85;
@@ -4689,6 +4742,260 @@
       border-color: #ffd200;
     }
 
+    /* Refinamento do painel operacional: contraste alto sem alterar a densidade. */
+    body.dark-mode {
+      --dark-canvas: #07131d;
+      --dark-surface: #0e2230;
+      --dark-surface-raised: #142b3a;
+      --dark-surface-hover: #1a3546;
+      --dark-border: #3b5d73;
+      --dark-border-strong: #547890;
+      --dark-text: #f7fbff;
+      --dark-text-soft: #c9d9e4;
+      --dark-text-muted: #9fb7c7;
+      --dark-yellow: #ffda32;
+      --dark-orange: #ff9d2e;
+      --dark-red: #ff4d63;
+      --dark-blue: #4a9dff;
+      --dark-green: #31d486;
+    }
+
+    body.dark-mode .app.docas-mode {
+      background: linear-gradient(180deg, #0a1b27 0%, var(--dark-canvas) 100%) !important;
+    }
+
+    body.dark-mode .docas-mode .toolbar {
+      background: linear-gradient(180deg, #082b42 0%, #061e30 100%) !important;
+      border-bottom-color: #31566f !important;
+      box-shadow: 0 7px 18px rgba(0, 0, 0, .24) !important;
+    }
+
+    body.dark-mode .docas-mode .wave-selector,
+    body.dark-mode .docas-mode .actions button,
+    body.dark-mode .docas-mode .auth-badge {
+      background: #0b2a3f !important;
+      color: var(--dark-text) !important;
+      border-color: #466a82 !important;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, .06) !important;
+    }
+
+    body.dark-mode .docas-mode .wave-selector {
+      border-bottom-color: var(--dark-yellow) !important;
+    }
+
+    body.dark-mode .docas-mode .view-switch button {
+      background: #0c273a !important;
+      color: #b9ccd9 !important;
+      border-color: #466a82 !important;
+    }
+
+    body.dark-mode .docas-mode .view-switch button:hover,
+    body.dark-mode .docas-mode .actions button:hover {
+      background: #153b54 !important;
+      color: #fff !important;
+      border-color: #6f98b2 !important;
+    }
+
+    body.dark-mode .docas-mode .view-switch button.active {
+      background: linear-gradient(180deg, #1a587f 0%, #123e5b 100%) !important;
+      color: #fff !important;
+      border-color: #9bc6df !important;
+      box-shadow: inset 0 -3px 0 var(--dark-yellow) !important;
+    }
+
+    body.dark-mode .docas-mode .side-rail {
+      background: #061d2c !important;
+      border-right-color: #294b61 !important;
+    }
+
+    body.dark-mode .docas-mode .side-rail button {
+      color: #c0d2de !important;
+    }
+
+    body.dark-mode .docas-mode .side-rail button.active {
+      color: var(--dark-yellow) !important;
+      background: rgba(255, 218, 50, .07) !important;
+      border-left-color: var(--dark-yellow) !important;
+    }
+
+    body.dark-mode .docas-mode .stats {
+      background: linear-gradient(180deg, #112a39 0%, #0d2230 100%) !important;
+      border-color: #3e6075 !important;
+      box-shadow: 0 8px 22px rgba(0, 0, 0, .22) !important;
+    }
+
+    body.dark-mode .docas-mode .stats > * {
+      background: transparent !important;
+      color: var(--dark-text) !important;
+      border-color: #35566b !important;
+      box-shadow: none !important;
+    }
+
+    body.dark-mode .docas-mode .report-title strong {
+      color: var(--dark-text) !important;
+      text-shadow: 0 1px 0 rgba(0, 0, 0, .35) !important;
+    }
+
+    body.dark-mode .docas-mode .wave-stat {
+      color: var(--dark-yellow) !important;
+    }
+
+    body.dark-mode .docas-mode .stat span,
+    body.dark-mode .docas-mode .countdown span {
+      color: var(--dark-text-soft) !important;
+    }
+
+    body.dark-mode .docas-mode .stat strong {
+      color: var(--dark-text) !important;
+    }
+
+    body.dark-mode .docas-mode .stat.preview strong,
+    body.dark-mode .docas-mode .stat.customs strong {
+      color: var(--dark-orange) !important;
+    }
+
+    body.dark-mode .docas-mode .stat.guard strong {
+      color: var(--dark-blue) !important;
+    }
+
+    body.dark-mode .docas-mode .stat.loaded strong {
+      color: var(--dark-green) !important;
+    }
+
+    body.dark-mode .docas-mode .stat.pending-count strong {
+      color: var(--dark-red) !important;
+    }
+
+    body.dark-mode .docas-mode .countdown strong {
+      color: var(--dark-yellow) !important;
+      text-shadow: 0 0 18px rgba(255, 218, 50, .12) !important;
+    }
+
+    body.dark-mode .docas-mode .dock-grid {
+      background: transparent !important;
+    }
+
+    body.dark-mode .docas-mode .slot,
+    body.dark-mode .docas-mode .doca-card {
+      background: var(--dark-surface-raised) !important;
+      color: var(--dark-text) !important;
+      border-color: var(--dark-border) !important;
+      box-shadow: 0 4px 11px rgba(0, 0, 0, .22) !important;
+    }
+
+    body.dark-mode .docas-mode .slot.status-customs {
+      background: linear-gradient(180deg, rgba(255, 157, 46, .12), transparent 48%), var(--dark-surface-raised) !important;
+    }
+
+    body.dark-mode .docas-mode .slot.status-pending {
+      background: linear-gradient(180deg, rgba(255, 77, 99, .11), transparent 48%), var(--dark-surface-raised) !important;
+    }
+
+    body.dark-mode .docas-mode .slot.status-guard {
+      background: linear-gradient(180deg, rgba(74, 157, 255, .12), transparent 48%), var(--dark-surface-raised) !important;
+    }
+
+    body.dark-mode .docas-mode .slot.status-loaded {
+      background: linear-gradient(180deg, rgba(49, 212, 134, .12), transparent 48%), var(--dark-surface-raised) !important;
+    }
+
+    body.dark-mode .docas-mode .slot.status-free {
+      background: #102633 !important;
+      border-color: #345367 !important;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, .025) !important;
+    }
+
+    body.dark-mode .docas-mode .slot.status-pending::before { background: var(--dark-red) !important; }
+    body.dark-mode .docas-mode .slot.status-loaded::before { background: var(--dark-green) !important; }
+    body.dark-mode .docas-mode .slot.status-customs::before { background: var(--dark-orange) !important; }
+    body.dark-mode .docas-mode .slot.status-guard::before { background: var(--dark-blue) !important; }
+    body.dark-mode .docas-mode .slot.status-free::before { background: #91aabd !important; }
+
+    body.dark-mode .docas-mode .slot:hover {
+      background-color: var(--dark-surface-hover) !important;
+      border-color: var(--dark-border-strong) !important;
+      box-shadow: 0 7px 17px rgba(0, 0, 0, .3) !important;
+    }
+
+    body.dark-mode .docas-mode .slot:focus-visible,
+    body.dark-mode .global-theme-toggle:focus-visible,
+    body.dark-mode .docas-mode button:focus-visible {
+      outline: 2px solid var(--dark-yellow) !important;
+      outline-offset: 2px !important;
+    }
+
+    body.dark-mode .docas-mode .dock-number,
+    body.dark-mode .docas-mode .dock-number-inline,
+    body.dark-mode .docas-mode .dock-person,
+    body.dark-mode .docas-mode .route {
+      color: var(--dark-text) !important;
+    }
+
+    body.dark-mode .docas-mode .route {
+      text-shadow: 0 1px 0 rgba(0, 0, 0, .42) !important;
+    }
+
+    body.dark-mode .docas-mode .dock-carrier-top,
+    body.dark-mode .docas-mode .dock-carrier-bottom,
+    body.dark-mode .docas-mode .dock-footer-line,
+    body.dark-mode .docas-mode .dock-footer-line strong {
+      color: #dce8f0 !important;
+    }
+
+    body.dark-mode .docas-mode .dock-minutes,
+    body.dark-mode .docas-mode .dock-extra-line,
+    body.dark-mode .docas-mode .load-timer {
+      color: var(--dark-text-muted) !important;
+    }
+
+    body.dark-mode .docas-mode .status-pending .dock-status { color: var(--dark-red) !important; }
+    body.dark-mode .docas-mode .status-loaded .dock-status { color: var(--dark-green) !important; }
+    body.dark-mode .docas-mode .status-customs .dock-status { color: var(--dark-orange) !important; }
+    body.dark-mode .docas-mode .status-guard .dock-status { color: var(--dark-blue) !important; }
+
+    body.dark-mode .docas-mode .slot.status-free .dock-number {
+      color: #c7d7e2 !important;
+    }
+
+    body.dark-mode .docas-mode .slot.status-free .dock-free {
+      color: #88a3b5 !important;
+    }
+
+    body.dark-mode .docas-mode .legend {
+      color: var(--dark-text-soft) !important;
+    }
+
+    body.dark-mode .docas-mode .legend .dot.free {
+      background: #91aabd !important;
+    }
+
+    body.dark-mode .docas-mode .footer-strip strong {
+      color: #f4f8fb !important;
+    }
+
+    body.dark-mode .docas-mode .footer-strip .center,
+    body.dark-mode .docas-mode .footer-strip .right {
+      color: var(--dark-red) !important;
+    }
+
+    body.dark-mode .docas-mode .footer-strip .footer-brand-name {
+      color: #f4f8fb !important;
+    }
+
+    body.dark-mode .docas-mode .footer-strip .footer-brand-logo {
+      border-color: rgba(255, 214, 0, .5) !important;
+      box-shadow: 0 1px 5px rgba(0, 0, 0, .35) !important;
+    }
+
+    body.dark-mode .docas-mode .footer-strip .footer-brand-divider {
+      background: rgba(255, 214, 0, .42) !important;
+    }
+
+    body.dark-mode .global-theme-toggle:hover {
+      background: #ffe15a !important;
+      border-color: #ffe15a !important;
+    }
+
     /* Não imprime o botão de tema */
     @media print {
       .global-theme-toggle {
@@ -4898,7 +5205,17 @@
     <footer class="footer-strip">
       <span>Última atualização: <strong id="footerUpdate"></strong><span class="footer-separator">|</span>Atualizado por: sistema ↻</span>
       <span class="center">Foco • Disciplina • Qualidade • Segurança</span>
-      <span class="right">DHL Supply Chain - Mercado Livre</span>
+      <span class="right footer-brands" aria-label="Parceiros: DHL Supply Chain e Mercado Livre">
+        <span class="footer-brand" aria-label="DHL Supply Chain">
+          <img class="footer-brand-logo footer-brand-logo-dhl" src="assets/logo-dhl.png" alt="" aria-hidden="true">
+          <span class="footer-brand-name">DHL Supply Chain</span>
+        </span>
+        <span class="footer-brand-divider" aria-hidden="true"></span>
+        <span class="footer-brand" aria-label="Mercado Livre">
+          <img class="footer-brand-logo footer-brand-logo-ml" src="assets/logo-mercado-livre.png" alt="" aria-hidden="true">
+          <span class="footer-brand-name">Mercado Livre</span>
+        </span>
+      </span>
     </footer>
   </main>
 
