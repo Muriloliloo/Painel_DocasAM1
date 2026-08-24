@@ -5075,6 +5075,7 @@
       vaga: "doca",
       "número da vaga": "doca",
       "numero da vaga": "doca",
+      "doca operacional": "doca",
       transportadora: "transportadora",
       placa: "placa",
       "tipo de veículo": "tipoVeiculo",
@@ -5091,6 +5092,8 @@
       estado: "estadoAduana",
       "estado da aduana": "estadoAduana",
       "estado aduana": "estadoAduana",
+      "estado da auditoria": "estadoAduana",
+      "estado auditoria": "estadoAduana",
       processo: "processo",
       "tempo do processo": "tempoProcesso",
       "tempo de processo": "tempoProcesso",
@@ -5256,34 +5259,24 @@
       return /_AM/i.test(normalize(value)) || /^[A-Z]{1,4}\d{0,3}_[A-Z0-9]+$/i.test(normalize(value));
     }
 
-    function isExpedida(value) {
-      return /\bexpedid[ao]\b/.test(plainText(value));
-    }
-
     function normalizeBaseStatus(value) {
-      const text = plainText(value);
+      const text = plainText(value).replace(/\s+/g, " ");
       if (!text) return "";
-      if (/\bexpedid[ao]\b/.test(text)) return "Expedida";
-      if (/carregando|guardando|\bguard\b|\baguardando\b/.test(text)) return "Guardando";
-      if (/aduana|aduaneir|alfandeg|em andamento|processo/.test(text)) return "Em aduana";
-      if (/pendente|delay|atras/.test(text)) return "Pendente";
+      if (/^expedid[ao]$/.test(text)) return "Expedida";
+      if (/^(guardando|carregando|guardando\s*\/\s*carregando)$/.test(text)) return "Guardando";
+      if (/^(esperando (?:a )?aduana|aduana em andamento|em aduana)$/.test(text)) return "Em aduana";
+      if (text === "pendente" || text === "-") return "Pendente";
       return "";
     }
 
-    function baseStatusPriority(value) {
-      return {
-        Expedida: 4,
-        "Em aduana": 3,
-        Guardando: 2,
-        Pendente: 1
-      }[normalizeBaseStatus(value)] || 0;
+    function operationalStatus(value) {
+      // Processo vazio, "-" ou desconhecido nunca avança a rota.
+      return normalizeBaseStatus(value) || "Pendente";
     }
 
-    function mergeBaseStatus(currentStatus, nextStatus) {
-      const current = normalizeBaseStatus(currentStatus);
-      const next = normalizeBaseStatus(nextStatus);
-      if (baseStatusPriority(next) > baseStatusPriority(current)) return next;
-      return current || next || normalize(currentStatus) || normalize(nextStatus) || "";
+    function isExpedida(value) {
+      // Somente o valor operacional explícito "Expedida" (ou legado "Expedido") é aceito.
+      return normalizeBaseStatus(value) === "Expedida";
     }
 
     function rowStatus(row = []) {
@@ -5475,10 +5468,20 @@
     function extractDriverDetails(value) {
       const lines = normalize(value).split(/\n+/).map(normalize).filter(Boolean);
       const first = lines[0] || "";
-      const last = lines[lines.length - 1] || "";
-      const parts = last.includes("|") ? last.split("|").map(normalize) : [];
+      const carrierLine = lines.find(line => line.includes("|")) || "";
+      const parts = carrierLine ? carrierLine.split("|").map(normalize) : [];
       return {
         motorista: first,
+        transportadora: parts[0] || "",
+        placa: parts[1] || ""
+      };
+    }
+
+    function extractCarrierDetails(value) {
+      const lines = normalize(value).split(/\n+/).map(normalize).filter(Boolean);
+      const carrierLine = lines.find(line => line.includes("|")) || lines[0] || "";
+      const parts = carrierLine.split("|").map(normalize);
+      return {
         transportadora: parts[0] || "",
         placa: parts[1] || ""
       };
@@ -5498,11 +5501,12 @@
 
     function enrichBaseItem(item = {}) {
       const driver = extractDriverDetails(item.motorista || "");
+      const carrier = extractCarrierDetails(item.transportadora || "");
       item.rota = routeToken(item.rota) || item.rota || "";
       item.repLog = firstNonEmptyLine(item.repLog || "");
-      item.motorista = firstNonEmptyLine(item.motorista || driver.motorista || "");
-      item.transportadora = item.transportadora || driver.transportadora || "";
-      item.placa = item.placa || driver.placa || "";
+      item.motorista = firstNonEmptyLine(driver.motorista || item.motorista || "");
+      item.transportadora = carrier.transportadora || driver.transportadora || "";
+      item.placa = normalize(item.placa) || carrier.placa || driver.placa || "";
       item.auditTime = normalizeAuditTime(item.auditTime || item.tempoAuditoria || "");
       item.aduanaUnidades = normalize(item.aduanaUnidades || "");
       item.aduanaBipadas = correctUnits(item.aduanaBipadas || item.aduanaUnidades || "");
@@ -5510,8 +5514,40 @@
       item.tempoProcesso = normalize(item.tempoProcesso || "");
       item.tempoTotal = normalize(item.tempoTotal || "");
       item.estadoAduana = normalize(item.estadoAduana || "");
-      item.status = normalizeBaseStatus(item.processo) || normalizeBaseStatus(item.status) || normalize(item.status);
+      item.status = normalize(item.status || "");
       return item;
+    }
+
+    function baseItemForSource(item = {}, source = "operacional") {
+      const route = routeToken(item.rota) || normalize(item.rota);
+      if (source === "aduana") {
+        return {
+          rota: route,
+          motorista: normalize(item.motorista),
+          transportadora: normalize(item.transportadora),
+          placa: normalize(item.placa),
+          repLog: normalize(item.repLog),
+          auditTime: normalize(item.auditTime),
+          aduanaUnidades: normalize(item.aduanaUnidades),
+          aduanaBipadas: correctUnits(item.aduanaBipadas || item.aduanaUnidades || ""),
+          estadoAduana: normalize(item.estadoAduana)
+        };
+      }
+
+      const rawProcess = normalize(item.processo || item.status);
+      const status = operationalStatus(rawProcess);
+      return {
+        rota: route,
+        processo: status === "Pendente" ? "Pendente" : rawProcess,
+        tempoProcesso: normalize(item.tempoProcesso),
+        tempoTotal: normalize(item.tempoTotal),
+        doca: normalize(item.doca),
+        status
+      };
+    }
+
+    function isAduanaState(value) {
+      return /^(em andamento|conclu[ií]da|cancelada|pendente)$/i.test(normalize(value));
     }
     function lastStandaloneDock(row = []) {
       const docks = row
@@ -5592,64 +5628,56 @@
       return parsed;
     }
 
-    function parseBasePaste(text) {
+    function parseBasePaste(text, source = "operacional") {
       const rows = splitRows(text);
       if (!rows.length) return [];
       const { mappedHeader, headerIndex } = headerInfo(rows);
       const body = mappedHeader ? rows.slice(headerIndex + 1) : rows;
       const parsed = body.map(row => {
         const item = {};
-        const loose = row.some(looksLikeWave) ? parseLooseExtractionRow(row, mappedHeader) : null;
-        if (!mappedHeader && row.length === 1) {
-          item.rota = routeToken(row[0]) || row[0];
-          item.status = rowStatus(row) || (routeToken(row[0]) || looksLikeRoute(row[0]) ? "Expedida" : "");
-        } else if (!mappedHeader) {
-          const line = row.join("\t");
-          const route = routeToken(line);
-          const waveIndex = row.findIndex(looksLikeWave);
-          const routeIndex = route ? row.findIndex(cell => routeToken(cell) === route) : row.findIndex(looksLikeRoute);
-          item.onda = loose?.onda || (waveIndex >= 0 ? waveLabel(row[waveIndex]) : "");
-          item.rota = route || (routeIndex >= 0 ? row[routeIndex] : row[0]);
-          item.doca = loose?.doca || lastStandaloneDock(row);
-          item.status = rowStatus(row) || (row.length <= 2 && (routeToken(row[0]) || looksLikeRoute(row[0])) ? "Expedida" : "");
-          item.transportadora = loose?.transportadora || row.find((cell, index) => ![waveIndex, routeIndex].includes(index) && normalize(cell) && !looksLikeDock(cell) && !routeToken(cell) && !isBaseProcessText(cell)) || "";
-        } else {
+        const line = row.join("\t");
+        const route = routeToken(line);
+        const routeIndex = route ? row.findIndex(cell => routeToken(cell) === route) : row.findIndex(looksLikeRoute);
+
+        if (mappedHeader) {
           row.forEach((cell, index) => {
             const key = mappedHeader[index];
             if (key) item[key] = normalize(cell);
           });
-          item.onda = item.onda || loose?.onda || "";
-          item.rota = routeToken(item.rota) || loose?.rota || item.rota || routeToken(row.join("\t"));
-          item.doca = item.doca || loose?.doca || lastStandaloneDock(row);
-          item.transportadora = item.transportadora || loose?.transportadora || "";
-          item.status = normalizeBaseStatus(item.processo) || normalizeBaseStatus(item.status) || rowStatus(row.filter((cell, index) => mappedHeader[index] !== "estadoAduana")) || normalize(item.status);
+          item.rota = routeToken(item.rota) || item.rota || route;
+          if (source === "operacional") {
+            item.processo = item.processo || item.status || "";
+            item.doca = item.doca || lastStandaloneDock(row);
+          }
+        } else {
+          item.rota = route || (routeIndex >= 0 ? row[routeIndex] : row[0]);
+          const values = row.slice(Math.max(0, routeIndex) + 1).map(normalize);
+          if (source === "aduana") {
+            // Aceita tanto o formato exportado pelo painel quanto a ordem natural da Base Aduana.
+            if (isAduanaState(values[0])) {
+              item.estadoAduana = values[0] || "";
+              item.auditTime = values[1] || "";
+              item.aduanaBipadas = values[2] || "";
+              item.repLog = values[4] || "";
+              item.transportadora = values[5] || "";
+              item.placa = values[6] || "";
+            } else {
+              item.motorista = values[0] || "";
+              item.repLog = values[1] || "";
+              item.auditTime = values[2] || "";
+              item.aduanaUnidades = values[3] || "";
+              item.estadoAduana = values[4] || "";
+            }
+          } else {
+            // Formato operacional sem cabeçalho: rota, processo, tempo processo, tempo total, doca.
+            item.processo = values[0] || "";
+            item.tempoProcesso = values[1] || "";
+            item.tempoTotal = values[2] || "";
+            item.doca = values[3] || lastStandaloneDock(row);
+          }
         }
         enrichBaseItem(item);
-        return {
-          onda: item.onda ? waveLabel(item.onda) : "",
-          idRota: item.idRota || "",
-          rota: item.rota || "",
-          rotaOriginal: item.rotaOriginal || "",
-          doca: item.doca || "",
-          transportadora: item.transportadora || "",
-          repLog: item.repLog || "",
-          motorista: item.motorista || "",
-          auditTime: item.auditTime || "",
-          aduanaUnidades: item.aduanaUnidades || "",
-          aduanaBipadas: item.aduanaBipadas || "",
-          estadoAduana: item.estadoAduana || "",
-          processo: item.processo || "",
-          tempoProcesso: item.tempoProcesso || "",
-          tempoTotal: item.tempoTotal || "",
-          pacotes: item.pacotes || "",
-          placa: item.placa || "",
-          tipoVeiculo: item.tipoVeiculo || "",
-          tipoRota: item.tipoRota || "",
-          tipoArea: item.tipoArea || "",
-          spr: item.spr || "",
-          cluster: item.cluster || "",
-          status: normalizeBaseStatus(item.status) || item.status || ""
-        };
+        return baseItemForSource(item, source);
       }).filter(item => item.rota);
       return uniqueBaseRows(parsed);
     }
@@ -5658,28 +5686,29 @@
       return [header.join("\t"), ...rows.map(row => columns.map(key => row[key] || "").join("\t"))].join("\n");
     }
 
-    function toBasePaste(rows) {
+    function toBasePaste(rows, source = "operacional") {
       const uniqueRows = uniqueBaseRows(rows);
-      const hasAduanaDetails = uniqueRows.some(row => row.repLog || row.auditTime || row.aduanaBipadas || row.motorista || row.placa);
-      if (hasAduanaDetails) {
-        const header = ["Rota", "Estado", "Tempo de auditoria", "Unidades bipadas", "Doca", "Rep de aduana", "Transportadora", "Placa"];
+      if (source === "aduana") {
+        const header = ["Rota", "Motorista", "Rep de aduana", "Tempo de auditoria", "Unidades corretas", "Estado da aduana", "Transportadora", "Placa"];
         return [header.join("\t"), ...uniqueRows.map(row => [
           row.rota || "",
-          row.status || "",
+          row.motorista || "",
+          row.repLog || "",
           row.auditTime || "",
           row.aduanaBipadas || "",
-          row.doca || "",
-          row.repLog || "",
+          row.estadoAduana || "",
           row.transportadora || "",
           row.placa || ""
         ].join("\t"))].join("\n");
       }
-      return uniqueRows.map(row => {
-        const parts = [row.rota || ""];
-        if (row.status) parts.push(row.status);
-        if (row.doca) parts.push(row.doca);
-        return parts.filter(Boolean).join("\t");
-      }).filter(Boolean).join("\n");
+      const header = ["Rota", "Processo", "Tempo do processo", "Tempo total", "Doca operacional"];
+      return [header.join("\t"), ...uniqueRows.map(row => [
+        row.rota || "",
+        row.processo || row.status || "Pendente",
+        row.tempoProcesso || "",
+        row.tempoTotal || "",
+        row.doca || ""
+      ].join("\t"))].join("\n");
     }
     function uniqueBaseRows(rows = []) {
       const byRoute = new Map();
@@ -5691,23 +5720,12 @@
           return;
         }
         const current = byRoute.get(key);
-        byRoute.set(key, {
-          ...current,
-          onda: current.onda || row.onda || "",
-          idRota: current.idRota || row.idRota || "",
-          rotaOriginal: current.rotaOriginal || row.rotaOriginal || "",
-          doca: current.doca || row.doca || "",
-          transportadora: current.transportadora || row.transportadora || "",
-          repLog: current.repLog || row.repLog || "",
-          pacotes: current.pacotes || row.pacotes || "",
-          placa: current.placa || row.placa || "",
-          tipoVeiculo: current.tipoVeiculo || row.tipoVeiculo || "",
-          tipoRota: current.tipoRota || row.tipoRota || "",
-          tipoArea: current.tipoArea || row.tipoArea || "",
-          spr: current.spr || row.spr || "",
-          cluster: current.cluster || row.cluster || "",
-          status: mergeBaseStatus(current.status, row.status)
+        const merged = { ...current };
+        Object.entries(row).forEach(([field, value]) => {
+          if (normalize(value) !== "") merged[field] = value;
         });
+        merged.rota = row.rota || current.rota || "";
+        byRoute.set(key, merged);
       });
       return Array.from(byRoute.values());
     }
@@ -5743,24 +5761,22 @@
     }
 
     function isAduanaDetailRow(row = {}) {
-      return normalizeBaseStatus(row.status) === "Em aduana"
-        || Boolean(normalize(row.repLog) || normalize(row.motorista) || normalize(row.auditTime)
-          || normalize(row.aduanaUnidades) || normalize(row.aduanaBipadas) || normalize(row.estadoAduana));
+      return Boolean(normalize(row.repLog) || normalize(row.motorista) || normalize(row.transportadora)
+        || normalize(row.placa) || normalize(row.auditTime) || normalize(row.aduanaUnidades)
+        || normalize(row.aduanaBipadas) || normalize(row.estadoAduana));
     }
 
     function rebuildConsolidatedBase(extractionRows = data.extracao || []) {
-      data.baseOperacional = onlyPlannedBaseRows(data.baseOperacional || [], extractionRows);
-      data.baseAduana = onlyPlannedBaseRows(data.baseAduana || [], extractionRows);
-      const aduanaDetailsOnly = (data.baseAduana || []).map(row => ({
-        ...row,
-        // A Aduana complementa a rota, mas não substitui o processo/tempo operacional.
-        status: "",
-        processo: "",
-        tempoProcesso: "",
-        tempoTotal: "",
-        doca: ""
-      }));
-      data.base = mergeLatestBaseRows(data.baseOperacional, aduanaDetailsOnly);
+      const operationalRows = (data.baseOperacional || []).map(row =>
+        baseItemForSource(enrichBaseItem({ ...row }), "operacional")
+      );
+      const customsRows = (data.baseAduana || []).map(row =>
+        baseItemForSource(enrichBaseItem({ ...row }), "aduana")
+      );
+      data.baseOperacional = onlyPlannedBaseRows(operationalRows, extractionRows);
+      data.baseAduana = onlyPlannedBaseRows(customsRows, extractionRows);
+      // As duas fontes se complementam por rota, mantendo a titularidade de cada campo.
+      data.base = mergeLatestBaseRows(data.baseOperacional, data.baseAduana);
       data.base = onlyPlannedBaseRows(data.base, extractionRows);
       return data.base;
     }
@@ -5774,9 +5790,9 @@
     }
 
     function loadedKeys() {
-      return new Set(uniqueBaseRows(data.base)
+      return new Set(uniqueBaseRows(data.baseOperacional || [])
         .filter(row => {
-          const status = normalizeBaseStatus(row.status || row.processo || "");
+          const status = operationalStatus(row.processo || row.status);
           return status === "Guardando" || status === "Em aduana" || status === "Expedida";
         })
         .map(row => routeKey(row.rota))
@@ -5784,19 +5800,19 @@
     }
 
     function expedidaKeys() {
-      return new Set(uniqueBaseRows(data.base)
-        .filter(row => isExpedida(row.status))
+      return new Set(uniqueBaseRows(data.baseOperacional || [])
+        .filter(row => isExpedida(row.processo || row.status))
         .map(row => routeKey(row.rota))
         .filter(Boolean));
     }
 
-    function syncLoadingStarts(rows = data.base) {
+    function syncLoadingStarts(rows = data.baseOperacional || []) {
       const now = Date.now();
       let changed = false;
       const uniqueRows = uniqueBaseRows(rows);
       const active = new Set(uniqueRows
         .filter(row => {
-          const status = normalizeBaseStatus(row.status || row.processo || "");
+          const status = operationalStatus(row.processo || row.status);
           return status === "Guardando" || status === "Em aduana" || status === "Expedida";
         })
         .map(row => routeKey(row.rota))
@@ -5829,11 +5845,11 @@
         const key = routeKey(row.rota);
         const start = Number(data.carregamentoInicio[key] || 0);
         const end = Number(data.carregamentoFim[key] || 0);
-        if (key && data.modoTesteCronometro && !isExpedida(row.status) && start && end && end - start <= 1500) {
+        if (key && data.modoTesteCronometro && !isExpedida(row.processo || row.status) && start && end && end - start <= 1500) {
           delete data.carregamentoFim[key];
           changed = true;
         }
-        if (key && isExpedida(row.status)) {
+        if (key && isExpedida(row.processo || row.status)) {
           if (!data.carregamentoFim[key]) {
             data.carregamentoFim[key] = now;
             changed = true;
@@ -6281,9 +6297,9 @@
 
     function baseStatusByRoute() {
       const map = new Map();
-      uniqueBaseRows(data.base).forEach(row => {
+      uniqueBaseRows(data.baseOperacional || []).forEach(row => {
         const key = routeKey(row.rota);
-        if (key) map.set(key, normalizeBaseStatus(row.status) || normalize(row.status));
+        if (key) map.set(key, operationalStatus(row.processo || row.status));
       });
       return map;
     }
@@ -6291,7 +6307,7 @@
     function routeDockState(row, loaded, shipped, statusMap) {
       const key = routeKey(row.rota);
       if (!key || !loaded.has(key)) return "pending";
-      const status = normalizeBaseStatus(statusMap.get(key));
+      const status = operationalStatus(statusMap.get(key));
       if (status === "Pendente") return "pending";
       if (status === "Guardando") return "guard";
       if (status === "Em aduana") return "customs";
@@ -6462,13 +6478,13 @@
         ...consolidated,
         ...operational,
         repLog: customs.repLog || consolidated.repLog || operational.repLog || extraction.repLog || "",
-        motorista: customs.motorista || operational.motorista || consolidated.motorista || "",
+        motorista: customs.motorista || consolidated.motorista || "",
         auditTime: customs.auditTime || consolidated.auditTime || "",
         aduanaBipadas: customs.aduanaBipadas || consolidated.aduanaBipadas || "",
         estadoAduana: customs.estadoAduana || "",
-        transportadora: operational.transportadora || customs.transportadora || extraction.transportadora || "",
-        placa: operational.placa || customs.placa || consolidated.placa || "",
-        doca: extraction.doca || operational.doca || consolidated.doca || ""
+        transportadora: customs.transportadora || extraction.transportadora || "",
+        placa: customs.placa || extraction.placa || consolidated.placa || "",
+        doca: operational.doca || extraction.doca || consolidated.doca || ""
       };
     }
 
@@ -7359,9 +7375,9 @@
       document.getElementById("totalRotasInput").value = data.totalRotas || data.extracao.length || "";
       document.getElementById("dataInput").value = data.data || "";
       document.getElementById("extracaoPaste").value = toPaste(data.extracao);
-      document.getElementById("basePaste").value = toBasePaste(data.baseOperacional || data.base || []);
+      document.getElementById("basePaste").value = toBasePaste(data.baseOperacional || data.base || [], "operacional");
       document.getElementById("basePaste").placeholder = "Cole a atualização operacional. As rotas precisam existir na Extração.";
-      document.getElementById("aduanaPaste").value = toBasePaste(data.baseAduana || []);
+      document.getElementById("aduanaPaste").value = toBasePaste(data.baseAduana || [], "aduana");
       document.getElementById("aduanaPaste").placeholder = "Cole a atualização da Aduana. A ocorrência mais recente completa/atualiza a rota.";
       document.getElementById("drawer").classList.add("open");
     }
@@ -7602,7 +7618,8 @@
       data = JSON.parse(JSON.stringify(originalData));
       currentWave = data.ondas[0];
       document.getElementById("extracaoPaste").value = toPaste(data.extracao);
-      document.getElementById("basePaste").value = toBasePaste(data.base);
+      document.getElementById("basePaste").value = toBasePaste(data.baseOperacional || data.base || [], "operacional");
+      document.getElementById("aduanaPaste").value = toBasePaste(data.baseAduana || [], "aduana");
       localStorage.removeItem(storageKey);
       render();
     });
@@ -7610,6 +7627,7 @@
       if (!requireAdminAction()) return;
       document.getElementById("extracaoPaste").value = "";
       document.getElementById("basePaste").value = "";
+      document.getElementById("aduanaPaste").value = "";
     });
     document.getElementById("applyBtn").addEventListener("click", () => {
       if (!requireAdminAction()) return;
@@ -7624,8 +7642,8 @@
         return;
       }
 
-      const incomingOperational = parseBasePaste(operationalText);
-      const incomingAduana = parseBasePaste(aduanaText).filter(isAduanaDetailRow);
+      const incomingOperational = parseBasePaste(operationalText, "operacional");
+      const incomingAduana = parseBasePaste(aduanaText, "aduana").filter(isAduanaDetailRow);
       const planned = plannedRouteKeys(nextExtracao);
       const validOperational = incomingOperational.filter(row => planned.has(routeKey(row.rota)));
       const validAduana = incomingAduana.filter(row => planned.has(routeKey(row.rota)));
@@ -7647,7 +7665,7 @@
         carregamentoFim: data.carregamentoFim
       };
       rebuildConsolidatedBase(nextExtracao);
-      syncLoadingStarts(data.base);
+      syncLoadingStarts(data.baseOperacional);
       const waves = Array.from(new Set(nextExtracao.map(row => waveLabel(row.onda)).filter(wave => allowedWaves.includes(wave))));
       data.ondas = sanitizeWaves([...(originalData.ondas || []), ...waves]);
       currentWave = data.ondas.some(wave => waveLabel(wave) === waveLabel(currentWave)) ? currentWave : data.ondas[0];
@@ -7657,6 +7675,7 @@
       render();
     });
 
+    rebuildConsolidatedBase(data.extracao || []);
     render();
     initializeFirebase();
     setInterval(() => {
@@ -7709,11 +7728,3 @@
 </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
