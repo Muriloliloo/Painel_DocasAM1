@@ -1631,7 +1631,7 @@
       html,
       body {
         width: 100%;
-        min-width: 1180px;
+        min-width: 0;
       }
 
       body {
@@ -1643,11 +1643,16 @@
         -webkit-overflow-scrolling: touch;
       }
 
-      .app.docas-mode {
+      .app.docas-mode:not(.simple-docks-mode) {
         width: 1180px;
         min-width: 1180px;
         margin-left: 0;
         margin-right: 0;
+      }
+
+      .app.docas-mode.simple-docks-mode {
+        width: 100%;
+        min-width: 0;
       }
     }
 
@@ -5618,7 +5623,20 @@
     }
 
     .app.simple-docks-mode {
+      width: 100vw;
+      max-width: none;
+      height: 100vh;
+      height: 100dvh;
+      min-height: 0;
       background: #edf3f8;
+      border-radius: 0;
+    }
+
+    body.simple-docks-active {
+      width: 100%;
+      min-width: 0;
+      display: block;
+      overflow: hidden;
     }
 
     .app.simple-docks-mode > .topbar,
@@ -5638,6 +5656,14 @@
       z-index: 120;
       gap: clamp(7px, .78vw, 15px);
       padding-top: clamp(12px, 1.35vw, 24px);
+      overflow-x: hidden;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      scrollbar-width: none;
+    }
+
+    .app.simple-docks-mode .side-rail::-webkit-scrollbar {
+      display: none;
     }
 
     .app.simple-docks-mode .side-rail button {
@@ -5650,8 +5676,12 @@
       z-index: 100;
       min-width: 0;
       display: grid;
-      grid-template-rows: 109px 116px minmax(0, 1fr) 44px;
-      padding: 20px 18px 0;
+      grid-template-rows:
+        clamp(70px, 11.6vh, 109px)
+        clamp(82px, 12.4vh, 116px)
+        minmax(0, 1fr)
+        clamp(38px, 4.8vh, 44px);
+      padding: clamp(10px, 2.15vh, 20px) clamp(8px, 1vw, 18px) 0;
       background: #f8fafc;
       color: #05294d;
       overflow: hidden;
@@ -5660,20 +5690,20 @@
     .simple-docks-heading {
       display: flex;
       align-items: center;
-      gap: 18px;
+      gap: clamp(10px, 1vw, 18px);
       min-width: 0;
     }
 
     .simple-docks-heading-icon {
-      width: 64px;
-      height: 64px;
-      flex: 0 0 64px;
+      width: clamp(46px, 6.8vh, 64px);
+      height: clamp(46px, 6.8vh, 64px);
+      flex: 0 0 clamp(46px, 6.8vh, 64px);
       display: grid;
       place-items: center;
       border-radius: 10px;
       background: #05294d;
       color: #fff;
-      font-size: 29px;
+      font-size: clamp(22px, 3vh, 29px);
     }
 
     .simple-docks-heading-copy {
@@ -5685,7 +5715,7 @@
     .simple-docks-heading-copy h2 {
       margin: 0;
       color: #05294d;
-      font: 950 36px/.98 "Segoe UI Variable Display", "Segoe UI", Arial, sans-serif;
+      font: 950 clamp(24px, 2vw, 36px)/.98 "Segoe UI Variable Display", "Segoe UI", Arial, sans-serif;
       letter-spacing: .2px;
       text-transform: uppercase;
     }
@@ -5693,41 +5723,42 @@
     .simple-docks-heading-copy p {
       margin: 0;
       color: #05294d;
-      font: 850 17px/1.15 "Segoe UI", Arial, sans-serif;
+      font: 850 clamp(12px, .95vw, 17px)/1.15 "Segoe UI", Arial, sans-serif;
     }
 
     .simple-docks-metrics {
       min-width: 0;
       display: grid;
-      grid-template-columns: repeat(7, minmax(178px, 1fr));
-      gap: 16px;
+      grid-template-columns: repeat(7, minmax(0, 1fr));
+      gap: clamp(6px, .85vw, 16px);
       padding-bottom: 0;
-      overflow-x: auto;
+      overflow-x: hidden;
       overflow-y: hidden;
     }
 
     .simple-docks-metric {
       min-width: 0;
-      height: 116px;
+      height: 100%;
       display: grid;
-      grid-template-columns: 64px minmax(0, 1fr);
+      grid-template-columns: clamp(42px, 3.7vw, 64px) minmax(0, 1fr);
       align-items: center;
-      gap: 16px;
-      padding: 14px 22px;
+      gap: clamp(6px, .7vw, 16px);
+      padding: clamp(7px, .75vw, 14px) clamp(7px, 1vw, 22px);
       border: 1px solid #cfdae5;
       border-radius: 9px;
       background: #fff;
+      overflow: hidden;
     }
 
     .simple-metric-icon {
-      width: 64px;
-      height: 64px;
+      width: clamp(42px, 3.7vw, 64px);
+      height: clamp(42px, 3.7vw, 64px);
       display: grid;
       place-items: center;
       border-radius: 10px;
       background: #007fab;
       color: #fff;
-      font-size: 29px;
+      font-size: clamp(20px, 1.7vw, 29px);
     }
 
     .simple-docks-metric.loaded .simple-metric-icon { background: #23df79; }
@@ -5744,14 +5775,16 @@
 
     .simple-metric-copy span {
       color: #05294d;
-      font: 950 12px/1 "Segoe UI", Arial, sans-serif;
+      font: 950 clamp(9px, .68vw, 12px)/1 "Segoe UI", Arial, sans-serif;
       text-transform: uppercase;
       white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     .simple-metric-copy strong {
       color: #05294d;
-      font: 950 34px/.95 "Segoe UI Variable Display", "Segoe UI", Arial, sans-serif;
+      font: 950 clamp(23px, 1.9vw, 34px)/.95 "Segoe UI Variable Display", "Segoe UI", Arial, sans-serif;
       font-variant-numeric: tabular-nums;
       white-space: nowrap;
     }
@@ -5762,39 +5795,48 @@
     .simple-docks-metric.pending .simple-metric-copy strong { color: #ed001c; }
 
     .simple-docks-metric.remaining .simple-metric-copy strong {
-      font-size: 30px;
+      font-size: clamp(17px, 1.55vw, 30px);
       letter-spacing: -.8px;
     }
 
     .simple-metric-copy small {
       min-height: 12px;
       color: #05294d;
-      font: 900 11px/1 "Segoe UI", Arial, sans-serif;
+      font: 900 clamp(8px, .62vw, 11px)/1 "Segoe UI", Arial, sans-serif;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     .simple-docks-grid-wrap {
       min-height: 0;
       padding-top: 0;
-      padding-bottom: 10px;
-      overflow: auto;
+      padding-bottom: clamp(5px, 1vh, 10px);
+      overflow-x: hidden;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      scrollbar-gutter: stable;
     }
 
     .simple-docks-grid {
+      --simple-columns: 15;
+      --simple-card-height: 54px;
+      --simple-grid-gap: clamp(5px, .48vw, 9px);
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(104px, 1fr));
-      grid-auto-rows: 54px;
-      gap: 9px;
+      grid-template-columns: repeat(var(--simple-columns), minmax(0, 1fr));
+      grid-auto-rows: var(--simple-card-height);
+      gap: var(--simple-grid-gap);
       align-content: start;
     }
 
     .simple-dock-card {
       min-width: 0;
-      min-height: 54px;
+      min-height: 0;
       display: grid;
       align-content: center;
       justify-items: start;
-      gap: 6px;
-      padding: 7px 10px;
+      gap: clamp(2px, .35vw, 6px);
+      padding: clamp(4px, .42vw, 7px) clamp(6px, .55vw, 10px);
       border: 0;
       border-radius: 7px;
       background: #d4dae3;
@@ -5827,13 +5869,13 @@
     }
 
     .simple-dock-card-number {
-      font: 950 14px/1 "Segoe UI", Arial, sans-serif;
+      font: 950 clamp(11px, .78vw, 15px)/1 "Segoe UI", Arial, sans-serif;
       font-variant-numeric: tabular-nums;
     }
 
     .simple-dock-card-route {
       width: 100%;
-      font: 950 16px/1.15 "Segoe UI", Arial, sans-serif;
+      font: 950 clamp(11px, .9vw, 17px)/1.1 "Segoe UI", Arial, sans-serif;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -5842,9 +5884,9 @@
     .simple-docks-legend {
       display: flex;
       align-items: center;
-      gap: 32px;
+      gap: clamp(16px, 1.7vw, 32px);
       min-width: 0;
-      padding: 0 22px;
+      padding: 0 clamp(10px, 1.2vw, 22px);
       border: 1px solid #cfdae5;
       border-radius: 9px 9px 0 0;
       background: #fff;
@@ -5856,7 +5898,7 @@
       align-items: center;
       gap: 9px;
       color: #05294d;
-      font: 950 12px/1 "Segoe UI", Arial, sans-serif;
+      font: 950 clamp(9px, .68vw, 12px)/1 "Segoe UI", Arial, sans-serif;
       text-transform: uppercase;
       white-space: nowrap;
     }
@@ -5901,9 +5943,197 @@
       color: #f4f8fb;
     }
 
-    @media (max-width: 1180px) {
+    @media (min-width: 2560px) {
+      .app.simple-docks-mode {
+        --docas-rail-w: 108px;
+      }
+
+      .app.simple-docks-mode .side-rail button {
+        font-size: 14px;
+      }
+
+      .app.simple-docks-mode .rail-icon {
+        font-size: 28px;
+      }
+
+      .simple-docks-heading-copy h2 {
+        font-size: 44px;
+      }
+
+      .simple-docks-heading-copy p {
+        font-size: 20px;
+      }
+
+      .simple-docks-metric {
+        grid-template-columns: 72px minmax(0, 1fr);
+      }
+
+      .simple-metric-icon {
+        width: 72px;
+        height: 72px;
+        font-size: 34px;
+      }
+
+      .simple-metric-copy span,
+      .simple-docks-legend span {
+        font-size: 14px;
+      }
+
+      .simple-metric-copy strong {
+        font-size: 40px;
+      }
+
+      .simple-docks-metric.remaining .simple-metric-copy strong {
+        font-size: 34px;
+      }
+
+      .simple-dock-card-number {
+        font-size: 17px;
+      }
+
+      .simple-dock-card-route {
+        font-size: 20px;
+      }
+    }
+
+    @media (max-width: 1100px) {
+      .simple-docks-metrics {
+        grid-template-columns: repeat(7, minmax(154px, 1fr));
+        overflow-x: auto;
+        overscroll-behavior-inline: contain;
+        scrollbar-width: thin;
+      }
+
+      .simple-docks-metric {
+        grid-template-columns: 42px minmax(0, 1fr);
+        padding-inline: 8px;
+      }
+
+      .simple-metric-icon {
+        width: 42px;
+        height: 42px;
+      }
+
+      .simple-docks-metric.remaining .simple-metric-copy strong {
+        font-size: 18px;
+      }
+    }
+
+    @media (max-width: 760px) {
+      .app.simple-docks-mode {
+        --docas-rail-w: 58px;
+      }
+
+      .app.simple-docks-mode .side-rail {
+        gap: 4px;
+        padding-top: 8px;
+      }
+
+      .app.simple-docks-mode .side-rail button {
+        min-height: 42px;
+        padding-inline: 2px;
+        font-size: 8px;
+      }
+
+      .app.simple-docks-mode .rail-icon {
+        font-size: 18px;
+      }
+
       .app.simple-docks-mode .simple-docks-view {
-        min-width: 1100px;
+        grid-template-rows: 64px 80px minmax(0, 1fr) 40px;
+        padding: 8px 7px 0;
+      }
+
+      .simple-docks-heading {
+        gap: 8px;
+      }
+
+      .simple-docks-heading-icon {
+        width: 44px;
+        height: 44px;
+        flex-basis: 44px;
+        border-radius: 8px;
+        font-size: 21px;
+      }
+
+      .simple-docks-heading-copy h2 {
+        font-size: clamp(20px, 6.2vw, 27px);
+      }
+
+      .simple-docks-heading-copy p {
+        max-width: 230px;
+        font-size: 10px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .simple-docks-metrics {
+        grid-template-columns: repeat(7, 146px);
+        gap: 7px;
+        scroll-snap-type: x proximity;
+      }
+
+      .simple-docks-metric {
+        scroll-snap-align: start;
+        border-radius: 7px;
+      }
+
+      .simple-docks-grid {
+        --simple-grid-gap: 7px;
+      }
+
+      .simple-dock-card {
+        border-radius: 6px;
+        padding: 6px 8px;
+      }
+
+      .simple-dock-card-number {
+        font-size: 12px;
+      }
+
+      .simple-dock-card-route {
+        font-size: 13px;
+      }
+
+      .simple-docks-legend {
+        gap: 18px;
+        padding-inline: 10px;
+        overflow-x: auto;
+        scrollbar-width: thin;
+      }
+
+      .simple-docks-legend span {
+        font-size: 9px;
+      }
+
+      .simple-docks-legend i {
+        width: 11px;
+        height: 11px;
+        flex-basis: 11px;
+      }
+    }
+
+    @media (max-width: 420px) {
+      .app.simple-docks-mode {
+        --docas-rail-w: 52px;
+      }
+
+      .app.simple-docks-mode .simple-docks-view {
+        padding-inline: 6px;
+      }
+
+      .app.simple-docks-mode .side-rail button {
+        min-height: 40px;
+        font-size: 7.5px;
+      }
+
+      .simple-docks-heading-copy h2 {
+        font-size: 20px;
+      }
+
+      .simple-docks-heading-copy p {
+        max-width: 185px;
       }
     }
 
@@ -8634,9 +8864,84 @@
       grid.innerHTML = cards.join("");
     }
 
+    let simpleDocksResizeFrame = 0;
+
+    function updateSimpleDocksLayout() {
+      const app = document.querySelector(".app");
+      const grid = document.getElementById("simpleDocksGrid");
+      const wrap = grid?.closest(".simple-docks-grid-wrap");
+      if (!app?.classList.contains("simple-docks-mode") || !grid || !wrap) return;
+
+      const viewportWidth = window.innerWidth;
+      const gridWidth = grid.clientWidth;
+      const gridStyle = getComputedStyle(grid);
+      const wrapStyle = getComputedStyle(wrap);
+      const gap = Number.parseFloat(gridStyle.columnGap) || 7;
+      const totalDocks = Math.max(1, Number(data.docas || 92));
+
+      let minimumCardWidth = 112;
+      let minimumColumns = 8;
+      let maximumColumns = 16;
+
+      if (viewportWidth <= 420) {
+        minimumCardWidth = 118;
+        minimumColumns = 2;
+        maximumColumns = 2;
+      } else if (viewportWidth <= 760) {
+        minimumCardWidth = 124;
+        minimumColumns = 2;
+        maximumColumns = 5;
+      } else if (viewportWidth <= 1100) {
+        minimumCardWidth = 108;
+        minimumColumns = 5;
+        maximumColumns = 8;
+      } else if (viewportWidth <= 1600) {
+        minimumCardWidth = 108;
+        minimumColumns = 10;
+        maximumColumns = 12;
+      } else if (viewportWidth <= 2400) {
+        minimumCardWidth = 112;
+        minimumColumns = 12;
+        maximumColumns = 16;
+      } else {
+        minimumCardWidth = 160;
+        minimumColumns = 16;
+        maximumColumns = 18;
+      }
+
+      const widthBasedColumns = Math.floor((gridWidth + gap) / (minimumCardWidth + gap));
+      const columns = Math.min(
+        totalDocks,
+        Math.max(minimumColumns, Math.min(maximumColumns, widthBasedColumns || minimumColumns))
+      );
+      const rows = Math.ceil(totalDocks / columns);
+      const availableHeight = Math.max(
+        0,
+        wrap.clientHeight
+          - (Number.parseFloat(wrapStyle.paddingTop) || 0)
+          - (Number.parseFloat(wrapStyle.paddingBottom) || 0)
+      );
+      const fittedHeight = Math.floor((availableHeight - (gap * Math.max(0, rows - 1))) / rows);
+      const minimumCardHeight = viewportWidth <= 760 ? 50 : 36;
+      const maximumCardHeight = viewportWidth >= 2560 ? 88 : 64;
+      const cardHeight = Math.max(minimumCardHeight, Math.min(maximumCardHeight, fittedHeight || minimumCardHeight));
+
+      grid.style.setProperty("--simple-columns", String(columns));
+      grid.style.setProperty("--simple-card-height", `${cardHeight}px`);
+      grid.dataset.columns = String(columns);
+      grid.dataset.rows = String(rows);
+      grid.dataset.fitsViewport = String(fittedHeight >= minimumCardHeight);
+    }
+
+    function scheduleSimpleDocksLayout() {
+      cancelAnimationFrame(simpleDocksResizeFrame);
+      simpleDocksResizeFrame = requestAnimationFrame(updateSimpleDocksLayout);
+    }
+
     function renderSimpleDocks() {
       renderSimpleDocksMetrics();
       renderSimpleDocksGrid();
+      scheduleSimpleDocksLayout();
     }
 
     function updateDockRailState() {
@@ -9916,6 +10221,7 @@
       app?.classList.toggle("docas-mode", currentView === "docas");
       app?.classList.toggle("report-mode", currentView !== "docas");
       app?.classList.toggle("simple-docks-mode", simpleMode);
+      document.body.classList.toggle("simple-docks-active", simpleMode);
       document.querySelectorAll("[data-view]").forEach(button => button.classList.toggle("active", button.dataset.view === currentView));
       document.getElementById("dockGrid").style.display = currentView === "docas" && !simpleMode ? "flex" : "none";
       document.getElementById("simpleDocksView")?.setAttribute("aria-hidden", simpleMode ? "false" : "true");
@@ -10183,6 +10489,7 @@
       dockDisplayMode = "simple";
       renderViews();
     });
+    window.addEventListener("resize", scheduleSimpleDocksLayout, { passive: true });
     document.getElementById("simpleDocksGrid")?.addEventListener("click", event => {
       const button = event.target.closest("[data-simple-route]");
       if (button?.dataset.simpleRoute) openRouteHistory(button.dataset.simpleRoute);
