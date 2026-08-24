@@ -924,6 +924,11 @@
       border-left-color: #ffd200;
     }
 
+    .docas-mode .side-rail #overviewRailBtn,
+    .docas-mode .side-rail #simpleDocksBtn {
+      cursor: pointer;
+    }
+
     .docas-mode .rail-icon {
       display: block;
       font: 950 22px/1 "Segoe UI", Arial, sans-serif;
@@ -5607,6 +5612,301 @@
       }
     }
 
+    /* Modo simples de docas — grade compacta inspirada na referência do usuário. */
+    .simple-docks-view {
+      display: none;
+    }
+
+    .app.simple-docks-mode {
+      background: #edf3f8;
+    }
+
+    .app.simple-docks-mode > .topbar,
+    .app.simple-docks-mode > .toolbar,
+    .app.simple-docks-mode > .stats,
+    .app.simple-docks-mode > .legend,
+    .app.simple-docks-mode > .wave-title,
+    .app.simple-docks-mode > .dock-grid,
+    .app.simple-docks-mode > .footer-strip,
+    .app.simple-docks-mode > .final-countdown-alert {
+      display: none !important;
+    }
+
+    .app.simple-docks-mode .side-rail {
+      top: 0;
+      bottom: 0;
+      z-index: 120;
+      gap: clamp(7px, .78vw, 15px);
+      padding-top: clamp(12px, 1.35vw, 24px);
+    }
+
+    .app.simple-docks-mode .side-rail button {
+      cursor: pointer;
+    }
+
+    .app.simple-docks-mode .simple-docks-view {
+      position: absolute;
+      inset: 0 0 0 var(--docas-rail-w);
+      z-index: 100;
+      min-width: 0;
+      display: grid;
+      grid-template-rows: 109px 116px minmax(0, 1fr) 44px;
+      padding: 20px 18px 0;
+      background: #f8fafc;
+      color: #05294d;
+      overflow: hidden;
+    }
+
+    .simple-docks-heading {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      min-width: 0;
+    }
+
+    .simple-docks-heading-icon {
+      width: 64px;
+      height: 64px;
+      flex: 0 0 64px;
+      display: grid;
+      place-items: center;
+      border-radius: 10px;
+      background: #05294d;
+      color: #fff;
+      font-size: 29px;
+    }
+
+    .simple-docks-heading-copy {
+      min-width: 0;
+      display: grid;
+      gap: 4px;
+    }
+
+    .simple-docks-heading-copy h2 {
+      margin: 0;
+      color: #05294d;
+      font: 950 36px/.98 "Segoe UI Variable Display", "Segoe UI", Arial, sans-serif;
+      letter-spacing: .2px;
+      text-transform: uppercase;
+    }
+
+    .simple-docks-heading-copy p {
+      margin: 0;
+      color: #05294d;
+      font: 850 17px/1.15 "Segoe UI", Arial, sans-serif;
+    }
+
+    .simple-docks-metrics {
+      min-width: 0;
+      display: grid;
+      grid-template-columns: repeat(7, minmax(178px, 1fr));
+      gap: 16px;
+      padding-bottom: 0;
+      overflow-x: auto;
+      overflow-y: hidden;
+    }
+
+    .simple-docks-metric {
+      min-width: 0;
+      height: 116px;
+      display: grid;
+      grid-template-columns: 64px minmax(0, 1fr);
+      align-items: center;
+      gap: 16px;
+      padding: 14px 22px;
+      border: 1px solid #cfdae5;
+      border-radius: 9px;
+      background: #fff;
+    }
+
+    .simple-metric-icon {
+      width: 64px;
+      height: 64px;
+      display: grid;
+      place-items: center;
+      border-radius: 10px;
+      background: #007fab;
+      color: #fff;
+      font-size: 29px;
+    }
+
+    .simple-docks-metric.loaded .simple-metric-icon { background: #23df79; }
+    .simple-docks-metric.customs .simple-metric-icon { background: #ff8500; }
+    .simple-docks-metric.loading .simple-metric-icon { background: #087cc1; }
+    .simple-docks-metric.pending .simple-metric-icon { background: #ff243d; }
+
+    .simple-metric-copy {
+      min-width: 0;
+      display: grid;
+      align-content: center;
+      gap: 4px;
+    }
+
+    .simple-metric-copy span {
+      color: #05294d;
+      font: 950 12px/1 "Segoe UI", Arial, sans-serif;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .simple-metric-copy strong {
+      color: #05294d;
+      font: 950 34px/.95 "Segoe UI Variable Display", "Segoe UI", Arial, sans-serif;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+
+    .simple-docks-metric.loaded .simple-metric-copy strong { color: #00b95c; }
+    .simple-docks-metric.customs .simple-metric-copy strong { color: #ff7900; }
+    .simple-docks-metric.loading .simple-metric-copy strong { color: #087cc1; }
+    .simple-docks-metric.pending .simple-metric-copy strong { color: #ed001c; }
+
+    .simple-docks-metric.remaining .simple-metric-copy strong {
+      font-size: 30px;
+      letter-spacing: -.8px;
+    }
+
+    .simple-metric-copy small {
+      min-height: 12px;
+      color: #05294d;
+      font: 900 11px/1 "Segoe UI", Arial, sans-serif;
+    }
+
+    .simple-docks-grid-wrap {
+      min-height: 0;
+      padding-top: 0;
+      padding-bottom: 10px;
+      overflow: auto;
+    }
+
+    .simple-docks-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(104px, 1fr));
+      grid-auto-rows: 54px;
+      gap: 9px;
+      align-content: start;
+    }
+
+    .simple-dock-card {
+      min-width: 0;
+      min-height: 54px;
+      display: grid;
+      align-content: center;
+      justify-items: start;
+      gap: 6px;
+      padding: 7px 10px;
+      border: 0;
+      border-radius: 7px;
+      background: #d4dae3;
+      color: #05294d;
+      text-align: left;
+      overflow: hidden;
+    }
+
+    button.simple-dock-card {
+      cursor: pointer;
+    }
+
+    button.simple-dock-card:hover {
+      filter: brightness(.96);
+    }
+
+    button.simple-dock-card:focus-visible {
+      outline: 3px solid #05294d;
+      outline-offset: 2px;
+    }
+
+    .simple-dock-card.loaded { background: #08b95d; color: #fff; }
+    .simple-dock-card.pending { background: #ed001c; color: #fff; }
+    .simple-dock-card.customs { background: #ff8500; color: #fff; }
+    .simple-dock-card.loading { background: #087dcc; color: #fff; }
+    .simple-dock-card.free { background: #d4dae3; color: #05294d; }
+
+    .simple-dock-card.free {
+      align-content: start;
+    }
+
+    .simple-dock-card-number {
+      font: 950 14px/1 "Segoe UI", Arial, sans-serif;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .simple-dock-card-route {
+      width: 100%;
+      font: 950 16px/1.15 "Segoe UI", Arial, sans-serif;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .simple-docks-legend {
+      display: flex;
+      align-items: center;
+      gap: 32px;
+      min-width: 0;
+      padding: 0 22px;
+      border: 1px solid #cfdae5;
+      border-radius: 9px 9px 0 0;
+      background: #fff;
+      overflow-x: auto;
+    }
+
+    .simple-docks-legend span {
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      color: #05294d;
+      font: 950 12px/1 "Segoe UI", Arial, sans-serif;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .simple-docks-legend i {
+      width: 14px;
+      height: 14px;
+      flex: 0 0 14px;
+      border-radius: 50%;
+      background: #d4dae3;
+    }
+
+    .simple-docks-legend .loaded { background: #08b95d; }
+    .simple-docks-legend .pending { background: #ed001c; }
+    .simple-docks-legend .customs { background: #ff8500; }
+    .simple-docks-legend .loading { background: #087dcc; }
+    .simple-docks-legend .free { background: #b8c2ce; }
+
+    body.dark-mode .app.simple-docks-mode,
+    body.dark-mode .app.simple-docks-mode .simple-docks-view {
+      background: #081722 !important;
+      color: #f4f8fb !important;
+    }
+
+    body.dark-mode .simple-docks-heading-copy h2,
+    body.dark-mode .simple-docks-heading-copy p,
+    body.dark-mode .simple-metric-copy span,
+    body.dark-mode .simple-metric-copy strong,
+    body.dark-mode .simple-metric-copy small,
+    body.dark-mode .simple-docks-legend span {
+      color: #f4f8fb !important;
+    }
+
+    body.dark-mode .simple-docks-metric,
+    body.dark-mode .simple-docks-legend {
+      background: #112733 !important;
+      border-color: #38566a !important;
+    }
+
+    body.dark-mode .simple-dock-card.free {
+      background: #304554;
+      color: #f4f8fb;
+    }
+
+    @media (max-width: 1180px) {
+      .app.simple-docks-mode .simple-docks-view {
+        min-width: 1100px;
+      }
+    }
+
     /* Modo de alertas operacionais — referência visual fornecida pelo usuário. */
     .alerts-modal {
       position: fixed;
@@ -6271,8 +6571,8 @@
       </div>
     </section>
     <aside class="side-rail" aria-label="Menu operacional da aba docas">
-      <button class="active" type="button"><span class="rail-icon">▦</span><span>Overview</span></button>
-      <button type="button"><span class="rail-icon">▤</span><span>Docas</span></button>
+      <button class="active" id="overviewRailBtn" type="button"><span class="rail-icon"><i class="bi bi-grid-3x3-gap-fill" aria-hidden="true"></i></span><span>Overview</span></button>
+      <button id="simpleDocksBtn" type="button"><span class="rail-icon"><i class="bi bi-building-fill" aria-hidden="true"></i></span><span>Docas</span></button>
       <button id="routeHistoryBtn" type="button" title="Consultar histórico por rota"><span class="rail-icon">⌁</span><span>Rotas</span></button>
       <button id="fullHistoryBtn" type="button" title="Abrir modo histórico completo"><span class="rail-icon">◴</span><span>Históricos</span></button>
       <button id="alertsBtn" type="button" title="Abrir alertas de processo">
@@ -6283,7 +6583,62 @@
       <button type="button"><span class="rail-icon">□</span><span>Relatórios</span></button>
       <button type="button"><span class="rail-icon">⚙</span><span>Config.</span></button>
       <button type="button"><span class="rail-icon">?</span><span>Ajuda</span></button>
-    </aside>    <section class="stats">
+    </aside>
+
+    <section class="simple-docks-view" id="simpleDocksView" aria-labelledby="simpleDocksTitle">
+      <header class="simple-docks-heading">
+        <span class="simple-docks-heading-icon"><i class="bi bi-building-fill" aria-hidden="true"></i></span>
+        <span class="simple-docks-heading-copy">
+          <h2 id="simpleDocksTitle">Modo simples</h2>
+          <p>Grade de docas com cards pequenos</p>
+        </span>
+      </header>
+
+      <section class="simple-docks-metrics" aria-label="Resumo das docas">
+        <article class="simple-docks-metric routes">
+          <span class="simple-metric-icon"><i class="bi bi-diagram-3-fill" aria-hidden="true"></i></span>
+          <span class="simple-metric-copy"><span>Rotas</span><strong id="simpleRoutesCount">0</strong><small id="simpleWaveLabel">ONDA 01</small></span>
+        </article>
+        <article class="simple-docks-metric docks">
+          <span class="simple-metric-icon"><i class="bi bi-building" aria-hidden="true"></i></span>
+          <span class="simple-metric-copy"><span>Docas</span><strong id="simpleDocksCount">92</strong><small>Posições</small></span>
+        </article>
+        <article class="simple-docks-metric loaded">
+          <span class="simple-metric-icon"><i class="bi bi-check-lg" aria-hidden="true"></i></span>
+          <span class="simple-metric-copy"><span>Expedidas</span><strong id="simpleLoadedCount">0</strong><small id="simpleLoadedPercent">0,0%</small></span>
+        </article>
+        <article class="simple-docks-metric customs">
+          <span class="simple-metric-icon"><i class="bi bi-hourglass-split" aria-hidden="true"></i></span>
+          <span class="simple-metric-copy"><span>Em aduana</span><strong id="simpleCustomsCount">0</strong><small id="simpleCustomsPercent">0,0%</small></span>
+        </article>
+        <article class="simple-docks-metric loading">
+          <span class="simple-metric-icon"><i class="bi bi-box-seam-fill" aria-hidden="true"></i></span>
+          <span class="simple-metric-copy"><span>Carregando</span><strong id="simpleLoadingCount">0</strong><small id="simpleLoadingPercent">0,0%</small></span>
+        </article>
+        <article class="simple-docks-metric pending">
+          <span class="simple-metric-icon"><i class="bi bi-exclamation-triangle" aria-hidden="true"></i></span>
+          <span class="simple-metric-copy"><span>Pendentes</span><strong id="simplePendingCount">0</strong><small id="simplePendingPercent">0,0%</small></span>
+        </article>
+        <article class="simple-docks-metric remaining">
+          <span class="simple-metric-icon"><i class="bi bi-stopwatch-fill" aria-hidden="true"></i></span>
+          <span class="simple-metric-copy"><span>Tempo restante</span><strong id="simpleRemainingTime">00:00:00</strong><small>hh:mm:ss</small></span>
+        </article>
+      </section>
+
+      <div class="simple-docks-grid-wrap">
+        <div class="simple-docks-grid" id="simpleDocksGrid" aria-label="Grade simples das docas"></div>
+      </div>
+
+      <footer class="simple-docks-legend" aria-label="Legenda do modo simples">
+        <span><i class="loaded"></i>Expedida</span>
+        <span><i class="pending"></i>Pendente</span>
+        <span><i class="customs"></i>Aduana em andamento</span>
+        <span><i class="loading"></i>Carregando</span>
+        <span><i class="free"></i>Doca livre</span>
+      </footer>
+    </section>
+
+    <section class="stats">
       <div class="report-title"><strong>REPORTE OOT 3.0</strong><span class="wave-stat" id="waveStatLabel">ONDA 01</span></div>
       <div class="stat"><span>Início</span><strong id="waveStartTime">08H30</strong></div>
       <div class="stat"><span>Término</span><strong id="waveEndTime">09H22</strong></div>
@@ -6696,6 +7051,7 @@
     }
     let currentWave = data.ondas[0] || "Onda 1";
     let currentView = "docas";
+    let dockDisplayMode = "overview";
     let alertToastTimer = null;
     let cloudState = {
       enabled: false,
@@ -8192,6 +8548,103 @@
       return slot;
     }
 
+    function simpleDockStateMeta(state = "free") {
+      return {
+        loaded: { className: "loaded", label: "Expedida" },
+        pending: { className: "pending", label: "Pendente" },
+        customs: { className: "customs", label: "Aduana em andamento" },
+        guard: { className: "loading", label: "Carregando" },
+        free: { className: "free", label: "Doca livre" }
+      }[state] || { className: "free", label: "Doca livre" };
+    }
+
+    function simpleWaveRemainingSeconds(wave) {
+      const time = parseWaveTime(wave);
+      if (!time?.inicio || !time?.fim) return 0;
+      const start = timeToTimestamp(time.inicio);
+      const end = timeToTimestamp(time.fim);
+      const now = Date.now();
+      if (!start || !end || now >= end) return 0;
+      const reference = now < start ? start : now;
+      return Math.max(0, Math.ceil((end - reference) / 1000));
+    }
+
+    function simpleClockLabel(seconds = 0) {
+      const value = Math.max(0, Number(seconds || 0));
+      const hours = Math.floor(value / 3600);
+      const minutes = Math.floor((value % 3600) / 60);
+      const secs = value % 60;
+      return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
+    }
+
+    function renderSimpleDocksMetrics() {
+      const routes = rowsForWave(currentWave);
+      const counts = dockSlotCounts(currentWave);
+      const total = routes.length;
+      const percent = value => `${(total ? value / total * 100 : 0).toFixed(1).replace(".", ",")}%`;
+      const values = {
+        simpleRoutesCount: total,
+        simpleWaveLabel: displayWave(currentWave),
+        simpleDocksCount: Number(data.docas || 92),
+        simpleLoadedCount: counts.loaded || 0,
+        simpleLoadedPercent: percent(counts.loaded || 0),
+        simpleCustomsCount: counts.customs || 0,
+        simpleCustomsPercent: percent(counts.customs || 0),
+        simpleLoadingCount: counts.guard || 0,
+        simpleLoadingPercent: percent(counts.guard || 0),
+        simplePendingCount: counts.pending || 0,
+        simplePendingPercent: percent(counts.pending || 0),
+        simpleRemainingTime: simpleClockLabel(simpleWaveRemainingSeconds(currentWave))
+      };
+      Object.entries(values).forEach(([id, value]) => {
+        const element = document.getElementById(id);
+        if (element) element.textContent = value;
+      });
+    }
+
+    function renderSimpleDocksGrid() {
+      const grid = document.getElementById("simpleDocksGrid");
+      if (!grid) return;
+      const map = routeByDock(currentWave);
+      const loaded = loadedKeys();
+      const shipped = expedidaKeys();
+      const statusMap = baseStatusByRoute();
+      const baseMap = baseDetailsByRoute();
+      const maxDock = Number(data.docas || 92);
+      const cards = [];
+
+      for (let dock = 1; dock <= maxDock; dock += 1) {
+        const rows = map.get(dock) || [];
+        const displayRows = rows.map(row => mergeRouteBaseDetails(row, baseMap));
+        const primary = displayRows[0];
+        const state = primary ? routeDockState(primary, loaded, shipped, statusMap) : "free";
+        const meta = simpleDockStateMeta(state);
+        const routeText = displayRows.map(row => row.rota).filter(Boolean).join(" / ");
+        if (!primary) {
+          cards.push(`<div class="simple-dock-card free" title="Doca ${dock} livre"><span class="simple-dock-card-number">${dock}</span></div>`);
+          continue;
+        }
+        cards.push(`
+          <button class="simple-dock-card ${meta.className}" type="button" data-simple-route="${escapeHtml(primary.rota)}" title="Doca ${dock} · ${escapeHtml(routeText)} · ${meta.label}" aria-label="Abrir histórico da rota ${escapeHtml(primary.rota)}, doca ${dock}, ${meta.label}">
+            <span class="simple-dock-card-number">${dock}</span>
+            <strong class="simple-dock-card-route">${escapeHtml(routeText)}</strong>
+          </button>
+        `);
+      }
+      grid.innerHTML = cards.join("");
+    }
+
+    function renderSimpleDocks() {
+      renderSimpleDocksMetrics();
+      renderSimpleDocksGrid();
+    }
+
+    function updateDockRailState() {
+      const alertsOpen = document.getElementById("alertsModal")?.classList.contains("open");
+      document.getElementById("overviewRailBtn")?.classList.toggle("active", !alertsOpen && currentView === "docas" && dockDisplayMode === "overview");
+      document.getElementById("simpleDocksBtn")?.classList.toggle("active", !alertsOpen && currentView === "docas" && dockDisplayMode === "simple");
+    }
+
     function formatHistoryDate(value) {
       if (!value) return "--";
       const date = new Date(value);
@@ -8470,7 +8923,7 @@
       modal.setAttribute("aria-hidden", "true");
       document.body.style.overflow = "";
       document.getElementById("alertsBtn").classList.remove("active");
-      document.querySelector(".side-rail button")?.classList.add("active");
+      updateDockRailState();
     }
 
     function announceProcessAlerts() {
@@ -9459,13 +9912,18 @@
     }
     function renderViews() {
       const app = document.querySelector(".app");
+      const simpleMode = currentView === "docas" && dockDisplayMode === "simple";
       app?.classList.toggle("docas-mode", currentView === "docas");
       app?.classList.toggle("report-mode", currentView !== "docas");
+      app?.classList.toggle("simple-docks-mode", simpleMode);
       document.querySelectorAll("[data-view]").forEach(button => button.classList.toggle("active", button.dataset.view === currentView));
-      document.getElementById("dockGrid").style.display = currentView === "docas" ? "flex" : "none";
-      document.querySelector(".legend")?.classList.toggle("active", currentView === "docas");
+      document.getElementById("dockGrid").style.display = currentView === "docas" && !simpleMode ? "flex" : "none";
+      document.getElementById("simpleDocksView")?.setAttribute("aria-hidden", simpleMode ? "false" : "true");
+      document.querySelector(".legend")?.classList.toggle("active", currentView === "docas" && !simpleMode);
       document.getElementById("justificativasView").classList.toggle("active", currentView === "justificativas");
       document.getElementById("fechamentoView").classList.toggle("active", currentView === "fechamento");
+      if (simpleMode) renderSimpleDocks();
+      updateDockRailState();
       renderJustifications();
       renderSummary();
       renderClosure();
@@ -9715,6 +10173,20 @@
       render();
     });
 
+    document.getElementById("overviewRailBtn")?.addEventListener("click", () => {
+      currentView = "docas";
+      dockDisplayMode = "overview";
+      renderViews();
+    });
+    document.getElementById("simpleDocksBtn")?.addEventListener("click", () => {
+      currentView = "docas";
+      dockDisplayMode = "simple";
+      renderViews();
+    });
+    document.getElementById("simpleDocksGrid")?.addEventListener("click", event => {
+      const button = event.target.closest("[data-simple-route]");
+      if (button?.dataset.simpleRoute) openRouteHistory(button.dataset.simpleRoute);
+    });
     document.getElementById("routeHistoryBtn")?.addEventListener("click", () => openRouteHistory());
     document.getElementById("fullHistoryBtn")?.addEventListener("click", () => openRouteHistory());
     document.getElementById("closeRouteHistoryBtn")?.addEventListener("click", closeRouteHistory);
@@ -9863,7 +10335,8 @@
     setInterval(() => {
       document.getElementById("footerUpdate").textContent = `${data.data || ""} ${currentTimeLabel()}`.trim();
       renderStats();
-      if (currentView === "docas") renderGrid();
+      if (currentView === "docas" && dockDisplayMode === "simple") renderSimpleDocksMetrics();
+      else if (currentView === "docas") renderGrid();
     }, 1000);
   </script>
 
