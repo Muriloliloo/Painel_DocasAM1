@@ -6137,6 +6137,666 @@
       }
     }
 
+    /* Modo de rotas com tempo — tabela operacional baseada na referência do usuário. */
+    .routes-mode-view {
+      display: none;
+    }
+
+    .app.routes-mode {
+      width: 100vw;
+      max-width: none;
+      height: 100vh;
+      height: 100dvh;
+      min-height: 0;
+      background: #edf3f8;
+      border-radius: 0;
+    }
+
+    .app.docas-mode.routes-mode:not(.simple-docks-mode) {
+      width: 100vw;
+      min-width: 0;
+      max-width: none;
+      margin: 0;
+    }
+
+    body.routes-mode-active {
+      width: 100%;
+      min-width: 0;
+      display: block;
+      overflow: hidden;
+    }
+
+    .app.routes-mode > .topbar,
+    .app.routes-mode > .toolbar,
+    .app.routes-mode > .stats,
+    .app.routes-mode > .legend,
+    .app.routes-mode > .wave-title,
+    .app.routes-mode > .dock-grid,
+    .app.routes-mode > .simple-docks-view,
+    .app.routes-mode > .footer-strip,
+    .app.routes-mode > .final-countdown-alert {
+      display: none !important;
+    }
+
+    .app.routes-mode .side-rail {
+      top: 0;
+      bottom: 0;
+      z-index: 120;
+      gap: clamp(7px, .78vw, 15px);
+      padding-top: clamp(12px, 1.35vw, 24px);
+      overflow-x: hidden;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      scrollbar-width: none;
+    }
+
+    .app.routes-mode .side-rail::-webkit-scrollbar {
+      display: none;
+    }
+
+    .app.routes-mode .routes-mode-view {
+      position: absolute;
+      inset: 0 0 0 var(--docas-rail-w);
+      z-index: 100;
+      min-width: 0;
+      display: grid;
+      grid-template-rows: auto clamp(92px, 15vh, 124px) minmax(0, 1fr);
+      gap: clamp(10px, 1.5vh, 18px);
+      padding: clamp(9px, 1.5vh, 16px) clamp(10px, 1.25vw, 24px) clamp(10px, 1.5vh, 18px);
+      background: #edf3f8;
+      color: #05294d;
+      overflow: hidden;
+    }
+
+    .routes-mode-heading {
+      min-width: 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+    }
+
+    .routes-mode-title-block {
+      min-width: 0;
+      display: flex;
+      align-items: center;
+      gap: clamp(10px, 1vw, 18px);
+    }
+
+    .routes-mode-number {
+      width: clamp(48px, 7.2vh, 68px);
+      height: clamp(48px, 7.2vh, 68px);
+      flex: 0 0 clamp(48px, 7.2vh, 68px);
+      display: grid;
+      place-items: center;
+      border-radius: 9px;
+      background: #05294d;
+      color: #fff;
+      font: 950 clamp(24px, 3.5vh, 34px)/1 "Segoe UI Variable Display", "Segoe UI", Arial, sans-serif;
+    }
+
+    .routes-mode-title-copy {
+      min-width: 0;
+      display: grid;
+      gap: 4px;
+    }
+
+    .routes-mode-title-copy h2 {
+      margin: 0;
+      color: #05294d;
+      font: 950 clamp(24px, 2.1vw, 38px)/.98 "Segoe UI Variable Display", "Segoe UI", Arial, sans-serif;
+      letter-spacing: .2px;
+      text-transform: uppercase;
+    }
+
+    .routes-mode-title-copy p {
+      margin: 0;
+      color: #05294d;
+      font: 850 clamp(11px, .96vw, 17px)/1.15 "Segoe UI", Arial, sans-serif;
+    }
+
+    .routes-wave-picker {
+      min-width: clamp(170px, 15vw, 240px);
+      display: grid;
+      gap: 5px;
+      color: #05294d;
+      font: 900 clamp(9px, .68vw, 12px)/1 "Segoe UI", Arial, sans-serif;
+      text-transform: uppercase;
+    }
+
+    .routes-wave-picker select {
+      width: 100%;
+      height: clamp(40px, 5.2vh, 48px);
+      padding: 0 38px 0 13px;
+      border: 1px solid #b9cad9;
+      border-radius: 7px;
+      background: #fff;
+      color: #05294d;
+      font: 900 clamp(12px, .9vw, 15px)/1 "Segoe UI", Arial, sans-serif;
+      cursor: pointer;
+    }
+
+    .routes-wave-picker select:focus-visible {
+      outline: 3px solid #0b86ca;
+      outline-offset: 2px;
+    }
+
+    .routes-mode-metrics {
+      min-width: 0;
+      display: grid;
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      gap: clamp(7px, .9vw, 17px);
+      overflow-x: hidden;
+      overflow-y: hidden;
+    }
+
+    .routes-mode-metric {
+      min-width: 0;
+      height: 100%;
+      display: grid;
+      grid-template-columns: clamp(44px, 4.2vw, 66px) minmax(0, 1fr);
+      align-items: center;
+      gap: clamp(7px, .8vw, 16px);
+      padding: clamp(8px, .85vw, 15px) clamp(8px, 1vw, 20px);
+      border: 1px solid #cfdae5;
+      border-radius: 9px;
+      background: #fff;
+      overflow: hidden;
+    }
+
+    .routes-metric-icon {
+      width: clamp(44px, 4.2vw, 66px);
+      height: clamp(44px, 4.2vw, 66px);
+      display: grid;
+      place-items: center;
+      border-radius: 9px;
+      background: #007fab;
+      color: #fff;
+      font-size: clamp(21px, 2vw, 31px);
+    }
+
+    .routes-mode-metric.loaded .routes-metric-icon { background: #23df79; }
+    .routes-mode-metric.customs .routes-metric-icon { background: #ff8500; }
+    .routes-mode-metric.loading .routes-metric-icon { background: #087cc1; }
+    .routes-mode-metric.pending .routes-metric-icon { background: #ff243d; }
+    .routes-mode-metric.average .routes-metric-icon { background: #007fab; }
+
+    .routes-metric-copy {
+      min-width: 0;
+      display: grid;
+      align-content: center;
+      gap: 4px;
+    }
+
+    .routes-metric-copy > span {
+      color: #05294d;
+      font: 950 clamp(8.5px, .66vw, 12px)/1 "Segoe UI", Arial, sans-serif;
+      text-transform: uppercase;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .routes-metric-copy strong {
+      color: #05294d;
+      font: 950 clamp(23px, 1.9vw, 35px)/.95 "Segoe UI Variable Display", "Segoe UI", Arial, sans-serif;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+
+    .routes-mode-metric.loaded .routes-metric-copy strong { color: #00b95c; }
+    .routes-mode-metric.customs .routes-metric-copy strong { color: #ff7900; }
+    .routes-mode-metric.loading .routes-metric-copy strong { color: #087cc1; }
+    .routes-mode-metric.pending .routes-metric-copy strong { color: #ed001c; }
+
+    .routes-mode-metric.average .routes-metric-copy strong {
+      font-size: clamp(17px, 1.5vw, 29px);
+      letter-spacing: -.7px;
+    }
+
+    .routes-metric-copy small {
+      color: #05294d;
+      font: 900 clamp(8px, .62vw, 11px)/1 "Segoe UI", Arial, sans-serif;
+      white-space: nowrap;
+    }
+
+    .routes-table-card {
+      min-width: 0;
+      min-height: 0;
+      border: 1px solid #cfdae5;
+      border-radius: 9px;
+      background: #fff;
+      overflow: auto;
+      overscroll-behavior: contain;
+      scrollbar-gutter: stable;
+    }
+
+    .routes-table-head,
+    .routes-table-row {
+      min-width: 910px;
+      display: grid;
+      grid-template-columns: minmax(104px, .65fr) minmax(165px, 1.35fr) minmax(150px, 1fr) minmax(180px, 1.2fr) minmax(170px, 1fr) minmax(72px, .45fr);
+      align-items: center;
+      column-gap: clamp(8px, 1.1vw, 24px);
+    }
+
+    .routes-table-head {
+      position: sticky;
+      top: 0;
+      z-index: 5;
+      min-height: clamp(38px, 5.5vh, 50px);
+      padding: 0 clamp(14px, 2.6vw, 48px);
+      border-bottom: 1px solid #d6e0e8;
+      background: #eaf1f7;
+      color: #05294d;
+      font: 950 clamp(9px, .72vw, 13px)/1 "Segoe UI", Arial, sans-serif;
+      text-align: center;
+      text-transform: uppercase;
+    }
+
+    .routes-table-body {
+      min-width: 910px;
+    }
+
+    .routes-table-row {
+      width: 100%;
+      min-height: clamp(76px, 10.8vh, 104px);
+      padding: clamp(8px, 1vh, 12px) clamp(14px, 2.6vw, 48px);
+      border: 0;
+      border-bottom: 1px solid #e1e8ee;
+      background: #fff;
+      color: #05294d;
+      text-align: center;
+      cursor: pointer;
+    }
+
+    .routes-table-row:last-child {
+      border-bottom: 0;
+    }
+
+    .routes-table-row:hover {
+      background: #f6f9fc;
+    }
+
+    .routes-table-row:focus-visible {
+      position: relative;
+      z-index: 2;
+      outline: 3px solid #0b86ca;
+      outline-offset: -3px;
+    }
+
+    .routes-cell {
+      min-width: 0;
+      display: grid;
+      justify-items: center;
+      gap: 5px;
+    }
+
+    .routes-cell::before {
+      display: none;
+      content: attr(data-label);
+    }
+
+    .routes-dock-value {
+      width: min(100%, 148px);
+      min-height: clamp(50px, 7.6vh, 68px);
+      display: grid;
+      place-items: center;
+      border-radius: 7px;
+      background: #d4dae3;
+      color: #05294d;
+      font: 950 clamp(25px, 2.3vw, 38px)/1 "Segoe UI Variable Display", "Segoe UI", Arial, sans-serif;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .routes-dock-value.loaded { background: #08b95d; color: #fff; }
+    .routes-dock-value.customs { background: #ff8500; color: #fff; }
+    .routes-dock-value.loading { background: #087dcc; color: #fff; }
+    .routes-dock-value.pending { background: #ed001c; color: #fff; }
+
+    .routes-cell-main {
+      max-width: 100%;
+      color: #05294d;
+      font: 950 clamp(15px, 1.3vw, 23px)/1.05 "Segoe UI Variable Display", "Segoe UI", Arial, sans-serif;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .routes-cell-sub {
+      max-width: 100%;
+      color: #05294d;
+      font: 900 clamp(9px, .68vw, 12px)/1 "Segoe UI", Arial, sans-serif;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .routes-status-value {
+      width: min(100%, 156px);
+      min-height: 38px;
+      display: grid;
+      place-items: center;
+      padding: 7px 11px;
+      border-radius: 7px;
+      background: #d4dae3;
+      color: #05294d;
+      font: 950 clamp(9px, .72vw, 12px)/1.1 "Segoe UI", Arial, sans-serif;
+      text-transform: uppercase;
+    }
+
+    .routes-status-value.loaded { background: #08b95d; color: #fff; }
+    .routes-status-value.customs { background: #ff8500; color: #fff; }
+    .routes-status-value.loading { background: #087dcc; color: #fff; }
+    .routes-status-value.pending { background: #ed001c; color: #fff; }
+
+    .routes-qr-icon {
+      width: clamp(40px, 4.2vw, 56px);
+      height: clamp(40px, 4.2vw, 56px);
+      display: grid;
+      place-items: center;
+      border: 1px solid #c7d5e1;
+      background: #fff;
+      color: #05294d;
+      font-size: clamp(24px, 2.2vw, 34px);
+    }
+
+    .routes-empty-state {
+      min-height: 220px;
+      display: grid;
+      place-items: center;
+      gap: 8px;
+      padding: 30px;
+      color: #64788a;
+      text-align: center;
+    }
+
+    .routes-empty-state i {
+      font-size: 38px;
+    }
+
+    .routes-empty-state strong {
+      color: #05294d;
+      font-size: 17px;
+    }
+
+    body.dark-mode .app.routes-mode,
+    body.dark-mode .app.routes-mode .routes-mode-view {
+      background: #081722 !important;
+      color: #f4f8fb !important;
+    }
+
+    body.dark-mode .routes-mode-title-copy h2,
+    body.dark-mode .routes-mode-title-copy p,
+    body.dark-mode .routes-wave-picker,
+    body.dark-mode .routes-metric-copy > span,
+    body.dark-mode .routes-metric-copy strong,
+    body.dark-mode .routes-metric-copy small,
+    body.dark-mode .routes-table-head,
+    body.dark-mode .routes-cell-main,
+    body.dark-mode .routes-cell-sub,
+    body.dark-mode .routes-empty-state strong {
+      color: #f4f8fb !important;
+    }
+
+    body.dark-mode .routes-wave-picker select,
+    body.dark-mode .routes-mode-metric,
+    body.dark-mode .routes-table-card,
+    body.dark-mode .routes-table-row,
+    body.dark-mode .routes-qr-icon {
+      background: #112733 !important;
+      border-color: #38566a !important;
+      color: #f4f8fb !important;
+    }
+
+    body.dark-mode .routes-table-head,
+    body.dark-mode .routes-table-row:hover {
+      background: #183341 !important;
+    }
+
+    body.dark-mode .routes-table-row {
+      border-bottom-color: #2f4a5b !important;
+    }
+
+    body.dark-mode .routes-dock-value:not(.loaded):not(.customs):not(.loading):not(.pending),
+    body.dark-mode .routes-status-value:not(.loaded):not(.customs):not(.loading):not(.pending) {
+      background: #304554;
+      color: #f4f8fb;
+    }
+
+    @media (min-width: 2560px) {
+      .app.routes-mode {
+        --docas-rail-w: 108px;
+      }
+
+      .app.routes-mode .side-rail button {
+        font-size: 14px;
+      }
+
+      .app.routes-mode .rail-icon {
+        font-size: 28px;
+      }
+
+      .routes-mode-title-copy h2 { font-size: 44px; }
+      .routes-mode-title-copy p { font-size: 20px; }
+      .routes-metric-copy > span,
+      .routes-table-head { font-size: 14px; }
+      .routes-metric-copy strong { font-size: 40px; }
+      .routes-mode-metric.average .routes-metric-copy strong { font-size: 34px; }
+      .routes-table-row { min-height: 122px; }
+      .routes-cell-main { font-size: 28px; }
+      .routes-cell-sub { font-size: 15px; }
+    }
+
+    @media (max-width: 1250px) {
+      .routes-mode-metrics {
+        grid-template-columns: repeat(6, minmax(170px, 1fr));
+        overflow-x: auto;
+        overscroll-behavior-inline: contain;
+        scrollbar-width: thin;
+      }
+
+      .routes-mode-metric {
+        scroll-snap-align: start;
+      }
+    }
+
+    @media (max-width: 760px) {
+      .app.routes-mode {
+        --docas-rail-w: 58px;
+      }
+
+      .app.routes-mode .side-rail {
+        gap: 4px;
+        padding-top: 8px;
+      }
+
+      .app.routes-mode .side-rail button {
+        min-height: 42px;
+        padding-inline: 2px;
+        font-size: 8px;
+      }
+
+      .app.routes-mode .rail-icon {
+        font-size: 18px;
+      }
+
+      .app.routes-mode .routes-mode-view {
+        grid-template-rows: auto 80px minmax(0, 1fr);
+        gap: 8px;
+        padding: 8px 7px;
+      }
+
+      .routes-mode-heading {
+        align-items: stretch;
+        gap: 8px;
+      }
+
+      .routes-mode-title-block {
+        gap: 8px;
+      }
+
+      .routes-mode-number {
+        width: 44px;
+        height: 44px;
+        flex-basis: 44px;
+        font-size: 22px;
+      }
+
+      .routes-mode-title-copy h2 {
+        font-size: clamp(17px, 5.1vw, 23px);
+      }
+
+      .routes-mode-title-copy p {
+        max-width: 170px;
+        font-size: 9px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .routes-wave-picker {
+        min-width: 116px;
+        align-self: center;
+        font-size: 7px;
+      }
+
+      .routes-wave-picker select {
+        height: 36px;
+        padding-left: 8px;
+        padding-right: 24px;
+        font-size: 10px;
+      }
+
+      .routes-mode-metrics {
+        grid-template-columns: repeat(6, 152px);
+        gap: 7px;
+        scroll-snap-type: x proximity;
+      }
+
+      .routes-mode-metric {
+        grid-template-columns: 42px minmax(0, 1fr);
+        padding: 7px 8px;
+      }
+
+      .routes-metric-icon {
+        width: 42px;
+        height: 42px;
+      }
+
+      .routes-table-card {
+        overflow-x: hidden;
+        overflow-y: auto;
+      }
+
+      .routes-table-head {
+        display: none;
+      }
+
+      .routes-table-body {
+        min-width: 0;
+        display: grid;
+        gap: 8px;
+        padding: 8px;
+      }
+
+      .routes-table-row {
+        min-width: 0;
+        min-height: 0;
+        grid-template-columns: minmax(72px, .7fr) minmax(0, 1.3fr);
+        gap: 10px 12px;
+        padding: 10px;
+        border: 1px solid #d6e0e8;
+        border-radius: 8px;
+        text-align: left;
+      }
+
+      .routes-cell {
+        justify-items: start;
+        align-content: start;
+        gap: 4px;
+      }
+
+      .routes-cell::before {
+        display: block;
+        color: #607588;
+        font: 900 8px/1 "Segoe UI", Arial, sans-serif;
+        text-transform: uppercase;
+      }
+
+      .routes-cell.dock {
+        grid-row: span 2;
+      }
+
+      .routes-cell.status,
+      .routes-cell.time,
+      .routes-cell.entry,
+      .routes-cell.qr {
+        grid-column: 2;
+      }
+
+      .routes-dock-value {
+        width: 100%;
+        min-height: 64px;
+        font-size: 27px;
+      }
+
+      .routes-cell-main {
+        font-size: 15px;
+      }
+
+      .routes-cell-sub {
+        font-size: 9px;
+      }
+
+      .routes-status-value {
+        min-height: 31px;
+        justify-items: start;
+        font-size: 9px;
+      }
+
+      .routes-qr-icon {
+        width: 38px;
+        height: 38px;
+        font-size: 23px;
+      }
+
+      body.dark-mode .routes-table-row {
+        border-color: #38566a !important;
+      }
+
+      body.dark-mode .routes-cell::before {
+        color: #9fb3c2;
+      }
+    }
+
+    @media (max-width: 420px) {
+      .app.routes-mode {
+        --docas-rail-w: 52px;
+      }
+
+      .app.routes-mode .routes-mode-view {
+        padding-inline: 6px;
+      }
+
+      .app.routes-mode .side-rail button {
+        min-height: 40px;
+        font-size: 7.5px;
+      }
+
+      .routes-mode-title-copy p {
+        display: none;
+      }
+
+      .routes-wave-picker {
+        min-width: 104px;
+      }
+
+      .routes-table-row {
+        grid-template-columns: 68px minmax(0, 1fr);
+      }
+    }
+
     /* Modo de alertas operacionais — referência visual fornecida pelo usuário. */
     .alerts-modal {
       position: fixed;
@@ -6803,7 +7463,7 @@
     <aside class="side-rail" aria-label="Menu operacional da aba docas">
       <button class="active" id="overviewRailBtn" type="button"><span class="rail-icon"><i class="bi bi-grid-3x3-gap-fill" aria-hidden="true"></i></span><span>Overview</span></button>
       <button id="simpleDocksBtn" type="button"><span class="rail-icon"><i class="bi bi-building-fill" aria-hidden="true"></i></span><span>Docas</span></button>
-      <button id="routeHistoryBtn" type="button" title="Consultar histórico por rota"><span class="rail-icon">⌁</span><span>Rotas</span></button>
+      <button id="routeHistoryBtn" type="button" title="Abrir modo de rotas com tempo"><span class="rail-icon"><i class="bi bi-signpost-split-fill" aria-hidden="true"></i></span><span>Rotas</span></button>
       <button id="fullHistoryBtn" type="button" title="Abrir modo histórico completo"><span class="rail-icon">◴</span><span>Históricos</span></button>
       <button id="alertsBtn" type="button" title="Abrir alertas de processo">
         <span class="rail-icon"><i class="bi bi-exclamation-triangle-fill" aria-hidden="true"></i></span>
@@ -6866,6 +7526,56 @@
         <span><i class="loading"></i>Carregando</span>
         <span><i class="free"></i>Doca livre</span>
       </footer>
+    </section>
+
+    <section class="routes-mode-view" id="routesModeView" aria-labelledby="routesModeTitle" aria-hidden="true">
+      <header class="routes-mode-heading">
+        <div class="routes-mode-title-block">
+          <span class="routes-mode-number" aria-hidden="true">2</span>
+          <span class="routes-mode-title-copy">
+            <h2 id="routesModeTitle">Modo com tempo</h2>
+            <p>Cards maiores com mais informações</p>
+          </span>
+        </div>
+        <label class="routes-wave-picker" for="routesWaveSelect">
+          <span>Selecionar onda</span>
+          <select id="routesWaveSelect" aria-label="Selecionar onda do modo de rotas"></select>
+        </label>
+      </header>
+
+      <section class="routes-mode-metrics" id="routesModeMetrics" aria-label="Resumo das rotas">
+        <article class="routes-mode-metric monitored">
+          <span class="routes-metric-icon"><i class="bi bi-list-ul" aria-hidden="true"></i></span>
+          <span class="routes-metric-copy"><span>Total monitoradas</span><strong id="routesMonitoredCount">0</strong><small>100%</small></span>
+        </article>
+        <article class="routes-mode-metric loaded">
+          <span class="routes-metric-icon"><i class="bi bi-check-lg" aria-hidden="true"></i></span>
+          <span class="routes-metric-copy"><span>Expedidas</span><strong id="routesLoadedCount">0</strong><small id="routesLoadedPercent">0,0%</small></span>
+        </article>
+        <article class="routes-mode-metric customs">
+          <span class="routes-metric-icon"><i class="bi bi-hourglass-split" aria-hidden="true"></i></span>
+          <span class="routes-metric-copy"><span>Em aduana</span><strong id="routesCustomsCount">0</strong><small id="routesCustomsPercent">0,0%</small></span>
+        </article>
+        <article class="routes-mode-metric loading">
+          <span class="routes-metric-icon"><i class="bi bi-box-seam-fill" aria-hidden="true"></i></span>
+          <span class="routes-metric-copy"><span>Carregando</span><strong id="routesLoadingCount">0</strong><small id="routesLoadingPercent">0,0%</small></span>
+        </article>
+        <article class="routes-mode-metric pending">
+          <span class="routes-metric-icon"><i class="bi bi-exclamation-lg" aria-hidden="true"></i></span>
+          <span class="routes-metric-copy"><span>Pendentes</span><strong id="routesPendingCount">0</strong><small id="routesPendingPercent">0,0%</small></span>
+        </article>
+        <article class="routes-mode-metric average">
+          <span class="routes-metric-icon"><i class="bi bi-clock" aria-hidden="true"></i></span>
+          <span class="routes-metric-copy"><span>Média em doca</span><strong id="routesAverageTime">00:00:00</strong><small>hh:mm:ss</small></span>
+        </article>
+      </section>
+
+      <section class="routes-table-card" aria-label="Rotas monitoradas na onda selecionada">
+        <div class="routes-table-head" aria-hidden="true">
+          <span>Doca</span><span>Rota</span><span>Status</span><span>Tempo em doca</span><span>Entrada</span><span>QR</span>
+        </div>
+        <div class="routes-table-body" id="routesModeRows"></div>
+      </section>
     </section>
 
     <section class="stats">
@@ -8944,10 +9654,121 @@
       scheduleSimpleDocksLayout();
     }
 
+    function routeModeRows(wave = currentWave) {
+      const byRoute = new Map();
+      rowsForWave(wave).forEach(row => {
+        const key = routeKey(row.rota);
+        if (key && !byRoute.has(key)) byRoute.set(key, row);
+      });
+      return Array.from(byRoute.values()).sort((a, b) => {
+        const dockA = Number(String(a.doca || "").replace(/\D/g, "")) || Number.MAX_SAFE_INTEGER;
+        const dockB = Number(String(b.doca || "").replace(/\D/g, "")) || Number.MAX_SAFE_INTEGER;
+        return dockA - dockB || normalize(a.rota).localeCompare(normalize(b.rota), "pt-BR", { numeric: true });
+      });
+    }
+
+    function routeModeProcessSeconds(route, wave, details = {}, milestones = {}) {
+      const informed = durationTextToMs(details.tempoTotal || details.tempoProcesso || details.auditTime || "");
+      if (informed > 0) return Math.floor(informed / 1000);
+      const key = routeKey(route);
+      const tracked = elapsedSeconds(key, wave);
+      if (tracked || data.carregamentoInicio?.[key]) return tracked;
+      const start = Number(milestones.entryBase || 0);
+      if (!start) return 0;
+      const end = Number(milestones.completed || 0) || Date.now();
+      return Math.max(0, Math.floor((end - start) / 1000));
+    }
+
+    function renderRoutesWaveSelector() {
+      const select = document.getElementById("routesWaveSelect");
+      if (!select) return;
+      const waves = (data.ondas?.length ? data.ondas : [currentWave]).filter(Boolean);
+      select.innerHTML = waves.map(wave => {
+        const timing = parseWaveTime(wave);
+        const interval = timing?.inicio && timing?.fim ? ` · ${timing.inicio}–${timing.fim}` : "";
+        return `<option value="${escapeHtml(wave)}"${waveLabel(wave) === waveLabel(currentWave) ? " selected" : ""}>${escapeHtml(displayWave(wave) + interval)}</option>`;
+      }).join("");
+    }
+
+    function renderRoutesMode() {
+      renderRoutesWaveSelector();
+      const rows = routeModeRows(currentWave);
+      const loaded = loadedKeys();
+      const shipped = expedidaKeys();
+      const statusMap = baseStatusByRoute();
+      const baseMap = baseDetailsByRoute();
+      const total = rows.length;
+      const counts = { loaded: 0, customs: 0, guard: 0, pending: 0 };
+      let totalProcessSeconds = 0;
+      let timedRoutes = 0;
+
+      const content = rows.map(row => {
+        const merged = mergeRouteBaseDetails(row, baseMap);
+        const details = { ...routeCurrentDetails(row.rota), ...merged };
+        const state = routeDockState(merged, loaded, shipped, statusMap);
+        const meta = simpleDockStateMeta(state);
+        counts[state] = (counts[state] || 0) + 1;
+
+        const historyRows = routeHistoryRows(row.rota);
+        const lifecycle = routeLifecycleTimes(row.rota, historyRows);
+        const milestones = historyMilestones(details, historyRows, lifecycle);
+        const entry = historyMomentParts(milestones.entryBase);
+        const qr = historyMomentParts(milestones.qrBip);
+        const processSeconds = routeModeProcessSeconds(row.rota, merged.onda || currentWave, details, milestones);
+        if (processSeconds > 0) {
+          totalProcessSeconds += processSeconds;
+          timedRoutes += 1;
+        }
+
+        const dock = normalize(merged.doca) || "-";
+        const route = normalize(merged.rota) || "-";
+        return `
+          <button class="routes-table-row" type="button" data-routes-route="${escapeHtml(route)}" aria-label="Abrir histórico da rota ${escapeHtml(route)}, doca ${escapeHtml(dock)}, ${escapeHtml(meta.label)}">
+            <span class="routes-cell dock" data-label="Doca"><strong class="routes-dock-value ${meta.className}">${escapeHtml(dock)}</strong></span>
+            <span class="routes-cell route" data-label="Rota"><strong class="routes-cell-main">${escapeHtml(route)}</strong><small class="routes-cell-sub">${escapeHtml(displayWave(merged.onda || currentWave))}</small></span>
+            <span class="routes-cell status" data-label="Status"><strong class="routes-status-value ${meta.className}">${escapeHtml(meta.label)}</strong></span>
+            <span class="routes-cell time" data-label="Tempo em doca"><strong class="routes-cell-main">${simpleClockLabel(processSeconds)}</strong><small class="routes-cell-sub">hh:mm:ss</small></span>
+            <span class="routes-cell entry" data-label="Entrada"><strong class="routes-cell-main">${escapeHtml(entry.time)}</strong><small class="routes-cell-sub">${escapeHtml(entry.date)}</small></span>
+            <span class="routes-cell qr" data-label="QR"><span class="routes-qr-icon" aria-hidden="true"><i class="bi bi-qr-code"></i></span><small class="routes-cell-sub">${escapeHtml(qr.time)}</small></span>
+          </button>
+        `;
+      }).join("");
+
+      const percent = value => `${(total ? value / total * 100 : 0).toFixed(1).replace(".", ",")}%`;
+      const values = {
+        routesMonitoredCount: total,
+        routesLoadedCount: counts.loaded || 0,
+        routesLoadedPercent: percent(counts.loaded || 0),
+        routesCustomsCount: counts.customs || 0,
+        routesCustomsPercent: percent(counts.customs || 0),
+        routesLoadingCount: counts.guard || 0,
+        routesLoadingPercent: percent(counts.guard || 0),
+        routesPendingCount: counts.pending || 0,
+        routesPendingPercent: percent(counts.pending || 0),
+        routesAverageTime: simpleClockLabel(timedRoutes ? Math.round(totalProcessSeconds / timedRoutes) : 0)
+      };
+      Object.entries(values).forEach(([id, value]) => {
+        const element = document.getElementById(id);
+        if (element) element.textContent = value;
+      });
+
+      const container = document.getElementById("routesModeRows");
+      if (container) {
+        container.innerHTML = content || `
+          <div class="routes-empty-state">
+            <i class="bi bi-inbox" aria-hidden="true"></i>
+            <strong>Nenhuma rota nesta onda</strong>
+            <span>Selecione outra onda ou adicione dados no Editor de dados.</span>
+          </div>
+        `;
+      }
+    }
+
     function updateDockRailState() {
       const alertsOpen = document.getElementById("alertsModal")?.classList.contains("open");
       document.getElementById("overviewRailBtn")?.classList.toggle("active", !alertsOpen && currentView === "docas" && dockDisplayMode === "overview");
       document.getElementById("simpleDocksBtn")?.classList.toggle("active", !alertsOpen && currentView === "docas" && dockDisplayMode === "simple");
+      document.getElementById("routeHistoryBtn")?.classList.toggle("active", !alertsOpen && currentView === "routes");
     }
 
     function formatHistoryDate(value) {
@@ -10218,17 +11039,22 @@
     function renderViews() {
       const app = document.querySelector(".app");
       const simpleMode = currentView === "docas" && dockDisplayMode === "simple";
-      app?.classList.toggle("docas-mode", currentView === "docas");
-      app?.classList.toggle("report-mode", currentView !== "docas");
+      const routesMode = currentView === "routes";
+      app?.classList.toggle("docas-mode", currentView === "docas" || routesMode);
+      app?.classList.toggle("report-mode", currentView !== "docas" && !routesMode);
       app?.classList.toggle("simple-docks-mode", simpleMode);
+      app?.classList.toggle("routes-mode", routesMode);
       document.body.classList.toggle("simple-docks-active", simpleMode);
+      document.body.classList.toggle("routes-mode-active", routesMode);
       document.querySelectorAll("[data-view]").forEach(button => button.classList.toggle("active", button.dataset.view === currentView));
       document.getElementById("dockGrid").style.display = currentView === "docas" && !simpleMode ? "flex" : "none";
       document.getElementById("simpleDocksView")?.setAttribute("aria-hidden", simpleMode ? "false" : "true");
+      document.getElementById("routesModeView")?.setAttribute("aria-hidden", routesMode ? "false" : "true");
       document.querySelector(".legend")?.classList.toggle("active", currentView === "docas" && !simpleMode);
       document.getElementById("justificativasView").classList.toggle("active", currentView === "justificativas");
       document.getElementById("fechamentoView").classList.toggle("active", currentView === "fechamento");
       if (simpleMode) renderSimpleDocks();
+      if (routesMode) renderRoutesMode();
       updateDockRailState();
       renderJustifications();
       renderSummary();
@@ -10494,7 +11320,20 @@
       const button = event.target.closest("[data-simple-route]");
       if (button?.dataset.simpleRoute) openRouteHistory(button.dataset.simpleRoute);
     });
-    document.getElementById("routeHistoryBtn")?.addEventListener("click", () => openRouteHistory());
+    document.getElementById("routeHistoryBtn")?.addEventListener("click", () => {
+      currentView = "routes";
+      renderViews();
+    });
+    document.getElementById("routesWaveSelect")?.addEventListener("change", event => {
+      const wave = event.target.value;
+      if (!wave) return;
+      currentWave = wave;
+      render();
+    });
+    document.getElementById("routesModeRows")?.addEventListener("click", event => {
+      const button = event.target.closest("[data-routes-route]");
+      if (button?.dataset.routesRoute) openRouteHistory(button.dataset.routesRoute);
+    });
     document.getElementById("fullHistoryBtn")?.addEventListener("click", () => openRouteHistory());
     document.getElementById("closeRouteHistoryBtn")?.addEventListener("click", closeRouteHistory);
     document.getElementById("routeHistoryPrintBtn")?.addEventListener("click", printRouteHistory);
@@ -10644,6 +11483,7 @@
       renderStats();
       if (currentView === "docas" && dockDisplayMode === "simple") renderSimpleDocksMetrics();
       else if (currentView === "docas") renderGrid();
+      else if (currentView === "routes") renderRoutesMode();
     }, 1000);
   </script>
 
