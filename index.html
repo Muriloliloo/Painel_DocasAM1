@@ -5608,6 +5608,556 @@
       }
     }
 
+    /* Modo de alertas operacionais — referência visual fornecida pelo usuário. */
+    .alerts-modal {
+      position: fixed;
+      inset: 0;
+      z-index: 6000;
+      display: none;
+      background: #e8f0f7;
+      color: #04294d;
+      font-family: "Segoe UI", Arial, sans-serif;
+    }
+
+    .alerts-modal.open {
+      display: block;
+    }
+
+    .alerts-panel {
+      width: 100vw;
+      height: 100vh;
+      display: grid;
+      grid-template-rows: 90px minmax(0, 1fr);
+      overflow: hidden;
+    }
+
+    .alerts-header {
+      display: grid;
+      grid-template-columns: minmax(390px, 2fr) repeat(4, minmax(165px, .64fr));
+      min-width: 1040px;
+      margin: 5px 5px 0;
+      border: 1px solid #c8d6e2;
+      border-radius: 7px;
+      background: #fff;
+      overflow: hidden;
+    }
+
+    .alerts-title-block {
+      display: grid;
+      grid-template-columns: 52px minmax(0, 1fr);
+      align-items: center;
+      gap: 10px;
+      padding: 10px 18px;
+    }
+
+    .alerts-close-button {
+      width: 48px;
+      height: 56px;
+      display: grid;
+      place-items: center;
+      border: 0;
+      border-radius: 7px;
+      background: #f00020;
+      color: #fff;
+      cursor: pointer;
+    }
+
+    .alerts-close-button i {
+      font-size: 31px;
+      line-height: 1;
+    }
+
+    .alerts-title-copy {
+      display: grid;
+      gap: 4px;
+    }
+
+    .alerts-title-copy strong {
+      color: #05294d;
+      font: 950 29px/1 "Segoe UI Variable Display", "Segoe UI", Arial, sans-serif;
+      text-transform: uppercase;
+    }
+
+    .alerts-title-copy span {
+      color: #062b51;
+      font: 800 14px/1.15 "Segoe UI", Arial, sans-serif;
+    }
+
+    .alert-summary-card {
+      display: grid;
+      grid-template-columns: 54px minmax(0, 1fr);
+      align-items: center;
+      gap: 12px;
+      padding: 10px 16px;
+      border-left: 1px solid #d0dbe5;
+      background: #fff;
+    }
+
+    .alert-summary-icon {
+      width: 52px;
+      height: 52px;
+      display: grid;
+      place-items: center;
+      border-radius: 9px;
+      color: #fff;
+    }
+
+    .alert-summary-icon i {
+      font-size: 28px;
+      line-height: 1;
+    }
+
+    .alert-summary-card.critical .alert-summary-icon { background: #ff203d; }
+    .alert-summary-card.moderate .alert-summary-icon { background: #ffad0b; }
+    .alert-summary-card.active .alert-summary-icon { background: #16d879; }
+    .alert-summary-card.waves .alert-summary-icon { background: #007eb5; }
+
+    .alert-summary-copy {
+      display: grid;
+      gap: 4px;
+      min-width: 0;
+    }
+
+    .alert-summary-copy span {
+      color: #05294d;
+      font: 950 11px/1 "Segoe UI", Arial, sans-serif;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .alert-summary-copy strong {
+      color: #05294d;
+      font: 950 31px/1 "Segoe UI Variable Display", "Segoe UI", Arial, sans-serif;
+    }
+
+    .alert-summary-card.critical strong { color: #ec1232; }
+    .alert-summary-card.moderate strong { color: #ff8a00; }
+    .alert-summary-card.active strong { color: #00b95e; }
+    .alert-summary-card.waves strong { color: #e30628; }
+
+    .alerts-content {
+      min-height: 0;
+      display: grid;
+      grid-template-rows: auto minmax(185px, 1fr) minmax(120px, .58fr);
+      gap: 10px;
+      padding: 12px 5px 10px;
+      overflow: auto;
+    }
+
+    .alert-featured {
+      min-height: 108px;
+      display: grid;
+      grid-template-columns: 140px minmax(150px, .9fr) 82px 135px 145px minmax(235px, 1.25fr) 120px 145px minmax(220px, 1.15fr);
+      margin: 0 10px;
+      border: 1px solid #ff1435;
+      border-radius: 7px;
+      background: #fff1f3;
+      overflow-x: auto;
+      overflow-y: hidden;
+    }
+
+    .alert-featured.empty {
+      min-height: 108px;
+      display: grid;
+      grid-template-columns: 64px minmax(0, 1fr);
+      align-items: center;
+      gap: 14px;
+      padding: 18px 24px;
+      border-color: #25bb6c;
+      background: #effcf5;
+    }
+
+    .alert-featured-empty-icon {
+      width: 56px;
+      height: 56px;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      background: #14bd68;
+      color: #fff;
+      font-size: 28px;
+    }
+
+    .alert-featured-empty-copy {
+      display: grid;
+      gap: 5px;
+    }
+
+    .alert-featured-empty-copy strong {
+      font: 950 20px/1.1 "Segoe UI", Arial, sans-serif;
+    }
+
+    .alert-featured-empty-copy span {
+      font: 750 13px/1.3 "Segoe UI", Arial, sans-serif;
+    }
+
+    .alert-featured-cell {
+      min-width: 0;
+      display: grid;
+      place-content: center;
+      justify-items: center;
+      gap: 6px;
+      padding: 10px 12px;
+      border-right: 1px solid #d7e0e8;
+      text-align: center;
+    }
+
+    .alert-featured-cell:last-child {
+      border-right: 0;
+    }
+
+    .alert-featured-cell > span {
+      color: #05294d;
+      font: 950 10px/1 "Segoe UI", Arial, sans-serif;
+      text-transform: uppercase;
+    }
+
+    .alert-featured-cell > strong {
+      color: #041f3c;
+      font: 950 18px/1.1 "Segoe UI Variable Display", "Segoe UI", Arial, sans-serif;
+    }
+
+    .alert-featured-dock {
+      background: #ef001f;
+      color: #fff;
+    }
+
+    .alert-featured-dock > span,
+    .alert-featured-dock > strong {
+      color: #fff;
+    }
+
+    .alert-featured-dock > strong {
+      font-size: 50px;
+    }
+
+    .alert-priority-pill,
+    .alert-status-pill {
+      min-width: 112px;
+      display: inline-grid;
+      place-items: center;
+      padding: 8px 11px;
+      border-radius: 7px;
+      color: #fff;
+      font: 950 11px/1 "Segoe UI", Arial, sans-serif;
+      text-transform: uppercase;
+    }
+
+    .alert-priority-pill.critical,
+    .alert-status-pill.critical { background: #ed0625; }
+    .alert-priority-pill.moderate,
+    .alert-status-pill.moderate { background: #ff8500; }
+
+    .alert-featured-time {
+      font-variant-numeric: tabular-nums;
+    }
+
+    .alert-featured-time small {
+      color: #05294d;
+      font: 850 10px/1 "Segoe UI", Arial, sans-serif;
+    }
+
+    .alerts-table-card,
+    .alerts-log-card {
+      min-height: 0;
+      margin: 0 5px;
+      border: 1px solid #c8d5e0;
+      border-radius: 7px;
+      background: #fff;
+      overflow: hidden;
+    }
+
+    .alerts-card-heading {
+      min-height: 38px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 0 14px;
+      background: #eaf1f7;
+      border-bottom: 1px solid #ccd9e4;
+    }
+
+    .alerts-card-heading strong {
+      color: #05294d;
+      font: 950 13px/1 "Segoe UI", Arial, sans-serif;
+      text-transform: uppercase;
+    }
+
+    .alerts-card-heading span {
+      padding: 4px 9px;
+      border: 1px solid #bdcddd;
+      border-radius: 999px;
+      background: #fff;
+      color: #05294d;
+      font: 900 10px/1 "Segoe UI", Arial, sans-serif;
+    }
+
+    .alerts-table-wrap {
+      max-height: 100%;
+      overflow: auto;
+    }
+
+    .alerts-table {
+      width: 100%;
+      min-width: 1290px;
+      border-collapse: collapse;
+      color: #05294d;
+      font: 800 12px/1.25 "Segoe UI", Arial, sans-serif;
+    }
+
+    .alerts-table th,
+    .alerts-table td {
+      padding: 8px 10px;
+      border-bottom: 1px solid #d8e2eb;
+      text-align: center;
+      vertical-align: middle;
+    }
+
+    .alerts-table th {
+      position: sticky;
+      top: 0;
+      z-index: 1;
+      background: #eaf1f7;
+      color: #05294d;
+      font-size: 10px;
+      font-weight: 950;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .alerts-table tbody tr:hover td {
+      background: #f5f9fc;
+    }
+
+    .alert-dock-pill {
+      min-width: 72px;
+      display: inline-grid;
+      place-items: center;
+      padding: 7px 10px;
+      border-radius: 6px;
+      background: #ff8500;
+      color: #fff;
+      font: 950 18px/1 "Segoe UI", Arial, sans-serif;
+    }
+
+    .alert-dock-pill.critical {
+      background: #ed0625;
+    }
+
+    .alert-detail-button {
+      min-width: 105px;
+      height: 32px;
+      border: 0;
+      border-radius: 6px;
+      background: #062b51;
+      color: #fff;
+      font: 950 10px/1 "Segoe UI", Arial, sans-serif;
+      cursor: pointer;
+    }
+
+    .alert-empty-row td {
+      padding: 28px;
+      color: #5e7589;
+      font-weight: 850;
+    }
+
+    .process-alert-toast {
+      position: fixed;
+      top: 82px;
+      right: 18px;
+      z-index: 6100;
+      width: min(430px, calc(100vw - 36px));
+      min-height: 82px;
+      display: grid;
+      grid-template-columns: 52px minmax(0, 1fr) 24px;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 14px;
+      border: 2px solid #ff1737;
+      border-radius: 10px;
+      background: #fff;
+      color: #05294d;
+      box-shadow: 0 18px 45px rgba(5, 31, 59, .28);
+      cursor: pointer;
+    }
+
+    .process-alert-toast[hidden] {
+      display: none;
+    }
+
+    .process-alert-toast > i:first-child {
+      width: 48px;
+      height: 48px;
+      display: grid;
+      place-items: center;
+      border-radius: 8px;
+      background: #ef0627;
+      color: #fff;
+      font-size: 25px;
+    }
+
+    .process-alert-toast-copy {
+      display: grid;
+      gap: 5px;
+      text-align: left;
+    }
+
+    .process-alert-toast-copy strong {
+      font: 950 14px/1.1 "Segoe UI", Arial, sans-serif;
+      text-transform: uppercase;
+    }
+
+    .process-alert-toast-copy span {
+      font: 750 12px/1.3 "Segoe UI", Arial, sans-serif;
+    }
+
+    .process-alert-toast > i:last-child {
+      font-size: 20px;
+    }
+
+    #alertsBtn {
+      position: relative;
+      cursor: pointer;
+    }
+
+    #alertsBtn .rail-icon i {
+      font-size: 20px;
+    }
+
+    .alert-rail-badge {
+      position: absolute;
+      top: 0;
+      right: 11px;
+      min-width: 20px;
+      height: 20px;
+      display: grid;
+      place-items: center;
+      padding: 0 5px;
+      border: 2px solid #062642;
+      border-radius: 999px;
+      background: #ef0627;
+      color: #fff;
+      font: 950 10px/1 "Segoe UI", Arial, sans-serif;
+    }
+
+    .alert-rail-badge[hidden] {
+      display: none;
+    }
+
+    body.dark-mode .alerts-modal,
+    body.dark-mode .alerts-panel,
+    body.dark-mode .alerts-content {
+      background: #081722 !important;
+      color: #f4f8fb !important;
+    }
+
+    body.dark-mode .alerts-header,
+    body.dark-mode .alert-summary-card,
+    body.dark-mode .alerts-table-card,
+    body.dark-mode .alerts-log-card,
+    body.dark-mode .process-alert-toast,
+    body.dark-mode .alert-featured-cell,
+    body.dark-mode .alerts-table td {
+      background: #112733 !important;
+      color: #f4f8fb !important;
+      border-color: #38566a !important;
+    }
+
+    body.dark-mode .alert-featured {
+      background: #321923 !important;
+      border-color: #ff4a64 !important;
+    }
+
+    body.dark-mode .alert-featured.empty {
+      background: #123325 !important;
+      border-color: #2ad67c !important;
+    }
+
+    body.dark-mode .alerts-title-copy strong,
+    body.dark-mode .alerts-title-copy span,
+    body.dark-mode .alert-summary-copy span,
+    body.dark-mode .alert-summary-copy strong,
+    body.dark-mode .alert-featured-cell > span,
+    body.dark-mode .alert-featured-cell > strong,
+    body.dark-mode .alert-featured-time small,
+    body.dark-mode .alerts-card-heading strong,
+    body.dark-mode .alerts-card-heading span,
+    body.dark-mode .alerts-table,
+    body.dark-mode .alerts-table th,
+    body.dark-mode .process-alert-toast {
+      color: #f4f8fb !important;
+    }
+
+    body.dark-mode .alerts-card-heading,
+    body.dark-mode .alerts-table th {
+      background: #173140 !important;
+      border-color: #38566a !important;
+    }
+
+    body.dark-mode .alert-featured-dock {
+      background: #ef001f !important;
+    }
+
+    body.dark-mode .alerts-card-heading span {
+      background: #0b2230 !important;
+      border-color: #537085 !important;
+    }
+
+    @media (max-width: 1450px) {
+      .alert-summary-card {
+        gap: 8px;
+        padding-inline: 10px;
+      }
+
+      .alert-summary-copy span {
+        white-space: normal;
+      }
+    }
+
+    @media (max-width: 1180px) {
+      .alerts-panel {
+        overflow: auto;
+      }
+
+      .alerts-header {
+        grid-template-columns: minmax(330px, 1.4fr) repeat(4, minmax(150px, .6fr));
+      }
+
+      .alert-featured {
+        min-width: 1120px;
+      }
+    }
+
+    @media (max-width: 760px) {
+      .alerts-panel {
+        grid-template-rows: auto minmax(0, 1fr);
+      }
+
+      .alerts-header {
+        min-width: 0;
+        grid-template-columns: 1fr 1fr;
+        overflow: visible;
+      }
+
+      .alerts-title-block {
+        grid-column: 1 / -1;
+      }
+
+      .alert-summary-card {
+        border-top: 1px solid #d0dbe5;
+      }
+
+      .alerts-content {
+        grid-template-rows: auto minmax(220px, 1fr) minmax(150px, .7fr);
+      }
+
+      .alerts-table-card,
+      .alerts-log-card {
+        overflow: auto;
+      }
+    }
+
     @media print {
       body.printing-route-history .route-history-modal,
       body.printing-route-history #routeHistoryModal {
@@ -5681,6 +6231,11 @@
       .global-theme-toggle {
         display: none !important;
       }
+
+      .alerts-modal,
+      .process-alert-toast {
+        display: none !important;
+      }
     }
 
   </style>
@@ -5721,7 +6276,11 @@
       <button type="button"><span class="rail-icon">▤</span><span>Docas</span></button>
       <button id="routeHistoryBtn" type="button" title="Consultar histórico por rota"><span class="rail-icon">⌁</span><span>Rotas</span></button>
       <button id="fullHistoryBtn" type="button" title="Abrir modo histórico completo"><span class="rail-icon">◴</span><span>Históricos</span></button>
-      <button type="button"><span class="rail-icon">!</span><span>Alertas</span></button>
+      <button id="alertsBtn" type="button" title="Abrir alertas de processo">
+        <span class="rail-icon"><i class="bi bi-exclamation-triangle-fill" aria-hidden="true"></i></span>
+        <span>Alertas</span>
+        <span class="alert-rail-badge" id="alertRailBadge" hidden>0</span>
+      </button>
       <button type="button"><span class="rail-icon">□</span><span>Relatórios</span></button>
       <button type="button"><span class="rail-icon">⚙</span><span>Config.</span></button>
       <button type="button"><span class="rail-icon">?</span><span>Ajuda</span></button>
@@ -5787,6 +6346,104 @@
         </div>
       </section>
     </div>
+
+
+    <div class="alerts-modal" id="alertsModal" aria-hidden="true">
+      <section class="alerts-panel" role="dialog" aria-modal="true" aria-labelledby="alertsTitle">
+        <header class="alerts-header">
+          <div class="alerts-title-block">
+            <button class="alerts-close-button" id="closeAlertsBtn" type="button" aria-label="Voltar ao painel" title="Voltar ao painel">
+              <i class="bi bi-exclamation-lg" aria-hidden="true"></i>
+            </button>
+            <div class="alerts-title-copy">
+              <strong id="alertsTitle">Modo alerta</strong>
+              <span>Rotas em processo acima de 20 minutos</span>
+            </div>
+          </div>
+          <div class="alert-summary-card critical">
+            <span class="alert-summary-icon"><i class="bi bi-exclamation-lg" aria-hidden="true"></i></span>
+            <span class="alert-summary-copy"><span>Críticos</span><strong id="alertCriticalCount">0</strong></span>
+          </div>
+          <div class="alert-summary-card moderate">
+            <span class="alert-summary-icon"><i class="bi bi-exclamation-lg" aria-hidden="true"></i></span>
+            <span class="alert-summary-copy"><span>Moderados</span><strong id="alertModerateCount">0</strong></span>
+          </div>
+          <div class="alert-summary-card active">
+            <span class="alert-summary-icon"><i class="bi bi-check-lg" aria-hidden="true"></i></span>
+            <span class="alert-summary-copy"><span>Ativos</span><strong id="alertActiveCount">0</strong></span>
+          </div>
+          <div class="alert-summary-card waves">
+            <span class="alert-summary-icon"><i class="bi bi-clock" aria-hidden="true"></i></span>
+            <span class="alert-summary-copy"><span>Ondas afetadas</span><strong id="alertWaveCount">0</strong></span>
+          </div>
+        </header>
+
+        <div class="alerts-content">
+          <section class="alert-featured empty" id="alertFeatured" aria-label="Alerta prioritário"></section>
+
+          <section class="alerts-table-card" aria-label="Alertas ativos">
+            <div class="alerts-card-heading">
+              <strong>Rotas acima do limite</strong>
+              <span id="alertListCount">0 alertas</span>
+            </div>
+            <div class="alerts-table-wrap">
+              <table class="alerts-table">
+                <thead>
+                  <tr>
+                    <th>Doca</th>
+                    <th>Rota</th>
+                    <th>Onda</th>
+                    <th>Status</th>
+                    <th>Prioridade</th>
+                    <th>Responsável</th>
+                    <th>Início calculado</th>
+                    <th>Tempo em processo</th>
+                    <th>Origem</th>
+                    <th>Ação sugerida</th>
+                    <th>Ação</th>
+                  </tr>
+                </thead>
+                <tbody id="alertRows"></tbody>
+              </table>
+            </div>
+          </section>
+
+          <section class="alerts-log-card" aria-label="Registro dos alertas atuais">
+            <div class="alerts-card-heading">
+              <strong>Registro dos alertas atuais</strong>
+              <span>Limite operacional: 20 minutos</span>
+            </div>
+            <div class="alerts-table-wrap">
+              <table class="alerts-table">
+                <thead>
+                  <tr>
+                    <th>Alerta gerado</th>
+                    <th>Prioridade</th>
+                    <th>Doca</th>
+                    <th>Rota</th>
+                    <th>Onda</th>
+                    <th>Status</th>
+                    <th>Motivo</th>
+                    <th>Tempo</th>
+                    <th>Responsável</th>
+                  </tr>
+                </thead>
+                <tbody id="alertLogRows"></tbody>
+              </table>
+            </div>
+          </section>
+        </div>
+      </section>
+    </div>
+
+    <button class="process-alert-toast" id="processAlertToast" type="button" hidden aria-label="Abrir alertas de processo">
+      <i class="bi bi-exclamation-triangle-fill" aria-hidden="true"></i>
+      <span class="process-alert-toast-copy">
+        <strong id="processAlertToastTitle">Alerta operacional</strong>
+        <span id="processAlertToastText"></span>
+      </span>
+      <i class="bi bi-chevron-right" aria-hidden="true"></i>
+    </button>
 
 
     <div class="legend">
@@ -6040,6 +6697,7 @@
     }
     let currentWave = data.ondas[0] || "Onda 1";
     let currentView = "docas";
+    let alertToastTimer = null;
     let cloudState = {
       enabled: false,
       ready: false,
@@ -7601,6 +8259,239 @@
       };
     }
 
+    const processAlertThresholdMs = 20 * 60 * 1000;
+    const processAlertCriticalMs = 60 * 60 * 1000;
+
+    function formatAlertDuration(value) {
+      const totalSeconds = Math.max(0, Math.floor(Number(value || 0) / 1000));
+      const hours = Math.floor(totalSeconds / 3600);
+      const minutes = Math.floor((totalSeconds % 3600) / 60);
+      const seconds = totalSeconds % 60;
+      return [hours, minutes, seconds].map(part => String(part).padStart(2, "0")).join(":");
+    }
+
+    function formatAlertMoment(value, includeSeconds = true) {
+      const date = new Date(value || 0);
+      if (!value || Number.isNaN(date.getTime())) return "--";
+      return date.toLocaleString("pt-BR", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        ...(includeSeconds ? { second: "2-digit" } : {})
+      });
+    }
+
+    function latestAlertHistory(route, source) {
+      const key = routeKey(route);
+      return (Array.isArray(data.baseHistorico) ? data.baseHistorico : [])
+        .filter(row => routeKey(row.rota) === key && row.fonte === source)
+        .slice()
+        .sort((a, b) => new Date(b.atualizadoEm || 0) - new Date(a.atualizadoEm || 0))[0] || null;
+    }
+
+    function alertSuggestedAction(status = "") {
+      const normalized = normalizeBaseStatus(status);
+      if (normalized === "Em aduana") return "Acionar o responsável da Aduana e priorizar a conclusão.";
+      if (normalized === "Guardando") return "Priorizar o carregamento e avaliar reforço operacional.";
+      if (normalized === "Pendente") return "Verificar o bloqueio da rota e definir um plano de ação.";
+      return "Verificar a rota e registrar uma ação corretiva.";
+    }
+
+    function processAlertForRoute(route) {
+      const key = routeKey(route);
+      const operational = uniqueBaseRows(data.baseOperacional || []).find(row => routeKey(row.rota) === key) || {};
+      const customs = uniqueBaseRows(data.baseAduana || []).find(row => routeKey(row.rota) === key) || {};
+      const operationalStatusText = normalize(operational.processo || operational.status);
+      const customsStatusText = normalize(customs.processo || customs.estadoAduana || customs.status);
+
+      // Uma rota expedida já encerrou o processo e não deve permanecer em alerta.
+      if (isExpedida(operationalStatusText)) return null;
+
+      const candidates = [];
+      const operationalDuration = durationTextToMs(operational.tempoProcesso || operational.auditTime || operational.tempoTotal);
+      if (operationalStatusText && operationalDuration > 0) {
+        candidates.push({
+          source: "operacional",
+          sourceLabel: "Base operacional",
+          statusText: operationalStatusText,
+          durationMs: operationalDuration
+        });
+      }
+
+      const customsClosed = /conclu|cancelad|finaliz|encerr/i.test(plainText(customsStatusText));
+      const customsDuration = durationTextToMs(customs.tempoProcesso || customs.auditTime || customs.tempoTotal);
+      if (customsStatusText && !customsClosed && customsDuration > 0) {
+        candidates.push({
+          source: "aduana",
+          sourceLabel: "Base aduana",
+          statusText: customsStatusText,
+          durationMs: customsDuration
+        });
+      }
+
+      const activeProcess = candidates.sort((a, b) => b.durationMs - a.durationMs)[0];
+      if (!activeProcess || activeProcess.durationMs <= processAlertThresholdMs) return null;
+
+      const details = routeCurrentDetails(route);
+      const history = latestAlertHistory(route, activeProcess.source);
+      const generatedAt = new Date(history?.atualizadoEm || Date.now()).getTime();
+      const startedAt = Math.max(0, generatedAt - activeProcess.durationMs);
+      const normalizedStatus = normalizeBaseStatus(activeProcess.statusText) || activeProcess.statusText || "Em processo";
+      const severity = activeProcess.durationMs >= processAlertCriticalMs ? "critical" : "moderate";
+      const waveNumber = normalize(details.onda).match(/\d+/)?.[0] || "--";
+      const responsible = details.repLog || "Operação";
+
+      return {
+        route: details.rota || route,
+        dock: details.doca || "--",
+        wave: waveNumber === "--" ? waveNumber : String(waveNumber).padStart(2, "0"),
+        status: normalizedStatus,
+        severity,
+        priority: severity === "critical" ? "Alta" : "Média",
+        responsible,
+        durationMs: activeProcess.durationMs,
+        durationLabel: formatAlertDuration(activeProcess.durationMs),
+        source: activeProcess.source,
+        sourceLabel: activeProcess.sourceLabel,
+        startedAt,
+        generatedAt,
+        reason: `${normalizedStatus} acima do limite operacional de 20 minutos.`,
+        action: alertSuggestedAction(activeProcess.statusText)
+      };
+    }
+
+    function processAlerts() {
+      const routes = new Map();
+      (data.extracao || []).forEach(row => {
+        const key = routeKey(row.rota);
+        if (key && !routes.has(key)) routes.set(key, row.rota);
+      });
+      return Array.from(routes.values())
+        .map(processAlertForRoute)
+        .filter(Boolean)
+        .sort((a, b) => b.durationMs - a.durationMs || a.route.localeCompare(b.route, "pt-BR", { numeric: true }));
+    }
+
+    function alertSummaryCardHtml(alert) {
+      return `
+        <div class="alert-featured-cell alert-featured-dock">
+          <span>Doca</span>
+          <strong>${escapeHtml(alert.dock)}</strong>
+        </div>
+        <div class="alert-featured-cell"><span>Rota</span><strong>${escapeHtml(alert.route)}</strong></div>
+        <div class="alert-featured-cell"><span>Onda</span><strong>${escapeHtml(alert.wave)}</strong></div>
+        <div class="alert-featured-cell"><span>Status</span><span class="alert-status-pill ${alert.severity}">${escapeHtml(alert.status)}</span></div>
+        <div class="alert-featured-cell alert-featured-time"><span>Tempo em processo</span><strong>${escapeHtml(alert.durationLabel)}</strong><small>hh:mm:ss</small></div>
+        <div class="alert-featured-cell"><span>Motivo</span><strong>${escapeHtml(alert.reason)}</strong></div>
+        <div class="alert-featured-cell"><span>Prioridade</span><span class="alert-priority-pill ${alert.severity}">${escapeHtml(alert.priority)}</span></div>
+        <div class="alert-featured-cell"><span>Responsável</span><strong>${escapeHtml(alert.responsible)}</strong></div>
+        <div class="alert-featured-cell"><span>Ação sugerida</span><strong>${escapeHtml(alert.action)}</strong></div>
+      `;
+    }
+
+    function renderAlerts() {
+      const alerts = processAlerts();
+      const critical = alerts.filter(alert => alert.severity === "critical").length;
+      const moderate = alerts.length - critical;
+      const affectedWaves = new Set(alerts.map(alert => alert.wave)).size;
+
+      document.getElementById("alertCriticalCount").textContent = critical;
+      document.getElementById("alertModerateCount").textContent = moderate;
+      document.getElementById("alertActiveCount").textContent = alerts.length;
+      document.getElementById("alertWaveCount").textContent = affectedWaves;
+      document.getElementById("alertListCount").textContent = `${alerts.length} ${alerts.length === 1 ? "alerta" : "alertas"}`;
+
+      const railBadge = document.getElementById("alertRailBadge");
+      railBadge.textContent = alerts.length;
+      railBadge.hidden = alerts.length === 0;
+
+      const featured = document.getElementById("alertFeatured");
+      if (alerts.length) {
+        featured.classList.remove("empty");
+        featured.innerHTML = alertSummaryCardHtml(alerts[0]);
+      } else {
+        featured.classList.add("empty");
+        featured.innerHTML = `
+          <span class="alert-featured-empty-icon"><i class="bi bi-check-lg" aria-hidden="true"></i></span>
+          <span class="alert-featured-empty-copy">
+            <strong>Nenhuma rota acima de 20 minutos</strong>
+            <span>Os alertas serão gerados automaticamente após a aplicação dos dados.</span>
+          </span>
+        `;
+      }
+
+      const emptyRow = `<tr class="alert-empty-row"><td colspan="11">Nenhum alerta operacional ativo.</td></tr>`;
+      document.getElementById("alertRows").innerHTML = alerts.length ? alerts.map(alert => `
+        <tr>
+          <td><span class="alert-dock-pill ${alert.severity}">${escapeHtml(alert.dock)}</span></td>
+          <td>${escapeHtml(alert.route)}</td>
+          <td>${escapeHtml(alert.wave)}</td>
+          <td><span class="alert-status-pill ${alert.severity}">${escapeHtml(alert.status)}</span></td>
+          <td><span class="alert-priority-pill ${alert.severity}">${escapeHtml(alert.priority)}</span></td>
+          <td>${escapeHtml(alert.responsible)}</td>
+          <td>${escapeHtml(formatAlertMoment(alert.startedAt))}</td>
+          <td><strong>${escapeHtml(alert.durationLabel)}</strong></td>
+          <td>${escapeHtml(alert.sourceLabel)}</td>
+          <td>${escapeHtml(alert.action)}</td>
+          <td><button class="alert-detail-button" type="button" data-alert-route="${escapeHtml(alert.route)}">Ver histórico</button></td>
+        </tr>
+      `).join("") : emptyRow;
+
+      document.getElementById("alertLogRows").innerHTML = alerts.length ? alerts.map(alert => `
+        <tr>
+          <td>${escapeHtml(formatAlertMoment(alert.generatedAt))}</td>
+          <td>${escapeHtml(alert.priority)}</td>
+          <td>${escapeHtml(alert.dock)}</td>
+          <td>${escapeHtml(alert.route)}</td>
+          <td>${escapeHtml(alert.wave)}</td>
+          <td>${escapeHtml(alert.status)}</td>
+          <td>${escapeHtml(alert.reason)}</td>
+          <td>${escapeHtml(alert.durationLabel)}</td>
+          <td>${escapeHtml(alert.responsible)}</td>
+        </tr>
+      `).join("") : `<tr class="alert-empty-row"><td colspan="9">Nenhum alerta registrado nesta atualização.</td></tr>`;
+      return alerts;
+    }
+
+    function openAlerts() {
+      renderAlerts();
+      const modal = document.getElementById("alertsModal");
+      modal.classList.add("open");
+      modal.setAttribute("aria-hidden", "false");
+      document.body.style.overflow = "hidden";
+      document.querySelectorAll(".side-rail button").forEach(button => button.classList.remove("active"));
+      document.getElementById("alertsBtn").classList.add("active");
+    }
+
+    function closeAlerts() {
+      const modal = document.getElementById("alertsModal");
+      modal.classList.remove("open");
+      modal.setAttribute("aria-hidden", "true");
+      document.body.style.overflow = "";
+      document.getElementById("alertsBtn").classList.remove("active");
+      document.querySelector(".side-rail button")?.classList.add("active");
+    }
+
+    function announceProcessAlerts() {
+      const alerts = processAlerts();
+      const toast = document.getElementById("processAlertToast");
+      window.clearTimeout(alertToastTimer);
+      if (!alerts.length) {
+        toast.hidden = true;
+        return alerts;
+      }
+      const critical = alerts.filter(alert => alert.severity === "critical").length;
+      document.getElementById("processAlertToastTitle").textContent = `${alerts.length} ${alerts.length === 1 ? "rota em alerta" : "rotas em alerta"}`;
+      document.getElementById("processAlertToastText").textContent = critical
+        ? `${critical} crítico(s). A rota ${alerts[0].route} está em processo há ${alerts[0].durationLabel}.`
+        : `A rota ${alerts[0].route} está em processo há ${alerts[0].durationLabel}.`;
+      toast.hidden = false;
+      alertToastTimer = window.setTimeout(() => { toast.hidden = true; }, 9000);
+      return alerts;
+    }
+
     function historyStatus(row = {}) {
       return normalizeBaseStatus(row.processo || row.status)
         || (/conclu/i.test(normalize(row.estadoAduana)) ? "Aduana concluída" : "")
@@ -8596,6 +9487,7 @@
       renderGrid();
       renderPrintTable();
       renderViews();
+      renderAlerts();
       updateAuthBadge();
     }
 
@@ -8825,6 +9717,19 @@
     document.getElementById("fullHistoryBtn")?.addEventListener("click", () => openRouteHistory());
     document.getElementById("closeRouteHistoryBtn")?.addEventListener("click", closeRouteHistory);
     document.getElementById("routeHistoryPrintBtn")?.addEventListener("click", printRouteHistory);
+    document.getElementById("alertsBtn")?.addEventListener("click", openAlerts);
+    document.getElementById("closeAlertsBtn")?.addEventListener("click", closeAlerts);
+    document.getElementById("processAlertToast")?.addEventListener("click", () => {
+      document.getElementById("processAlertToast").hidden = true;
+      openAlerts();
+    });
+    document.getElementById("alertRows")?.addEventListener("click", event => {
+      const button = event.target.closest("[data-alert-route]");
+      if (!button) return;
+      const route = button.dataset.alertRoute;
+      closeAlerts();
+      openRouteHistory(route);
+    });
     document.querySelector("[data-close-route-history]")?.addEventListener("click", closeRouteHistory);
     document.getElementById("routeHistorySelect")?.addEventListener("change", event => {
       if (event.target.value) renderRouteHistory(event.target.value);
@@ -8850,6 +9755,10 @@
       if (route) openRouteHistory(route);
     });
     document.addEventListener("keydown", event => {
+      if (event.key === "Escape" && document.getElementById("alertsModal")?.classList.contains("open")) {
+        closeAlerts();
+        return;
+      }
       if (event.key === "Escape" && document.getElementById("routeHistoryModal")?.classList.contains("open")) {
         closeRouteHistory();
       }
@@ -8943,6 +9852,7 @@
       document.getElementById("drawer").classList.remove("open");
       document.querySelector(".app").classList.remove("editor-open");
       render();
+      announceProcessAlerts();
     });
 
     rebuildConsolidatedBase(data.extracao || []);
