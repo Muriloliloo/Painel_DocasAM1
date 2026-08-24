@@ -2177,6 +2177,15 @@
       box-shadow: none;
     }
 
+    .paste-box.selected-paste-target {
+      border-color: #063354;
+      box-shadow: 0 0 0 3px rgba(6, 51, 84, .18);
+    }
+
+    .paste-box.selected-paste-target label {
+      filter: brightness(.92);
+    }
+
     .paste-box label {
       height: 27px;
       padding: 0 12px;
@@ -5842,7 +5851,7 @@
     </header>
     <div class="paste-help">
       <strong>Instruções</strong>
-      Na Extração, cole a tabela completa para alimentar motorista, placa, transportadora, tipos e Rep/Log. Na Base, pode colar só uma rota por linha para atualizar o processo.
+      Na Extração, cole a tabela completa para alimentar motorista, placa, transportadora, tipos e Rep/Log. Para limpar, selecione primeiro a Extração, a Base operacional ou a Base aduana.
     </div>
     <div class="summary-fields">
       <label>Total rotas<input id="totalRotasInput" type="text"></label>
@@ -5864,7 +5873,7 @@
     </section>
     <div class="drawer-actions">
       <button id="exampleBtn" class="admin-only" type="button">Exemplo</button>
-      <button id="clearBtn" class="admin-only" type="button">Limpar</button>
+      <button id="clearBtn" class="admin-only" type="button" disabled>Limpar selecionado</button>
       <button class="primary admin-only" id="applyBtn" type="button">Aplicar</button>
     </div>
   </aside>
@@ -5978,6 +5987,7 @@
     }
     let currentWave = data.ondas[0] || "Onda 1";
     let currentView = "docas";
+    let selectedPasteTarget = "";
     let cloudState = {
       enabled: false,
       ready: false,
@@ -8522,6 +8532,32 @@
       updateAuthBadge();
     }
 
+    function selectPasteTarget(targetId = "") {
+      const allowedTargets = ["extracaoPaste", "basePaste", "aduanaPaste"];
+      selectedPasteTarget = allowedTargets.includes(targetId) ? targetId : "";
+      document.querySelectorAll(".paste-box").forEach(box => {
+        const selected = box.querySelector("textarea")?.id === selectedPasteTarget;
+        box.classList.toggle("selected-paste-target", selected);
+      });
+      const clearButton = document.getElementById("clearBtn");
+      if (clearButton) clearButton.disabled = !selectedPasteTarget || !canEditData();
+    }
+
+    function clearSelectedPasteTarget() {
+      if (!selectedPasteTarget) return;
+      const textarea = document.getElementById(selectedPasteTarget);
+      if (!textarea) return;
+      const start = Number(textarea.selectionStart || 0);
+      const end = Number(textarea.selectionEnd || 0);
+      if (end > start) {
+        textarea.setRangeText("", start, end, "start");
+      } else {
+        textarea.value = "";
+      }
+      textarea.dispatchEvent(new Event("input", { bubbles: true }));
+      textarea.focus();
+    }
+
     function openDrawer() {
       if (!requireAdminAction()) return;
       document.getElementById("totalRotasInput").value = data.totalRotas || data.extracao.length || "";
@@ -8531,6 +8567,7 @@
       document.getElementById("basePaste").placeholder = "Cole a atualização operacional. As rotas precisam existir na Extração.";
       document.getElementById("aduanaPaste").value = toBasePaste(data.baseAduana || [], "aduana");
       document.getElementById("aduanaPaste").placeholder = "Cole Processo e Tempo do processo da Aduana. Aceita Aduana em andamento, Contagem de pacotes e Em contagem.";
+      selectPasteTarget("");
       document.getElementById("drawer").classList.add("open");
     }
 
@@ -8743,6 +8780,7 @@
     document.getElementById("closeBtn").addEventListener("click", () => {
       document.getElementById("drawer").classList.remove("open");
       document.querySelector(".app").classList.remove("editor-open");
+      selectPasteTarget("");
     });
     document.getElementById("printBtn").addEventListener("click", openPdfDrawer);
     document.getElementById("closePdfBtn").addEventListener("click", () => {
@@ -8777,11 +8815,14 @@
       localStorage.removeItem(storageKey);
       render();
     });
+    ["extracaoPaste", "basePaste", "aduanaPaste"].forEach(targetId => {
+      const textarea = document.getElementById(targetId);
+      textarea?.addEventListener("focus", () => selectPasteTarget(targetId));
+      textarea?.addEventListener("pointerdown", () => selectPasteTarget(targetId));
+    });
     document.getElementById("clearBtn").addEventListener("click", () => {
       if (!requireAdminAction()) return;
-      document.getElementById("extracaoPaste").value = "";
-      document.getElementById("basePaste").value = "";
-      document.getElementById("aduanaPaste").value = "";
+      clearSelectedPasteTarget();
     });
     document.getElementById("applyBtn").addEventListener("click", () => {
       if (!requireAdminAction()) return;
