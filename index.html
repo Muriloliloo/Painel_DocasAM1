@@ -2177,15 +2177,6 @@
       box-shadow: none;
     }
 
-    .paste-box.selected-paste-target {
-      border-color: #063354;
-      box-shadow: 0 0 0 3px rgba(6, 51, 84, .18);
-    }
-
-    .paste-box.selected-paste-target label {
-      filter: brightness(.92);
-    }
-
     .paste-box label {
       height: 27px;
       padding: 0 12px;
@@ -2197,6 +2188,45 @@
 
     .paste-box.base label {
       background: #0aa65a;
+    }
+
+    .paste-box-header {
+      min-width: 0;
+      display: flex;
+      align-items: stretch;
+      background: #e00012;
+    }
+
+    .paste-box.base .paste-box-header {
+      background: #0aa65a;
+    }
+
+    .paste-box-header label,
+    .paste-box.base .paste-box-header label {
+      min-width: 0;
+      flex: 1;
+      background: transparent;
+    }
+
+    .paste-clear-button {
+      width: auto;
+      min-width: 78px;
+      padding: 0 12px;
+      border: 0;
+      border-left: 1px solid rgba(255, 255, 255, .42);
+      border-radius: 0;
+      background: rgba(0, 0, 0, .16);
+      color: #fff;
+      font: 900 11px/1 "Segoe UI", Arial, sans-serif;
+      text-transform: uppercase;
+      box-shadow: none;
+    }
+
+    .paste-clear-button:hover,
+    .paste-clear-button:focus-visible {
+      background: rgba(0, 0, 0, .28);
+      outline: 2px solid #fff;
+      outline-offset: -3px;
     }
 
     .paste-box textarea {
@@ -2221,7 +2251,7 @@
 
     .drawer-actions {
       display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
+      grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 12px;
       padding: 13px 16px 14px;
       background: #f7f9fb;
@@ -5851,7 +5881,7 @@
     </header>
     <div class="paste-help">
       <strong>Instruções</strong>
-      Na Extração, cole a tabela completa para alimentar motorista, placa, transportadora, tipos e Rep/Log. Para limpar, selecione primeiro a Extração, a Base operacional ou a Base aduana.
+      Na Extração, cole a tabela completa para alimentar motorista, placa, transportadora, tipos e Rep/Log. Cada janela possui seu próprio botão Limpar.
     </div>
     <div class="summary-fields">
       <label>Total rotas<input id="totalRotasInput" type="text"></label>
@@ -5859,21 +5889,29 @@
     </div>
     <section class="paste-area">
       <div class="paste-box">
-        <label for="extracaoPaste">Extração (colar do Excel)</label>
+        <div class="paste-box-header">
+          <label for="extracaoPaste">Extração (colar do Excel)</label>
+          <button class="paste-clear-button admin-only" type="button" data-clear-target="extracaoPaste" aria-label="Limpar somente a Extração">Limpar</button>
+        </div>
         <textarea id="extracaoPaste" spellcheck="false"></textarea>
       </div>
       <div class="paste-box base">
-        <label for="basePaste">Base operacional (colar do Excel)</label>
+        <div class="paste-box-header">
+          <label for="basePaste">Base operacional (colar do Excel)</label>
+          <button class="paste-clear-button admin-only" type="button" data-clear-target="basePaste" aria-label="Limpar somente a Base operacional">Limpar</button>
+        </div>
         <textarea id="basePaste" spellcheck="false"></textarea>
       </div>
       <div class="paste-box base">
-        <label for="aduanaPaste">Base aduana (colar do Excel)</label>
+        <div class="paste-box-header">
+          <label for="aduanaPaste">Base aduana (colar do Excel)</label>
+          <button class="paste-clear-button admin-only" type="button" data-clear-target="aduanaPaste" aria-label="Limpar somente a Base aduana">Limpar</button>
+        </div>
         <textarea id="aduanaPaste" spellcheck="false"></textarea>
       </div>
     </section>
     <div class="drawer-actions">
       <button id="exampleBtn" class="admin-only" type="button">Exemplo</button>
-      <button id="clearBtn" class="admin-only" type="button" disabled>Limpar selecionado</button>
       <button class="primary admin-only" id="applyBtn" type="button">Aplicar</button>
     </div>
   </aside>
@@ -5987,7 +6025,6 @@
     }
     let currentWave = data.ondas[0] || "Onda 1";
     let currentView = "docas";
-    let selectedPasteTarget = "";
     let cloudState = {
       enabled: false,
       ready: false,
@@ -8532,30 +8569,15 @@
       updateAuthBadge();
     }
 
-    function selectPasteTarget(targetId = "") {
+    function clearPasteTarget(targetId = "") {
       const allowedTargets = ["extracaoPaste", "basePaste", "aduanaPaste"];
-      selectedPasteTarget = allowedTargets.includes(targetId) ? targetId : "";
-      document.querySelectorAll(".paste-box").forEach(box => {
-        const selected = box.querySelector("textarea")?.id === selectedPasteTarget;
-        box.classList.toggle("selected-paste-target", selected);
-      });
-      const clearButton = document.getElementById("clearBtn");
-      if (clearButton) clearButton.disabled = !selectedPasteTarget || !canEditData();
-    }
-
-    function clearSelectedPasteTarget() {
-      if (!selectedPasteTarget) return;
-      const textarea = document.getElementById(selectedPasteTarget);
-      if (!textarea) return;
-      const start = Number(textarea.selectionStart || 0);
-      const end = Number(textarea.selectionEnd || 0);
-      if (end > start) {
-        textarea.setRangeText("", start, end, "start");
-      } else {
-        textarea.value = "";
-      }
+      if (!allowedTargets.includes(targetId)) return false;
+      const textarea = document.getElementById(targetId);
+      if (!textarea) return false;
+      textarea.value = "";
       textarea.dispatchEvent(new Event("input", { bubbles: true }));
       textarea.focus();
+      return true;
     }
 
     function openDrawer() {
@@ -8567,7 +8589,6 @@
       document.getElementById("basePaste").placeholder = "Cole a atualização operacional. As rotas precisam existir na Extração.";
       document.getElementById("aduanaPaste").value = toBasePaste(data.baseAduana || [], "aduana");
       document.getElementById("aduanaPaste").placeholder = "Cole Processo e Tempo do processo da Aduana. Aceita Aduana em andamento, Contagem de pacotes e Em contagem.";
-      selectPasteTarget("");
       document.getElementById("drawer").classList.add("open");
     }
 
@@ -8780,7 +8801,6 @@
     document.getElementById("closeBtn").addEventListener("click", () => {
       document.getElementById("drawer").classList.remove("open");
       document.querySelector(".app").classList.remove("editor-open");
-      selectPasteTarget("");
     });
     document.getElementById("printBtn").addEventListener("click", openPdfDrawer);
     document.getElementById("closePdfBtn").addEventListener("click", () => {
@@ -8815,14 +8835,11 @@
       localStorage.removeItem(storageKey);
       render();
     });
-    ["extracaoPaste", "basePaste", "aduanaPaste"].forEach(targetId => {
-      const textarea = document.getElementById(targetId);
-      textarea?.addEventListener("focus", () => selectPasteTarget(targetId));
-      textarea?.addEventListener("pointerdown", () => selectPasteTarget(targetId));
-    });
-    document.getElementById("clearBtn").addEventListener("click", () => {
-      if (!requireAdminAction()) return;
-      clearSelectedPasteTarget();
+    document.querySelectorAll("[data-clear-target]").forEach(button => {
+      button.addEventListener("click", () => {
+        if (!requireAdminAction()) return;
+        clearPasteTarget(button.dataset.clearTarget);
+      });
     });
     document.getElementById("applyBtn").addEventListener("click", () => {
       if (!requireAdminAction()) return;
