@@ -1708,7 +1708,11 @@
       overflow: hidden;
     }
 
-    .pdf-drawer.open { display: block; }
+    .pdf-drawer.open {
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr) auto;
+      max-height: calc(100vh - 142px);
+    }
 
     .login-modal {
       position: fixed;
@@ -1879,6 +1883,8 @@
       gap: 14px;
       padding: 14px;
       font: 800 13px "Segoe UI", Arial, sans-serif;
+      overflow-y: auto;
+      overscroll-behavior: contain;
     }
 
     .pdf-waves {
@@ -4237,6 +4243,36 @@
       margin-top: 2px;
     }
 
+    .pdf-hybrid-filters {
+      display: grid;
+      gap: 10px;
+      margin-top: 2px;
+      padding: 12px;
+      border: 1px solid #c8d8e5;
+      border-radius: 9px;
+      background: #edf5fb;
+    }
+
+    .pdf-hybrid-filters[hidden] {
+      display: none !important;
+    }
+
+    .pdf-hybrid-filters > strong {
+      color: #063354;
+      font: 900 11px/1.1 "Segoe UI", Arial, sans-serif;
+      text-transform: uppercase;
+    }
+
+    .pdf-hybrid-waves {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .pdf-hybrid-filter-note {
+      margin: -2px 0 0;
+      color: #60788c;
+      font: 700 10px/1.3 "Segoe UI", Arial, sans-serif;
+    }
+
     .pdf-option {
       display: grid;
       grid-template-columns: 22px minmax(0, 1fr);
@@ -4303,110 +4339,6 @@
       white-space: nowrap;
     }
 
-    /* O próprio exportador ganha uma prévia escura quando a opção é marcada */
-    .pdf-drawer.dark-preview {
-      background: #0e1b28;
-      border-color: #29465f;
-      color: #f4f8fc;
-    }
-
-    .pdf-drawer.dark-preview .pdf-body {
-      color: #f4f8fc;
-    }
-
-    .pdf-drawer.dark-preview .pdf-option,
-    .pdf-drawer.dark-preview .pdf-range label,
-    .pdf-drawer.dark-preview .pdf-waves label {
-      background: #13283a;
-      border-color: #35536b;
-      color: #f4f8fc;
-    }
-
-    .pdf-drawer.dark-preview .pdf-option b {
-      color: #fff;
-    }
-
-    .pdf-drawer.dark-preview .pdf-option small {
-      color: #a9c0d1;
-    }
-
-    .pdf-drawer.dark-preview input {
-      background: #091522;
-      color: #fff;
-      border-color: #3a5c75;
-    }
-
-    @media print {
-      body.print-dark-mode,
-      body.print-dark-mode .app,
-      body.print-dark-mode .print-table-wrap {
-        background: #08131e !important;
-        color: #f3f7fb !important;
-      }
-
-      body.print-dark-mode .topbar {
-        background: #0b2032 !important;
-        border-color: #27455c !important;
-      }
-
-      body.print-dark-mode h1 {
-        color: #ffd200 !important;
-      }
-
-      body.print-dark-mode .print-wave h3 {
-        color: #ffd200 !important;
-      }
-
-      body.print-dark-mode .print-table,
-      body.print-dark-mode .print-final-summary table,
-      body.print-dark-mode .print-mini-table table {
-        background: #0d1c29 !important;
-        color: #f5f8fb !important;
-      }
-
-      body.print-dark-mode .print-table th,
-      body.print-dark-mode .print-final-summary th,
-      body.print-dark-mode .print-mini-table th {
-        background: #17334a !important;
-        color: #fff !important;
-        border-color: #36566d !important;
-      }
-
-      body.print-dark-mode .print-table td,
-      body.print-dark-mode .print-final-summary td,
-      body.print-dark-mode .print-mini-table td {
-        background: #0d1c29 !important;
-        color: #f5f8fb !important;
-        border-color: #29475e !important;
-      }
-
-      body.print-dark-mode .print-table .wave-cell {
-        background: #5f4610 !important;
-        color: #ffe16a !important;
-      }
-
-      body.print-dark-mode .print-reason-summary,
-      body.print-dark-mode .print-impact-panel,
-      body.print-dark-mode .print-final-summary,
-      body.print-dark-mode .print-closure-message,
-      body.print-dark-mode .pdf-hybrid-section {
-        border-color: #35556d !important;
-        background: #0d1c29 !important;
-        color: #fff !important;
-      }
-
-      body.print-dark-mode .pdf-hybrid-section h4 {
-        background: #ffd200 !important;
-        color: #071826 !important;
-      }
-
-      body.print-dark-mode .pdf-hybrid-badge {
-        background: #5b4812 !important;
-        color: #ffe16a !important;
-      }
-    }
-
-  
     /* =========================================================
        CORREÇÃO DE IMPRESSÃO PDF
        - remove interface lateral/superior
@@ -4589,6 +4521,10 @@
     .global-theme-toggle:hover {
       transform: translateY(-1px);
       box-shadow: 0 7px 18px rgba(0, 20, 38, .27);
+    }
+
+    .pdf-drawer.open ~ .global-theme-toggle {
+      display: none;
     }
 
     .global-theme-toggle span:first-child {
@@ -6872,6 +6808,382 @@
       }
     }
 
+    /* Dashboard operacional — visão consolidada dos quatro modos. */
+    .dashboard-view {
+      display: none;
+    }
+
+    .app.dashboard-mode {
+      width: 100vw;
+      max-width: none;
+      min-width: 0;
+      height: 100vh;
+      height: 100dvh;
+      min-height: 0;
+      background: #edf3f8;
+      border-radius: 0;
+    }
+
+    .app.docas-mode.dashboard-mode:not(.simple-docks-mode) {
+      width: 100vw;
+      min-width: 0;
+      max-width: none;
+      margin: 0;
+    }
+
+    body.dashboard-mode-active {
+      width: 100%;
+      min-width: 0;
+      display: block;
+      overflow: hidden;
+    }
+
+    .app.dashboard-mode > .topbar,
+    .app.dashboard-mode > .toolbar,
+    .app.dashboard-mode > .stats,
+    .app.dashboard-mode > .legend,
+    .app.dashboard-mode > .wave-title,
+    .app.dashboard-mode > .dock-grid,
+    .app.dashboard-mode > .simple-docks-view,
+    .app.dashboard-mode > .routes-mode-view,
+    .app.dashboard-mode > .footer-strip,
+    .app.dashboard-mode > .final-countdown-alert {
+      display: none !important;
+    }
+
+    .app.dashboard-mode .side-rail {
+      top: 0;
+      bottom: 0;
+      z-index: 120;
+      gap: clamp(7px, .78vw, 15px);
+      padding-top: clamp(12px, 1.35vw, 24px);
+      overflow-x: hidden;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      scrollbar-width: none;
+    }
+
+    .app.dashboard-mode .side-rail::-webkit-scrollbar {
+      display: none;
+    }
+
+    .app.dashboard-mode .side-rail button {
+      cursor: pointer;
+    }
+
+    .app.dashboard-mode .dashboard-view {
+      position: absolute;
+      inset: 0 0 0 var(--docas-rail-w);
+      z-index: 100;
+      min-width: 0;
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr) auto;
+      gap: clamp(12px, 1.8vh, 20px);
+      padding: clamp(12px, 2vh, 22px) clamp(12px, 1.5vw, 28px);
+      background: #edf3f8;
+      color: #05294d;
+      overflow-y: auto;
+    }
+
+    .dashboard-heading {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      min-width: 0;
+    }
+
+    .dashboard-title-block {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      min-width: 0;
+    }
+
+    .dashboard-title-icon {
+      width: 58px;
+      height: 58px;
+      flex: 0 0 58px;
+      display: grid;
+      place-items: center;
+      border-radius: 12px;
+      background: #05294d;
+      color: #fff;
+      font-size: 27px;
+      box-shadow: 0 8px 20px rgba(5, 41, 77, .18);
+    }
+
+    .dashboard-title-copy {
+      display: grid;
+      gap: 3px;
+      min-width: 0;
+    }
+
+    .dashboard-title-copy h2 {
+      margin: 0;
+      color: #05294d;
+      font: 950 clamp(25px, 2.2vw, 40px)/1 "Segoe UI", Arial, sans-serif;
+      text-transform: uppercase;
+    }
+
+    .dashboard-title-copy p {
+      margin: 0;
+      color: #335873;
+      font: 800 clamp(12px, .95vw, 17px)/1.2 "Segoe UI", Arial, sans-serif;
+    }
+
+    .dashboard-mode-grid {
+      min-height: 0;
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: clamp(12px, 1.4vw, 22px);
+    }
+
+    .dashboard-mode-card {
+      min-width: 0;
+      min-height: 210px;
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr);
+      gap: 18px;
+      padding: clamp(18px, 1.5vw, 26px);
+      border: 1px solid #c5d5e2;
+      border-top: 5px solid var(--dashboard-accent, #0b74b8);
+      border-radius: 14px;
+      background: #fff;
+      color: #05294d;
+      text-align: left;
+      cursor: pointer;
+      box-shadow: 0 10px 26px rgba(5, 41, 77, .09);
+      transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+    }
+
+    .dashboard-mode-card:hover,
+    .dashboard-mode-card:focus-visible {
+      transform: translateY(-3px);
+      border-color: var(--dashboard-accent, #0b74b8);
+      box-shadow: 0 16px 34px rgba(5, 41, 77, .16);
+      outline: 0;
+    }
+
+    .dashboard-mode-card.docas { --dashboard-accent: #0bb45c; }
+    .dashboard-mode-card.routes { --dashboard-accent: #0b7fc2; }
+    .dashboard-mode-card.history { --dashboard-accent: #6c55b5; }
+    .dashboard-mode-card.alerts { --dashboard-accent: #ef3340; }
+
+    .dashboard-card-header {
+      display: grid;
+      grid-template-columns: 52px minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 13px;
+    }
+
+    .dashboard-card-icon {
+      width: 52px;
+      height: 52px;
+      display: grid;
+      place-items: center;
+      border-radius: 11px;
+      background: color-mix(in srgb, var(--dashboard-accent) 13%, white);
+      color: var(--dashboard-accent);
+      font-size: 25px;
+    }
+
+    .dashboard-card-copy {
+      display: grid;
+      gap: 3px;
+      min-width: 0;
+    }
+
+    .dashboard-card-copy strong {
+      color: #05294d;
+      font: 950 clamp(18px, 1.35vw, 25px)/1 "Segoe UI", Arial, sans-serif;
+      text-transform: uppercase;
+    }
+
+    .dashboard-card-copy small {
+      color: #587187;
+      font: 750 clamp(10px, .76vw, 13px)/1.2 "Segoe UI", Arial, sans-serif;
+    }
+
+    .dashboard-card-arrow {
+      color: #7890a4;
+      font-size: 20px;
+    }
+
+    .dashboard-card-metrics {
+      align-self: end;
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .dashboard-card-metrics span {
+      min-width: 0;
+      display: grid;
+      gap: 5px;
+      padding: 12px;
+      border: 1px solid #d7e2eb;
+      border-radius: 9px;
+      background: #f6f9fc;
+    }
+
+    .dashboard-card-metrics small {
+      color: #60798d;
+      font: 850 10px/1.1 "Segoe UI", Arial, sans-serif;
+      text-transform: uppercase;
+    }
+
+    .dashboard-card-metrics strong {
+      overflow: hidden;
+      color: #05294d;
+      font: 950 clamp(20px, 1.55vw, 30px)/1 "Segoe UI", Arial, sans-serif;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .dashboard-footer-summary {
+      min-height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 10px 14px;
+      border: 1px solid #cbd9e4;
+      border-radius: 10px;
+      background: #fff;
+      color: #31536d;
+      font: 800 12px/1.25 "Segoe UI", Arial, sans-serif;
+    }
+
+    .dashboard-footer-summary strong {
+      color: #05294d;
+      text-transform: uppercase;
+    }
+
+    body.dark-mode .app.dashboard-mode .dashboard-view {
+      background: #091722;
+      color: #edf5fb;
+    }
+
+    body.dark-mode .dashboard-title-copy h2,
+    body.dark-mode .dashboard-card-copy strong,
+    body.dark-mode .dashboard-card-metrics strong,
+    body.dark-mode .dashboard-footer-summary strong {
+      color: #f1f7fb;
+    }
+
+    body.dark-mode .dashboard-title-copy p,
+    body.dark-mode .dashboard-card-copy small,
+    body.dark-mode .dashboard-card-metrics small,
+    body.dark-mode .dashboard-footer-summary {
+      color: #a8bdcc;
+    }
+
+    body.dark-mode .dashboard-mode-card,
+    body.dark-mode .dashboard-card-metrics span,
+    body.dark-mode .dashboard-footer-summary {
+      background: #102330;
+      border-color: #304c60;
+    }
+
+    @media (max-width: 900px) {
+      .app.dashboard-mode .dashboard-view {
+        display: block;
+      }
+
+      .dashboard-heading,
+      .dashboard-mode-grid {
+        margin-bottom: clamp(12px, 1.8vh, 20px);
+      }
+
+      .dashboard-mode-grid {
+        grid-template-columns: 1fr;
+        grid-auto-rows: minmax(190px, auto);
+        min-height: max-content;
+      }
+
+      .dashboard-mode-card {
+        min-height: 190px;
+      }
+    }
+
+    @media (max-width: 620px) {
+      .app.dashboard-mode {
+        --docas-rail-w: 58px;
+      }
+
+      .app.dashboard-mode .side-rail {
+        gap: 4px;
+        padding-top: 8px;
+      }
+
+      .app.dashboard-mode .side-rail button {
+        min-height: 42px;
+        padding-inline: 2px;
+        font-size: 8px;
+      }
+
+      .app.dashboard-mode .rail-icon {
+        font-size: 18px;
+      }
+
+      .app.dashboard-mode .dashboard-view {
+        padding: 10px 8px;
+      }
+
+      .dashboard-heading {
+        align-items: flex-start;
+        gap: 8px;
+      }
+
+      .dashboard-title-icon {
+        width: 44px;
+        height: 44px;
+        flex-basis: 44px;
+        font-size: 21px;
+      }
+
+      .dashboard-title-copy h2 {
+        font-size: 20px;
+      }
+
+      .dashboard-title-copy p {
+        display: none;
+      }
+
+      .dashboard-heading .routes-wave-picker {
+        min-width: 106px;
+      }
+
+      .dashboard-mode-card {
+        min-height: 176px;
+        padding: 14px;
+      }
+
+      .dashboard-mode-grid {
+        grid-auto-rows: minmax(176px, auto);
+      }
+
+      .dashboard-card-header {
+        grid-template-columns: 44px minmax(0, 1fr) auto;
+      }
+
+      .dashboard-card-icon {
+        width: 44px;
+        height: 44px;
+        font-size: 21px;
+      }
+
+      .dashboard-card-metrics span {
+        padding: 9px;
+      }
+
+      .dashboard-footer-summary {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+    }
+
     /* Modo de alertas operacionais — referência visual fornecida pelo usuário. */
     .alerts-modal {
       position: fixed;
@@ -7544,7 +7856,7 @@
         <span>Alertas</span>
         <span class="alert-rail-badge" id="alertRailBadge" hidden>0</span>
       </button>
-      <button type="button"><span class="rail-icon">□</span><span>Relatórios</span></button>
+      <button id="dashboardRailBtn" type="button" title="Abrir Dashboard operacional"><span class="rail-icon"><i class="bi bi-speedometer2" aria-hidden="true"></i></span><span>Dashboard</span></button>
       <button type="button"><span class="rail-icon">⚙</span><span>Config.</span></button>
       <button type="button"><span class="rail-icon">?</span><span>Ajuda</span></button>
     </aside>
@@ -7656,6 +7968,81 @@
         </div>
         <div class="routes-table-body" id="routesModeRows"></div>
       </section>
+    </section>
+
+    <section class="dashboard-view" id="dashboardView" aria-labelledby="dashboardTitle" aria-hidden="true">
+      <header class="dashboard-heading">
+        <div class="dashboard-title-block">
+          <span class="dashboard-title-icon"><i class="bi bi-speedometer2" aria-hidden="true"></i></span>
+          <span class="dashboard-title-copy">
+            <h2 id="dashboardTitle">Dashboard operacional</h2>
+            <p>Docas, rotas, históricos e alertas em uma visão consolidada</p>
+          </span>
+        </div>
+        <label class="routes-wave-picker" for="dashboardWaveSelect">
+          <span>Selecionar onda</span>
+          <select id="dashboardWaveSelect" aria-label="Selecionar onda do Dashboard"></select>
+        </label>
+      </header>
+
+      <div class="dashboard-mode-grid" aria-label="Modos do painel">
+        <button class="dashboard-mode-card docas" type="button" data-dashboard-mode="docas">
+          <span class="dashboard-card-header">
+            <span class="dashboard-card-icon"><i class="bi bi-building-fill" aria-hidden="true"></i></span>
+            <span class="dashboard-card-copy"><strong>Modo Docas</strong><small>Ocupação e situação das posições</small></span>
+            <i class="bi bi-arrow-up-right dashboard-card-arrow" aria-hidden="true"></i>
+          </span>
+          <span class="dashboard-card-metrics">
+            <span><small>Rotas</small><strong id="dashboardDockRoutes">0</strong></span>
+            <span><small>Ocupadas</small><strong id="dashboardOccupiedDocks">0</strong></span>
+            <span><small>Livres</small><strong id="dashboardFreeDocks">0</strong></span>
+          </span>
+        </button>
+
+        <button class="dashboard-mode-card routes" type="button" data-dashboard-mode="routes">
+          <span class="dashboard-card-header">
+            <span class="dashboard-card-icon"><i class="bi bi-signpost-split-fill" aria-hidden="true"></i></span>
+            <span class="dashboard-card-copy"><strong>Modo Rotas</strong><small>Fluxo por status da onda selecionada</small></span>
+            <i class="bi bi-arrow-up-right dashboard-card-arrow" aria-hidden="true"></i>
+          </span>
+          <span class="dashboard-card-metrics">
+            <span><small>Expedidas</small><strong id="dashboardLoadedRoutes">0</strong></span>
+            <span><small>Em processo</small><strong id="dashboardProcessRoutes">0</strong></span>
+            <span><small>Pendentes</small><strong id="dashboardPendingRoutes">0</strong></span>
+          </span>
+        </button>
+
+        <button class="dashboard-mode-card history" type="button" data-dashboard-mode="history">
+          <span class="dashboard-card-header">
+            <span class="dashboard-card-icon"><i class="bi bi-clock-history" aria-hidden="true"></i></span>
+            <span class="dashboard-card-copy"><strong>Modo Histórico</strong><small>Registros e rotas acompanhadas</small></span>
+            <i class="bi bi-arrow-up-right dashboard-card-arrow" aria-hidden="true"></i>
+          </span>
+          <span class="dashboard-card-metrics">
+            <span><small>Rotas</small><strong id="dashboardHistoryRoutes">0</strong></span>
+            <span><small>Registros</small><strong id="dashboardHistoryRecords">0</strong></span>
+            <span><small>Finalizadas</small><strong id="dashboardHistoryFinished">0</strong></span>
+          </span>
+        </button>
+
+        <button class="dashboard-mode-card alerts" type="button" data-dashboard-mode="alerts">
+          <span class="dashboard-card-header">
+            <span class="dashboard-card-icon"><i class="bi bi-exclamation-triangle-fill" aria-hidden="true"></i></span>
+            <span class="dashboard-card-copy"><strong>Modo Alertas</strong><small>Processos acima do limite operacional</small></span>
+            <i class="bi bi-arrow-up-right dashboard-card-arrow" aria-hidden="true"></i>
+          </span>
+          <span class="dashboard-card-metrics">
+            <span><small>Ativos</small><strong id="dashboardActiveAlerts">0</strong></span>
+            <span><small>Críticos</small><strong id="dashboardCriticalAlerts">0</strong></span>
+            <span><small>Moderados</small><strong id="dashboardModerateAlerts">0</strong></span>
+          </span>
+        </button>
+      </div>
+
+      <footer class="dashboard-footer-summary">
+        <strong id="dashboardWaveLabel">ONDA 01</strong>
+        <span id="dashboardUpdateLabel">Dados consolidados da atualização atual.</span>
+      </footer>
     </section>
 
     <section class="stats">
@@ -7986,16 +8373,19 @@
           <input id="pdfIncludeHybrid" type="checkbox" checked>
           <span>
             <b>Incluir rotas híbridas</b>
-            <small>Busca automaticamente na Extração das ondas selecionadas.</small>
+            <small>Use filtros próprios para selecionar somente as híbridas desejadas.</small>
           </span>
         </label>
-        <label class="pdf-option">
-          <input id="pdfDarkMode" type="checkbox">
-          <span>
-            <b>Modo escuro</b>
-            <small>Gera o relatório com fundo escuro e contraste para leitura.</small>
-          </span>
-        </label>
+        <section class="pdf-hybrid-filters" id="pdfHybridFilters" aria-label="Filtros das rotas híbridas">
+          <strong>Ondas das rotas híbridas</strong>
+          <div class="pdf-waves pdf-hybrid-waves" id="pdfHybridWaveOptions"></div>
+          <strong>Docas das rotas híbridas</strong>
+          <div class="pdf-range">
+            <label>De <input id="pdfHybridDockStart" type="number" min="1" max="92" placeholder="1"></label>
+            <label>Até <input id="pdfHybridDockEnd" type="number" min="1" max="92" placeholder="92"></label>
+          </div>
+          <p class="pdf-hybrid-filter-note">Esses filtros afetam somente as rotas híbridas incluídas no PDF.</p>
+        </section>
       </div>
     </div>
     <div class="pdf-actions">
@@ -9868,11 +10258,64 @@
       }
     }
 
+    function renderDashboard() {
+      renderModeWaveSelector("dashboardWaveSelect");
+      const rows = routeModeRows(currentWave);
+      const loaded = loadedKeys();
+      const shipped = expedidaKeys();
+      const statusMap = baseStatusByRoute();
+      const baseMap = baseDetailsByRoute();
+      const counts = { loaded: 0, customs: 0, guard: 0, pending: 0 };
+      const occupiedDocks = new Set();
+
+      rows.forEach(row => {
+        const merged = mergeRouteBaseDetails(row, baseMap);
+        const state = routeDockState(merged, loaded, shipped, statusMap);
+        counts[state] = (counts[state] || 0) + 1;
+        const dock = Number(validDockValue(merged.doca));
+        if (dock > 0) occupiedDocks.add(dock);
+      });
+
+      const historyRoutes = allHistoryRoutes(currentWave);
+      const historyRecords = (data.baseHistorico || []).filter(row => {
+        const rowWave = row.onda || routeCurrentDetails(row.rota).onda;
+        return waveLabel(rowWave) === waveLabel(currentWave);
+      });
+      const historyFinished = historyRoutes.filter(route => historyStatusMeta(routeCurrentDetails(route)).className === "loaded").length;
+      const waveNumber = (normalize(currentWave).match(/\d+/)?.[0] || "--").padStart(2, "0");
+      const alerts = processAlerts().filter(alert => alert.wave === waveNumber);
+      const criticalAlerts = alerts.filter(alert => alert.severity === "critical").length;
+      const maxDocks = Number(data.docas || 92);
+
+      const values = {
+        dashboardDockRoutes: rows.length,
+        dashboardOccupiedDocks: occupiedDocks.size,
+        dashboardFreeDocks: Math.max(0, maxDocks - occupiedDocks.size),
+        dashboardLoadedRoutes: counts.loaded || 0,
+        dashboardProcessRoutes: (counts.customs || 0) + (counts.guard || 0),
+        dashboardPendingRoutes: counts.pending || 0,
+        dashboardHistoryRoutes: historyRoutes.length,
+        dashboardHistoryRecords: historyRecords.length,
+        dashboardHistoryFinished: historyFinished,
+        dashboardActiveAlerts: alerts.length,
+        dashboardCriticalAlerts: criticalAlerts,
+        dashboardModerateAlerts: Math.max(0, alerts.length - criticalAlerts),
+        dashboardWaveLabel: displayWave(currentWave),
+        dashboardUpdateLabel: `Atualizado em ${currentTimeLabel()} • ${rows.length} rotas consolidadas na onda.`
+      };
+
+      Object.entries(values).forEach(([id, value]) => {
+        const element = document.getElementById(id);
+        if (element) element.textContent = value;
+      });
+    }
+
     function updateDockRailState() {
       const alertsOpen = document.getElementById("alertsModal")?.classList.contains("open");
       document.getElementById("overviewRailBtn")?.classList.toggle("active", !alertsOpen && currentView === "docas" && dockDisplayMode === "overview");
       document.getElementById("simpleDocksBtn")?.classList.toggle("active", !alertsOpen && currentView === "docas" && dockDisplayMode === "simple");
       document.getElementById("routeHistoryBtn")?.classList.toggle("active", !alertsOpen && currentView === "routes");
+      document.getElementById("dashboardRailBtn")?.classList.toggle("active", !alertsOpen && currentView === "dashboard");
     }
 
     function formatHistoryDate(value) {
@@ -10415,7 +10858,6 @@
       populateRouteHistorySelect(selectedRoute, historySelectedWave);
 
       const entryBase = historyMomentParts(milestones.entryBase);
-      const positioned = historyMomentParts(milestones.positioned);
       const qrBip = historyMomentParts(milestones.qrBip);
       const completed = historyMomentParts(milestones.completed);
       const justification = getJustification(selectedRoute) || "Fluxo normal de carregamento";
@@ -10424,7 +10866,6 @@
 
       document.getElementById("routeHistoryMetrics").innerHTML = [
         historyMetricCard("bi-box-arrow-in-right", "Entrada na base", entryBase.time, entryBase.date),
-        historyMetricCard("bi-building", "Entrada na doca", positioned.time, positioned.date),
         historyMetricCard("bi-qr-code", "QR bipado", qrBip.time, qrBip.date),
         historyMetricCard("bi-box-arrow-right", "Saída da base", completed.time, completed.date),
         historyMetricCard("bi-clock", "Tempo em doca", historyDuration(milestones.positioned, processEnd), "hh:mm:ss"),
@@ -10485,15 +10926,26 @@
 
     function renderPdfWaveOptions() {
       const box = document.getElementById("pdfWaveOptions");
-      if (!box) return;
-      box.innerHTML = (data.ondas || []).map(wave => `
+      const hybridBox = document.getElementById("pdfHybridWaveOptions");
+      if (!box || !hybridBox) return;
+      const waves = data.ondas || [];
+      box.innerHTML = waves.map(wave => `
         <label>
           <input type="checkbox" data-pdf-wave value="${waveLabel(wave)}" checked>
           ${displayWave(wave)}
         </label>
       `).join("");
+      hybridBox.innerHTML = waves.map(wave => `
+        <label>
+          <input type="checkbox" data-pdf-hybrid-wave value="${waveLabel(wave)}" checked>
+          ${displayWave(wave)}
+        </label>
+      `).join("");
       document.getElementById("pdfDockStart").value = "1";
       document.getElementById("pdfDockEnd").value = String(data.docas || 92);
+      document.getElementById("pdfHybridDockStart").value = "1";
+      document.getElementById("pdfHybridDockEnd").value = String(data.docas || 92);
+      syncHybridPdfFilters();
     }
 
     function renderGrid() {
@@ -10592,14 +11044,15 @@
 
     function selectedHybridRows(wave, start = 0, end = 0) {
       const seen = new Set();
+      const maxDock = Number(data.docas || 92);
+      const fullDockRange = (!start || start <= 1) && (!end || end >= maxDock);
       return (data.extracao || [])
         .filter(row => waveLabel(row.onda) === waveLabel(wave))
         .filter(isHybridRoute)
         .filter(row => {
-          // Quando a híbrida tem doca, respeita o intervalo selecionado.
-          // Sem doca, continua entrando porque é uma rota híbrida planejada da onda.
           const dock = Number(String(row.doca || "").replace(/\D/g, ""));
-          if (!dock) return true;
+          // Sem doca, a híbrida entra apenas quando o intervalo completo está selecionado.
+          if (!dock) return fullDockRange;
           if (start && dock < start) return false;
           if (end && dock > end) return false;
           return true;
@@ -10615,7 +11068,6 @@
     }
 
     function renderHybridPrintSection(wave, start, end) {
-      if (!document.getElementById("pdfIncludeHybrid")?.checked) return "";
       const hybridRows = selectedHybridRows(wave, start, end);
       if (!hybridRows.length) return "";
 
@@ -10648,15 +11100,20 @@
       `;
     }
 
-    function applyPdfThemePreview() {
-      const dark = Boolean(document.getElementById("pdfDarkMode")?.checked);
-      document.getElementById("pdfDrawer")?.classList.toggle("dark-preview", dark);
+    function syncHybridPdfFilters() {
+      const includeHybrid = Boolean(document.getElementById("pdfIncludeHybrid")?.checked);
+      const filters = document.getElementById("pdfHybridFilters");
+      if (filters) filters.hidden = !includeHybrid;
     }
-
 
     function selectedPrintWaves() {
       const checked = Array.from(document.querySelectorAll("[data-pdf-wave]:checked")).map(input => input.value);
       return checked.length ? checked : data.ondas || [];
+    }
+
+    function selectedHybridPrintWaves() {
+      if (!document.getElementById("pdfIncludeHybrid")?.checked) return [];
+      return Array.from(document.querySelectorAll("[data-pdf-hybrid-wave]:checked")).map(input => input.value);
     }
 
     function printDockRange() {
@@ -10664,6 +11121,20 @@
         start: Number(document.getElementById("pdfDockStart")?.value || 0),
         end: Number(document.getElementById("pdfDockEnd")?.value || 0)
       };
+    }
+
+    function hybridPrintDockRange() {
+      return {
+        start: Number(document.getElementById("pdfHybridDockStart")?.value || 0),
+        end: Number(document.getElementById("pdfHybridDockEnd")?.value || 0)
+      };
+    }
+
+    function renderSelectedHybridPrintSections() {
+      const waves = selectedHybridPrintWaves();
+      if (!waves.length) return "";
+      const range = hybridPrintDockRange();
+      return waves.map(wave => renderHybridPrintSection(wave, range.start, range.end)).join("");
     }
 
     function countBy(rows, getKey) {
@@ -10830,10 +11301,13 @@
       const end = Number(range.end || 0);
       let docasRowCount = 0;
       const waveSections = waves.map(wave => {
-        const rows = rowsForWave(wave)
+        const waveRows = rowsForWave(wave)
           .filter(row => dockInRange(row, start, end))
           .slice()
           .sort((a, b) => Number(a.doca || 0) - Number(b.doca || 0));
+        const rows = type === "docas"
+          ? waveRows.filter(row => !isHybridRoute(row))
+          : waveRows;
         if (type === "docas") docasRowCount += rows.length;
         if (type === "justificativas") {
           const justified = rows.filter(row => getJustification(row.rota));
@@ -10888,7 +11362,6 @@
                   : `<tr><td colspan="4">Sem rotas cadastradas nesta onda.</td></tr>`}
               </tbody>
             </table>
-            ${renderHybridPrintSection(wave, start, end)}
           </section>
         `;
       }).join("");
@@ -10899,7 +11372,8 @@
       printRows.className = type === "docas" && docasRowCount > 0
         ? (docasRowCount <= 14 ? "print-docas-large" : docasRowCount <= 28 ? "print-docas-medium" : "")
         : "";
-      printRows.innerHTML = closureIntro + waveSections;
+      const hybridSections = type === "docas" ? renderSelectedHybridPrintSections() : "";
+      printRows.innerHTML = closureIntro + waveSections + hybridSections;
     }
 
     function renderJustifications() {
@@ -11156,21 +11630,26 @@
       const app = document.querySelector(".app");
       const simpleMode = currentView === "docas" && dockDisplayMode === "simple";
       const routesMode = currentView === "routes";
-      app?.classList.toggle("docas-mode", currentView === "docas" || routesMode);
-      app?.classList.toggle("report-mode", currentView !== "docas" && !routesMode);
+      const dashboardMode = currentView === "dashboard";
+      app?.classList.toggle("docas-mode", currentView === "docas" || routesMode || dashboardMode);
+      app?.classList.toggle("report-mode", currentView !== "docas" && !routesMode && !dashboardMode);
       app?.classList.toggle("simple-docks-mode", simpleMode);
       app?.classList.toggle("routes-mode", routesMode);
+      app?.classList.toggle("dashboard-mode", dashboardMode);
       document.body.classList.toggle("simple-docks-active", simpleMode);
       document.body.classList.toggle("routes-mode-active", routesMode);
+      document.body.classList.toggle("dashboard-mode-active", dashboardMode);
       document.querySelectorAll("[data-view]").forEach(button => button.classList.toggle("active", button.dataset.view === currentView));
       document.getElementById("dockGrid").style.display = currentView === "docas" && !simpleMode ? "flex" : "none";
       document.getElementById("simpleDocksView")?.setAttribute("aria-hidden", simpleMode ? "false" : "true");
       document.getElementById("routesModeView")?.setAttribute("aria-hidden", routesMode ? "false" : "true");
+      document.getElementById("dashboardView")?.setAttribute("aria-hidden", dashboardMode ? "false" : "true");
       document.querySelector(".legend")?.classList.toggle("active", currentView === "docas" && !simpleMode);
       document.getElementById("justificativasView").classList.toggle("active", currentView === "justificativas");
       document.getElementById("fechamentoView").classList.toggle("active", currentView === "fechamento");
       if (simpleMode) renderSimpleDocks();
       if (routesMode) renderRoutesMode();
+      if (dashboardMode) renderDashboard();
       updateDockRailState();
       renderJustifications();
       renderSummary();
@@ -11253,7 +11732,6 @@
     function openPdfDrawer() {
       renderPdfWaveOptions();
       document.getElementById("pdfDrawer").classList.add("open");
-      applyPdfThemePreview();
     }
 
     async function resolveUserRole(user) {
@@ -11426,6 +11904,10 @@
       dockDisplayMode = "overview";
       renderViews();
     });
+    document.getElementById("dashboardRailBtn")?.addEventListener("click", () => {
+      currentView = "dashboard";
+      renderViews();
+    });
     document.getElementById("simpleDocksBtn")?.addEventListener("click", () => {
       currentView = "docas";
       dockDisplayMode = "simple";
@@ -11448,6 +11930,28 @@
     };
     document.getElementById("simpleWaveSelect")?.addEventListener("change", changeOperationalWave);
     document.getElementById("routesWaveSelect")?.addEventListener("change", changeOperationalWave);
+    document.getElementById("dashboardWaveSelect")?.addEventListener("change", changeOperationalWave);
+    document.getElementById("dashboardView")?.addEventListener("click", event => {
+      const card = event.target.closest("[data-dashboard-mode]");
+      if (!card) return;
+      const mode = card.dataset.dashboardMode;
+      if (mode === "docas") {
+        currentView = "docas";
+        dockDisplayMode = "simple";
+        renderViews();
+        return;
+      }
+      if (mode === "routes") {
+        currentView = "routes";
+        renderViews();
+        return;
+      }
+      if (mode === "history") {
+        openRouteHistory(allHistoryRoutes(currentWave)[0] || "");
+        return;
+      }
+      if (mode === "alerts") openAlerts();
+    });
     document.getElementById("routesModeRows")?.addEventListener("click", event => {
       const button = event.target.closest("[data-routes-route]");
       if (button?.dataset.routesRoute) openRouteHistory(button.dataset.routesRoute);
@@ -11520,15 +12024,12 @@
     document.getElementById("closePdfBtn").addEventListener("click", () => {
       document.getElementById("pdfDrawer").classList.remove("open");
     });
-    document.getElementById("pdfDarkMode")?.addEventListener("change", applyPdfThemePreview);
+    document.getElementById("pdfIncludeHybrid")?.addEventListener("change", syncHybridPdfFilters);
     document.querySelectorAll("[data-print-type]").forEach(button => {
       button.addEventListener("click", () => {
-        const darkPdf = Boolean(document.getElementById("pdfDarkMode")?.checked);
-        document.body.classList.toggle("print-dark-mode", darkPdf);
         renderPrintTable(button.dataset.printType, selectedPrintWaves(), printDockRange());
         document.getElementById("pdfDrawer").classList.remove("open");
         window.print();
-        setTimeout(() => document.body.classList.remove("print-dark-mode"), 250);
       });
     });
     document.querySelectorAll("[data-view]").forEach(button => {
@@ -11611,6 +12112,7 @@
       if (currentView === "docas" && dockDisplayMode === "simple") renderSimpleDocksMetrics();
       else if (currentView === "docas") renderGrid();
       else if (currentView === "routes") renderRoutesMode();
+      else if (currentView === "dashboard") renderDashboard();
     }, 1000);
   </script>
 
