@@ -22,6 +22,7 @@
     };
   </script>
   <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
   <style>
     :root {
       --yellow: #ffd200;
@@ -4996,6 +4997,626 @@
       border-color: #ffe15a !important;
     }
 
+    /* Modo histórico completo: leitura operacional detalhada por rota. */
+    .route-history-modal {
+      align-items: stretch;
+      justify-content: stretch;
+      background: #edf3f8;
+    }
+
+    .route-history-modal.open {
+      display: block;
+    }
+
+    .route-history-panel {
+      width: 100vw;
+      max-width: none;
+      height: 100vh;
+      grid-template-rows: 76px minmax(0, 1fr);
+      background: #edf3f8;
+      color: #04294d;
+      box-shadow: none;
+      font-family: "Segoe UI", Arial, sans-serif;
+    }
+
+    .route-history-header {
+      min-height: 76px;
+      display: grid;
+      grid-template-columns: 52px minmax(0, 1fr) auto;
+      align-items: center;
+      justify-content: normal;
+      gap: 15px;
+      padding: 7px 10px;
+      background: #edf3f8;
+      color: #04294d;
+      border: 0;
+    }
+
+    .route-history-header .history-mode-number {
+      width: 52px;
+      height: 52px;
+      display: grid;
+      place-items: center;
+      padding: 0;
+      border: 0;
+      border-radius: 7px;
+      background: #062b51;
+      color: #fff;
+      font: 950 28px/1 "Segoe UI", Arial, sans-serif;
+      cursor: pointer;
+      box-shadow: none;
+    }
+
+    .route-history-header .history-mode-number:hover,
+    .route-history-header .history-mode-number:focus-visible {
+      background: #0b416f;
+      outline: 3px solid rgba(9, 180, 90, .28);
+      outline-offset: 2px;
+    }
+
+    .route-history-header .history-mode-copy {
+      display: grid;
+      gap: 3px;
+    }
+
+    .route-history-header .history-mode-copy strong {
+      color: #03294f;
+      font: 950 29px/1 "Segoe UI Variable Display", "Segoe UI", Arial, sans-serif;
+      letter-spacing: -.5px;
+      text-transform: uppercase;
+    }
+
+    .route-history-header .history-mode-copy span {
+      color: #062b51;
+      font: 800 14px/1.1 "Segoe UI", Arial, sans-serif;
+      letter-spacing: 0;
+      text-transform: none;
+    }
+
+    .route-history-header .history-export-button {
+      width: auto;
+      min-width: 132px;
+      height: 40px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 0 18px;
+      border: 1px solid #e5ebf0;
+      border-radius: 7px;
+      background: #fff;
+      color: #05294d;
+      font: 950 11px/1 "Segoe UI", Arial, sans-serif;
+      text-transform: uppercase;
+      cursor: pointer;
+      box-shadow: 0 5px 16px rgba(5, 41, 77, .05);
+    }
+
+    .route-history-header .history-export-button:hover,
+    .route-history-header .history-export-button:focus-visible {
+      border-color: #86a2b9;
+      background: #f8fbfd;
+      outline: 3px solid rgba(9, 180, 90, .18);
+      outline-offset: 2px;
+    }
+
+    .history-sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    .route-history-content {
+      min-height: 0;
+      display: grid;
+      grid-template-columns: minmax(0, 2.18fr) minmax(390px, .98fr);
+      align-items: stretch;
+      gap: 22px;
+      padding: 0 10px 70px;
+      overflow: auto;
+      background: #edf3f8;
+    }
+
+    .history-detail-card,
+    .route-history-timeline {
+      min-width: 0;
+      min-height: 523px;
+      margin: 0;
+      border: 1px solid #ccd9e5;
+      border-radius: 8px;
+      background: #fff;
+      box-shadow: 0 10px 25px rgba(4, 41, 77, .06);
+      overflow: hidden;
+    }
+
+    .history-detail-card {
+      padding: 19px;
+    }
+
+    .route-history-summary {
+      min-height: 102px;
+      display: grid;
+      grid-template-columns: minmax(150px, .72fr) repeat(3, minmax(190px, 1.14fr));
+      gap: 0;
+      margin: 0 0 15px;
+      border: 1px solid #cbd8e4;
+      border-radius: 7px;
+      background: #fff;
+      overflow: hidden;
+    }
+
+    .history-dock-summary,
+    .history-primary-summary {
+      min-width: 0;
+      display: grid;
+      place-content: center;
+      gap: 8px;
+      padding: 12px 18px;
+      border-right: 1px solid #cbd8e4;
+      text-align: center;
+    }
+
+    .history-dock-summary {
+      background: #08b45b;
+      color: #fff;
+    }
+
+    .history-dock-summary span,
+    .history-primary-summary > span:not(.history-status-pill) {
+      color: inherit;
+      font: 950 12px/1 "Segoe UI", Arial, sans-serif;
+      letter-spacing: .1px;
+      text-transform: uppercase;
+    }
+
+    .history-dock-summary strong {
+      color: #fff;
+      font: 950 44px/.8 "Segoe UI Variable Display", "Segoe UI", Arial, sans-serif;
+    }
+
+    .history-primary-summary strong,
+    .history-route-summary select {
+      width: 100%;
+      min-width: 0;
+      margin: 0;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      color: #03294f;
+      font: 950 24px/1 "Segoe UI Variable Display", "Segoe UI", Arial, sans-serif;
+      text-align: center;
+      text-align-last: center;
+      outline: 0;
+    }
+
+    .history-route-summary select {
+      cursor: pointer;
+    }
+
+    .history-status-summary {
+      border-right: 0;
+    }
+
+    .history-status-pill {
+      min-width: 120px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      justify-self: center;
+      min-height: 31px;
+      padding: 7px 16px;
+      border-radius: 5px;
+      background: #0bb45c;
+      color: #fff;
+      font: 950 11px/1 "Segoe UI", Arial, sans-serif;
+      text-transform: uppercase;
+    }
+
+    .history-status-pill.pending { background: #dc3545; }
+    .history-status-pill.customs { background: #f28c18; }
+    .history-status-pill.loading { background: #1b74d1; }
+
+    .history-info-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 11px;
+    }
+
+    .history-info-card {
+      min-width: 0;
+      min-height: 114px;
+      display: grid;
+      grid-template-columns: 36px minmax(0, 1fr);
+      align-items: center;
+      gap: 6px;
+      padding: 16px 17px;
+      border: 1px solid #cddae6;
+      border-radius: 7px;
+      background: #fff;
+    }
+
+    .history-info-card > i {
+      color: #052f59;
+      font-size: 26px;
+      line-height: 1;
+      text-align: left;
+    }
+
+    .history-info-card-copy {
+      min-width: 0;
+      display: grid;
+      gap: 5px;
+    }
+
+    .history-info-card-label {
+      color: #05294d;
+      font: 950 11px/1.1 "Segoe UI", Arial, sans-serif;
+      text-transform: uppercase;
+    }
+
+    .history-info-card-value {
+      overflow-wrap: anywhere;
+      color: #03294f;
+      font: 950 20px/1.1 "Segoe UI Variable Display", "Segoe UI", Arial, sans-serif;
+    }
+
+    .history-info-card-value.history-value-long {
+      font-size: 18px;
+      line-height: 1.15;
+    }
+
+    .history-info-card-subvalue {
+      color: #05294d;
+      font: 850 12px/1 "Segoe UI", Arial, sans-serif;
+    }
+
+    .route-history-timeline {
+      display: grid;
+      grid-template-rows: 62px minmax(0, 1fr);
+    }
+
+    .route-history-events-title {
+      min-height: 62px;
+      padding: 0 18px;
+      border-bottom: 1px solid #cddae6;
+      background: #f8fafc;
+      color: #03294f;
+    }
+
+    .route-history-events-title h3 {
+      min-height: 0;
+      display: block;
+      padding: 0;
+      background: transparent;
+      color: inherit;
+      font: 950 19px/1 "Segoe UI Variable Display", "Segoe UI", Arial, sans-serif;
+    }
+
+    .route-history-events-title span {
+      min-height: 32px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 15px;
+      border: 1px solid #cfdae5;
+      border-radius: 6px;
+      background: #fff;
+      color: #03294f;
+      font: 900 11px/1 "Segoe UI", Arial, sans-serif;
+      text-transform: none;
+    }
+
+    .route-history-phases {
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      gap: 0;
+      padding: 20px 20px 22px 40px;
+      background: #fff;
+    }
+
+    .history-status-event {
+      position: relative;
+      min-height: 75px;
+      display: grid;
+      grid-template-columns: 42px minmax(0, 1fr) 104px;
+      align-items: center;
+      gap: 10px;
+      margin-left: -20px;
+    }
+
+    .history-status-event:not(:last-child)::after {
+      content: "";
+      position: absolute;
+      z-index: 0;
+      left: 19px;
+      top: 50%;
+      bottom: -50%;
+      border-left: 3px solid #08b45b;
+    }
+
+    .history-status-event.pending:not(:last-child)::after {
+      border-left-color: #c2ced8;
+    }
+
+    .history-event-marker {
+      position: relative;
+      z-index: 1;
+      width: 38px;
+      height: 38px;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      background: #08b45b;
+      color: #fff;
+      font-size: 22px;
+    }
+
+    .history-status-event.pending .history-event-marker {
+      border: 2px solid #b8c6d2;
+      background: #fff;
+      color: #71889b;
+      font-size: 16px;
+    }
+
+    .history-event-copy {
+      min-width: 0;
+      display: grid;
+      gap: 7px;
+    }
+
+    .history-event-copy strong {
+      color: #03294f;
+      font: 950 16px/1.05 "Segoe UI Variable Display", "Segoe UI", Arial, sans-serif;
+      text-transform: uppercase;
+    }
+
+    .history-event-copy span {
+      color: #05294d;
+      font: 750 13px/1.2 "Segoe UI", Arial, sans-serif;
+    }
+
+    .history-event-time {
+      display: grid;
+      justify-items: end;
+      gap: 4px;
+      color: #03294f;
+      text-align: right;
+    }
+
+    .history-event-time strong {
+      font: 950 13px/1 "Segoe UI", Arial, sans-serif;
+    }
+
+    .history-event-time span {
+      font: 850 12px/1 "Segoe UI", Arial, sans-serif;
+    }
+
+    body.dark-mode .route-history-modal,
+    body.dark-mode .route-history-panel,
+    body.dark-mode .route-history-content {
+      background: #081722 !important;
+      color: #f5f9fc !important;
+    }
+
+    body.dark-mode .route-history-header {
+      background: #0a1c29 !important;
+      border-color: transparent !important;
+    }
+
+    body.dark-mode .route-history-header .history-mode-copy strong,
+    body.dark-mode .route-history-header .history-mode-copy span {
+      color: #f5f9fc !important;
+    }
+
+    body.dark-mode .route-history-header .history-export-button,
+    body.dark-mode .history-detail-card,
+    body.dark-mode .route-history-timeline,
+    body.dark-mode .route-history-summary,
+    body.dark-mode .history-info-card,
+    body.dark-mode .route-history-events-title,
+    body.dark-mode .route-history-phases,
+    body.dark-mode .route-history-events-title span {
+      background: #112733 !important;
+      color: #f5f9fc !important;
+      border-color: #38566a !important;
+    }
+
+    body.dark-mode .history-primary-summary,
+    body.dark-mode .history-dock-summary {
+      border-color: #38566a !important;
+    }
+
+    body.dark-mode .history-primary-summary > span:not(.history-status-pill),
+    body.dark-mode .history-primary-summary strong,
+    body.dark-mode .history-route-summary select,
+    body.dark-mode .history-info-card > i,
+    body.dark-mode .history-info-card-label,
+    body.dark-mode .history-info-card-value,
+    body.dark-mode .history-info-card-subvalue,
+    body.dark-mode .route-history-events-title h3,
+    body.dark-mode .route-history-events-title span,
+    body.dark-mode .history-event-copy strong,
+    body.dark-mode .history-event-copy span,
+    body.dark-mode .history-event-time {
+      color: #f5f9fc !important;
+    }
+
+    body.dark-mode .history-status-event.pending .history-event-marker {
+      background: #173140 !important;
+      color: #afc1ce !important;
+      border-color: #537085 !important;
+    }
+
+    @media (max-width: 1180px) {
+      .route-history-panel {
+        height: auto;
+        min-height: 100vh;
+        grid-template-rows: 76px auto;
+        overflow: auto;
+      }
+
+      .route-history-content {
+        grid-template-columns: 1fr;
+        overflow: visible;
+        padding-bottom: 28px;
+      }
+
+      .history-detail-card,
+      .route-history-timeline {
+        min-height: auto;
+      }
+
+      .route-history-timeline {
+        min-height: 430px;
+      }
+    }
+
+    @media (max-width: 820px) {
+      .route-history-header {
+        grid-template-columns: 46px minmax(0, 1fr) auto;
+        gap: 10px;
+      }
+
+      .route-history-header .history-mode-number {
+        width: 46px;
+        height: 46px;
+      }
+
+      .route-history-header .history-mode-copy strong {
+        font-size: 21px;
+      }
+
+      .route-history-header .history-mode-copy span {
+        font-size: 11px;
+      }
+
+      .route-history-header .history-export-button {
+        min-width: 44px;
+        width: 44px;
+        padding: 0;
+        font-size: 0;
+      }
+
+      .route-history-header .history-export-button i {
+        font-size: 18px;
+      }
+
+      .route-history-summary {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .history-dock-summary,
+      .history-primary-summary {
+        min-height: 90px;
+        border-bottom: 1px solid #cbd8e4;
+      }
+
+      .history-info-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 540px) {
+      .route-history-content {
+        padding-inline: 6px;
+      }
+
+      .history-detail-card {
+        padding: 10px;
+      }
+
+      .history-info-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .history-status-event {
+        grid-template-columns: 42px minmax(0, 1fr);
+      }
+
+      .history-event-time {
+        grid-column: 2;
+        justify-items: start;
+        grid-auto-flow: column;
+        justify-content: start;
+      }
+    }
+
+    @media print {
+      body.printing-route-history .route-history-modal,
+      body.printing-route-history #routeHistoryModal {
+        position: static !important;
+        display: block !important;
+        visibility: visible !important;
+        width: 100% !important;
+        height: auto !important;
+        background: #fff !important;
+      }
+
+      body.printing-route-history .route-history-panel {
+        display: grid !important;
+        visibility: visible !important;
+        width: 100% !important;
+        height: auto !important;
+        min-height: 0 !important;
+        grid-template-rows: 62px auto !important;
+        overflow: visible !important;
+        background: #fff !important;
+      }
+
+      body.printing-route-history .route-history-header,
+      body.printing-route-history .route-history-content,
+      body.printing-route-history .history-detail-card,
+      body.printing-route-history .route-history-timeline,
+      body.printing-route-history .route-history-summary,
+      body.printing-route-history .history-info-grid,
+      body.printing-route-history .history-info-card,
+      body.printing-route-history .route-history-events-title,
+      body.printing-route-history .route-history-phases,
+      body.printing-route-history .history-status-event {
+        visibility: visible !important;
+      }
+
+      body.printing-route-history .route-history-content {
+        display: grid !important;
+        grid-template-columns: minmax(0, 2.18fr) minmax(330px, .98fr) !important;
+        gap: 10px !important;
+        padding: 0 !important;
+        overflow: visible !important;
+        background: #fff !important;
+      }
+
+      body.printing-route-history .history-detail-card,
+      body.printing-route-history .route-history-timeline {
+        display: grid !important;
+        min-height: 0 !important;
+        box-shadow: none !important;
+      }
+
+      body.printing-route-history .history-info-card {
+        min-height: 90px !important;
+      }
+
+      body.printing-route-history .history-mode-number,
+      body.printing-route-history .history-export-button,
+      body.printing-route-history .global-theme-toggle {
+        display: none !important;
+      }
+
+      body.printing-route-history .route-history-header {
+        grid-template-columns: 1fr !important;
+        padding-left: 0 !important;
+        background: #fff !important;
+      }
+    }
+
     /* Não imprime o botão de tema */
     @media print {
       .global-theme-toggle {
@@ -5040,7 +5661,7 @@
       <button class="active" type="button"><span class="rail-icon">▦</span><span>Overview</span></button>
       <button type="button"><span class="rail-icon">▤</span><span>Docas</span></button>
       <button id="routeHistoryBtn" type="button" title="Consultar histórico por rota"><span class="rail-icon">⌁</span><span>Rotas</span></button>
-      <button type="button"><span class="rail-icon">◴</span><span>Históricos</span></button>
+      <button id="fullHistoryBtn" type="button" title="Abrir modo histórico completo"><span class="rail-icon">◴</span><span>Históricos</span></button>
       <button type="button"><span class="rail-icon">!</span><span>Alertas</span></button>
       <button type="button"><span class="rail-icon">□</span><span>Relatórios</span></button>
       <button type="button"><span class="rail-icon">⚙</span><span>Config.</span></button>
@@ -5061,60 +5682,49 @@
     <div class="final-countdown-alert" id="finalCountdownAlert" aria-live="assertive" hidden></div>
 
     <div class="route-history-modal" id="routeHistoryModal" aria-hidden="true">
-      <div class="route-history-backdrop" data-close-route-history></div>
       <section class="route-history-panel" role="dialog" aria-modal="true" aria-labelledby="routeHistoryTitle">
         <header class="route-history-header">
-          <div>
-            <span>Histórico operacional da rota</span>
-            <strong id="routeHistoryTitle">Selecione uma rota</strong>
+          <button class="history-mode-number" id="closeRouteHistoryBtn" type="button" aria-label="Voltar ao painel" title="Voltar ao painel">3</button>
+          <div class="history-mode-copy">
+            <strong>Modo completo</strong>
+            <span>Painel operacional detalhado</span>
           </div>
-          <button id="closeRouteHistoryBtn" type="button" aria-label="Fechar">×</button>
+          <h2 class="history-sr-only" id="routeHistoryTitle">Histórico operacional da rota</h2>
+          <button class="history-export-button" id="routeHistoryPrintBtn" type="button">
+            <i class="bi bi-file-earmark-pdf" aria-hidden="true"></i>
+            Exportar PDF
+          </button>
         </header>
 
-        <div class="route-history-tools">
-          <label>
-            <span>Rota</span>
-            <select id="routeHistorySelect"></select>
-          </label>
-          <label class="route-history-search">
-            <span>Buscar rota</span>
-            <input id="routeHistorySearch" type="search" placeholder="Ex.: VT12_AM1">
-          </label>
-        </div>
-
         <div class="route-history-content">
-          <section class="route-history-summary" id="routeHistorySummary"></section>
-
-          <section class="route-history-timeline">
-            <h3>Linha do tempo</h3>
-            <div class="route-history-phases" id="routeHistoryPhases"></div>
+          <section class="history-detail-card">
+            <div class="route-history-summary" id="routeHistorySummary">
+              <div class="history-dock-summary">
+                <span>Doca</span>
+                <strong id="historyDockValue">--</strong>
+              </div>
+              <label class="history-primary-summary history-route-summary">
+                <span>Rota</span>
+                <select id="routeHistorySelect" aria-label="Selecionar rota para o histórico"></select>
+              </label>
+              <div class="history-primary-summary">
+                <span>Onda</span>
+                <strong id="historyWaveValue">--</strong>
+              </div>
+              <div class="history-primary-summary history-status-summary">
+                <span class="history-status-pill" id="historyStatusValue">Sem status</span>
+              </div>
+            </div>
+            <div class="history-info-grid" id="routeHistoryMetrics"></div>
           </section>
 
-          <section class="route-history-events">
+          <aside class="route-history-timeline" aria-label="Histórico de status">
             <div class="route-history-events-title">
-              <h3>Atualizações registradas</h3>
-              <span id="routeHistoryEventCount">0 registros</span>
+              <h3>Histórico de status</h3>
+              <span id="routeHistoryEventCount">3 eventos</span>
             </div>
-            <div class="route-history-table-wrap">
-              <table class="route-history-table">
-                <thead>
-                  <tr>
-                    <th>Data/Hora</th>
-                    <th>Fonte</th>
-                    <th>Processo/Estado</th>
-                    <th>Tempo proc.</th>
-                    <th>Tempo total</th>
-                    <th>Rep/Log</th>
-                    <th>Motorista</th>
-                    <th>Transportadora</th>
-                    <th>Doca</th>
-                    <th>Pacotes</th>
-                  </tr>
-                </thead>
-                <tbody id="routeHistoryTableBody"></tbody>
-              </table>
-            </div>
-          </section>
+            <div class="route-history-phases" id="routeHistoryPhases"></div>
+          </aside>
         </div>
       </section>
     </div>
@@ -5579,7 +6189,7 @@
     function normalizeBaseStatus(value) {
       const text = plainText(value).replace(/\s+/g, " ");
       if (!text) return "";
-      if (/^expedid[ao]$/.test(text)) return "Expedida";
+      if (/^(expedir|expedid[ao])$/.test(text)) return "Expedida";
       if (/^(guardando|carregando|guardando\s*\/\s*carregando)$/.test(text)) return "Guardando";
       if (/^(esperando (?:a )?aduana|aduana em andamento|em aduana)$/.test(text)) return "Em aduana";
       if (text === "pendente" || text === "-") return "Pendente";
@@ -5592,7 +6202,7 @@
     }
 
     function isExpedida(value) {
-      // Somente o valor operacional explícito "Expedida" (ou legado "Expedido") é aceito.
+      // Aceita o comando operacional "Expedir" e os estados consolidados "Expedida/Expedido".
       return normalizeBaseStatus(value) === "Expedida";
     }
 
@@ -6098,10 +6708,57 @@
       return data.base;
     }
 
+    function durationTextToMs(value) {
+      const text = plainText(value).replace(/,/g, ".");
+      if (!text) return 0;
+
+      const clockMatch = text.match(/\b(\d{1,3}):(\d{2})(?::(\d{2}))?\b/);
+      if (clockMatch) {
+        if (clockMatch[3] !== undefined) {
+          return ((Number(clockMatch[1]) * 3600) + (Number(clockMatch[2]) * 60) + Number(clockMatch[3])) * 1000;
+        }
+        return ((Number(clockMatch[1]) * 60) + Number(clockMatch[2])) * 1000;
+      }
+
+      const unitPatterns = [
+        { regex: /(\d+(?:\.\d+)?)\s*(?:h|hora|horas|hour|hours)\b/g, multiplier: 3600000 },
+        { regex: /(\d+(?:\.\d+)?)\s*(?:m|min|mins|minuto|minutos|minute|minutes)\b/g, multiplier: 60000 },
+        { regex: /(\d+(?:\.\d+)?)\s*(?:s|seg|segs|segundo|segundos|second|seconds)\b/g, multiplier: 1000 }
+      ];
+      let total = 0;
+      unitPatterns.forEach(({ regex, multiplier }) => {
+        for (const match of text.matchAll(regex)) total += Number(match[1]) * multiplier;
+      });
+      if (total > 0) return Math.round(total);
+
+      const numericOnly = text.match(/^\s*(\d+(?:\.\d+)?)\s*$/);
+      return numericOnly ? Math.round(Number(numericOnly[1]) * 60000) : 0;
+    }
+
+    function historyRowDurationMs(row = {}, source = row.fonte || "") {
+      if (source === "aduana") return durationTextToMs(row.auditTime || row.tempoAuditoria || "");
+      return durationTextToMs(row.tempoProcesso || row.auditTime || "");
+    }
+
     function appendBaseHistory(source, rows = []) {
-      const stamp = new Date().toISOString();
+      const stampMs = Date.now();
+      const stamp = new Date(stampMs).toISOString();
       data.baseHistorico = Array.isArray(data.baseHistorico) ? data.baseHistorico : [];
-      rows.forEach(row => data.baseHistorico.push({ ...row, fonte: source, atualizadoEm: stamp }));
+      rows.forEach(row => {
+        const durationMs = historyRowDurationMs(row, source);
+        const calculatedEventMs = durationMs > 0 ? Math.max(0, stampMs - durationMs) : 0;
+        const dispatchedNow = source === "operacional" && isExpedida(row.processo || row.status);
+        data.baseHistorico.push({
+          ...row,
+          fonte: source,
+          atualizadoEm: stamp,
+          ...(dispatchedNow ? { expedidaEm: stamp } : {}),
+          ...(calculatedEventMs ? {
+            eventoCalculadoEm: new Date(calculatedEventMs).toISOString(),
+            duracaoInformadaMs: durationMs
+          } : {})
+        });
+      });
       // Proteção simples para o localStorage/Firestore não crescer indefinidamente.
       if (data.baseHistorico.length > 5000) data.baseHistorico = data.baseHistorico.slice(-5000);
     }
@@ -6872,14 +7529,119 @@
       };
     }
 
-    function routeHistoryPhase(title, start, end) {
+    function historyMomentParts(value) {
+      if (!value) return { time: "--:--:--", date: "--/--/----" };
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) return { time: "--:--:--", date: "--/--/----" };
+      return {
+        time: date.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", second: "2-digit" }),
+        date: date.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" })
+      };
+    }
+
+    function historyDuration(start, end) {
+      const startMs = Number(start || 0);
+      const endMs = Number(end || 0);
+      if (!startMs || !endMs || endMs < startMs) return "--:--:--";
+      const totalSeconds = Math.floor((endMs - startMs) / 1000);
+      const hours = Math.floor(totalSeconds / 3600);
+      const minutes = Math.floor((totalSeconds % 3600) / 60);
+      const seconds = totalSeconds % 60;
+      return [hours, minutes, seconds].map(value => String(value).padStart(2, "0")).join(":");
+    }
+
+    function historyMetricCard(icon, label, value, subvalue = "", longValue = false) {
       return `
-        <article class="route-history-phase">
-          <h4>${escapeHtml(title)}</h4>
-          <div class="route-history-phase-body">
-            <div><span>Início</span><strong>${escapeHtml(start ? formatHistoryDate(start) : "--")}</strong></div>
-            <div><span>Término</span><strong>${escapeHtml(end ? formatHistoryDate(end) : "--")}</strong></div>
+        <article class="history-info-card">
+          <i class="bi ${icon}" aria-hidden="true"></i>
+          <div class="history-info-card-copy">
+            <span class="history-info-card-label">${escapeHtml(label)}</span>
+            <strong class="history-info-card-value${longValue ? " history-value-long" : ""}">${escapeHtml(value || "-")}</strong>
+            ${subvalue ? `<small class="history-info-card-subvalue">${escapeHtml(subvalue)}</small>` : ""}
           </div>
+        </article>
+      `;
+    }
+
+    function historyStatusMeta(details = {}) {
+      const status = normalizeBaseStatus(details.processo || details.status) || normalize(details.estadoAduana);
+      if (status === "Expedida") return { label: "Carregada", className: "loaded" };
+      if (status === "Guardando") return { label: "Em carregamento", className: "loading" };
+      if (status === "Em aduana") return { label: "Em aduana", className: "customs" };
+      if (status === "Pendente") return { label: "Pendente", className: "pending" };
+      return { label: status || "Planejada", className: "planned" };
+    }
+
+    function historyMilestones(details, rows, lifecycle) {
+      const rowTime = row => {
+        const value = row?.atualizadoEm;
+        if (!value) return 0;
+        const parsed = new Date(value).getTime();
+        return Number.isNaN(parsed) ? 0 : parsed;
+      };
+      const calculatedRowTime = row => {
+        const explicit = new Date(row?.eventoCalculadoEm || 0).getTime();
+        if (Number.isFinite(explicit) && explicit > 0) return explicit;
+        const savedAt = rowTime(row);
+        const durationMs = Number(row?.duracaoInformadaMs || 0) || historyRowDurationMs(row, row?.fonte);
+        return savedAt && durationMs > 0 ? Math.max(0, savedAt - durationMs) : 0;
+      };
+      const earliest = values => values.filter(value => Number(value) > 0).sort((a, b) => a - b)[0] || 0;
+
+      const qrCandidates = rows
+        .filter(row => {
+          const operationalStatus = normalizeBaseStatus(row.processo || row.status);
+          const customsEvidence = row.fonte === "aduana" && (
+            normalize(row.auditTime) || normalize(row.aduanaBipadas) || /andamento|conclu|valid|bip/i.test(normalize(row.estadoAduana))
+          );
+          return operationalStatus === "Em aduana" || customsEvidence;
+        })
+        .map(calculatedRowTime);
+      const qrBip = earliest(qrCandidates);
+      // Regra operacional: a entrada na base ocorre sempre dez minutos antes do início da bipagem.
+      const entryBase = qrBip ? Math.max(0, qrBip - 10 * 60 * 1000) : 0;
+
+      const positionedCandidates = rows
+        .filter(row => {
+          const status = normalizeBaseStatus(row.processo || row.status);
+          return row.fonte === "operacional" && ["Guardando", "Em aduana"].includes(status);
+        })
+        .map(calculatedRowTime);
+      const positionedFromData = earliest(positionedCandidates);
+
+      const completedRow = rows.find(row =>
+        row.fonte === "operacional" && isExpedida(row.processo || row.status)
+      );
+      const lastRow = rows.length ? rows[rows.length - 1] : null;
+      const completedFromData = earliest(rows
+        .filter(row => row.fonte === "operacional" && isExpedida(row.processo || row.status))
+        .map(row => {
+          const dispatchTime = new Date(row.expedidaEm || row.atualizadoEm || 0).getTime();
+          return Number.isNaN(dispatchTime) ? 0 : dispatchTime;
+        }));
+      const isLoaded = historyStatusMeta(details).className === "loaded";
+      return {
+        entryBase,
+        positioned: positionedFromData || qrBip || Number(lifecycle.loadingStart || 0),
+        qrBip,
+        completed: completedFromData || (isLoaded ? (Number(lifecycle.loadingEnd || 0) || rowTime(completedRow) || rowTime(lastRow)) : 0)
+      };
+    }
+
+    function historyTimelineEvent(title, description, value) {
+      const moment = historyMomentParts(value);
+      const complete = Boolean(value);
+      return `
+        <article class="history-status-event${complete ? "" : " pending"}">
+          <span class="history-event-marker" aria-hidden="true"><i class="bi ${complete ? "bi-check-lg" : "bi-clock"}"></i></span>
+          <div class="history-event-copy">
+            <strong>${escapeHtml(title)}</strong>
+            <span>${escapeHtml(description)}</span>
+          </div>
+          <time class="history-event-time"${complete ? ` datetime="${escapeHtml(new Date(value).toISOString())}"` : ""}>
+            <strong>${escapeHtml(moment.time)}</strong>
+            <span>${escapeHtml(moment.date)}</span>
+          </time>
         </article>
       `;
     }
@@ -6913,55 +7675,54 @@
       const details = routeCurrentDetails(route);
       const rows = routeHistoryRows(route);
       const lifecycle = routeLifecycleTimes(route, rows);
+      const milestones = historyMilestones(details, rows, lifecycle);
+      const statusMeta = historyStatusMeta(details);
+      const selectedRoute = details.rota || route;
+      const waveNumber = (normalize(details.onda).match(/\d+/)?.[0] || "--").padStart(2, "0");
+      const processEnd = milestones.completed || Date.now();
 
-      document.getElementById("routeHistoryTitle").textContent = details.rota || route;
-      populateRouteHistorySelect(details.rota || route);
+      document.getElementById("routeHistoryTitle").textContent = `Histórico operacional da rota ${selectedRoute}`;
+      document.getElementById("historyDockValue").textContent = details.doca || "--";
+      document.getElementById("historyWaveValue").textContent = waveNumber;
 
-      const packages = details.pacotes || details.spr || "--";
-      document.getElementById("routeHistorySummary").innerHTML = [
-        ["Rota", details.rota || route],
-        ["Doca", details.doca || "--"],
-        ["Motorista", details.motorista || "--"],
-        ["Rep / Log", routePersonName(details) || "--"],
-        ["Transportadora", details.transportadora || "--"],
-        ["Placa", details.placa || "--"],
-        ["Pacotes / SPR", packages],
-        ["Corretas", details.aduanaBipadas || "--"],
-        ["Processo atual", details.processo || normalizeBaseStatus(details.status) || "--"],
-        ["Tempo processo", details.tempoProcesso || "--"],
-        ["Tempo total", details.tempoTotal || "--"],
-        ["Tempo auditoria", details.auditTime || "--"]
-      ].map(([label, value]) => `
-        <div class="route-history-kpi">
-          <span>${escapeHtml(label)}</span>
-          <strong title="${escapeHtml(value)}">${escapeHtml(value)}</strong>
-        </div>
-      `).join("");
+      const statusPill = document.getElementById("historyStatusValue");
+      statusPill.textContent = statusMeta.label;
+      statusPill.className = `history-status-pill ${statusMeta.className}`;
 
-      document.getElementById("routeHistoryPhases").innerHTML = [
-        routeHistoryPhase("Aduana", lifecycle.aduanaStart, lifecycle.aduanaEnd),
-        routeHistoryPhase("Carregamento", lifecycle.loadingStart, lifecycle.loadingEnd),
-        routeHistoryPhase("Expedição", lifecycle.expeditionStart, lifecycle.expeditionEnd)
+      populateRouteHistorySelect(selectedRoute);
+
+      const entryBase = historyMomentParts(milestones.entryBase);
+      const positioned = historyMomentParts(milestones.positioned);
+      const qrBip = historyMomentParts(milestones.qrBip);
+      const completed = historyMomentParts(milestones.completed);
+      const justification = getJustification(selectedRoute) || "Fluxo normal de carregamento";
+      const responsible = routePersonName(details) || "Planejamento";
+      const observations = details.observacoes || details.observacao || "-";
+
+      document.getElementById("routeHistoryMetrics").innerHTML = [
+        historyMetricCard("bi-box-arrow-in-right", "Entrada na base", entryBase.time, entryBase.date),
+        historyMetricCard("bi-building", "Entrada na doca", positioned.time, positioned.date),
+        historyMetricCard("bi-qr-code", "QR bipado", qrBip.time, qrBip.date),
+        historyMetricCard("bi-box-arrow-right", "Saída da base", completed.time, completed.date),
+        historyMetricCard("bi-clock", "Tempo em doca", historyDuration(milestones.positioned, processEnd), "hh:mm:ss"),
+        historyMetricCard("bi-stopwatch", "Tempo desde entrada na base", historyDuration(milestones.entryBase, processEnd), "hh:mm:ss"),
+        historyMetricCard("bi-person-badge", "Motorista", details.motorista || "Não informado", "", true),
+        historyMetricCard("bi-credit-card-2-front", "Placa", details.placa || "Não informada"),
+        historyMetricCard("bi-journal-text", "Justificativa", justification, "", true),
+        historyMetricCard("bi-chevron-double-up", "Prioridade", details.prioridade || "Normal"),
+        historyMetricCard("bi-person-gear", "Responsável", responsible, "", true),
+        historyMetricCard("bi-list-columns-reverse", "Observações", observations, "", true)
       ].join("");
 
-      document.getElementById("routeHistoryEventCount").textContent =
-        `${rows.length} ${rows.length === 1 ? "registro" : "registros"}`;
-
-      const tbody = document.getElementById("routeHistoryTableBody");
-      tbody.innerHTML = rows.length ? rows.slice().reverse().map(row => `
-        <tr>
-          <td>${escapeHtml(formatHistoryDate(row.atualizadoEm))}</td>
-          <td>${escapeHtml(row.fonte === "aduana" ? "Aduana" : "Operacional")}</td>
-          <td>${escapeHtml(historyStatus(row))}</td>
-          <td>${escapeHtml(row.tempoProcesso || "--")}</td>
-          <td>${escapeHtml(row.tempoTotal || "--")}</td>
-          <td>${escapeHtml(routePersonName(row) || "--")}</td>
-          <td>${escapeHtml(row.motorista || "--")}</td>
-          <td>${escapeHtml(row.transportadora || "--")}</td>
-          <td>${escapeHtml(row.doca || details.doca || "--")}</td>
-          <td>${escapeHtml(row.pacotes || row.spr || "--")}</td>
-        </tr>
-      `).join("") : `<tr><td colspan="10" class="route-history-empty">Ainda não existem atualizações históricas registradas para esta rota.</td></tr>`;
+      const events = [
+        ["Entrada base", "Veículo registrado na portaria", milestones.entryBase],
+        ["QR bipado", "QR Code da rota validado", milestones.qrBip],
+        ["Carregamento finalizado", "Veículo liberado da base", milestones.completed]
+      ];
+      document.getElementById("routeHistoryEventCount").textContent = `${events.length} eventos`;
+      document.getElementById("routeHistoryPhases").innerHTML = events
+        .map(([title, description, value]) => historyTimelineEvent(title, description, value))
+        .join("");
     }
 
     function openRouteHistory(route = "") {
@@ -6983,6 +7744,14 @@
       modal.classList.remove("open");
       modal.setAttribute("aria-hidden", "true");
       document.body.style.overflow = "";
+    }
+
+    function printRouteHistory() {
+      const cleanup = () => document.body.classList.remove("printing-route-history");
+      document.body.classList.add("printing-route-history");
+      window.addEventListener("afterprint", cleanup, { once: true });
+      window.print();
+      window.setTimeout(cleanup, 1200);
     }
 
 
@@ -7871,7 +8640,9 @@
     });
 
     document.getElementById("routeHistoryBtn")?.addEventListener("click", () => openRouteHistory());
+    document.getElementById("fullHistoryBtn")?.addEventListener("click", () => openRouteHistory());
     document.getElementById("closeRouteHistoryBtn")?.addEventListener("click", closeRouteHistory);
+    document.getElementById("routeHistoryPrintBtn")?.addEventListener("click", printRouteHistory);
     document.querySelector("[data-close-route-history]")?.addEventListener("click", closeRouteHistory);
     document.getElementById("routeHistorySelect")?.addEventListener("change", event => {
       if (event.target.value) renderRouteHistory(event.target.value);
