@@ -1022,14 +1022,47 @@
     }
 
     .docas-mode .dock-block {
+      position: relative;
       display: flex;
       gap: 8px;
       min-width: 0;
+      padding-top: clamp(20px, 1.8vh, 27px);
     }
 
     .docas-mode .dock-block.block-1 { flex: 2 1 0; }
     .docas-mode .dock-block.block-2 { flex: 4 1 0; }
     .docas-mode .dock-block.block-3 { flex: 6 1 0; }
+
+    .docas-mode .dock-zone-labels {
+      position: absolute;
+      inset: 0 0 auto;
+      height: clamp(16px, 1.45vh, 22px);
+      display: grid;
+      grid-template-columns: repeat(var(--dock-zone-columns), minmax(0, 1fr));
+      gap: var(--docas-card-gap, 8px);
+      pointer-events: none;
+    }
+
+    .docas-mode .dock-zone-label {
+      min-width: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2px clamp(4px, .45vw, 9px);
+      overflow: hidden;
+      border: 1px solid #214b6d;
+      border-bottom: 3px solid #ffd200;
+      border-radius: 5px 5px 3px 3px;
+      background: #062642;
+      color: #fff;
+      font: 950 clamp(8px, .58vw, 12px)/1 "Segoe UI", Arial, sans-serif;
+      letter-spacing: .04em;
+      text-align: center;
+      text-transform: uppercase;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      box-shadow: 0 2px 6px rgba(5, 31, 54, .16);
+    }
 
     .docas-mode .dock-column {
       display: grid;
@@ -2717,14 +2750,22 @@
 
 
 
-    /* Modo relatorio: Justificativas e Fechamento sem elementos da aba Docas. */
+    /* Modo relatório: Justificativas e Fechamento com navegação lateral persistente. */
     .report-mode {
+      --report-rail-w: clamp(70px, 4vw, 84px);
       width: 100vw;
       max-width: none;
+      min-width: 0;
       height: 100vh;
       border-radius: 0;
+      grid-template-columns: var(--report-rail-w) minmax(0, 1fr);
       grid-template-rows: auto auto minmax(0, 1fr);
       background: #e8f0f7;
+    }
+
+    .report-mode > .topbar,
+    .report-mode > .toolbar {
+      grid-column: 1 / -1;
     }
 
     .report-mode .toolbar {
@@ -2943,7 +2984,6 @@
     .report-mode .tabs .wave-selector {
       height: 48px;
     }
-    .report-mode .side-rail,
     .report-mode .stats,
     .report-mode .legend,
     .report-mode .wave-title,
@@ -2953,12 +2993,88 @@
       display: none !important;
     }
 
+    .report-mode .side-rail {
+      position: relative;
+      grid-column: 1;
+      grid-row: 3;
+      z-index: 6;
+      min-width: 0;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      gap: clamp(7px, .78vw, 15px);
+      padding: clamp(12px, 1.35vw, 26px) 0 14px;
+      overflow-x: hidden;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      scrollbar-width: none;
+      background: #062642;
+      border-right: 1px solid #0c3a60;
+    }
+
+    .report-mode .side-rail::-webkit-scrollbar {
+      display: none;
+    }
+
+    .report-mode .side-rail button {
+      display: grid;
+      place-items: center;
+      gap: 5px;
+      min-height: clamp(38px, 3vw, 50px);
+      padding-inline: 2px;
+      border: 0;
+      border-left: 4px solid transparent;
+      background: transparent;
+      color: #fff;
+      font: 950 clamp(10px, .64vw, 12px)/1.05 "Segoe UI", Arial, sans-serif;
+      text-align: center;
+    }
+
+    .report-mode .side-rail button.active {
+      color: #ffd200;
+      border-left-color: #ffd200;
+    }
+
+    .report-mode .side-rail :is(#overviewRailBtn, #simpleDocksBtn, #routeHistoryBtn, #fullHistoryBtn, #alertsBtn, #dashboardRailBtn) {
+      cursor: pointer;
+    }
+
+    .report-mode .rail-icon {
+      display: block;
+      font: 950 clamp(18px, 1.2vw, 23px)/1 "Segoe UI", Arial, sans-serif;
+    }
+
     .report-mode .tailwind-mode.panel-view {
+      grid-column: 2;
+      grid-row: 3;
+      width: 100%;
+      min-width: 0;
       height: 100%;
       max-height: none;
       min-height: 0;
       padding: 10px 12px;
       overflow: auto;
+    }
+
+    @media (max-width: 760px) {
+      .report-mode {
+        --report-rail-w: 58px;
+      }
+
+      .report-mode .side-rail {
+        gap: 4px;
+        padding-top: 8px;
+      }
+
+      .report-mode .side-rail button {
+        min-height: 42px;
+        font-size: 8px;
+      }
+
+      .report-mode .rail-icon {
+        font-size: 18px;
+      }
     }
 
     /* Tailwind mode: Justificativas e Fechamento seguem o layout original anterior. */
@@ -9800,6 +9916,15 @@
       [[51, 52, 53, 54, 55, 56, 57], [58, 59, 60, 61, 62, 63, 64], [65, 66, 67, 68, 69, 70, 71], [72, 73, 74, 75, 76, 77, 78], [79, 80, 81, 82, 83, 84, 85], [86, 87, 88, 89, 90, 91, 92]]
     ];
 
+    const dockZoneLabels = [
+      [{ label: "Lado Heineken", column: 1, span: 2, range: "docas 01 e 02" }],
+      [{ label: "Lado Central", column: 1, span: 4, range: "docas 18 a 39" }],
+      [
+        { label: "Lado Parede", column: 1, span: 5, range: "docas 51 a 79" },
+        { label: "Line Hall", column: 6, span: 1, range: "doca 86" }
+      ]
+    ];
+
     function formatMetricHour(value) {
       return normalize(value) || "--";
     }
@@ -10962,6 +11087,21 @@
       dockLayoutBlocks.forEach((block, blockIndex) => {
         const blockEl = document.createElement("div");
         blockEl.className = `dock-block block-${blockIndex + 1}`;
+
+        const zoneRow = document.createElement("div");
+        zoneRow.className = "dock-zone-labels";
+        zoneRow.style.setProperty("--dock-zone-columns", String(block.length));
+        zoneRow.setAttribute("aria-label", "Setores operacionais das docas");
+        (dockZoneLabels[blockIndex] || []).forEach(zone => {
+          const label = document.createElement("span");
+          label.className = "dock-zone-label";
+          label.style.gridColumn = `${zone.column} / span ${zone.span}`;
+          label.textContent = zone.label;
+          label.title = `${zone.label} — ${zone.range}`;
+          label.setAttribute("aria-label", `${zone.label}, ${zone.range}`);
+          zoneRow.appendChild(label);
+        });
+        blockEl.appendChild(zoneRow);
 
         block.forEach(column => {
           const columnEl = document.createElement("div");
