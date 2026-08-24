@@ -999,8 +999,7 @@
       font-size: 26px;
     }
 
-    .docas-mode .wave-title,
-    .docas-mode .final-countdown-alert {
+    .docas-mode .wave-title {
       display: none !important;
     }
 
@@ -6395,7 +6394,7 @@
                     <th>Onda</th>
                     <th>Status</th>
                     <th>Prioridade</th>
-                    <th>Responsável</th>
+                    <th>Log Responsável</th>
                     <th>Início calculado</th>
                     <th>Tempo em processo</th>
                     <th>Origem</th>
@@ -6425,7 +6424,7 @@
                     <th>Status</th>
                     <th>Motivo</th>
                     <th>Tempo</th>
-                    <th>Responsável</th>
+                    <th>Log Responsável</th>
                   </tr>
                 </thead>
                 <tbody id="alertLogRows"></tbody>
@@ -8386,7 +8385,7 @@
         <div class="alert-featured-cell alert-featured-time"><span>Tempo em processo</span><strong>${escapeHtml(alert.durationLabel)}</strong><small>hh:mm:ss</small></div>
         <div class="alert-featured-cell"><span>Motivo</span><strong>${escapeHtml(alert.reason)}</strong></div>
         <div class="alert-featured-cell"><span>Prioridade</span><span class="alert-priority-pill ${alert.severity}">${escapeHtml(alert.priority)}</span></div>
-        <div class="alert-featured-cell"><span>Responsável</span><strong>${escapeHtml(alert.responsible)}</strong></div>
+        <div class="alert-featured-cell"><span>Log Responsável</span><strong>${escapeHtml(alert.responsible)}</strong></div>
         <div class="alert-featured-cell"><span>Ação sugerida</span><strong>${escapeHtml(alert.action)}</strong></div>
       `;
     }
@@ -8478,17 +8477,17 @@
       const alerts = processAlerts();
       const toast = document.getElementById("processAlertToast");
       window.clearTimeout(alertToastTimer);
-      if (!alerts.length) {
+      if (!alerts.length || currentView !== "docas") {
         toast.hidden = true;
         return alerts;
       }
       const critical = alerts.filter(alert => alert.severity === "critical").length;
       document.getElementById("processAlertToastTitle").textContent = `${alerts.length} ${alerts.length === 1 ? "rota em alerta" : "rotas em alerta"}`;
       document.getElementById("processAlertToastText").textContent = critical
-        ? `${critical} crítico(s). A rota ${alerts[0].route} está em processo há ${alerts[0].durationLabel}.`
-        : `A rota ${alerts[0].route} está em processo há ${alerts[0].durationLabel}.`;
+        ? `${critical} crítico(s). Rota ofensora: ${alerts[0].route}, doca ${alerts[0].dock}, há ${alerts[0].durationLabel}.`
+        : `Rota ofensora: ${alerts[0].route}, doca ${alerts[0].dock}, há ${alerts[0].durationLabel}.`;
       toast.hidden = false;
-      alertToastTimer = window.setTimeout(() => { toast.hidden = true; }, 9000);
+      alertToastTimer = window.setTimeout(() => { toast.hidden = true; }, 5000);
       return alerts;
     }
 
@@ -8744,7 +8743,7 @@
         historyMetricCard("bi-signpost-split", "Tipo de rota", details.tipoRota || "Não informado", "", true),
         historyMetricCard("bi-geo-alt", "Tipo de área", details.tipoArea || "Não informada", "", true),
         historyMetricCard("bi-journal-text", "Justificativa", justification, "", true),
-        historyMetricCard("bi-person-gear", "Responsável", responsible, "", true),
+        historyMetricCard("bi-person-gear", "Log Responsável", responsible, "", true),
         historyMetricCard("bi-list-columns-reverse", "Observações", observations, "", true)
       ].join("");
 
@@ -8857,19 +8856,22 @@
       document.getElementById("occupiedDocks").textContent = customsCount;
       document.getElementById("pendingRoutes").textContent = pending;
       document.getElementById("remainingTime").textContent = remainingWaveTime(currentWave);
-      renderFinalCountdownAlert(rows.length);
+      renderFinalCountdownAlert();
     }
-    function renderFinalCountdownAlert(routeCount = rowsForWave(currentWave).length) {
+    function renderFinalCountdownAlert() {
       const alert = document.getElementById("finalCountdownAlert");
       if (!alert) return;
-      const seconds = remainingWaveSeconds(currentWave);
-      const show = routeCount > 0 && seconds !== null && seconds > 0 && seconds <= 60;
+      const finalWave = (data.ondas || [])
+        .map(wave => ({ wave, seconds: remainingWaveSeconds(wave) }))
+        .filter(item => item.seconds !== null && item.seconds > 0 && item.seconds <= 60)
+        .sort((a, b) => a.seconds - b.seconds)[0] || null;
+      const show = Boolean(finalWave && rowsForWave(finalWave.wave).length > 0);
       alert.hidden = !show;
       if (!show) {
         alert.innerHTML = "";
         return;
       }
-      alert.innerHTML = `<span>Contagem final da ${displayWave(currentWave)}</span><strong>${formatShortCountdown(seconds)}</strong>`;
+      alert.innerHTML = `<span>Contagem final da ${displayWave(finalWave.wave)}</span><strong>${formatShortCountdown(finalWave.seconds)}</strong>`;
     }
 
     function dockInRange(row, start, end) {
