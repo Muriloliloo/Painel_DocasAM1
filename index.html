@@ -6993,7 +6993,8 @@
       z-index: 100;
       min-width: 0;
       display: grid;
-      grid-template-rows: auto minmax(0, 1fr) auto;
+      grid-template-rows: auto auto auto auto;
+      align-content: start;
       gap: clamp(12px, 1.8vh, 20px);
       padding: clamp(12px, 2vh, 22px) clamp(12px, 1.5vw, 28px);
       background: #edf3f8;
@@ -7049,18 +7050,80 @@
     }
 
     .dashboard-mode-grid {
-      min-height: 0;
+      min-height: max-content;
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
+      grid-auto-rows: minmax(300px, auto);
       gap: clamp(12px, 1.4vw, 22px);
+    }
+
+    .dashboard-summary-strip {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: clamp(8px, .9vw, 14px);
+      min-width: 0;
+    }
+
+    .dashboard-summary-item {
+      min-width: 0;
+      min-height: 74px;
+      display: grid;
+      grid-template-columns: 48px minmax(0, 1fr);
+      align-items: center;
+      gap: 12px;
+      padding: 10px 13px;
+      border: 1px solid #cbd9e4;
+      border-radius: 11px;
+      background: #fff;
+      box-shadow: 0 6px 18px rgba(5, 41, 77, .07);
+    }
+
+    .dashboard-summary-icon {
+      width: 48px;
+      height: 48px;
+      display: grid;
+      place-items: center;
+      border-radius: 10px;
+      background: var(--summary-color, #0b7fc2);
+      color: #fff;
+      font-size: 23px;
+    }
+
+    .dashboard-summary-copy {
+      min-width: 0;
+      display: grid;
+      gap: 2px;
+    }
+
+    .dashboard-summary-copy small {
+      overflow: hidden;
+      color: #3e5d74;
+      font: 850 10px/1.1 "Segoe UI", Arial, sans-serif;
+      text-overflow: ellipsis;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .dashboard-summary-copy strong {
+      overflow: hidden;
+      color: #05294d;
+      font: 950 clamp(22px, 1.7vw, 32px)/1 "Segoe UI", Arial, sans-serif;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .dashboard-summary-copy em {
+      color: #547188;
+      font: 800 10px/1.1 "Segoe UI", Arial, sans-serif;
+      font-style: normal;
     }
 
     .dashboard-mode-card {
       min-width: 0;
       min-height: 210px;
       display: grid;
-      grid-template-rows: auto minmax(0, 1fr);
-      gap: 18px;
+      grid-template-rows: auto minmax(120px, 1fr) auto;
+      gap: 13px;
       padding: clamp(18px, 1.5vw, 26px);
       border: 1px solid #c5d5e2;
       border-top: 5px solid var(--dashboard-accent, #0b74b8);
@@ -7126,6 +7189,249 @@
       font-size: 20px;
     }
 
+    .dashboard-live-preview {
+      min-width: 0;
+      min-height: 0;
+      display: block;
+      overflow: hidden;
+    }
+
+    .dashboard-preview-empty {
+      min-height: 112px;
+      display: grid;
+      place-items: center;
+      gap: 6px;
+      padding: 14px;
+      border: 1px dashed #c7d6e2;
+      border-radius: 10px;
+      background: #f6f9fc;
+      color: #587187;
+      text-align: center;
+      font: 800 11px/1.25 "Segoe UI", Arial, sans-serif;
+    }
+
+    .dashboard-preview-empty i {
+      color: var(--dashboard-accent);
+      font-size: 25px;
+    }
+
+    .dashboard-docks-preview {
+      display: grid;
+      grid-template-columns: repeat(7, minmax(0, 1fr));
+      align-content: start;
+      gap: 5px;
+    }
+
+    .dashboard-dock-mini {
+      min-width: 0;
+      min-height: 34px;
+      display: grid;
+      align-content: center;
+      gap: 1px;
+      padding: 4px 5px;
+      border-radius: 6px;
+      background: #d5dee7;
+      color: #05294d;
+    }
+
+    .dashboard-dock-mini strong,
+    .dashboard-dock-mini small {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .dashboard-dock-mini strong { font: 950 10px/1 "Segoe UI", Arial, sans-serif; }
+    .dashboard-dock-mini small { font: 850 8px/1.05 "Segoe UI", Arial, sans-serif; }
+    .dashboard-dock-mini.state-loaded { background: #13bc63; color: #fff; }
+    .dashboard-dock-mini.state-pending { background: #f00022; color: #fff; }
+    .dashboard-dock-mini.state-customs { background: #ff8800; color: #fff; }
+    .dashboard-dock-mini.state-loading { background: #1186c8; color: #fff; }
+
+    .dashboard-routes-preview {
+      display: grid;
+      align-content: start;
+      gap: 7px;
+    }
+
+    .dashboard-route-mini {
+      min-width: 0;
+      display: grid;
+      grid-template-columns: 50px minmax(0, 1fr) 86px 66px;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .dashboard-route-dock {
+      min-height: 38px;
+      display: grid;
+      place-items: center;
+      border-radius: 7px;
+      background: #d5dee7;
+      color: #05294d;
+      font: 950 18px/1 "Segoe UI", Arial, sans-serif;
+    }
+
+    .dashboard-route-dock.loaded { background: #13bc63; color: #fff; }
+    .dashboard-route-dock.pending { background: #f00022; color: #fff; }
+    .dashboard-route-dock.customs { background: #ff8800; color: #fff; }
+    .dashboard-route-dock.loading { background: #1186c8; color: #fff; }
+
+    .dashboard-route-copy,
+    .dashboard-route-time {
+      min-width: 0;
+      display: grid;
+      gap: 2px;
+    }
+
+    .dashboard-route-copy strong,
+    .dashboard-route-time strong {
+      overflow: hidden;
+      color: #05294d;
+      font: 950 11px/1.05 "Segoe UI", Arial, sans-serif;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .dashboard-route-copy small,
+    .dashboard-route-time small {
+      color: #587187;
+      font: 800 8px/1 "Segoe UI", Arial, sans-serif;
+      text-transform: uppercase;
+    }
+
+    .dashboard-route-status {
+      overflow: hidden;
+      padding: 7px 5px;
+      border-radius: 6px;
+      background: #d5dee7;
+      color: #05294d;
+      font: 900 8px/1.05 "Segoe UI", Arial, sans-serif;
+      text-align: center;
+      text-overflow: ellipsis;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .dashboard-route-status.loaded { background: #13bc63; color: #fff; }
+    .dashboard-route-status.pending { background: #f00022; color: #fff; }
+    .dashboard-route-status.customs { background: #ff8800; color: #fff; }
+    .dashboard-route-status.loading { background: #1186c8; color: #fff; }
+
+    .dashboard-history-preview {
+      min-height: 118px;
+      display: grid;
+      grid-template-columns: 76px minmax(0, 1fr);
+      gap: 12px;
+      padding: 10px;
+      border: 1px solid #d7e2eb;
+      border-radius: 10px;
+      background: #f8fafc;
+    }
+
+    .dashboard-history-dock {
+      display: grid;
+      place-items: center;
+      align-content: center;
+      gap: 3px;
+      border-radius: 8px;
+      background: #13bc63;
+      color: #fff;
+    }
+
+    .dashboard-history-dock small { font: 850 8px/1 "Segoe UI", Arial, sans-serif; text-transform: uppercase; }
+    .dashboard-history-dock strong { font: 950 28px/1 "Segoe UI", Arial, sans-serif; }
+    .dashboard-history-dock.loading { background: #1186c8; }
+    .dashboard-history-dock.customs { background: #ff8800; }
+    .dashboard-history-dock.pending { background: #f00022; }
+    .dashboard-history-dock.planned { background: #8a9caf; }
+
+    .dashboard-history-content {
+      min-width: 0;
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 9px 12px;
+    }
+
+    .dashboard-history-field {
+      min-width: 0;
+      display: grid;
+      align-content: center;
+      gap: 3px;
+    }
+
+    .dashboard-history-field small {
+      color: #587187;
+      font: 850 8px/1 "Segoe UI", Arial, sans-serif;
+      text-transform: uppercase;
+    }
+
+    .dashboard-history-field strong {
+      overflow: hidden;
+      color: #05294d;
+      font: 950 11px/1.1 "Segoe UI", Arial, sans-serif;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .dashboard-history-status {
+      justify-self: start;
+      padding: 6px 9px;
+      border-radius: 6px;
+      background: #13bc63;
+      color: #fff !important;
+      font-size: 8px !important;
+      text-transform: uppercase;
+    }
+
+    .dashboard-history-status.loading { background: #1186c8; }
+    .dashboard-history-status.customs { background: #ff8800; }
+    .dashboard-history-status.pending { background: #f00022; }
+    .dashboard-history-status.planned { background: #8a9caf; }
+
+    .dashboard-alert-preview {
+      min-height: 118px;
+      display: grid;
+      grid-template-columns: 74px minmax(0, 1fr);
+      border: 1px solid #ff6278;
+      border-radius: 10px;
+      overflow: hidden;
+      background: #fff9fa;
+    }
+
+    .dashboard-alert-dock {
+      display: grid;
+      place-items: center;
+      align-content: center;
+      gap: 3px;
+      background: #f00022;
+      color: #fff;
+    }
+
+    .dashboard-alert-dock.moderate { background: #ff8800; }
+    .dashboard-alert-dock small { font: 850 8px/1 "Segoe UI", Arial, sans-serif; text-transform: uppercase; }
+    .dashboard-alert-dock strong { font: 950 28px/1 "Segoe UI", Arial, sans-serif; }
+
+    .dashboard-alert-content {
+      min-width: 0;
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 7px 10px;
+      padding: 10px 12px;
+    }
+
+    .dashboard-alert-field {
+      min-width: 0;
+      display: grid;
+      align-content: center;
+      gap: 3px;
+    }
+
+    .dashboard-alert-field.wide { grid-column: 1 / -1; }
+    .dashboard-alert-field small { color: #8d2637; font: 850 8px/1 "Segoe UI", Arial, sans-serif; text-transform: uppercase; }
+    .dashboard-alert-field strong { overflow: hidden; color: #cc0020; font: 950 11px/1.15 "Segoe UI", Arial, sans-serif; text-overflow: ellipsis; }
+    .dashboard-alert-field:not(.wide) strong { white-space: nowrap; }
+
     .dashboard-card-metrics {
       align-self: end;
       display: grid;
@@ -7159,7 +7465,7 @@
 
     .dashboard-footer-summary {
       min-height: 48px;
-      display: flex;
+      display: none;
       align-items: center;
       justify-content: space-between;
       gap: 12px;
@@ -7196,10 +7502,61 @@
     }
 
     body.dark-mode .dashboard-mode-card,
+    body.dark-mode .dashboard-summary-item,
     body.dark-mode .dashboard-card-metrics span,
     body.dark-mode .dashboard-footer-summary {
       background: #102330;
       border-color: #304c60;
+    }
+
+    body.dark-mode .dashboard-summary-copy strong,
+    body.dark-mode .dashboard-route-copy strong,
+    body.dark-mode .dashboard-route-time strong,
+    body.dark-mode .dashboard-history-field strong {
+      color: #f1f7fb;
+    }
+
+    body.dark-mode .dashboard-summary-copy small,
+    body.dark-mode .dashboard-summary-copy em,
+    body.dark-mode .dashboard-route-copy small,
+    body.dark-mode .dashboard-route-time small,
+    body.dark-mode .dashboard-history-field small {
+      color: #a8bdcc;
+    }
+
+    body.dark-mode .dashboard-history-preview,
+    body.dark-mode .dashboard-preview-empty {
+      background: #0c1d29;
+      border-color: #304c60;
+    }
+
+    body.dark-mode .dashboard-alert-preview { background: #2b1720; }
+
+    body.dark-mode .dashboard-alert-field small { color: #ff9aae; }
+    body.dark-mode .dashboard-alert-field strong { color: #fff4f6; }
+
+    @media (min-width: 1500px) {
+      .dashboard-mode-grid {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+      }
+
+      .dashboard-mode-card {
+        min-height: 300px;
+        padding: 16px;
+      }
+
+      .dashboard-card-copy strong { font-size: 19px; }
+      .dashboard-card-copy small { font-size: 10px; }
+      .dashboard-card-icon { width: 46px; height: 46px; font-size: 22px; }
+      .dashboard-card-header { grid-template-columns: 46px minmax(0, 1fr) auto; gap: 10px; }
+      .dashboard-card-metrics span { padding: 8px; }
+      .dashboard-card-metrics strong { font-size: 20px; }
+    }
+
+    @media (max-width: 1180px) {
+      .dashboard-summary-strip {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
     }
 
     @media (max-width: 900px) {
@@ -7208,6 +7565,7 @@
       }
 
       .dashboard-heading,
+      .dashboard-summary-strip,
       .dashboard-mode-grid {
         margin-bottom: clamp(12px, 1.8vh, 20px);
       }
@@ -7218,8 +7576,12 @@
         min-height: max-content;
       }
 
+      .dashboard-summary-strip {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
       .dashboard-mode-card {
-        min-height: 190px;
+        min-height: 260px;
       }
     }
 
@@ -7248,6 +7610,8 @@
       }
 
       .dashboard-heading {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
         align-items: flex-start;
         gap: 8px;
       }
@@ -7268,16 +7632,17 @@
       }
 
       .dashboard-heading .routes-wave-picker {
-        min-width: 106px;
+        width: 100%;
+        min-width: 0;
       }
 
       .dashboard-mode-card {
-        min-height: 176px;
+        min-height: 244px;
         padding: 14px;
       }
 
       .dashboard-mode-grid {
-        grid-auto-rows: minmax(176px, auto);
+        grid-auto-rows: minmax(244px, auto);
       }
 
       .dashboard-card-header {
@@ -7293,6 +7658,27 @@
       .dashboard-card-metrics span {
         padding: 9px;
       }
+
+      .dashboard-summary-strip {
+        grid-template-columns: 1fr;
+      }
+
+      .dashboard-summary-item {
+        min-height: 62px;
+        grid-template-columns: 40px minmax(0, 1fr);
+      }
+
+      .dashboard-summary-icon {
+        width: 40px;
+        height: 40px;
+        font-size: 19px;
+      }
+
+      .dashboard-docks-preview { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+      .dashboard-route-mini { grid-template-columns: 44px minmax(0, 1fr) 72px; }
+      .dashboard-route-time { display: none; }
+      .dashboard-history-preview,
+      .dashboard-alert-preview { grid-template-columns: 62px minmax(0, 1fr); }
 
       .dashboard-footer-summary {
         align-items: flex-start;
@@ -8101,6 +8487,29 @@
         </label>
       </header>
 
+      <div class="dashboard-summary-strip" aria-label="Resumo operacional da onda">
+        <span class="dashboard-summary-item" style="--summary-color:#0b7fc2">
+          <span class="dashboard-summary-icon"><i class="bi bi-signpost-split-fill" aria-hidden="true"></i></span>
+          <span class="dashboard-summary-copy"><small>Total de rotas</small><strong id="dashboardTotalRoutes">0</strong><em id="dashboardTotalWave">ONDA 01</em></span>
+        </span>
+        <span class="dashboard-summary-item" style="--summary-color:#087dac">
+          <span class="dashboard-summary-icon"><i class="bi bi-building" aria-hidden="true"></i></span>
+          <span class="dashboard-summary-copy"><small>Docas ativas</small><strong id="dashboardActiveDocks">0</strong><em id="dashboardDockPercent">0,0%</em></span>
+        </span>
+        <span class="dashboard-summary-item" style="--summary-color:#13bc63">
+          <span class="dashboard-summary-icon"><i class="bi bi-check-lg" aria-hidden="true"></i></span>
+          <span class="dashboard-summary-copy"><small>Expedidas</small><strong id="dashboardSummaryLoaded">0</strong><em id="dashboardLoadedPercent">0,0%</em></span>
+        </span>
+        <span class="dashboard-summary-item" style="--summary-color:#f00022">
+          <span class="dashboard-summary-icon"><i class="bi bi-exclamation-triangle" aria-hidden="true"></i></span>
+          <span class="dashboard-summary-copy"><small>Pendentes</small><strong id="dashboardSummaryPending">0</strong><em id="dashboardPendingPercent">0,0%</em></span>
+        </span>
+        <span class="dashboard-summary-item" style="--summary-color:#0789b7">
+          <span class="dashboard-summary-icon"><i class="bi bi-stopwatch" aria-hidden="true"></i></span>
+          <span class="dashboard-summary-copy"><small>Tempo médio em doca</small><strong id="dashboardAverageTime">00:00:00</strong><em>hh:mm:ss</em></span>
+        </span>
+      </div>
+
       <div class="dashboard-mode-grid" aria-label="Modos do painel">
         <button class="dashboard-mode-card docas" type="button" data-dashboard-mode="docas">
           <span class="dashboard-card-header">
@@ -8108,6 +8517,7 @@
             <span class="dashboard-card-copy"><strong>Modo Docas</strong><small>Ocupação e situação das posições</small></span>
             <i class="bi bi-arrow-up-right dashboard-card-arrow" aria-hidden="true"></i>
           </span>
+          <span class="dashboard-live-preview dashboard-docks-preview" id="dashboardDocksPreview" aria-label="Prévia das docas"></span>
           <span class="dashboard-card-metrics">
             <span><small>Rotas</small><strong id="dashboardDockRoutes">0</strong></span>
             <span><small>Ocupadas</small><strong id="dashboardOccupiedDocks">0</strong></span>
@@ -8121,6 +8531,7 @@
             <span class="dashboard-card-copy"><strong>Modo Rotas</strong><small>Fluxo por status da onda selecionada</small></span>
             <i class="bi bi-arrow-up-right dashboard-card-arrow" aria-hidden="true"></i>
           </span>
+          <span class="dashboard-live-preview dashboard-routes-preview" id="dashboardRoutesPreview" aria-label="Prévia das rotas"></span>
           <span class="dashboard-card-metrics">
             <span><small>Expedidas</small><strong id="dashboardLoadedRoutes">0</strong></span>
             <span><small>Em processo</small><strong id="dashboardProcessRoutes">0</strong></span>
@@ -8134,6 +8545,7 @@
             <span class="dashboard-card-copy"><strong>Modo Histórico</strong><small>Registros e rotas acompanhadas</small></span>
             <i class="bi bi-arrow-up-right dashboard-card-arrow" aria-hidden="true"></i>
           </span>
+          <span class="dashboard-live-preview" id="dashboardHistoryPreview" aria-label="Prévia do histórico"></span>
           <span class="dashboard-card-metrics">
             <span><small>Rotas</small><strong id="dashboardHistoryRoutes">0</strong></span>
             <span><small>Registros</small><strong id="dashboardHistoryRecords">0</strong></span>
@@ -8147,6 +8559,7 @@
             <span class="dashboard-card-copy"><strong>Modo Alertas</strong><small>Processos acima do limite operacional</small></span>
             <i class="bi bi-arrow-up-right dashboard-card-arrow" aria-hidden="true"></i>
           </span>
+          <span class="dashboard-live-preview" id="dashboardAlertsPreview" aria-label="Prévia dos alertas"></span>
           <span class="dashboard-card-metrics">
             <span><small>Ativos</small><strong id="dashboardActiveAlerts">0</strong></span>
             <span><small>Críticos</small><strong id="dashboardCriticalAlerts">0</strong></span>
@@ -10383,6 +10796,136 @@
       }
     }
 
+    function dashboardEmptyPreview(icon, message) {
+      return `
+        <span class="dashboard-preview-empty">
+          <i class="bi ${escapeHtml(icon)}" aria-hidden="true"></i>
+          <span>${escapeHtml(message)}</span>
+        </span>
+      `;
+    }
+
+    function renderDashboardDocksPreview(rows, loaded, shipped, statusMap, baseMap, maxDocks) {
+      const container = document.getElementById("dashboardDocksPreview");
+      if (!container) return;
+
+      const occupied = new Map();
+      rows.forEach(row => {
+        const merged = mergeRouteBaseDetails(row, baseMap);
+        const dock = Number(validDockValue(merged.doca));
+        if (dock > 0 && !occupied.has(dock)) {
+          occupied.set(dock, {
+            dock,
+            route: normalize(merged.rota) || "-",
+            state: routeDockState(merged, loaded, shipped, statusMap)
+          });
+        }
+      });
+
+      const slots = Array.from(occupied.values())
+        .sort((a, b) => a.dock - b.dock)
+        .slice(0, 28);
+      for (let dock = 1; slots.length < 28 && dock <= maxDocks; dock += 1) {
+        if (!occupied.has(dock)) slots.push({ dock, route: "Livre", state: "free" });
+      }
+      slots.sort((a, b) => a.dock - b.dock);
+
+      container.innerHTML = slots.length
+        ? slots.map(slot => {
+            const meta = simpleDockStateMeta(slot.state);
+            return `
+              <span class="dashboard-dock-mini state-${escapeHtml(meta.className)}" title="Doca ${escapeHtml(slot.dock)} • ${escapeHtml(slot.route)} • ${escapeHtml(meta.label)}">
+                <strong>${escapeHtml(slot.dock)}</strong>
+                <small>${escapeHtml(slot.route)}</small>
+              </span>
+            `;
+          }).join("")
+        : dashboardEmptyPreview("bi-building", "Nenhuma doca ocupada nesta onda.");
+    }
+
+    function renderDashboardRoutesPreview(rows, loaded, shipped, statusMap, baseMap) {
+      const container = document.getElementById("dashboardRoutesPreview");
+      if (!container) return;
+
+      const previewRows = rows.slice(0, 4).map(row => {
+        const merged = mergeRouteBaseDetails(row, baseMap);
+        const details = { ...routeCurrentDetails(row.rota), ...merged };
+        const state = routeDockState(merged, loaded, shipped, statusMap);
+        const meta = simpleDockStateMeta(state);
+        const historyRows = routeHistoryRows(row.rota);
+        const lifecycle = routeLifecycleTimes(row.rota, historyRows);
+        const milestones = historyMilestones(details, historyRows, lifecycle);
+        const seconds = routeModeProcessSeconds(row.rota, merged.onda || currentWave, details, milestones);
+        return `
+          <span class="dashboard-route-mini">
+            <strong class="dashboard-route-dock ${escapeHtml(meta.className)}">${escapeHtml(normalize(merged.doca) || "-")}</strong>
+            <span class="dashboard-route-copy"><strong>${escapeHtml(normalize(merged.rota) || "-")}</strong><small>${escapeHtml(displayWave(merged.onda || currentWave))}</small></span>
+            <strong class="dashboard-route-status ${escapeHtml(meta.className)}">${escapeHtml(meta.label)}</strong>
+            <span class="dashboard-route-time"><strong>${escapeHtml(simpleClockLabel(seconds))}</strong><small>hh:mm:ss</small></span>
+          </span>
+        `;
+      }).join("");
+
+      container.innerHTML = previewRows || dashboardEmptyPreview("bi-signpost-split", "Nenhuma rota nesta onda.");
+    }
+
+    function renderDashboardHistoryPreview(historyRoutes) {
+      const container = document.getElementById("dashboardHistoryPreview");
+      if (!container) return;
+      if (!historyRoutes.length) {
+        container.innerHTML = dashboardEmptyPreview("bi-clock-history", "Nenhum histórico nesta onda.");
+        return;
+      }
+
+      const route = historyRoutes
+        .slice()
+        .sort((a, b) => routeHistoryRows(b).length - routeHistoryRows(a).length)[0];
+      const details = routeCurrentDetails(route);
+      const historyRows = routeHistoryRows(route);
+      const lifecycle = routeLifecycleTimes(route, historyRows);
+      const milestones = historyMilestones(details, historyRows, lifecycle);
+      const entry = historyMomentParts(milestones.entryBase);
+      const seconds = routeModeProcessSeconds(route, details.onda || currentWave, details, milestones);
+      const meta = historyStatusMeta(details);
+
+      container.innerHTML = `
+        <span class="dashboard-history-preview">
+          <span class="dashboard-history-dock ${escapeHtml(meta.className)}"><small>Doca</small><strong>${escapeHtml(normalize(details.doca) || "-")}</strong></span>
+          <span class="dashboard-history-content">
+            <span class="dashboard-history-field"><small>Rota</small><strong>${escapeHtml(normalize(details.rota || route) || "-")}</strong></span>
+            <span class="dashboard-history-field"><small>Onda</small><strong>${escapeHtml(displayWave(details.onda || currentWave).replace("ONDA ", ""))}</strong></span>
+            <span class="dashboard-history-field"><small>Entrada na base</small><strong>${escapeHtml(entry.time)}</strong></span>
+            <span class="dashboard-history-field"><small>Tempo em doca</small><strong>${escapeHtml(simpleClockLabel(seconds))}</strong></span>
+            <span class="dashboard-history-field"><small>Status</small><strong class="dashboard-history-status ${escapeHtml(meta.className)}">${escapeHtml(meta.label)}</strong></span>
+            <span class="dashboard-history-field"><small>Log responsável</small><strong>${escapeHtml(details.repLog || "Não informado")}</strong></span>
+          </span>
+        </span>
+      `;
+    }
+
+    function renderDashboardAlertsPreview(alerts) {
+      const container = document.getElementById("dashboardAlertsPreview");
+      if (!container) return;
+      const alert = alerts[0];
+      if (!alert) {
+        container.innerHTML = dashboardEmptyPreview("bi-shield-check", "Nenhuma rota acima de 20 minutos.");
+        return;
+      }
+
+      container.innerHTML = `
+        <span class="dashboard-alert-preview">
+          <span class="dashboard-alert-dock ${escapeHtml(alert.severity)}"><small>Doca</small><strong>${escapeHtml(alert.dock)}</strong></span>
+          <span class="dashboard-alert-content">
+            <span class="dashboard-alert-field"><small>Rota</small><strong>${escapeHtml(alert.route)}</strong></span>
+            <span class="dashboard-alert-field"><small>Onda</small><strong>${escapeHtml(alert.wave)}</strong></span>
+            <span class="dashboard-alert-field"><small>Tempo parado</small><strong>${escapeHtml(alert.durationLabel)}</strong></span>
+            <span class="dashboard-alert-field"><small>Status</small><strong>${escapeHtml(alert.status)}</strong></span>
+            <span class="dashboard-alert-field wide"><small>Motivo</small><strong>${escapeHtml(alert.reason)}</strong></span>
+          </span>
+        </span>
+      `;
+    }
+
     function renderDashboard() {
       renderModeWaveSelector("dashboardWaveSelect");
       const rows = routeModeRows(currentWave);
@@ -10392,6 +10935,8 @@
       const baseMap = baseDetailsByRoute();
       const counts = { loaded: 0, customs: 0, guard: 0, pending: 0 };
       const occupiedDocks = new Set();
+      let totalProcessSeconds = 0;
+      let timedRoutes = 0;
 
       rows.forEach(row => {
         const merged = mergeRouteBaseDetails(row, baseMap);
@@ -10399,6 +10944,15 @@
         counts[state] = (counts[state] || 0) + 1;
         const dock = Number(validDockValue(merged.doca));
         if (dock > 0) occupiedDocks.add(dock);
+        const details = { ...routeCurrentDetails(row.rota), ...merged };
+        const historyRows = routeHistoryRows(row.rota);
+        const lifecycle = routeLifecycleTimes(row.rota, historyRows);
+        const milestones = historyMilestones(details, historyRows, lifecycle);
+        const seconds = routeModeProcessSeconds(row.rota, merged.onda || currentWave, details, milestones);
+        if (seconds > 0) {
+          totalProcessSeconds += seconds;
+          timedRoutes += 1;
+        }
       });
 
       const historyRoutes = allHistoryRoutes(currentWave);
@@ -10411,8 +10965,18 @@
       const alerts = processAlerts().filter(alert => alert.wave === waveNumber);
       const criticalAlerts = alerts.filter(alert => alert.severity === "critical").length;
       const maxDocks = Number(data.docas || 92);
+      const percent = value => `${(rows.length ? value / rows.length * 100 : 0).toFixed(1).replace(".", ",")}%`;
 
       const values = {
+        dashboardTotalRoutes: rows.length,
+        dashboardTotalWave: displayWave(currentWave),
+        dashboardActiveDocks: occupiedDocks.size,
+        dashboardDockPercent: `${(maxDocks ? occupiedDocks.size / maxDocks * 100 : 0).toFixed(1).replace(".", ",")}% das docas`,
+        dashboardSummaryLoaded: counts.loaded || 0,
+        dashboardLoadedPercent: percent(counts.loaded || 0),
+        dashboardSummaryPending: counts.pending || 0,
+        dashboardPendingPercent: percent(counts.pending || 0),
+        dashboardAverageTime: simpleClockLabel(timedRoutes ? Math.round(totalProcessSeconds / timedRoutes) : 0),
         dashboardDockRoutes: rows.length,
         dashboardOccupiedDocks: occupiedDocks.size,
         dashboardFreeDocks: Math.max(0, maxDocks - occupiedDocks.size),
@@ -10433,6 +10997,11 @@
         const element = document.getElementById(id);
         if (element) element.textContent = value;
       });
+
+      renderDashboardDocksPreview(rows, loaded, shipped, statusMap, baseMap, maxDocks);
+      renderDashboardRoutesPreview(rows, loaded, shipped, statusMap, baseMap);
+      renderDashboardHistoryPreview(historyRoutes);
+      renderDashboardAlertsPreview(alerts);
     }
 
     function updateDockRailState() {
