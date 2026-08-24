@@ -7585,9 +7585,10 @@
         ...extraction,
         ...consolidated,
         ...operational,
-        // Os dados cadastrais do histórico pertencem à Extração.
-        repLog: extraction.repLog || "",
-        motorista: extraction.motorista || "",
+        // A Extração continua sendo a fonte principal. Quando ela não traz os
+        // nomes, usa os dados cadastrados na Aduana para não exibir "Não informado".
+        repLog: extraction.repLog || customs.repLog || consolidated.repLog || "",
+        motorista: extraction.motorista || customs.motorista || consolidated.motorista || "",
         auditTime: customs.auditTime || consolidated.auditTime || "",
         aduanaBipadas: customs.aduanaBipadas || consolidated.aduanaBipadas || "",
         estadoAduana: customs.estadoAduana || "",
