@@ -6421,11 +6421,25 @@
     }
 
     function headerInfo(rows = []) {
+      let bestHeader = null;
       for (let index = 0; index < rows.length; index += 1) {
         const mappedHeader = headerMap(rows[index]);
-        if (mappedHeader && mappedHeader.filter(Boolean).length >= 2) return { mappedHeader, headerIndex: index };
+        if (!mappedHeader) continue;
+        const recognized = mappedHeader.filter(Boolean);
+        if (recognized.length < 2 || !recognized.includes("rota")) continue;
+
+        // Textos copiados da Aduana trazem indicadores antes da tabela, como
+        // "CORRETAS | A MAIS | FALTANTES | AVARIADOS | ROTA". Escolher o
+        // primeiro cabeçalho reconhecido desloca todas as colunas da tabela real.
+        const routeFirstBonus = mappedHeader.findIndex(key => key === "rota") === 0 ? 1 : 0;
+        const score = new Set(recognized).size * 10 + routeFirstBonus;
+        if (!bestHeader || score > bestHeader.score) {
+          bestHeader = { mappedHeader, headerIndex: index, score };
+        }
       }
-      return { mappedHeader: null, headerIndex: -1 };
+      return bestHeader
+        ? { mappedHeader: bestHeader.mappedHeader, headerIndex: bestHeader.headerIndex }
+        : { mappedHeader: null, headerIndex: -1 };
     }
     function headerMap(row) {
       const mapped = row.map(cell => aliases[normalize(cell).toLowerCase()] || "");
@@ -6433,7 +6447,7 @@
     }
 
     function routeToken(value) {
-      return normalize(value).match(/\b[A-Z]{1,5}\d{0,3}_AM\d+\b/i)?.[0]?.toUpperCase() || "";
+      return normalize(value).match(/\b[A-Z]{1,5}\d{0,3}_[A-Z0-9]+\b/i)?.[0]?.toUpperCase() || "";
     }
 
     function dockFromText(value) {
@@ -6680,7 +6694,7 @@
         }
         enrichBaseItem(item);
         return baseItemForSource(item, source);
-      }).filter(item => item.rota);
+      }).filter(item => looksLikeRoute(item.rota));
       return uniqueBaseRows(parsed);
     }
     function toPaste(rows) {
