@@ -2047,7 +2047,7 @@
     }
 
     .paste-box::before {
-      content: "Onda  |  ID da Rota  |  Rota otimizada  |  Rota original  |  Doca  |  Transportadora  |  Placa";
+      content: "Onda | Rota otimizada | Doca | Rep/Log | Motorista | Transportadora | Placa | Tipo de veículo | Tipo de rota | Tipo de área";
       position: absolute;
       opacity: 0;
     }
@@ -5228,6 +5228,12 @@
       gap: 11px;
     }
 
+    @media (min-width: 1500px) {
+      .history-info-grid {
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+      }
+    }
+
     .history-info-card {
       min-width: 0;
       min-height: 114px;
@@ -5836,7 +5842,7 @@
     </header>
     <div class="paste-help">
       <strong>Instruções</strong>
-      Na Extração, cole a tabela completa ou Onda, Rota otimizada e Doca. Na Base, pode colar só uma rota por linha para transformar em verde.
+      Na Extração, cole a tabela completa para alimentar motorista, placa, transportadora, tipos e Rep/Log. Na Base, pode colar só uma rota por linha para atualizar o processo.
     </div>
     <div class="summary-fields">
       <label>Total rotas<input id="totalRotasInput" type="text"></label>
@@ -5988,7 +5994,7 @@
       tools: {}
     };
 
-    const columns = ["onda", "idRota", "rota", "rotaOriginal", "doca", "repLog", "transportadora", "placa", "tipoVeiculo", "tipoRota", "tipoArea", "spr", "pacotes", "cluster"];
+    const columns = ["onda", "idRota", "rota", "rotaOriginal", "doca", "repLog", "motorista", "transportadora", "placa", "tipoVeiculo", "tipoRota", "tipoArea", "spr", "pacotes", "cluster"];
     const aliases = {
       onda: "onda",
       "id da rota": "idRota",
@@ -6075,6 +6081,8 @@
       logístico: "repLog",
       operador: "repLog",
       motorista: "motorista",
+      "nome do motorista": "motorista",
+      "nome motorista": "motorista",
       driver: "motorista",
       nome: "repLog"
     };
@@ -6190,8 +6198,8 @@
       const text = plainText(value).replace(/\s+/g, " ");
       if (!text) return "";
       if (/^(expedir|expedid[ao])$/.test(text)) return "Expedida";
-      if (/^(guardando|carregando|guardando\s*\/\s*carregando)$/.test(text)) return "Guardando";
-      if (/^(esperando (?:a )?aduana|aduana em andamento|em aduana)$/.test(text)) return "Em aduana";
+      if (/^(guardando(?: pacotes?)?|carregando(?: pacotes?)?|guardando\s*\/\s*carregando)$/.test(text)) return "Guardando";
+      if (/^(esperando (?:a )?aduana|aduana em andamento|em andamento|em aduana|contagem de pacotes?|em contagem)$/.test(text)) return "Em aduana";
       if (text === "pendente" || text === "-") return "Pendente";
       return "";
     }
@@ -6450,6 +6458,10 @@
       if (source === "aduana") {
         return {
           rota: route,
+          processo: normalize(item.processo || item.status),
+          tempoProcesso: normalize(item.tempoProcesso),
+          tempoTotal: normalize(item.tempoTotal),
+          doca: normalize(item.doca),
           motorista: normalize(item.motorista),
           transportadora: normalize(item.transportadora),
           placa: normalize(item.placa),
@@ -6474,7 +6486,7 @@
     }
 
     function isAduanaState(value) {
-      return /^(em andamento|conclu[ií]da|cancelada|pendente)$/i.test(normalize(value));
+      return /^(aduana em andamento|em andamento|contagem de pacotes?|em contagem|conclu[ií]da|cancelada|pendente)$/i.test(normalize(value));
     }
     function lastStandaloneDock(row = []) {
       const docks = row
@@ -6534,6 +6546,7 @@
         doca,
         transportadora,
         repLog: item.repLog || "",
+        motorista: item.motorista || "",
         pacotes: item.pacotes || "",
         placa: item.placa || "",
         tipoVeiculo: item.tipoVeiculo || "",
@@ -6609,16 +6622,20 @@
       return uniqueBaseRows(parsed);
     }
     function toPaste(rows) {
-      const header = ["Onda", "ID da Rota", "Rota otimizada", "Rota original", "Doca", "Rep/Log", "Transportadora", "Placa", "Tipo de veículo", "Tipo de rota", "Tipo de área", "SPR", "Pacotes", "Cluster"];
+      const header = ["Onda", "ID da Rota", "Rota otimizada", "Rota original", "Doca", "Rep/Log", "Motorista", "Transportadora", "Placa", "Tipo de veículo", "Tipo de rota", "Tipo de área", "SPR", "Pacotes", "Cluster"];
       return [header.join("\t"), ...rows.map(row => columns.map(key => row[key] || "").join("\t"))].join("\n");
     }
 
     function toBasePaste(rows, source = "operacional") {
       const uniqueRows = uniqueBaseRows(rows);
       if (source === "aduana") {
-        const header = ["Rota", "Motorista", "Rep de aduana", "Tempo de auditoria", "Unidades corretas", "Estado da aduana", "Transportadora", "Placa"];
+        const header = ["Rota", "Processo", "Tempo do processo", "Tempo total", "Doca", "Motorista", "Rep de aduana", "Tempo de auditoria", "Unidades corretas", "Estado da aduana", "Transportadora", "Placa"];
         return [header.join("\t"), ...uniqueRows.map(row => [
           row.rota || "",
+          row.processo || "",
+          row.tempoProcesso || "",
+          row.tempoTotal || "",
+          row.doca || "",
           row.motorista || "",
           row.repLog || "",
           row.auditTime || "",
@@ -6690,7 +6707,8 @@
     function isAduanaDetailRow(row = {}) {
       return Boolean(normalize(row.repLog) || normalize(row.motorista) || normalize(row.transportadora)
         || normalize(row.placa) || normalize(row.auditTime) || normalize(row.aduanaUnidades)
-        || normalize(row.aduanaBipadas) || normalize(row.estadoAduana));
+        || normalize(row.aduanaBipadas) || normalize(row.estadoAduana) || normalize(row.processo)
+        || normalize(row.tempoProcesso) || normalize(row.tempoTotal));
     }
 
     function rebuildConsolidatedBase(extractionRows = data.extracao || []) {
@@ -6702,8 +6720,8 @@
       );
       data.baseOperacional = onlyPlannedBaseRows(operationalRows, extractionRows);
       data.baseAduana = onlyPlannedBaseRows(customsRows, extractionRows);
-      // As duas fontes se complementam por rota, mantendo a titularidade de cada campo.
-      data.base = mergeLatestBaseRows(data.baseOperacional, data.baseAduana);
+      // As duas fontes se complementam; em campos operacionais coincidentes, a Base Operacional vence.
+      data.base = mergeLatestBaseRows(data.baseAduana, data.baseOperacional);
       data.base = onlyPlannedBaseRows(data.base, extractionRows);
       return data.base;
     }
@@ -6736,8 +6754,15 @@
     }
 
     function historyRowDurationMs(row = {}, source = row.fonte || "") {
-      if (source === "aduana") return durationTextToMs(row.auditTime || row.tempoAuditoria || "");
+      if (source === "aduana") return durationTextToMs(row.tempoProcesso || row.auditTime || row.tempoAuditoria || "");
       return durationTextToMs(row.tempoProcesso || row.auditTime || "");
+    }
+
+    function calculatedDispatchEndMs(stampMs, durationMs, previousUpdateMs = 0) {
+      if (!(stampMs > 0)) return 0;
+      if (!(durationMs > 0)) return stampMs;
+      const calculated = previousUpdateMs > 0 ? previousUpdateMs + durationMs : stampMs - durationMs;
+      return Math.max(0, Math.min(stampMs, calculated));
     }
 
     function appendBaseHistory(source, rows = []) {
@@ -6748,11 +6773,26 @@
         const durationMs = historyRowDurationMs(row, source);
         const calculatedEventMs = durationMs > 0 ? Math.max(0, stampMs - durationMs) : 0;
         const dispatchedNow = source === "operacional" && isExpedida(row.processo || row.status);
+        const previousOperational = dispatchedNow
+          ? data.baseHistorico.slice().reverse().find(historyRow =>
+            historyRow.fonte === "operacional" &&
+            routeKey(historyRow.rota) === routeKey(row.rota) &&
+            !isExpedida(historyRow.processo || historyRow.status)
+          )
+          : null;
+        const previousUpdateMs = previousOperational
+          ? new Date(previousOperational.atualizadoEm || 0).getTime()
+          : 0;
+        // Expedido representa o fim do processo: atualização anterior + duração informada.
+        // Sem ocorrência anterior, usa o horário de aplicação menos a duração como fallback.
+        const dispatchEndMs = dispatchedNow
+          ? calculatedDispatchEndMs(stampMs, durationMs, previousUpdateMs)
+          : 0;
         data.baseHistorico.push({
           ...row,
           fonte: source,
           atualizadoEm: stamp,
-          ...(dispatchedNow ? { expedidaEm: stamp } : {}),
+          ...(dispatchEndMs ? { expedidaEm: new Date(dispatchEndMs).toISOString() } : {}),
           ...(calculatedEventMs ? {
             eventoCalculadoEm: new Date(calculatedEventMs).toISOString(),
             duracaoInformadaMs: durationMs
@@ -7433,12 +7473,30 @@
       });
     }
 
+    function latestRouteCycleRows(rows = []) {
+      let cycleStartIndex = 0;
+      let completedSinceStart = false;
+      rows.forEach((row, index) => {
+        const phase = normalizeBaseStatus(row.processo || row.status || row.estadoAduana);
+        if (phase === "Expedida") {
+          completedSinceStart = true;
+          return;
+        }
+        if (phase === "Em aduana" && completedSinceStart) {
+          cycleStartIndex = index;
+          completedSinceStart = false;
+        }
+      });
+      return rows.slice(cycleStartIndex);
+    }
+
     function routeHistoryRows(route) {
       const key = routeKey(route);
-      return (Array.isArray(data.baseHistorico) ? data.baseHistorico : [])
+      const sortedRows = (Array.isArray(data.baseHistorico) ? data.baseHistorico : [])
         .filter(row => routeKey(row.rota) === key)
         .slice()
         .sort((a, b) => new Date(a.atualizadoEm || 0) - new Date(b.atualizadoEm || 0));
+      return latestRouteCycleRows(sortedRows);
     }
 
     function routeCurrentDetails(route) {
@@ -7451,13 +7509,17 @@
         ...extraction,
         ...consolidated,
         ...operational,
-        repLog: customs.repLog || consolidated.repLog || operational.repLog || extraction.repLog || "",
-        motorista: customs.motorista || consolidated.motorista || "",
+        // Os dados cadastrais do histórico pertencem à Extração.
+        repLog: extraction.repLog || "",
+        motorista: extraction.motorista || "",
         auditTime: customs.auditTime || consolidated.auditTime || "",
         aduanaBipadas: customs.aduanaBipadas || consolidated.aduanaBipadas || "",
         estadoAduana: customs.estadoAduana || "",
-        transportadora: customs.transportadora || extraction.transportadora || "",
-        placa: customs.placa || extraction.placa || consolidated.placa || "",
+        transportadora: extraction.transportadora || "",
+        placa: extraction.placa || "",
+        tipoVeiculo: extraction.tipoVeiculo || "",
+        tipoRota: extraction.tipoRota || "",
+        tipoArea: extraction.tipoArea || "",
         doca: operational.doca || extraction.doca || consolidated.doca || ""
       };
     }
@@ -7590,21 +7652,22 @@
 
       const qrCandidates = rows
         .filter(row => {
-          const operationalStatus = normalizeBaseStatus(row.processo || row.status);
-          const customsEvidence = row.fonte === "aduana" && (
-            normalize(row.auditTime) || normalize(row.aduanaBipadas) || /andamento|conclu|valid|bip/i.test(normalize(row.estadoAduana))
-          );
-          return operationalStatus === "Em aduana" || customsEvidence;
+          const processStatus = normalizeBaseStatus(row.processo || row.status || row.estadoAduana);
+          const customsStatus = row.fonte === "aduana"
+            ? normalizeBaseStatus(row.estadoAduana || row.processo || row.status)
+            : "";
+          return processStatus === "Em aduana" || customsStatus === "Em aduana";
         })
         .map(calculatedRowTime);
       const qrBip = earliest(qrCandidates);
-      // Regra operacional: a entrada na base ocorre sempre dez minutos antes do início da bipagem.
+      // Entrada na base: dez minutos antes do início calculado de Aduana/Contagem.
+      // QR bipado: exatamente dez minutos depois da entrada, coincidindo com esse início.
       const entryBase = qrBip ? Math.max(0, qrBip - 10 * 60 * 1000) : 0;
 
       const positionedCandidates = rows
         .filter(row => {
           const status = normalizeBaseStatus(row.processo || row.status);
-          return row.fonte === "operacional" && ["Guardando", "Em aduana"].includes(status);
+          return row.fonte === "operacional" && status === "Guardando";
         })
         .map(calculatedRowTime);
       const positionedFromData = earliest(positionedCandidates);
@@ -7696,7 +7759,7 @@
       const qrBip = historyMomentParts(milestones.qrBip);
       const completed = historyMomentParts(milestones.completed);
       const justification = getJustification(selectedRoute) || "Fluxo normal de carregamento";
-      const responsible = routePersonName(details) || "Planejamento";
+      const responsible = details.repLog || "Não informado";
       const observations = details.observacoes || details.observacao || "-";
 
       document.getElementById("routeHistoryMetrics").innerHTML = [
@@ -7708,8 +7771,11 @@
         historyMetricCard("bi-stopwatch", "Tempo desde entrada na base", historyDuration(milestones.entryBase, processEnd), "hh:mm:ss"),
         historyMetricCard("bi-person-badge", "Motorista", details.motorista || "Não informado", "", true),
         historyMetricCard("bi-credit-card-2-front", "Placa", details.placa || "Não informada"),
+        historyMetricCard("bi-truck", "Transportadora", details.transportadora || "Não informada", "", true),
+        historyMetricCard("bi-car-front", "Tipo de veículo", details.tipoVeiculo || "Não informado", "", true),
+        historyMetricCard("bi-signpost-split", "Tipo de rota", details.tipoRota || "Não informado", "", true),
+        historyMetricCard("bi-geo-alt", "Tipo de área", details.tipoArea || "Não informada", "", true),
         historyMetricCard("bi-journal-text", "Justificativa", justification, "", true),
-        historyMetricCard("bi-chevron-double-up", "Prioridade", details.prioridade || "Normal"),
         historyMetricCard("bi-person-gear", "Responsável", responsible, "", true),
         historyMetricCard("bi-list-columns-reverse", "Observações", observations, "", true)
       ].join("");
@@ -8464,7 +8530,7 @@
       document.getElementById("basePaste").value = toBasePaste(data.baseOperacional || data.base || [], "operacional");
       document.getElementById("basePaste").placeholder = "Cole a atualização operacional. As rotas precisam existir na Extração.";
       document.getElementById("aduanaPaste").value = toBasePaste(data.baseAduana || [], "aduana");
-      document.getElementById("aduanaPaste").placeholder = "Cole a atualização da Aduana. A ocorrência mais recente completa/atualiza a rota.";
+      document.getElementById("aduanaPaste").placeholder = "Cole Processo e Tempo do processo da Aduana. Aceita Aduana em andamento, Contagem de pacotes e Em contagem.";
       document.getElementById("drawer").classList.add("open");
     }
 
