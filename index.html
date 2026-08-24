@@ -9615,6 +9615,151 @@
       return parsed;
     }
 
+    function normalizeSmartPasteSource(text) {
+      return String(text || "")
+        .replace(/\r\n?/g, "\n")
+        .replace(/&#x0*9;|&#0*9;/gi, "\t")
+        .replace(/<br\s*\/?>/gi, "\n")
+        .replace(/&nbsp;|\u00a0/gi, " ")
+        .replace(/\\_/g, "_")
+        .replace(/\\#/g, "#");
+    }
+
+    function semanticPasteLines(value) {
+      return normalizeSmartPasteSource(value)
+        .replace(/["“”]/g, "\n")
+        .split(/[\t\n]+/)
+        .map(line => normalize(line).replace(/\s+/g, " "))
+        .filter(Boolean);
+    }
+
+    function looksLikeVehiclePlate(value) {
+      const text = normalize(value).toUpperCase();
+      return /^(?=.{5,12}$)(?=.*[A-Z])(?=.*\d)[A-Z0-9]{3}(?:-[A-Z0-9]{4,8}|[A-Z0-9]{4,9})$/.test(text);
+    }
+
+    function isAduanaSemanticNoise(value) {
+      const text = normalize(value);
+      const plain = plainText(text);
+      if (!text || routeToken(text) || /^#?\d{6,}$/.test(text)) return true;
+      if (looksLikeVehiclePlate(text) || text.includes("|")) return true;
+      if (/^\d+(?:[.,]\d+)?\s*(?:min(?:uto)?s?\.?|%)$/i.test(text)) return true;
+      if (/^\d+\s+(?:corretas?|faltantes?|avariad[ao]s?|a\s+mais)\b/i.test(text)) return true;
+      if (/^\d{1,2}:\d{2}(?::\d{2})?(?:\s*\|\s*\d{1,2}\/[a-zç.]+\.?)?$/i.test(text)) return true;
+      if (/^\d{1,2}\/[a-zç.]+\.?$/i.test(text) || isAduanaState(text)) return true;
+      return /^(rota e veiculo|motorista|rep de aduana|tempo de auditoria|unidades|estado|historico de aduana|configurar aduana)$/i.test(plain);
+    }
+
+    function previousSemanticIndex(lines, fromIndex, floorIndex = 0) {
+      for (let index = fromIndex - 1; index >= floorIndex; index -= 1) {
+        if (!isAduanaSemanticNoise(lines[index])) return index;
+      }
+      return -1;
+    }
+
+    function parseLooseAduanaText(text) {
+      const source = normalizeSmartPasteSource(text);
+      const anchors = Array.from(source.matchAll(/\b([A-Z]{1,5}\d{0,3}_[A-Z0-9]+)\b[\s'"“”\\]*#\d+/gi));
+      if (!anchors.length) return [];
+
+      return anchors.map((anchor, index) => {
+        const route = anchor[1].toUpperCase();
+        const blockEnd = anchors[index + 1]?.index ?? source.length;
+        const lines = semanticPasteLines(source.slice(anchor.index, blockEnd));
+        const routeLineIndex = Math.max(0, lines.findIndex(line => routeToken(line) === route));
+
+        let carrierLineIndex = lines.findIndex((line, lineIndex) => {
+          if (lineIndex <= routeLineIndex || !line.includes("|")) return false;
+          const parts = line.split("|").map(normalize);
+          return looksLikeVehiclePlate(parts.at(-1)) && !parts.at(-1).includes("/");
+        });
+        let plateLineIndex = -1;
+        let transportadora = "";
+        let placa = "";
+
+        if (carrierLineIndex >= 0) {
+          const carrier = extractCarrierDetails(lines[carrierLineIndex]);
+          transportadora = carrier.transportadora;
+          placa = carrier.placa;
+        } else {
+          plateLineIndex = lines.findIndex((line, lineIndex) => lineIndex > routeLineIndex && looksLikeVehiclePlate(line));
+          if (plateLineIndex >= 0) {
+            placa = lines[plateLineIndex];
+            carrierLineIndex = previousSemanticIndex(lines, plateLineIndex, routeLineIndex + 1);
+            transportadora = carrierLineIndex >= 0 ? lines[carrierLineIndex] : "";
+          }
+        }
+
+        const driverIndex = carrierLineIndex >= 0
+          ? previousSemanticIndex(lines, carrierLineIndex, routeLineIndex + 1)
+          : -1;
+        const motorista = driverIndex >= 0 ? lines[driverIndex] : "";
+        const repSearchStart = Math.max(carrierLineIndex, plateLineIndex, driverIndex, routeLineIndex) + 1;
+        const repDateIndex = lines.findIndex((line, lineIndex) => {
+          if (lineIndex < repSearchStart) return false;
+          return /^\d{1,2}:\d{2}(?::\d{2})?(?:\s*\|\s*\d{1,2}\/[a-zç.]+\.?)?$/i.test(line)
+            || /^\d{1,2}\/[a-zç.]+\.?$/i.test(line);
+        });
+        const repIndex = repDateIndex >= 0
+          ? previousSemanticIndex(lines, repDateIndex, repSearchStart)
+          : -1;
+        const repLog = repIndex >= 0 ? lines[repIndex] : "";
+        const auditSearchStart = repDateIndex >= 0 ? repDateIndex + 1 : repSearchStart;
+        const auditTime = lines.slice(auditSearchStart)
+          .find(line => /^\d+(?:[.,]\d+)?\s*(?:min(?:uto)?s?\.?)$/i.test(line)) || "";
+        const unitLines = lines.filter(line => /\b(?:corretas?|a\s+mais|faltantes?|avariad[ao]s?)\b/i.test(line));
+        const aduanaUnidades = unitLines.join(" | ");
+        const estadoAduana = lines.slice(auditSearchStart).find(isAduanaState) || "";
+
+        const item = {
+          rota: route,
+          motorista,
+          transportadora,
+          placa,
+          repLog,
+          auditTime,
+          aduanaUnidades,
+          aduanaBipadas: correctUnits(aduanaUnidades),
+          estadoAduana
+        };
+        enrichBaseItem(item);
+        return baseItemForSource(item, "aduana");
+      }).filter(item => looksLikeRoute(item.rota));
+    }
+
+    function looseOperationalProcess(lines = []) {
+      return lines.find(line => /^(?:aduana em andamento|em andamento|em aduana|guardando(?: pacotes?)?|carregando(?: pacotes?)?|guardando\s*\/\s*carregando|expedir|expedid[ao]|esperando (?:a )?aduana|contagem de pacotes?|em contagem|pendente|-)$/i.test(normalize(line))) || "";
+    }
+
+    function parseLooseOperationalText(text) {
+      const source = normalizeSmartPasteSource(text);
+      const anchors = Array.from(source.matchAll(/\b([A-Z]{1,5}\d{0,3}_[A-Z0-9]+)\b/gi));
+      if (!anchors.length) return [];
+
+      return anchors.map((anchor, index) => {
+        const route = anchor[1].toUpperCase();
+        const blockEnd = anchors[index + 1]?.index ?? source.length;
+        const lines = semanticPasteLines(source.slice(anchor.index, blockEnd));
+        const processo = looseOperationalProcess(lines.slice(1));
+        const durations = lines
+          .map(line => line.match(/^\d+(?:[.,]\d+)?\s*(?:min(?:uto)?s?\.?)$/i)?.[0] || "")
+          .filter(Boolean);
+        const doca = lines
+          .map(line => validDockValue(line))
+          .filter(Boolean)
+          .at(-1) || "";
+        const item = {
+          rota: route,
+          processo,
+          tempoProcesso: durations[0] || "",
+          tempoTotal: durations[1] || durations[0] || "",
+          doca
+        };
+        enrichBaseItem(item);
+        return baseItemForSource(item, "operacional");
+      }).filter(item => looksLikeRoute(item.rota));
+    }
+
     function parseBasePaste(text, source = "operacional") {
       const rows = splitRows(text);
       if (!rows.length) return [];
@@ -9666,7 +9811,10 @@
         enrichBaseItem(item);
         return baseItemForSource(item, source);
       }).filter(item => looksLikeRoute(item.rota));
-      return uniqueBaseRows(parsed);
+      const semanticRows = source === "aduana"
+        ? parseLooseAduanaText(text)
+        : parseLooseOperationalText(text);
+      return uniqueBaseRows([...parsed, ...semanticRows]);
     }
     function toPaste(rows) {
       const header = ["Onda", "ID da Rota", "Rota otimizada", "Rota original", "Doca", "Rep/Log", "Motorista", "Transportadora", "Placa", "Tipo de veículo", "Tipo de rota", "Tipo de área", "SPR", "Pacotes", "Cluster"];
