@@ -8201,6 +8201,16 @@
       return /^\d{1,3}$/.test(text);
     }
 
+    function validDockValue(value) {
+      const text = normalize(value);
+      if (!text) return "";
+      const direct = looksLikeDock(text) ? Number(text) : 0;
+      const labeled = text.match(/\b(?:doca|vaga)\s*[:#-]?\s*(\d{1,3})\b/i);
+      const candidate = direct || Number(labeled?.[1] || 0);
+      const maximum = Number(data.docas || 92);
+      return candidate >= 1 && candidate <= maximum ? String(candidate) : "";
+    }
+
     function looksLikeWave(value) {
       return /^onda\s*\d+/i.test(normalize(value));
     }
@@ -8404,10 +8414,13 @@
     }
 
     function dockFromText(value) {
-      const match = normalize(value).match(/\b([1-9]\d?)\b/);
-      if (!match) return "";
-      const dock = Number(match[1]);
-      return dock >= 1 && dock <= 92 ? String(dock) : "";
+      const text = normalize(value);
+      const strict = validDockValue(text);
+      if (strict) return strict;
+      const leading = text.match(/^([1-9]\d?)\b/);
+      if (!leading || /^\d+\s*(?:corretas?|faltantes?|avariad[ao]s?|a\s+mais)\b/i.test(text)) return "";
+      const dock = Number(leading[1]);
+      return dock >= 1 && dock <= Number(data.docas || 92) ? String(dock) : "";
     }
 
     function cleanTransportadora(value) {
@@ -8479,6 +8492,7 @@
       item.tempoTotal = normalize(item.tempoTotal || "");
       item.estadoAduana = normalize(item.estadoAduana || "");
       item.status = normalize(item.status || "");
+      item.doca = validDockValue(item.doca);
       return item;
     }
 
@@ -8490,7 +8504,7 @@
           processo: normalize(item.processo || item.status),
           tempoProcesso: normalize(item.tempoProcesso),
           tempoTotal: normalize(item.tempoTotal),
-          doca: normalize(item.doca),
+          doca: validDockValue(item.doca),
           motorista: normalize(item.motorista),
           transportadora: normalize(item.transportadora),
           placa: normalize(item.placa),
@@ -8509,7 +8523,7 @@
         processo: status === "Pendente" ? "Pendente" : rawProcess,
         tempoProcesso: normalize(item.tempoProcesso),
         tempoTotal: normalize(item.tempoTotal),
-        doca: normalize(item.doca),
+        doca: validDockValue(item.doca),
         status
       };
     }
@@ -8544,7 +8558,7 @@
       const afterRoute = routeIndex >= 0 ? row.slice(routeIndex + 1).map(normalize).filter(Boolean) : [];
       const afterRouteText = routeIndex >= 0 ? afterRoute.join(" ") : line.slice(line.toUpperCase().indexOf(route) + route.length);
 
-      let doca = item.doca || "";
+      let doca = validDockValue(item.doca);
       let transportadora = item.transportadora || "";
 
       if (!doca && afterRoute.length) {
@@ -8616,7 +8630,7 @@
           item.rota = routeToken(item.rota) || item.rota || route;
           if (source === "operacional") {
             item.processo = item.processo || item.status || "";
-            item.doca = item.doca || lastStandaloneDock(row);
+            item.doca = validDockValue(item.doca) || lastStandaloneDock(row);
           }
         } else {
           item.rota = route || (routeIndex >= 0 ? row[routeIndex] : row[0]);
@@ -8956,7 +8970,7 @@
     function routeByDock(wave) {
       const map = new Map();
       rowsForWave(wave).forEach(row => {
-        const dock = Number(String(row.doca).replace(/\D/g, ""));
+        const dock = Number(validDockValue(row.doca));
         if (!dock) return;
         if (!map.has(dock)) map.set(dock, []);
         map.get(dock).push(row);
@@ -9330,7 +9344,7 @@
         ...base,
         onda: row.onda || base.onda || "",
         rota: row.rota || base.rota || "",
-        doca: base.doca || row.doca || "",
+        doca: validDockValue(base.doca) || validDockValue(row.doca),
         transportadora: base.transportadora || row.transportadora || "",
         spr: row.spr || base.spr || "",
         pacotes: row.pacotes || base.pacotes || "",
@@ -9660,9 +9674,10 @@
         const key = routeKey(row.rota);
         if (key && !byRoute.has(key)) byRoute.set(key, row);
       });
+      const baseMap = baseDetailsByRoute();
       return Array.from(byRoute.values()).sort((a, b) => {
-        const dockA = Number(String(a.doca || "").replace(/\D/g, "")) || Number.MAX_SAFE_INTEGER;
-        const dockB = Number(String(b.doca || "").replace(/\D/g, "")) || Number.MAX_SAFE_INTEGER;
+        const dockA = Number(validDockValue(baseMap.get(routeKey(a.rota))?.doca) || validDockValue(a.doca)) || Number.MAX_SAFE_INTEGER;
+        const dockB = Number(validDockValue(baseMap.get(routeKey(b.rota))?.doca) || validDockValue(b.doca)) || Number.MAX_SAFE_INTEGER;
         return dockA - dockB || normalize(a.rota).localeCompare(normalize(b.rota), "pt-BR", { numeric: true });
       });
     }
@@ -9833,7 +9848,7 @@
         tipoVeiculo: extraction.tipoVeiculo || "",
         tipoRota: extraction.tipoRota || "",
         tipoArea: extraction.tipoArea || "",
-        doca: operational.doca || extraction.doca || consolidated.doca || ""
+        doca: validDockValue(operational.doca) || validDockValue(extraction.doca) || validDockValue(consolidated.doca)
       };
     }
 
