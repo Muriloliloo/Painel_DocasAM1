@@ -9009,7 +9009,9 @@
       applyingRemote: false,
       savingRemote: false,
       pendingRemoteSave: false,
-      lastLocalSaveAt: 0,
+      lastCloudAckRevision: 0,
+      retryTimer: null,
+      retryAttempts: 0,
       tools: {}
     };
 
@@ -10314,14 +10316,31 @@
       return Object.entries(data.justificativas || {}).find(([savedKey]) => routeKey(savedKey) === key)?.[1] || "";
     }
 
-    function saveData() {
+    function nextSyncRevision() {
+      return Math.max(Date.now(), Number(data.syncRevision || 0) + 1);
+    }
+
+    function saveData(options = {}) {
       normalizeJustificationStore();
-      if (!cloudState.applyingRemote) {
-        data.syncRevision = Date.now();
-        cloudState.lastLocalSaveAt = data.syncRevision;
+      const localOnly = Boolean(options.localOnly);
+      const advanceRevision = options.advanceRevision !== false;
+      if (!cloudState.applyingRemote && advanceRevision) {
+        data.syncRevision = nextSyncRevision();
       }
       localStorage.setItem(storageKey, JSON.stringify(data));
-      saveDataToCloud();
+      if (!localOnly) saveDataToCloud();
+    }
+
+    function scheduleCloudRetry() {
+      if (cloudState.retryTimer || cloudState.retryAttempts >= 5) return;
+      cloudState.retryAttempts += 1;
+      const delay = Math.min(30000, 2000 * (2 ** (cloudState.retryAttempts - 1)));
+      cloudState.retryTimer = window.setTimeout(() => {
+        cloudState.retryTimer = null;
+        if (!cloudState.pendingRemoteSave) return;
+        cloudState.pendingRemoteSave = false;
+        saveDataToCloud();
+      }, delay);
     }
 
     async function saveDataToCloud() {
@@ -10330,23 +10349,52 @@
         cloudState.pendingRemoteSave = true;
         return;
       }
+      if (cloudState.retryTimer) {
+        window.clearTimeout(cloudState.retryTimer);
+        cloudState.retryTimer = null;
+      }
+      let syncFailed = false;
       try {
         cloudState.savingRemote = true;
         cloudState.pendingRemoteSave = false;
         normalizeJustificationStore();
-        // Nao usar merge aqui: com merge, campos apagados dentro de payload.justificativas
-        // podem continuar no Firestore. Gravando o documento inteiro, os motivos limpos
-        // somem tambem do banco de dados e dos outros computadores.
-        await cloudState.tools.setDoc(cloudState.docRef, {
-          payload: JSON.parse(JSON.stringify(data)),
-          updatedAt: cloudState.tools.serverTimestamp(),
-          updatedBy: cloudState.user?.email || "sistema"
+        if (!Number(data.syncRevision || 0)) {
+          data.syncRevision = nextSyncRevision();
+          localStorage.setItem(storageKey, JSON.stringify(data));
+        }
+        const localPayload = JSON.parse(JSON.stringify(data));
+        const localRevision = Number(localPayload.syncRevision || 0);
+        const result = await cloudState.tools.runTransaction(cloudState.db, async transaction => {
+          const snapshot = await transaction.get(cloudState.docRef);
+          const remotePayload = snapshot.exists() ? snapshot.data()?.payload : null;
+          const remoteRevision = Number(remotePayload?.syncRevision || 0);
+
+          // Uma aba antiga nunca pode substituir uma revisão já confirmada no servidor.
+          if (remotePayload && remoteRevision > localRevision) {
+            return { wrote: false, payload: remotePayload, revision: remoteRevision };
+          }
+
+          transaction.set(cloudState.docRef, {
+            payload: localPayload,
+            updatedAt: cloudState.tools.serverTimestamp(),
+            updatedBy: cloudState.user?.email || "sistema"
+          });
+          return { wrote: true, payload: localPayload, revision: localRevision };
         });
+        cloudState.retryAttempts = 0;
+        if (result.wrote) {
+          cloudState.lastCloudAckRevision = result.revision;
+        } else if (result.payload) {
+          applyRemotePayload(result.payload);
+        }
       } catch (error) {
+        syncFailed = true;
+        cloudState.pendingRemoteSave = true;
         console.warn("Falha ao sincronizar com Firebase:", error);
+        scheduleCloudRetry();
       } finally {
         cloudState.savingRemote = false;
-        if (cloudState.pendingRemoteSave) {
+        if (!syncFailed && cloudState.pendingRemoteSave) {
           cloudState.pendingRemoteSave = false;
           saveDataToCloud();
         }
@@ -11792,7 +11840,7 @@
 
     function renderGrid() {
       const grid = document.getElementById("dockGrid");
-      if (syncLoadingStarts()) saveData();
+      if (syncLoadingStarts()) saveData({ localOnly: true, advanceRevision: false });
       const map = routeByDock(currentWave);
       const loaded = loadedKeys();
       const shipped = expedidaKeys();
@@ -12604,30 +12652,47 @@
       }
     }
 
-    function applyRemotePayload(payload) {
-      if (!payload) return;
+    function remotePayloadDecision(payload, currentPayload = data) {
+      if (!payload) return { apply: false, reason: "empty", incomingRevision: 0, currentRevision: 0 };
       const incomingRevision = Number(payload.syncRevision || 0);
-      const currentRevision = Number(data.syncRevision || 0);
-      const recentLocalSave = cloudState.lastLocalSaveAt && Date.now() - cloudState.lastLocalSaveAt < 8000;
-      if (recentLocalSave && incomingRevision && currentRevision && incomingRevision < currentRevision) return;
+      const currentRevision = Number(currentPayload?.syncRevision || 0);
+      if (!currentRevision) return { apply: true, reason: "initial", incomingRevision, currentRevision };
+      if (!incomingRevision) return { apply: false, reason: "legacy", incomingRevision, currentRevision };
+      if (incomingRevision < currentRevision) return { apply: false, reason: "older", incomingRevision, currentRevision };
+      if (incomingRevision === currentRevision) return { apply: false, reason: "same", incomingRevision, currentRevision };
+      return { apply: true, reason: "newer", incomingRevision, currentRevision };
+    }
+
+    function applyRemotePayload(payload) {
+      const decision = remotePayloadDecision(payload);
+      if (!decision.apply) {
+        if (decision.reason === "older" || decision.reason === "legacy") {
+          console.info("Snapshot remoto ignorado para impedir regressão de estado.", decision);
+        }
+        return false;
+      }
       cloudState.applyingRemote = true;
-      data = { ...JSON.parse(JSON.stringify(originalData)), ...payload };
-      data.docas = Math.max(Number(data.docas || 0), Number(originalData.docas || 92));
-      data.horarios = { ...(data.horarios || {}), ...(originalData.horarios || {}), ...horariosOficiais };
-      data.justificativas = data.justificativas || {};
-      normalizeJustificationStore();
-      data.baseOperacional = Array.isArray(data.baseOperacional) ? data.baseOperacional : (Array.isArray(data.base) ? data.base : []);
-      data.baseAduana = Array.isArray(data.baseAduana) ? data.baseAduana : [];
-      data.baseHistorico = Array.isArray(data.baseHistorico) ? data.baseHistorico : [];
-      rebuildConsolidatedBase(data.extracao || []);
-      data.carregamentoInicio = data.carregamentoInicio || {};
-      data.carregamentoFim = data.carregamentoFim || {};
-      data.ciclosExtras = { ...(originalData.ciclosExtras || {}), ...(data.ciclosExtras || {}) };
-      data.ondas = sanitizeWaves(data.ondas);
-      currentWave = data.ondas.some(wave => waveLabel(wave) === waveLabel(currentWave)) ? currentWave : data.ondas[0];
-      localStorage.setItem(storageKey, JSON.stringify(data));
-      render();
-      cloudState.applyingRemote = false;
+      try {
+        data = { ...JSON.parse(JSON.stringify(originalData)), ...payload };
+        data.docas = Math.max(Number(data.docas || 0), Number(originalData.docas || 92));
+        data.horarios = { ...(data.horarios || {}), ...(originalData.horarios || {}), ...horariosOficiais };
+        data.justificativas = data.justificativas || {};
+        normalizeJustificationStore();
+        data.baseOperacional = Array.isArray(data.baseOperacional) ? data.baseOperacional : (Array.isArray(data.base) ? data.base : []);
+        data.baseAduana = Array.isArray(data.baseAduana) ? data.baseAduana : [];
+        data.baseHistorico = Array.isArray(data.baseHistorico) ? data.baseHistorico : [];
+        rebuildConsolidatedBase(data.extracao || []);
+        data.carregamentoInicio = data.carregamentoInicio || {};
+        data.carregamentoFim = data.carregamentoFim || {};
+        data.ciclosExtras = { ...(originalData.ciclosExtras || {}), ...(data.ciclosExtras || {}) };
+        data.ondas = sanitizeWaves(data.ondas);
+        currentWave = data.ondas.some(wave => waveLabel(wave) === waveLabel(currentWave)) ? currentWave : data.ondas[0];
+        localStorage.setItem(storageKey, JSON.stringify(data));
+        render();
+        return true;
+      } finally {
+        cloudState.applyingRemote = false;
+      }
     }
 
     function subscribePanel() {
@@ -12638,7 +12703,7 @@
           return;
         }
         const payload = snapshot.data()?.payload;
-        if (cloudState.savingRemote) return;
+        if (cloudState.savingRemote && snapshot.metadata?.hasPendingWrites) return;
         if (payload) applyRemotePayload(payload);
       }, error => console.warn("Falha ao ouvir Firebase:", error));
     }
@@ -12664,6 +12729,7 @@
           doc: firestoreModule.doc,
           getDoc: firestoreModule.getDoc,
           setDoc: firestoreModule.setDoc,
+          runTransaction: firestoreModule.runTransaction,
           onSnapshot: firestoreModule.onSnapshot,
           serverTimestamp: firestoreModule.serverTimestamp
         };
