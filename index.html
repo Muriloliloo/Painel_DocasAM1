@@ -9078,6 +9078,8 @@
       savingRemote: false,
       pendingRemoteSave: false,
       lastCloudAckRevision: 0,
+      lastRemoteRevision: 0,
+      authResolved: false,
       retryTimer: null,
       retryAttempts: 0,
       tools: {}
@@ -12720,10 +12722,32 @@
       }
     }
 
-    function remotePayloadDecision(payload, currentPayload = data) {
+    function remotePayloadDecision(payload, currentPayload = data, options = {}) {
       if (!payload) return { apply: false, reason: "empty", incomingRevision: 0, currentRevision: 0 };
       const incomingRevision = Number(payload.syncRevision || 0);
       const currentRevision = Number(currentPayload?.syncRevision || 0);
+      const cloudSnapshot = Boolean(options.cloudSnapshot);
+      const authoritativeReader = cloudSnapshot && cloudState.authResolved && !isAdmin();
+      const lastRemoteRevision = Number(cloudState.lastRemoteRevision || 0);
+
+      // Leitores nunca podem usar a cópia local do navegador para bloquear o Firebase.
+      // Isso garante que celulares e tablets recebam o estado oficial mesmo se o relógio
+      // ou o cache do dispositivo tiver produzido uma revisão local maior.
+      if (authoritativeReader) {
+        if (!incomingRevision) {
+          return {
+            apply: !lastRemoteRevision,
+            reason: lastRemoteRevision ? "reader-legacy" : "reader-initial-legacy",
+            incomingRevision,
+            currentRevision
+          };
+        }
+        if (!lastRemoteRevision) return { apply: true, reason: "reader-initial", incomingRevision, currentRevision };
+        if (incomingRevision < lastRemoteRevision) return { apply: false, reason: "reader-older", incomingRevision, currentRevision };
+        if (incomingRevision === lastRemoteRevision) return { apply: false, reason: "reader-same", incomingRevision, currentRevision };
+        return { apply: true, reason: "reader-newer", incomingRevision, currentRevision };
+      }
+
       if (!currentRevision) return { apply: true, reason: "initial", incomingRevision, currentRevision };
       if (!incomingRevision) return { apply: false, reason: "legacy", incomingRevision, currentRevision };
       if (incomingRevision < currentRevision) return { apply: false, reason: "older", incomingRevision, currentRevision };
@@ -12731,10 +12755,10 @@
       return { apply: true, reason: "newer", incomingRevision, currentRevision };
     }
 
-    function applyRemotePayload(payload) {
-      const decision = remotePayloadDecision(payload);
+    function applyRemotePayload(payload, options = {}) {
+      const decision = remotePayloadDecision(payload, data, options);
       if (!decision.apply) {
-        if (decision.reason === "older" || decision.reason === "legacy") {
+        if (["older", "legacy", "reader-older", "reader-legacy"].includes(decision.reason)) {
           console.info("Snapshot remoto ignorado para impedir regressão de estado.", decision);
         }
         return false;
@@ -12755,6 +12779,15 @@
         data.ciclosExtras = { ...(originalData.ciclosExtras || {}), ...(data.ciclosExtras || {}) };
         data.ondas = sanitizeWaves(data.ondas);
         currentWave = data.ondas.some(wave => waveLabel(wave) === waveLabel(currentWave)) ? currentWave : data.ondas[0];
+        if (options.cloudSnapshot) {
+          cloudState.lastRemoteRevision = decision.incomingRevision;
+          console.info("Snapshot Firebase aplicado no painel.", {
+            role: roleLabel(),
+            revision: decision.incomingRevision,
+            previousLocalRevision: decision.currentRevision,
+            reason: decision.reason
+          });
+        }
         localStorage.setItem(storageKey, JSON.stringify(data));
         render();
         return true;
@@ -12772,7 +12805,7 @@
         }
         const payload = snapshot.data()?.payload;
         if (cloudState.savingRemote && snapshot.metadata?.hasPendingWrites) return;
-        if (payload) applyRemotePayload(payload);
+        if (payload) applyRemotePayload(payload, { cloudSnapshot: true });
       }, error => console.warn("Falha ao ouvir Firebase:", error));
     }
 
@@ -12804,11 +12837,13 @@
         const panel = window.FIREBASE_PANEL_DOC || {};
         cloudState.docRef = cloudState.tools.doc(cloudState.db, panel.collection || "paineis", panel.document || "docas-am1");
         cloudState.ready = true;
-        subscribePanel();
         cloudState.tools.onAuthStateChanged(cloudState.auth, async user => {
           cloudState.user = user;
           cloudState.role = user ? await resolveUserRole(user) : "leitor";
+          cloudState.authResolved = true;
+          cloudState.lastRemoteRevision = 0;
           updateAuthBadge();
+          subscribePanel();
           render();
         });
       } catch (error) {
