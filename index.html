@@ -8481,7 +8481,103 @@
         display: none;
       }
     }
+/* =========================================================
+   EDITOR DE DADOS - ÁREA MAIOR E REDIMENSIONÁVEL
+   ========================================================= */
 
+/* Desktop */
+@media (min-width: 901px) {
+
+  .drawer {
+    width: min(850px, calc(100vw - 20px)) !important;
+    max-width: calc(100vw - 20px) !important;
+    height: min(900px, calc(100dvh - 8px)) !important;
+    max-height: calc(100dvh - 8px) !important;
+
+    /* Permite puxar a lateral e aumentar/diminuir */
+    resize: horizontal;
+    overflow: auto !important;
+  }
+
+  /* Área das três bases */
+  .paste-area {
+    min-height: 0;
+    overflow: auto;
+  }
+
+  #extracaoPaste,
+  #basePaste,
+  #aduanaPaste {
+    width: 100%;
+    resize: vertical;
+  }
+
+  #extracaoPaste {
+    min-height: 160px;
+  }
+
+  #basePaste,
+  #aduanaPaste {
+    min-height: 210px;
+  }
+}
+
+
+/* Full HD */
+@media (min-width: 1600px) {
+
+  .drawer {
+    width: min(950px, 55vw) !important;
+  }
+
+  #extracaoPaste {
+    min-height: 180px;
+  }
+
+  #basePaste,
+  #aduanaPaste {
+    min-height: 240px;
+  }
+}
+
+
+/* 2K / 4K */
+@media (min-width: 2560px) {
+
+  .drawer {
+    width: min(1250px, 48vw) !important;
+  }
+
+  #extracaoPaste {
+    min-height: 230px;
+  }
+
+  #basePaste,
+  #aduanaPaste {
+    min-height: 320px;
+  }
+}
+
+
+/* Tablet e celular */
+@media (max-width: 900px) {
+
+  .drawer {
+    left: 4px !important;
+    right: 4px !important;
+    width: auto !important;
+    height: calc(100dvh - 8px) !important;
+    max-height: calc(100dvh - 8px) !important;
+    resize: none;
+  }
+
+  #extracaoPaste,
+  #basePaste,
+  #aduanaPaste {
+    min-height: 180px;
+    resize: vertical;
+  }
+}
   </style>
 </head>
 <body>
