@@ -277,6 +277,51 @@
       white-space: nowrap;
     }
 
+    .actions .sync-refresh-btn {
+      min-width: 42px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      color: #fff;
+      border-color: rgba(255, 210, 0, .48);
+    }
+
+    .sync-refresh-btn i {
+      font-size: 16px;
+      line-height: 1;
+    }
+
+    .sync-refresh-btn.is-loading i {
+      animation: sync-refresh-spin .75s linear infinite;
+    }
+
+    .sync-refresh-btn.is-success {
+      background: linear-gradient(180deg, #16a765, #087442);
+      border-color: #43df96;
+    }
+
+    .sync-refresh-btn.is-error {
+      background: linear-gradient(180deg, #e62942, #a9001b);
+      border-color: #ff7082;
+    }
+
+    .sync-refresh-status {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    @keyframes sync-refresh-spin {
+      to { transform: rotate(360deg); }
+    }
+
     .auth-badge {
       min-width: 66px;
       min-height: 32px;
@@ -8380,6 +8425,63 @@
       }
     }
 
+    /* O seletor precisa ficar acima dos indicadores, inclusive no modo escuro. */
+    .app > .toolbar,
+    body.dark-mode .app > .toolbar {
+      overflow: visible;
+      z-index: 500;
+    }
+
+    .tabs .wave-picker.open {
+      z-index: 520;
+    }
+
+    .tabs .wave-menu {
+      z-index: 540;
+    }
+
+    body.dark-mode .tabs .wave-menu {
+      border-color: #4c7088;
+      background: #0c2231;
+      box-shadow: 0 20px 45px rgba(0, 0, 0, .58);
+    }
+
+    body.dark-mode .tabs .wave-option {
+      background: #0f2a3b !important;
+      color: #f5f9fc !important;
+      border-color: #315267 !important;
+    }
+
+    body.dark-mode .tabs .wave-option:hover,
+    body.dark-mode .tabs .wave-option:focus {
+      background: #17435d !important;
+      color: #fff !important;
+    }
+
+    body.dark-mode .tabs .wave-option.active {
+      background: #ffd200 !important;
+      color: #071826 !important;
+      border-color: #ffd200 !important;
+    }
+
+    .docas-mode .actions .sync-refresh-btn {
+      min-width: 44px;
+      width: auto;
+      padding-inline: 9px;
+    }
+
+    @media (max-width: 720px) {
+      .docas-mode .actions .sync-refresh-btn {
+        min-width: 38px;
+        width: 38px;
+        padding-inline: 0;
+      }
+
+      .sync-refresh-btn .sync-refresh-label {
+        display: none;
+      }
+    }
+
   </style>
 </head>
 <body>
@@ -8409,6 +8511,10 @@
         <button type="button" data-view="fechamento">Fechamento</button>
       </section>
       <div class="actions">
+        <button id="refreshSyncBtn" class="sync-refresh-btn" type="button" title="Atualizar dados do painel" aria-label="Atualizar dados do painel">
+          <i class="bi bi-arrow-clockwise" aria-hidden="true"></i><span class="sync-refresh-label">Atualizar</span>
+        </button>
+        <span class="sync-refresh-status" id="syncRefreshStatus" role="status" aria-live="polite"></span>
         <button id="authBtn" class="auth-badge" type="button"><span>Firebase</span><strong>Local</strong></button>
         <button id="testTimerBtn" class="test-mode admin-only" type="button">Teste</button>
         <button id="toggleTimersBtn" class="timer-toggle" type="button" hidden aria-hidden="true">Cronômetro</button>
@@ -9023,6 +9129,10 @@
   <script src="ondas-dados.js"></script>
   <script>
     const storageKey = "ondas-dados";
+    const LOCAL_HISTORY_MAX_ROWS = 1200;
+    const CLOUD_HISTORY_MAX_ROWS = 600;
+    const CLOUD_HISTORY_MIN_ROWS = 100;
+    const CLOUD_PAYLOAD_SAFE_BYTES = 650 * 1024;
     const originalData = JSON.parse(JSON.stringify(window.ONDAS_DADOS));
     const horariosOficiais = {
       "Onda 1": { inicio: "08:30", fim: "09:22" },
@@ -10066,8 +10176,11 @@
           } : {})
         });
       });
-      // Proteção simples para o localStorage/Firestore não crescer indefinidamente.
-      if (data.baseHistorico.length > 5000) data.baseHistorico = data.baseHistorico.slice(-5000);
+      // Mantém o histórico recente no navegador sem permitir crescimento ilimitado.
+      // A nuvem usa um recorte ainda menor para respeitar o limite de documento do Firestore.
+      if (data.baseHistorico.length > LOCAL_HISTORY_MAX_ROWS) {
+        data.baseHistorico = data.baseHistorico.slice(-LOCAL_HISTORY_MAX_ROWS);
+      }
     }
 
     function loadedKeys() {
@@ -10390,6 +10503,45 @@
       return Math.max(Date.now(), Number(data.syncRevision || 0) + 1);
     }
 
+    function serializedByteLength(value) {
+      const serialized = JSON.stringify(value);
+      if (typeof TextEncoder !== "undefined") return new TextEncoder().encode(serialized).length;
+      return encodeURIComponent(serialized).replace(/%[0-9A-F]{2}|./gi, "x").length;
+    }
+
+    function cloudPayloadSnapshot(source = data) {
+      const payload = JSON.parse(JSON.stringify(source || {}));
+      const fullHistory = Array.isArray(payload.baseHistorico) ? payload.baseHistorico : [];
+      payload.baseHistorico = fullHistory.slice(-CLOUD_HISTORY_MAX_ROWS);
+      let payloadBytes = serializedByteLength(payload);
+
+      while (payloadBytes > CLOUD_PAYLOAD_SAFE_BYTES && payload.baseHistorico.length > CLOUD_HISTORY_MIN_ROWS) {
+        const proportionalSize = Math.floor(payload.baseHistorico.length * CLOUD_PAYLOAD_SAFE_BYTES / payloadBytes * .88);
+        const nextSize = Math.max(
+          CLOUD_HISTORY_MIN_ROWS,
+          Math.min(payload.baseHistorico.length - 25, proportionalSize)
+        );
+        payload.baseHistorico = payload.baseHistorico.slice(-nextSize);
+        payloadBytes = serializedByteLength(payload);
+      }
+
+      if (payloadBytes > CLOUD_PAYLOAD_SAFE_BYTES) {
+        payload.baseHistorico = [];
+        payloadBytes = serializedByteLength(payload);
+      }
+
+      if (payloadBytes > CLOUD_PAYLOAD_SAFE_BYTES) {
+        throw new Error(`Os dados ativos ocupam ${payloadBytes} bytes e ainda excedem o limite seguro da nuvem.`);
+      }
+
+      return {
+        payload,
+        payloadBytes,
+        historyRows: payload.baseHistorico.length,
+        trimmedHistoryRows: Math.max(0, fullHistory.length - payload.baseHistorico.length)
+      };
+    }
+
     function saveData(options = {}) {
       normalizeJustificationStore();
       const localOnly = Boolean(options.localOnly);
@@ -10414,16 +10566,18 @@
     }
 
     async function saveDataToCloud() {
-      if (!cloudState.ready || !cloudState.docRef || !isAdmin() || cloudState.applyingRemote) return;
+      if (!cloudState.ready || !cloudState.docRef || !isAdmin() || cloudState.applyingRemote) return false;
       if (cloudState.savingRemote) {
         cloudState.pendingRemoteSave = true;
-        return;
+        return false;
       }
       if (cloudState.retryTimer) {
         window.clearTimeout(cloudState.retryTimer);
         cloudState.retryTimer = null;
       }
       let syncFailed = false;
+      let syncSucceeded = false;
+      let snapshotInfo = null;
       try {
         cloudState.savingRemote = true;
         cloudState.pendingRemoteSave = false;
@@ -10432,7 +10586,8 @@
           data.syncRevision = nextSyncRevision();
           localStorage.setItem(storageKey, JSON.stringify(data));
         }
-        const localPayload = JSON.parse(JSON.stringify(data));
+        snapshotInfo = cloudPayloadSnapshot(data);
+        const localPayload = snapshotInfo.payload;
         const localRevision = Number(localPayload.syncRevision || 0);
         const result = await cloudState.tools.runTransaction(cloudState.db, async transaction => {
           const snapshot = await transaction.get(cloudState.docRef);
@@ -10454,13 +10609,25 @@
         cloudState.retryAttempts = 0;
         if (result.wrote) {
           cloudState.lastCloudAckRevision = result.revision;
+          syncSucceeded = true;
+          console.info("Firebase sincronizado com sucesso.", {
+            revision: result.revision,
+            payloadBytes: snapshotInfo.payloadBytes,
+            historyRows: snapshotInfo.historyRows,
+            trimmedHistoryRows: snapshotInfo.trimmedHistoryRows
+          });
         } else if (result.payload) {
           applyRemotePayload(result.payload);
+          syncSucceeded = true;
         }
       } catch (error) {
         syncFailed = true;
         cloudState.pendingRemoteSave = true;
-        console.warn("Falha ao sincronizar com Firebase:", error);
+        console.warn("Falha ao sincronizar com Firebase:", {
+          error,
+          payloadBytes: snapshotInfo?.payloadBytes || 0,
+          historyRows: snapshotInfo?.historyRows || 0
+        });
         scheduleCloudRetry();
       } finally {
         cloudState.savingRemote = false;
@@ -10469,6 +10636,7 @@
           saveDataToCloud();
         }
       }
+      return syncSucceeded;
     }
 
     function justificationSentence(row) {
@@ -12734,6 +12902,9 @@
       // Isso garante que celulares e tablets recebam o estado oficial mesmo se o relógio
       // ou o cache do dispositivo tiver produzido uma revisão local maior.
       if (authoritativeReader) {
+        if (options.forceCloud) {
+          return { apply: true, reason: "reader-forced", incomingRevision, currentRevision };
+        }
         if (!incomingRevision) {
           return {
             apply: !lastRemoteRevision,
@@ -12793,6 +12964,72 @@
         return true;
       } finally {
         cloudState.applyingRemote = false;
+      }
+    }
+
+    let refreshStateTimer = null;
+
+    function setRefreshSyncState(state = "idle", message = "Atualizar dados do painel") {
+      const button = document.getElementById("refreshSyncBtn");
+      const status = document.getElementById("syncRefreshStatus");
+      if (!button) return;
+      button.classList.toggle("is-loading", state === "loading");
+      button.classList.toggle("is-success", state === "success");
+      button.classList.toggle("is-error", state === "error");
+      button.disabled = state === "loading";
+      button.title = message;
+      button.setAttribute("aria-label", message);
+      if (status) status.textContent = message;
+      const icon = button.querySelector("i");
+      if (icon) {
+        icon.className = state === "success"
+          ? "bi bi-check-lg"
+          : state === "error"
+            ? "bi bi-exclamation-lg"
+            : "bi bi-arrow-clockwise";
+      }
+    }
+
+    function resetRefreshSyncState(delay = 2200) {
+      if (refreshStateTimer) window.clearTimeout(refreshStateTimer);
+      refreshStateTimer = window.setTimeout(() => setRefreshSyncState(), delay);
+    }
+
+    async function refreshPanelFromCloud() {
+      if (!cloudState.ready || !cloudState.docRef || !cloudState.authResolved) {
+        setRefreshSyncState("error", "Firebase ainda está conectando. Tente novamente em instantes.");
+        resetRefreshSyncState(3200);
+        return false;
+      }
+
+      setRefreshSyncState("loading", "Atualizando dados do painel...");
+      try {
+        if (isAdmin()) {
+          // No computador administrador, o botão publica o estado local correto antes da leitura.
+          data.syncRevision = nextSyncRevision();
+          localStorage.setItem(storageKey, JSON.stringify(data));
+          const saved = await saveDataToCloud();
+          if (!saved) throw new Error("Não foi possível publicar a atualização no Firebase.");
+        }
+
+        const snapshot = await cloudState.tools.getDoc(cloudState.docRef);
+        const payload = snapshot.exists() ? snapshot.data()?.payload : null;
+        if (!payload) throw new Error("O Firebase ainda não possui dados do painel.");
+        const applied = applyRemotePayload(payload, {
+          cloudSnapshot: true,
+          forceCloud: !isAdmin()
+        });
+        if (!applied && !isAdmin()) throw new Error("A atualização recebida não pôde ser aplicada.");
+
+        const time = new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+        setRefreshSyncState("success", `Painel atualizado às ${time}.`);
+        resetRefreshSyncState();
+        return true;
+      } catch (error) {
+        console.warn("Atualização manual do painel falhou:", error);
+        setRefreshSyncState("error", error?.message || "Falha ao atualizar o painel.");
+        resetRefreshSyncState(4200);
+        return false;
       }
     }
 
@@ -12889,6 +13126,7 @@
     }
 
     document.getElementById("editBtn").addEventListener("click", openDrawer);
+    document.getElementById("refreshSyncBtn").addEventListener("click", refreshPanelFromCloud);
     document.getElementById("authBtn").addEventListener("click", () => {
       document.getElementById("loginModal").classList.add("open");
     });
