@@ -8482,100 +8482,214 @@
       }
     }
 /* =========================================================
-   EDITOR DE DADOS - ÁREA MAIOR E REDIMENSIONÁVEL
+   EDITOR DE DADOS - AMPLO, REDIMENSIONÁVEL E CABEÇALHOS FIXOS
    ========================================================= */
 
-/* Desktop */
+.drawer {
+  grid-template-rows: 44px auto auto minmax(0, 1fr) auto auto !important;
+  overflow: hidden !important;
+  z-index: 650 !important;
+}
+
+body.editor-open .global-theme-toggle {
+  display: none !important;
+}
+
+.drawer-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.drawer .drawer-expand-button,
+.drawer .drawer-header-actions #closeBtn {
+  width: 32px;
+  min-width: 32px;
+  height: 32px;
+  min-height: 32px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 1px solid rgba(255,255,255,.18);
+  border-radius: 6px;
+  background: rgba(255,255,255,.08);
+  color: #fff;
+  cursor: pointer;
+}
+
+.drawer .drawer-expand-button:hover,
+.drawer .drawer-expand-button:focus-visible,
+.drawer .drawer-header-actions #closeBtn:hover,
+.drawer .drawer-header-actions #closeBtn:focus-visible {
+  background: rgba(255,255,255,.18);
+  outline: 2px solid rgba(255,255,255,.8);
+  outline-offset: -2px;
+}
+
+.drawer .drawer-expand-button i {
+  font-size: 15px;
+}
+
+.drawer .drawer-header-actions #closeBtn {
+  font: 950 24px/1 "Segoe UI", Arial, sans-serif;
+}
+
+.drawer .paste-area {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-bottom: 16px;
+}
+
+.drawer .paste-box {
+  position: relative;
+  flex: 0 0 auto;
+  min-height: 0;
+  display: grid;
+  grid-template-rows: 34px auto;
+  overflow: visible;
+}
+
+.drawer .paste-box-header {
+  position: sticky;
+  top: 0;
+  z-index: 12;
+  min-width: 0;
+  min-height: 34px;
+  display: flex;
+  align-items: stretch;
+  overflow: visible;
+  box-shadow: 0 2px 0 rgba(6, 51, 84, .12);
+}
+
+.drawer .paste-box-header label,
+.drawer .paste-box.base .paste-box-header label {
+  min-width: 0;
+  height: 34px;
+  flex: 1 1 auto;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.drawer .paste-clear-button {
+  position: relative;
+  z-index: 13;
+  width: auto;
+  min-width: 110px;
+  flex: 0 0 clamp(110px, 26%, 180px);
+  min-height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  visibility: visible;
+  overflow: visible;
+  white-space: nowrap;
+}
+
+.drawer .paste-box textarea {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  height: 210px;
+  min-height: 150px;
+  max-height: 68dvh;
+  resize: vertical;
+  overflow: auto;
+  padding-top: 18px;
+}
+
+.drawer .paste-box:first-child textarea {
+  height: 180px;
+}
+
 @media (min-width: 901px) {
-
   .drawer {
-    width: min(850px, calc(100vw - 20px)) !important;
-    max-width: calc(100vw - 20px) !important;
+    width: min(900px, calc(100vw - 20px)) !important;
+    min-width: min(586px, calc(100vw - 20px));
+    max-width: calc(100vw - 8px) !important;
     height: min(900px, calc(100dvh - 8px)) !important;
+    min-height: min(560px, calc(100dvh - 8px));
     max-height: calc(100dvh - 8px) !important;
-
-    /* Permite puxar a lateral e aumentar/diminuir */
-    resize: horizontal;
-    overflow: auto !important;
+    resize: both;
   }
 
-  /* Área das três bases */
-  .paste-area {
-    min-height: 0;
-    overflow: auto;
-  }
-
-  #extracaoPaste,
-  #basePaste,
-  #aduanaPaste {
-    width: 100%;
-    resize: vertical;
-  }
-
-  #extracaoPaste {
-    min-height: 160px;
-  }
-
-  #basePaste,
-  #aduanaPaste {
-    min-height: 210px;
-  }
-}
-
-
-/* Full HD */
-@media (min-width: 1600px) {
-
-  .drawer {
-    width: min(950px, 55vw) !important;
-  }
-
-  #extracaoPaste {
-    min-height: 180px;
-  }
-
-  #basePaste,
-  #aduanaPaste {
-    min-height: 240px;
-  }
-}
-
-
-/* 2K / 4K */
-@media (min-width: 2560px) {
-
-  .drawer {
-    width: min(1250px, 48vw) !important;
-  }
-
-  #extracaoPaste {
-    min-height: 230px;
-  }
-
-  #basePaste,
-  #aduanaPaste {
-    min-height: 320px;
-  }
-}
-
-
-/* Tablet e celular */
-@media (max-width: 900px) {
-
-  .drawer {
-    left: 4px !important;
-    right: 4px !important;
-    width: auto !important;
+  .drawer.drawer-expanded {
+    inset: 4px !important;
+    width: calc(100vw - 8px) !important;
+    min-width: 0;
+    max-width: none !important;
     height: calc(100dvh - 8px) !important;
-    max-height: calc(100dvh - 8px) !important;
+    min-height: 0;
+    max-height: none !important;
+    resize: none;
+  }
+}
+
+@media (min-width: 1600px) {
+  .drawer:not(.drawer-expanded) {
+    width: min(1020px, 58vw) !important;
+  }
+
+  .drawer .paste-box textarea {
+    height: 240px;
+  }
+
+  .drawer .paste-box:first-child textarea {
+    height: 200px;
+  }
+}
+
+@media (min-width: 2560px) {
+  .drawer:not(.drawer-expanded) {
+    width: min(1320px, 50vw) !important;
+  }
+
+  .drawer .paste-box textarea {
+    height: 310px;
+  }
+
+  .drawer .paste-box:first-child textarea {
+    height: 240px;
+  }
+}
+
+@media (max-width: 900px) {
+  .drawer,
+  .drawer.drawer-expanded {
+    inset: max(4px, env(safe-area-inset-top)) 4px 4px 4px !important;
+    width: auto !important;
+    min-width: 0;
+    max-width: none !important;
+    height: auto !important;
+    min-height: 0;
+    max-height: none !important;
     resize: none;
   }
 
-  #extracaoPaste,
-  #basePaste,
-  #aduanaPaste {
-    min-height: 180px;
-    resize: vertical;
+  .drawer .drawer-expand-button {
+    display: none;
+  }
+
+  .drawer .paste-area {
+    gap: 14px;
+    padding-inline: 12px;
+  }
+
+  .drawer .paste-box textarea,
+  .drawer .paste-box:first-child textarea {
+    height: 190px;
+    min-height: 140px;
+    max-height: 55dvh;
+  }
+
+  .drawer .paste-clear-button {
+    min-width: 96px;
+    flex-basis: 96px;
   }
 }
   </style>
@@ -9112,7 +9226,12 @@
   <aside class="drawer" id="drawer" aria-label="Editor de dados">
     <header>
       <h2>Editor de dados</h2>
-      <button id="closeBtn" type="button" aria-label="Fechar">×</button>
+      <div class="drawer-header-actions">
+        <button id="expandDrawerBtn" class="drawer-expand-button" type="button" aria-label="Expandir editor" aria-pressed="false" title="Expandir editor">
+          <i class="bi bi-arrows-fullscreen" aria-hidden="true"></i>
+        </button>
+        <button id="closeBtn" type="button" aria-label="Fechar">×</button>
+      </div>
     </header>
     <div class="paste-help">
       <strong>Instruções</strong>
@@ -12966,6 +13085,8 @@
       document.getElementById("aduanaPaste").placeholder = "Cole Processo e Tempo do processo da Aduana. Aceita Aduana em andamento, Contagem de pacotes e Em contagem.";
       document.getElementById("pasteClearStatus").textContent = "";
       document.getElementById("drawer").classList.add("open");
+      document.querySelector(".app")?.classList.add("editor-open");
+      document.body.classList.add("editor-open");
     }
 
     function openPdfDrawer() {
@@ -13376,9 +13497,28 @@
     });
 
     document.getElementById("metricEditBtn").addEventListener("click", openDrawer);
+    document.getElementById("expandDrawerBtn")?.addEventListener("click", () => {
+      const drawer = document.getElementById("drawer");
+      const button = document.getElementById("expandDrawerBtn");
+      const expanded = !drawer.classList.contains("drawer-expanded");
+      drawer.classList.toggle("drawer-expanded", expanded);
+      button.setAttribute("aria-pressed", String(expanded));
+      button.setAttribute("aria-label", expanded ? "Restaurar tamanho do editor" : "Expandir editor");
+      button.title = expanded ? "Restaurar tamanho" : "Expandir editor";
+      const icon = button.querySelector("i");
+      if (icon) icon.className = expanded ? "bi bi-fullscreen-exit" : "bi bi-arrows-fullscreen";
+    });
     document.getElementById("closeBtn").addEventListener("click", () => {
-      document.getElementById("drawer").classList.remove("open");
-      document.querySelector(".app").classList.remove("editor-open");
+      const drawer = document.getElementById("drawer");
+      drawer.classList.remove("open", "drawer-expanded");
+      const expandButton = document.getElementById("expandDrawerBtn");
+      expandButton?.setAttribute("aria-pressed", "false");
+      expandButton?.setAttribute("aria-label", "Expandir editor");
+      if (expandButton) expandButton.title = "Expandir editor";
+      const expandIcon = expandButton?.querySelector("i");
+      if (expandIcon) expandIcon.className = "bi bi-arrows-fullscreen";
+      document.querySelector(".app")?.classList.remove("editor-open");
+      document.body.classList.remove("editor-open");
     });
     document.getElementById("printBtn").addEventListener("click", openPdfDrawer);
     document.getElementById("closePdfBtn").addEventListener("click", () => {
@@ -13458,7 +13598,8 @@
       currentWave = data.ondas.some(wave => waveLabel(wave) === waveLabel(currentWave)) ? currentWave : data.ondas[0];
       saveData();
       document.getElementById("drawer").classList.remove("open");
-      document.querySelector(".app").classList.remove("editor-open");
+      document.querySelector(".app")?.classList.remove("editor-open");
+      document.body.classList.remove("editor-open");
       render();
       announceProcessAlerts();
     });
