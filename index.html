@@ -70,6 +70,10 @@
       position: relative;
     }
 
+    .dark-brand-relief {
+      display: none;
+    }
+
     .topbar {
       height: 62px;
       display: grid;
@@ -4923,6 +4927,66 @@
       background: linear-gradient(180deg, #0a1b27 0%, var(--dark-canvas) 100%) !important;
     }
 
+    body.dark-mode .app {
+      isolation: isolate;
+    }
+
+    body.dark-mode .app > :not(.dark-brand-relief) {
+      z-index: 1;
+    }
+
+    body.dark-mode .dark-brand-relief {
+      position: fixed;
+      inset: clamp(112px, 15vh, 148px) clamp(38px, 4vw, 78px) clamp(46px, 7vh, 72px) clamp(88px, 7vw, 126px);
+      z-index: 2;
+      display: grid;
+      grid-template-columns: minmax(0, .92fr) minmax(0, 1.08fr);
+      align-items: center;
+      justify-items: center;
+      gap: clamp(70px, 9vw, 160px);
+      overflow: hidden;
+      pointer-events: none;
+      user-select: none;
+    }
+
+    body.dark-mode .dark-brand-relief img {
+      display: block;
+      width: 100%;
+      height: auto;
+      object-fit: contain;
+      opacity: .065;
+      filter:
+        grayscale(1)
+        saturate(0)
+        brightness(.68)
+        contrast(1.85)
+        drop-shadow(-2px -2px 1px rgba(169, 203, 222, .24))
+        drop-shadow(4px 5px 3px rgba(0, 0, 0, .78));
+      mix-blend-mode: luminosity;
+    }
+
+    body.dark-mode .dark-brand-relief-dhl {
+      max-width: 430px;
+    }
+
+    body.dark-mode .dark-brand-relief-ml {
+      max-width: 500px;
+    }
+
+    @media (max-width: 760px) {
+      body.dark-mode .dark-brand-relief {
+        inset: 120px 18px 62px 66px;
+        grid-template-columns: 1fr;
+        grid-template-rows: repeat(2, minmax(0, 1fr));
+        gap: 24px;
+      }
+
+      body.dark-mode .dark-brand-relief img {
+        width: min(72vw, 360px);
+        opacity: .06;
+      }
+    }
+
     body.dark-mode .docas-mode .toolbar {
       background: linear-gradient(180deg, #082b42 0%, #061e30 100%) !important;
       border-bottom-color: #31566f !important;
@@ -8320,6 +8384,10 @@
 </head>
 <body>
   <main class="app">
+    <div class="dark-brand-relief" aria-hidden="true">
+      <img class="dark-brand-relief-dhl" src="assets/logo-dhl.png" alt="">
+      <img class="dark-brand-relief-ml" src="assets/logo-mercado-livre.png" alt="">
+    </div>
     <header class="topbar">
       <img class="brand-logo brand-dhl" src="assets/logo-dhl.png" alt="DHL Supply Chain">
       <div class="title-wrap">
