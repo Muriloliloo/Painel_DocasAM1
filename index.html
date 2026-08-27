@@ -13342,6 +13342,85 @@ body.editor-open .global-theme-toggle {
       document.getElementById("loginModal").classList.remove("open");
     }
 
+        // =========================================================
+    // COLAGEM CONTÍNUA - BASE OPERACIONAL / BASE ADUANA
+    // =========================================================
+    function prepareContinuousPaste(textarea) {
+      if (!textarea) return;
+
+      const moveCursorToReadyLine = () => {
+        let value = textarea.value || "";
+
+        // Se já houver conteúdo, garante uma linha nova no final.
+        if (value && !value.endsWith("\n")) {
+          value += "\n";
+          textarea.value = value;
+        }
+
+        const end = textarea.value.length;
+        textarea.setSelectionRange(end, end);
+
+        // Mantém a visualização na última linha.
+        textarea.scrollTop = textarea.scrollHeight;
+      };
+
+      // Ao entrar no campo, já posiciona na próxima linha disponível.
+      textarea.addEventListener("focus", () => {
+        window.setTimeout(moveCursorToReadyLine, 0);
+      });
+
+      textarea.addEventListener("click", () => {
+        window.setTimeout(moveCursorToReadyLine, 0);
+      });
+
+      /*
+       * A colagem sempre entra no FINAL da base.
+       * Isso evita substituir dados antigos caso o usuário
+       * tenha clicado sem querer em uma linha anterior.
+       */
+      textarea.addEventListener("paste", event => {
+        if (!isAdmin()) return;
+
+        event.preventDefault();
+
+        const clipboardText =
+          event.clipboardData?.getData("text/plain") || "";
+
+        if (!clipboardText) return;
+
+        const pasted = clipboardText
+          .replace(/\r\n/g, "\n")
+          .replace(/\r/g, "\n")
+          .replace(/^\n+|\n+$/g, "");
+
+        if (!pasted) return;
+
+        let current = textarea.value || "";
+
+        // Remove linhas vazias extras somente no final.
+        current = current.replace(/\n+$/g, "");
+
+        if (current) {
+          textarea.value = current + "\n" + pasted + "\n";
+        } else {
+          textarea.value = pasted + "\n";
+        }
+
+        // Dispara input para manter compatibilidade com
+        // qualquer rotina atual que acompanhe alteração do campo.
+        textarea.dispatchEvent(new Event("input", {
+          bubbles: true
+        }));
+
+        const end = textarea.value.length;
+        textarea.setSelectionRange(end, end);
+        textarea.scrollTop = textarea.scrollHeight;
+      });
+    }
+
+    prepareContinuousPaste(document.getElementById("basePaste"));
+    prepareContinuousPaste(document.getElementById("aduanaPaste"));
+
     document.getElementById("editBtn").addEventListener("click", openDrawer);
     document.getElementById("refreshSyncBtn").addEventListener("click", refreshPanelFromCloud);
     document.getElementById("authBtn").addEventListener("click", () => {
