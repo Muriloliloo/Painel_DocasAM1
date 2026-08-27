@@ -13074,6 +13074,43 @@ body.editor-open .global-theme-toggle {
       return true;
     }
 
+    // Deixa Base Operacional e Base Aduana prontas para a próxima colagem
+    // sempre que o Editor de Dados for aberto.
+    function prepareBasesWhenOpeningEditor() {
+      const baseOperacional = document.getElementById("basePaste");
+      const baseAduana = document.getElementById("aduanaPaste");
+
+      const prepareField = textarea => {
+        if (!textarea) return;
+
+        let value = textarea.value || "";
+
+        // Remove apenas linhas vazias excedentes no final.
+        value = value.replace(/\n+$/g, "");
+
+        // Se já existem dados, cria exatamente uma nova linha pronta.
+        textarea.value = value ? value + "\n" : "";
+
+        const end = textarea.value.length;
+        textarea.setSelectionRange(end, end);
+        textarea.scrollTop = textarea.scrollHeight;
+      };
+
+      // As duas bases ficam preparadas na próxima linha livre.
+      prepareField(baseOperacional);
+      prepareField(baseAduana);
+
+      // O cursor ativo começa automaticamente na Base Operacional.
+      window.setTimeout(() => {
+        if (!baseOperacional) return;
+
+        baseOperacional.focus();
+        const end = baseOperacional.value.length;
+        baseOperacional.setSelectionRange(end, end);
+        baseOperacional.scrollTop = baseOperacional.scrollHeight;
+      }, 80);
+    }
+
     function openDrawer() {
       if (!requireAdminAction()) return;
       document.getElementById("totalRotasInput").value = data.totalRotas || data.extracao.length || "";
@@ -13087,6 +13124,10 @@ body.editor-open .global-theme-toggle {
       document.getElementById("drawer").classList.add("open");
       document.querySelector(".app")?.classList.add("editor-open");
       document.body.classList.add("editor-open");
+
+      // Ao abrir, deixa as duas bases na próxima linha livre e
+      // posiciona o cursor automaticamente na Base Operacional.
+      prepareBasesWhenOpeningEditor();
     }
 
     function openPdfDrawer() {
@@ -13342,9 +13383,9 @@ body.editor-open .global-theme-toggle {
       document.getElementById("loginModal").classList.remove("open");
     }
 
-        // =========================================================
+       
     // COLAGEM CONTÍNUA - BASE OPERACIONAL / BASE ADUANA
-    // =========================================================
+   
     function prepareContinuousPaste(textarea) {
       if (!textarea) return;
 
