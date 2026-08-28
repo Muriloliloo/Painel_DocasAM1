@@ -10012,6 +10012,40 @@ body.editor-open .global-theme-toggle {
       return parsed;
     }
 
+    function sameExtractionRoute(left = {}, right = {}) {
+      if (waveLabel(left.onda) !== waveLabel(right.onda)) return false;
+      const leftId = normalize(left.idRota);
+      const rightId = normalize(right.idRota);
+      if (leftId && rightId && leftId === rightId) return true;
+      return Boolean(routeKey(left.rota) && routeKey(left.rota) === routeKey(right.rota));
+    }
+
+    function mergeExtractionRows(currentRows = [], incomingRows = []) {
+      const merged = [];
+      const upsert = row => {
+        if (!row || !waveLabel(row.onda) || !routeKey(row.rota)) return;
+        const index = merged.findIndex(saved => sameExtractionRoute(saved, row));
+        if (index < 0) {
+          merged.push({ ...row, onda: waveLabel(row.onda) });
+          return;
+        }
+        const previous = merged[index];
+        const next = { ...previous };
+        Object.entries(row).forEach(([field, value]) => {
+          if (normalize(value) !== "") next[field] = value;
+        });
+        next.onda = waveLabel(row.onda || previous.onda);
+        next.rota = row.rota || previous.rota || "";
+        merged[index] = next;
+      };
+
+      // A atualização é cumulativa: uma nova onda atualiza suas próprias rotas,
+      // sem apagar planejamento, status ou fechamento das ondas anteriores.
+      currentRows.forEach(upsert);
+      incomingRows.forEach(upsert);
+      return merged;
+    }
+
     function normalizeSmartPasteSource(text) {
       return String(text || "")
         .replace(/\r\n?/g, "\n")
@@ -13682,16 +13716,18 @@ body.editor-open .global-theme-toggle {
       const operationalText = document.getElementById("basePaste").value;
       const aduanaText = document.getElementById("aduanaPaste").value;
       const nextExtracao = parsePaste(extractionText);
+      const previousExtractionRows = (data.extracao || []).length;
+      const mergedExtracao = mergeExtractionRows(data.extracao || [], nextExtracao);
 
       // A Base nunca cria rota. Sem planejamento válido na Extração, nenhuma Base é aplicada.
-      if (!nextExtracao.length && (normalize(operationalText) || normalize(aduanaText))) {
+      if (!mergedExtracao.length && (normalize(operationalText) || normalize(aduanaText))) {
         alert("A Base depende da Extração. Cole/aplique primeiro um planejamento válido na Extração.");
         return;
       }
 
       const incomingOperational = parseBasePaste(operationalText, "operacional");
       const incomingAduana = parseBasePaste(aduanaText, "aduana").filter(isAduanaDetailRow);
-      const planned = plannedRouteKeys(nextExtracao);
+      const planned = plannedRouteKeys(mergedExtracao);
       const validOperational = incomingOperational.filter(row => planned.has(routeKey(row.rota)));
       const validAduana = incomingAduana.filter(row => planned.has(routeKey(row.rota)));
 
@@ -13704,18 +13740,24 @@ body.editor-open .global-theme-toggle {
         ...data,
         totalRotas: normalize(document.getElementById("totalRotasInput").value),
         data: normalize(document.getElementById("dataInput").value),
-        extracao: nextExtracao,
+        extracao: mergedExtracao,
         baseOperacional: data.baseOperacional,
         baseAduana: data.baseAduana,
         baseHistorico: data.baseHistorico,
         carregamentoInicio: data.carregamentoInicio,
         carregamentoFim: data.carregamentoFim
       };
-      rebuildConsolidatedBase(nextExtracao);
+      rebuildConsolidatedBase(mergedExtracao);
       syncLoadingStarts(data.baseOperacional);
-      const waves = Array.from(new Set(nextExtracao.map(row => waveLabel(row.onda)).filter(wave => allowedWaves.includes(wave))));
+      const waves = Array.from(new Set(mergedExtracao.map(row => waveLabel(row.onda)).filter(wave => allowedWaves.includes(wave))));
       data.ondas = sanitizeWaves([...(originalData.ondas || []), ...waves]);
       currentWave = data.ondas.some(wave => waveLabel(wave) === waveLabel(currentWave)) ? currentWave : data.ondas[0];
+      console.info("Editor aplicado com consolidação cumulativa por onda.", {
+        incomingExtractionRows: nextExtracao.length,
+        previousExtractionRows,
+        consolidatedExtractionRows: mergedExtracao.length,
+        waves: waves.map(displayWave)
+      });
       saveData();
       document.getElementById("drawer").classList.remove("open");
       document.querySelector(".app")?.classList.remove("editor-open");
