@@ -94,14 +94,16 @@
       const hasAssociatedRoutes = providedAssociation === null
         ? plannedRoutes > 0 || dispatchedRoutes > 0 || pendingRoutes > 0
         : Boolean(providedAssociation);
-      const isFinished = pendingRoutes === 0 && dispatchedRoutes >= plannedRoutes;
-      const status = isFinished
-        ? "FINALIZADA"
-        : dispatchedRoutes > 0
-          ? "EM_ANDAMENTO"
-          : hasAssociatedRoutes
-            ? "PENDENTE"
-            : "SEM_ROTAS";
+      const isFinished = plannedRoutes > 0 && pendingRoutes === 0 && dispatchedRoutes >= plannedRoutes;
+      const status = plannedRoutes === 0
+        ? "SEM_ROTAS"
+        : isFinished
+          ? "FINALIZADA"
+          : dispatchedRoutes > 0
+            ? "EM_ANDAMENTO"
+            : hasAssociatedRoutes
+              ? "PENDENTE"
+              : "SEM_ROTAS";
 
       return {
         waveId: firstValue(wave, ["waveId", "wave_id", "id"]),
@@ -193,7 +195,14 @@
         auditStatus: toText(firstValue(audit, ["auditStatus", "status"])),
         auditType: toText(firstValue(audit, ["auditType", "audit_type"])),
         routeId: firstValue(audit, ["routeId", "route_id"], firstValue(driver, ["routeId", "route_id"])),
-        routeName: toText(firstValue(audit, ["routeName", "route_name"], firstValue(driver, ["routeName", "route_name"]))),
+        routeName: toText(
+          firstValue(audit, ["routeName"])
+          || firstValue(audit, ["route_name"])
+          || firstValue(driver, ["cluster_id"])
+          || firstValue(driver, ["clusterId"])
+          || firstValue(driver, ["route_name"])
+          || firstValue(driver, ["routeName"])
+        ),
         operatorId: firstValue(audit, ["operatorId", "operator_id"], firstValue(operator, ["operatorId", "operator_id", "id"])),
         operatorName: toText(firstValue(audit, ["operatorName"], joinName(
           firstValue(operator, ["name", "first_name"]),
@@ -244,23 +253,22 @@
     const audits = normalizeAudit(auditSource);
     const auditsByRoute = latestAuditsByRoute(audits);
 
-    return dispatch.map(route => {
-      const audit = auditsByRoute.get(routeKey(route.routeId)) || null;
+    function consolidateRoute(route, audit) {
       const unitCounts = audit ? { ...audit.unitCounts } : {};
 
       return {
-        routeId: route.routeId,
-        routeName: route.routeName || audit?.routeName || "",
-        dockNumber: route.dockNumber,
-        process: route.process,
-        processOriginal: route.processOriginal,
-        processLabel: route.processLabel,
-        startTimeSeconds: route.startTimeSeconds,
-        startTime: route.startTime,
-        totalElapsedTimeSeconds: route.totalElapsedTimeSeconds,
-        totalElapsedTime: route.totalElapsedTime,
-        startTimeMeaning: route.startTimeMeaning,
-        totalElapsedTimeMeaning: route.totalElapsedTimeMeaning,
+        routeId: route?.routeId ?? audit?.routeId ?? "",
+        routeName: route?.routeName || audit?.routeName || "",
+        dockNumber: route ? route.dockNumber : null,
+        process: route?.process || "",
+        processOriginal: route?.processOriginal || "",
+        processLabel: route?.processLabel || "",
+        startTimeSeconds: route ? route.startTimeSeconds : null,
+        startTime: route?.startTime || "",
+        totalElapsedTimeSeconds: route ? route.totalElapsedTimeSeconds : null,
+        totalElapsedTime: route?.totalElapsedTime || "",
+        startTimeMeaning: route?.startTimeMeaning || "",
+        totalElapsedTimeMeaning: route?.totalElapsedTimeMeaning || "",
         audit,
         auditId: audit?.auditId ?? null,
         auditStatus: audit?.auditStatus || "",
@@ -278,7 +286,19 @@
         leftover: audit?.leftoverCount || 0,
         leftoverCount: audit?.leftoverCount || 0
       };
+    }
+
+    const consolidatedRoutes = dispatch.map(route => {
+      const audit = auditsByRoute.get(routeKey(route.routeId)) || null;
+      return consolidateRoute(route, audit);
     });
+
+    const dispatchRouteIds = new Set(dispatch.map(route => routeKey(route.routeId)).filter(Boolean));
+    auditsByRoute.forEach((audit, key) => {
+      if (!dispatchRouteIds.has(key)) consolidatedRoutes.push(consolidateRoute(null, audit));
+    });
+
+    return consolidatedRoutes;
   }
 
   function buildOperationalSnapshot({ waves = [], dispatch = [], audits = [] } = {}) {
@@ -295,7 +315,7 @@
         dispatchedRoutes,
         pendingRoutes,
         progress: progressPercent(dispatchedRoutes, plannedRoutes),
-        isFinished: normalizedWaves.length > 0 && pendingRoutes === 0 && dispatchedRoutes >= plannedRoutes
+        isFinished: plannedRoutes > 0 && pendingRoutes === 0 && dispatchedRoutes >= plannedRoutes
       },
       routes: mergeOperationalData(dispatch, audits)
     };
