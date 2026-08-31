@@ -45,7 +45,24 @@
     const rawMessage = error && typeof error.message === "string"
       ? error.message
       : "Falha ao atualizar a integração operacional.";
-    const message = rawMessage.replace(/[\r\n\t]+/g, " ").replace(/\s+/g, " ").trim();
+    const message = rawMessage
+      .replace(/https?:\/\/[^\s]+/gi, "[URL_REMOVIDA]")
+      .replace(
+        /\b(authorization)\s*[:=]\s*(?:(?:bearer|basic)\s+)?(?:"[^"]*"|'[^']*'|[^\s,;]+)/gi,
+        (_, label) => `${label}: [REMOVIDO]`
+      )
+      .replace(/\b(cookie)\s*[:=]\s*[^\r\n]*/gi, (_, label) => `${label}: [REMOVIDO]`)
+      .replace(/\bbearer\s+(?:"[^"]*"|'[^']*'|[A-Za-z0-9._~+/=-]+)/gi, "Bearer [REMOVIDO]")
+      .replace(
+        /\b(access[_-]?token|refresh[_-]?token|client[_-]?secret|api[_-]?key|csrf(?:[_-]?token)?|token)\b\s*[:=]\s*(?:"[^"]*"|'[^']*'|[^\s,;]+)/gi,
+        (_, label) => `${label}=[REMOVIDO]`
+      )
+      .replace(/\b[A-Za-z0-9._~+/=-]{24,}\b/g, value => (
+        /[A-Za-z]/.test(value) && /\d/.test(value) ? "[REMOVIDO]" : value
+      ))
+      .replace(/[\r\n\t]+/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
     return (message || "Falha ao atualizar a integração operacional.").slice(0, 240);
   }
 
@@ -122,6 +139,7 @@
 
   function stop() {
     running = false;
+    sourceGeneration += 1;
     clearScheduledTimer();
     emitState();
     return false;
@@ -129,7 +147,6 @@
 
   function clearProvider() {
     provider = null;
-    sourceGeneration += 1;
     stop();
     return false;
   }

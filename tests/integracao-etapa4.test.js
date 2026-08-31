@@ -307,6 +307,101 @@ test("refreshNow reutiliza a Promise ativa e nunca chama o provider em paralelo"
   assert.equal(source.getStatus().isRefreshing, false);
 });
 
+test("stop invalida refresh pendente e um novo refresh manual continua válido", async () => {
+  const harness = createHarness();
+  const source = harness.window.PainelIntegracaoFonte;
+  const bridge = harness.window.PainelIntegracaoBridge;
+  let calls = 0;
+  let resolvePendingLoad;
+
+  source.setProvider({
+    load() {
+      calls += 1;
+      if (calls === 1) return Promise.resolve(fictionalPayload(4401, "FONTE_ANTERIOR_AM1"));
+      if (calls === 2) {
+        return new Promise(resolve => {
+          resolvePendingLoad = resolve;
+        });
+      }
+      return Promise.resolve(fictionalPayload(4403, "FONTE_APOS_STOP_AM1", "loading_packages"));
+    }
+  });
+
+  const previousSnapshot = await source.refreshNow();
+  const successfulEventsBeforeStop = eventDetails(harness, "painel:integration-refresh-success").length;
+  const pendingRefresh = source.start();
+  assert.equal(source.getStatus().isRefreshing, true);
+
+  source.stop();
+  assert.equal(source.isRunning(), false);
+  resolvePendingLoad(fictionalPayload(4402, "FONTE_OBSOLETA_AM1", "dispatched"));
+  const staleResult = await pendingRefresh;
+
+  assert.equal(staleResult, previousSnapshot);
+  assert.equal(bridge.getSnapshot(), previousSnapshot);
+  assert.equal(bridge.getSnapshot().routes[0].routeId, 4401);
+  assert.equal(source.getStatus().successfulRefreshes, 1);
+  assert.equal(eventDetails(harness, "painel:integration-refresh-success").length, successfulEventsBeforeStop);
+  assert.equal(source.isRunning(), false);
+
+  const snapshotAfterStop = await source.refreshNow();
+  assert.equal(calls, 3);
+  assert.equal(snapshotAfterStop.routes[0].routeId, 4403);
+  assert.equal(snapshotAfterStop.routes[0].processLabel, "CARREGAMENTO");
+  assert.equal(bridge.getSnapshot(), snapshotAfterStop);
+  assert.equal(source.getStatus().successfulRefreshes, 2);
+  assert.equal(source.isRunning(), false);
+});
+
+test("status e evento sanitizam dados sensíveis sem alterar o erro rejeitado", async () => {
+  const harness = createHarness();
+  const source = harness.window.PainelIntegracaoFonte;
+  const originalError = new Error(
+    "401 https://interno.exemplo/api Authorization: Bearer segredo123 token=abc client_secret=xyz\n"
+    + "CSRF=csrf123 access_token=acesso123 refresh_token=renova123 api_key=chave123 "
+    + "opaque=ABCDEFGHIJKLMNOP1234567890\nCookie: sessao=sessao123"
+  );
+
+  source.setProvider({
+    async load() {
+      throw originalError;
+    }
+  });
+
+  let rejectedError = null;
+  try {
+    await source.refreshNow();
+  } catch (error) {
+    rejectedError = error;
+  }
+
+  const statusMessage = source.getStatus().lastError;
+  const errorEvent = eventDetails(harness, "painel:integration-refresh-error").at(-1);
+  assert.equal(rejectedError, originalError);
+  assert.match(rejectedError.message, /interno\.exemplo/);
+  assert.match(statusMessage, /401/);
+  assert.match(statusMessage, /\[URL_REMOVIDA\]/);
+  assert.match(statusMessage, /\[REMOVIDO\]/);
+  assert.equal(errorEvent.message, statusMessage);
+  assert.equal(Object.hasOwn(errorEvent, "stack"), false);
+
+  [
+    "interno.exemplo",
+    "segredo123",
+    "token=abc",
+    "client_secret=xyz",
+    "csrf123",
+    "acesso123",
+    "renova123",
+    "chave123",
+    "ABCDEFGHIJKLMNOP1234567890",
+    "sessao123"
+  ].forEach(secret => {
+    assert.equal(statusMessage.includes(secret), false);
+    assert.equal(errorEvent.message.includes(secret), false);
+  });
+});
+
 test("Fonte e UI são independentes e o fluxo completo usa adaptador e render existente", async () => {
   const harness = createHarness();
   const source = harness.window.PainelIntegracaoFonte;
