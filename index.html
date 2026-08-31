@@ -9344,6 +9344,7 @@ body.editor-open .global-theme-toggle {
   <script src="ondas-dados.js"></script>
   <script src="integracao-operacional.js"></script>
   <script src="integracao-painel.js"></script>
+  <script src="integracao-adaptador.js"></script>
   <script>
     const storageKey = "ondas-dados";
     const LOCAL_HISTORY_MAX_ROWS = 1200;
@@ -9410,6 +9411,10 @@ body.editor-open .global-theme-toggle {
       retryTimer: null,
       retryAttempts: 0,
       tools: {}
+    };
+    const integrationState = {
+      enabled: false,
+      lastAppliedSnapshot: null
     };
 
     const columns = ["onda", "idRota", "rota", "rotaOriginal", "doca", "repLog", "motorista", "transportadora", "placa", "tipoVeiculo", "tipoRota", "tipoArea", "spr", "pacotes", "cluster"];
@@ -10332,6 +10337,188 @@ body.editor-open .global-theme-toggle {
       return Array.from(byRoute.values());
     }
 
+    // INTEGRATION_UI_START
+    function hasIntegrationValue(value) {
+      if (value === undefined || value === null) return false;
+      if (typeof value === "string") return normalize(value) !== "";
+      if (Array.isArray(value)) return value.length > 0;
+      if (typeof value === "object") return Object.keys(value).length > 0;
+      return true;
+    }
+
+    function mergeConservativeFields(current = {}, incoming = {}) {
+      const merged = { ...current };
+      Object.entries(incoming).forEach(([field, value]) => {
+        if (!hasIntegrationValue(value)) return;
+        if (field === "unitCounts" && typeof value === "object" && !Array.isArray(value)) {
+          merged.unitCounts = { ...(current.unitCounts || {}), ...value };
+          return;
+        }
+        merged[field] = value;
+      });
+      return merged;
+    }
+
+    function integrationRouteIdentity(row = {}) {
+      const technicalId = normalize(row.routeId ?? row.idRota);
+      if (technicalId) return `id:${technicalId}`;
+      const visualName = routeKey(row.rota || row.routeName);
+      return visualName ? `name:${visualName}` : "";
+    }
+
+    function mergeIntegrationRoutes(currentRoutes = [], incomingRoutes = []) {
+      const merged = currentRoutes.map(route => ({ ...route }));
+      const positions = new Map();
+      merged.forEach((route, index) => {
+        const identity = integrationRouteIdentity(route);
+        if (identity) positions.set(identity, index);
+      });
+
+      incomingRoutes.forEach(route => {
+        const identity = integrationRouteIdentity(route);
+        if (!identity) return;
+        const index = positions.get(identity);
+        if (index === undefined) {
+          positions.set(identity, merged.length);
+          merged.push({ ...route });
+          return;
+        }
+        merged[index] = mergeConservativeFields(merged[index], route);
+      });
+      return merged;
+    }
+
+    function singleSnapshotWave(snapshot = {}) {
+      const waves = Array.isArray(snapshot.waves) ? snapshot.waves : [];
+      if (waves.length !== 1) return "";
+      return waveLabel(waves[0].waveName || waves[0].name || waves[0].waveId || "");
+    }
+
+    function mergeIntegrationSnapshot(currentSnapshot, incomingSnapshot) {
+      const current = currentSnapshot || { generatedAt: "", waves: [], waveTotals: {}, routes: [] };
+      const waves = incomingSnapshot.waves.length ? incomingSnapshot.waves : current.waves;
+      const fallbackWave = singleSnapshotWave({ waves });
+      const incomingRoutes = incomingSnapshot.routes.map(route => ({
+        ...route,
+        onda: route.onda || fallbackWave
+      }));
+
+      return {
+        generatedAt: incomingSnapshot.generatedAt || current.generatedAt || "",
+        waves,
+        waveTotals: mergeConservativeFields(current.waveTotals, incomingSnapshot.waveTotals),
+        routes: mergeIntegrationRoutes(current.routes, incomingRoutes)
+      };
+    }
+
+    function mergePanelRows(currentRows = [], incomingRows = []) {
+      const merged = currentRows.map(row => ({ ...row }));
+      incomingRows.forEach(incoming => {
+        const technicalId = normalize(incoming.routeId ?? incoming.idRota);
+        const visualName = routeKey(incoming.rota || incoming.routeName);
+        let index = technicalId
+          ? merged.findIndex(row => normalize(row.routeId ?? row.idRota) === technicalId)
+          : -1;
+        if (index < 0 && visualName) index = merged.findIndex(row => routeKey(row.rota) === visualName);
+        if (index < 0) {
+          if (visualName) merged.push({ ...incoming });
+          return;
+        }
+        merged[index] = mergeConservativeFields(merged[index], incoming);
+      });
+      return merged;
+    }
+
+    function activeIntegrationRoutes() {
+      if (!integrationState.enabled) return [];
+      return integrationState.lastAppliedSnapshot?.routes || [];
+    }
+
+    function effectiveExtractionRows() {
+      if (!integrationState.enabled) return data.extracao || [];
+      return mergePanelRows(data.extracao || [], activeIntegrationRoutes());
+    }
+
+    function effectiveOperationalRows() {
+      if (!integrationState.enabled) return data.baseOperacional || [];
+      const operationalRoutes = activeIntegrationRoutes().filter(row =>
+        hasIntegrationValue(row.processo)
+        || hasIntegrationValue(row.status)
+        || hasIntegrationValue(row.doca)
+        || hasIntegrationValue(row.tempoProcesso)
+        || hasIntegrationValue(row.tempoTotal)
+      );
+      return mergePanelRows(data.baseOperacional || [], operationalRoutes);
+    }
+
+    function effectiveCustomsRows() {
+      if (!integrationState.enabled) return data.baseAduana || [];
+      const customsRoutes = activeIntegrationRoutes().filter(row =>
+        hasIntegrationValue(row.auditId)
+        || hasIntegrationValue(row.auditStatus)
+        || hasIntegrationValue(row.repLog)
+        || hasIntegrationValue(row.motorista)
+        || hasIntegrationValue(row.transportadora)
+        || hasIntegrationValue(row.placa)
+        || hasIntegrationValue(row.aduanaUnidades)
+        || hasIntegrationValue(row.aduanaBipadas)
+      );
+      return mergePanelRows(data.baseAduana || [], customsRoutes);
+    }
+
+    function effectiveConsolidatedRows() {
+      if (!integrationState.enabled) return data.base || [];
+      return mergePanelRows(
+        mergePanelRows(data.base || [], effectiveCustomsRows()),
+        effectiveOperationalRows()
+      );
+    }
+
+    function applyIntegrationSnapshot(snapshot) {
+      if (!integrationState.enabled) return null;
+      const adapter = window.PainelIntegracaoAdaptador;
+      if (!adapter || typeof adapter.adaptSnapshot !== "function") {
+        throw new Error("O adaptador da integração operacional não está disponível.");
+      }
+      const adaptedSnapshot = adapter.adaptSnapshot(snapshot);
+      integrationState.lastAppliedSnapshot = mergeIntegrationSnapshot(
+        integrationState.lastAppliedSnapshot,
+        adaptedSnapshot
+      );
+      render();
+      return integrationState.lastAppliedSnapshot;
+    }
+
+    window.PainelIntegracaoUI = Object.freeze({
+      enable() {
+        integrationState.enabled = true;
+        render();
+        return true;
+      },
+      disable() {
+        integrationState.enabled = false;
+        render();
+        return false;
+      },
+      isEnabled() {
+        return integrationState.enabled;
+      },
+      applySnapshot: applyIntegrationSnapshot,
+      getLastAppliedSnapshot() {
+        return integrationState.lastAppliedSnapshot;
+      }
+    });
+
+    window.addEventListener("painel:operational-snapshot", event => {
+      if (!integrationState.enabled || !event.detail || typeof event.detail !== "object") return;
+      try {
+        applyIntegrationSnapshot(event.detail);
+      } catch (error) {
+        console.warn("Snapshot operacional ignorado:", error);
+      }
+    });
+    // INTEGRATION_UI_END
+
     function plannedRouteKeys(extractionRows = data.extracao || []) {
       return new Set((extractionRows || []).map(row => routeKey(row.rota)).filter(Boolean));
     }
@@ -10444,7 +10631,7 @@ body.editor-open .global-theme-toggle {
     }
 
     function loadedKeys() {
-      return new Set(uniqueBaseRows(data.baseOperacional || [])
+      return new Set(uniqueBaseRows(effectiveOperationalRows())
         .filter(row => {
           const status = operationalStatus(row.processo || row.status);
           return status === "Guardando" || status === "Em aduana" || status === "Expedida";
@@ -10454,7 +10641,7 @@ body.editor-open .global-theme-toggle {
     }
 
     function expedidaKeys() {
-      return new Set(uniqueBaseRows(data.baseOperacional || [])
+      return new Set(uniqueBaseRows(effectiveOperationalRows())
         .filter(row => isExpedida(row.processo || row.status))
         .map(row => routeKey(row.rota))
         .filter(Boolean));
@@ -10561,7 +10748,7 @@ body.editor-open .global-theme-toggle {
     }
 
     function rowsForWave(wave) {
-      return data.extracao.filter(row => waveLabel(row.onda) === waveLabel(wave));
+      return effectiveExtractionRows().filter(row => waveLabel(row.onda) === waveLabel(wave));
     }
 
     function routeByDock(wave) {
@@ -10577,12 +10764,12 @@ body.editor-open .global-theme-toggle {
 
     function pendingRows(wave = null, includeOpen = false) {
       const expedidas = expedidaKeys();
-      return data.extracao.filter(row => (!wave || waveLabel(row.onda) === waveLabel(wave)) && (includeOpen || isWaveClosed(row.onda)) && !expedidas.has(routeKey(row.rota)));
+      return effectiveExtractionRows().filter(row => (!wave || waveLabel(row.onda) === waveLabel(wave)) && (includeOpen || isWaveClosed(row.onda)) && !expedidas.has(routeKey(row.rota)));
     }
 
     function closureLostRows(wave = null, includeOpen = false) {
       const loaded = loadedKeys();
-      const rows = data.extracao.filter(row => {
+      const rows = effectiveExtractionRows().filter(row => {
         if (wave && waveLabel(row.onda) !== waveLabel(wave)) return false;
         if (!includeOpen && !isWaveClosed(row.onda)) return false;
         const key = routeKey(row.rota);
@@ -10598,7 +10785,7 @@ body.editor-open .global-theme-toggle {
     }
 
     function plannedRows(wave = null) {
-      return data.extracao.filter(row => !wave || waveLabel(row.onda) === waveLabel(wave));
+      return effectiveExtractionRows().filter(row => !wave || waveLabel(row.onda) === waveLabel(wave));
     }
 
     function shippedRows(wave = null) {
@@ -11038,7 +11225,7 @@ body.editor-open .global-theme-toggle {
 
     function baseDetailsByRoute() {
       const map = new Map();
-      uniqueBaseRows(data.base).forEach(row => {
+      uniqueBaseRows(effectiveConsolidatedRows()).forEach(row => {
         const key = routeKey(row.rota);
         if (key) map.set(key, row);
       });
@@ -11062,7 +11249,7 @@ body.editor-open .global-theme-toggle {
 
     function baseStatusByRoute() {
       const map = new Map();
-      uniqueBaseRows(data.baseOperacional || []).forEach(row => {
+      uniqueBaseRows(effectiveOperationalRows()).forEach(row => {
         const key = routeKey(row.rota);
         if (key) map.set(key, operationalStatus(row.processo || row.status));
       });
@@ -11748,10 +11935,10 @@ body.editor-open .global-theme-toggle {
 
     function routeCurrentDetails(route) {
       const key = routeKey(route);
-      const extraction = (data.extracao || []).find(row => routeKey(row.rota) === key) || {};
-      const operational = uniqueBaseRows(data.baseOperacional || []).find(row => routeKey(row.rota) === key) || {};
-      const customs = uniqueBaseRows(data.baseAduana || []).find(row => routeKey(row.rota) === key) || {};
-      const consolidated = uniqueBaseRows(data.base || []).find(row => routeKey(row.rota) === key) || {};
+      const extraction = effectiveExtractionRows().find(row => routeKey(row.rota) === key) || {};
+      const operational = uniqueBaseRows(effectiveOperationalRows()).find(row => routeKey(row.rota) === key) || {};
+      const customs = uniqueBaseRows(effectiveCustomsRows()).find(row => routeKey(row.rota) === key) || {};
+      const consolidated = uniqueBaseRows(effectiveConsolidatedRows()).find(row => routeKey(row.rota) === key) || {};
       return {
         ...extraction,
         ...consolidated,
@@ -11814,8 +12001,8 @@ body.editor-open .global-theme-toggle {
 
     function processAlertForRoute(route) {
       const key = routeKey(route);
-      const operational = uniqueBaseRows(data.baseOperacional || []).find(row => routeKey(row.rota) === key) || {};
-      const customs = uniqueBaseRows(data.baseAduana || []).find(row => routeKey(row.rota) === key) || {};
+      const operational = uniqueBaseRows(effectiveOperationalRows()).find(row => routeKey(row.rota) === key) || {};
+      const customs = uniqueBaseRows(effectiveCustomsRows()).find(row => routeKey(row.rota) === key) || {};
       const operationalStatusText = normalize(operational.processo || operational.status);
       const customsStatusText = normalize(customs.processo || customs.estadoAduana || customs.status);
 
@@ -11877,7 +12064,7 @@ body.editor-open .global-theme-toggle {
 
     function processAlerts() {
       const routes = new Map();
-      (data.extracao || []).forEach(row => {
+      effectiveExtractionRows().forEach(row => {
         const key = routeKey(row.rota);
         if (key && !routes.has(key)) routes.set(key, row.rota);
       });
@@ -12193,7 +12380,7 @@ body.editor-open .global-theme-toggle {
     function allHistoryRoutes(wave = "") {
       const routes = new Map();
       const selectedWave = wave ? waveLabel(wave) : "";
-      (data.extracao || []).forEach(row => {
+      effectiveExtractionRows().forEach(row => {
         if (selectedWave && waveLabel(row.onda) !== selectedWave) return;
         const key = routeKey(row.rota);
         if (key) routes.set(key, row.rota);
@@ -12338,7 +12525,7 @@ body.editor-open .global-theme-toggle {
 
     function renderGrid() {
       const grid = document.getElementById("dockGrid");
-      if (syncLoadingStarts()) saveData({ localOnly: true, advanceRevision: false });
+      if (!integrationState.enabled && syncLoadingStarts()) saveData({ localOnly: true, advanceRevision: false });
       const map = routeByDock(currentWave);
       const loaded = loadedKeys();
       const shipped = expedidaKeys();

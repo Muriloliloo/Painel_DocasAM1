@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Teste local — Integração Etapa 3</title>
+</head>
+<body>
+  <h1>Teste local da integração</h1>
+  <p id="testStatus" role="status">Executando…</p>
+  <ol id="testResults"></ol>
+  <iframe id="panelFrame" src="../index.html" title="Painel em teste" hidden></iframe>
+
+  <script>
+    const results = document.getElementById("testResults");
+    const status = document.getElementById("testStatus");
+    const frame = document.getElementById("panelFrame");
+    let failures = 0;
+
+    function record(name, passed) {
+      const item = document.createElement("li");
+      item.textContent = `${passed ? "PASSOU" : "FALHOU"}: ${name}`;
+      item.dataset.result = passed ? "pass" : "fail";
+      results.appendChild(item);
+      if (!passed) failures += 1;
+    }
+
+    function panelSummary(panelDocument) {
+      return {
+        total: panelDocument.getElementById("totalRoutes")?.textContent || "",
+        guarding: panelDocument.getElementById("guardingRoutes")?.textContent || "",
+        loaded: panelDocument.getElementById("loadedRoutes")?.textContent || "",
+        customs: panelDocument.getElementById("occupiedDocks")?.textContent || "",
+        pending: panelDocument.getElementById("pendingRoutes")?.textContent || "",
+        testRoutes: panelDocument.querySelectorAll('[data-routes-route^="TESTE"]').length
+      };
+    }
+
+    function manualFields(panelDocument) {
+      return ["extracaoPaste", "basePaste", "aduanaPaste"].map(id =>
+        panelDocument.getElementById(id)?.value || ""
+      );
+    }
+
+    function fictionalPayload(emptyAuditPeople = false) {
+      return {
+        waves: [{
+          wave_id: "W-TESTE-1",
+          wave_name: "Onda 1",
+          planned_routes: 4,
+          dispatched_routes: 1,
+          pending_routes: 3,
+          has_associated_routes: true
+        }],
+        dispatch: [
+          {
+            route_id: 1001,
+            route_name: "TESTE1_AM1",
+            dock_number: 10,
+            process: "customs_in_progress",
+            start_time: 120,
+            total_elapsed_time: 300
+          },
+          {
+            route_id: 1002,
+            route_name: "TESTE2_AM1",
+            dock_number: 20,
+            process: "loading_packages",
+            start_time: 60,
+            total_elapsed_time: 240
+          },
+          {
+            route_id: 1003,
+            route_name: "TESTE3_AM1",
+            process: "dispatched",
+            start_time: 45,
+            total_elapsed_time: 744
+          }
+        ],
+        audits: [
+          {
+            id: "AUD-TESTE-1",
+            status: "in_progress",
+            driver: { route_id: 1001, cluster_id: "TESTE1_AM1" },
+            operator: {
+              name: emptyAuditPeople ? "" : "REP",
+              last_name: emptyAuditPeople ? "" : "Ficticio"
+            },
+            transporter: {
+              first_name: emptyAuditPeople ? "" : "Motorista",
+              last_name: emptyAuditPeople ? "" : "Ficticio"
+            },
+            carrier: { display_name: emptyAuditPeople ? "" : "Transportadora Ficticia" },
+            units: [{ entity_id: "UNIT-TESTE-1", status: "audited" }],
+            started_at: "2026-08-30T10:00:00Z"
+          },
+          {
+            id: "AUD-TESTE-4",
+            status: "in_progress",
+            driver: { route_id: 1004, cluster_id: "TESTE4_AM1" },
+            operator: { name: "REP", last_name: "Aduana" },
+            created_at: "2026-08-30T10:05:00Z"
+          }
+        ]
+      };
+    }
+
+    frame.addEventListener("load", async () => {
+      const panelWindow = frame.contentWindow;
+      const panelDocument = frame.contentDocument;
+      const bridge = panelWindow.PainelIntegracaoBridge;
+      const integrationUi = panelWindow.PainelIntegracaoUI;
+      const wait = milliseconds => new Promise(resolve => setTimeout(resolve, milliseconds));
+
+      try {
+        record("APIs do bridge, adaptador e UI disponíveis", Boolean(
+          bridge && panelWindow.PainelIntegracaoAdaptador && integrationUi
+        ));
+        bridge.clear();
+        integrationUi.disable();
+        await wait(30);
+
+        const manualBefore = manualFields(panelDocument);
+        const disabledBefore = panelSummary(panelDocument);
+        bridge.ingest(fictionalPayload());
+        await wait(30);
+        const disabledAfter = panelSummary(panelDocument);
+
+        record("modo automático inicia desabilitado", integrationUi.isEnabled() === false);
+        record("bridge cria snapshot mesmo com UI desabilitada", bridge.hasSnapshot() === true);
+        record("evento desabilitado não aplica snapshot ao painel", integrationUi.getLastAppliedSnapshot() === null);
+        record("indicadores não mudam com UI desabilitada", JSON.stringify(disabledAfter) === JSON.stringify(disabledBefore));
+        record("bases manuais não mudam com UI desabilitada", JSON.stringify(manualFields(panelDocument)) === JSON.stringify(manualBefore));
+
+        integrationUi.enable();
+        bridge.ingest(fictionalPayload());
+        await wait(30);
+        panelDocument.getElementById("routeHistoryBtn")?.click();
+        await wait(30);
+
+        const applied = integrationUi.getLastAppliedSnapshot();
+        const route1 = applied?.routes.find(route => route.routeId === 1001);
+        const route2 = applied?.routes.find(route => route.routeId === 1002);
+        const route3 = applied?.routes.find(route => route.routeId === 1003);
+        const route4 = applied?.routes.find(route => route.routeId === 1004);
+        record("renderização existente exibe as quatro rotas fictícias", panelSummary(panelDocument).testRoutes === 4);
+        record("Aduana usa status existente e preserva pessoas/unidades", Boolean(
+          route1?.processo === "Em aduana"
+          && route1.repLog === "REP Ficticio"
+          && route1.motorista === "Motorista Ficticio"
+          && route1.transportadora === "Transportadora Ficticia"
+          && route1.totalUnits === 1
+        ));
+        record("Carregamento usa o status Guardando", route2?.processo === "Guardando");
+        record("Expedida preserva os dois tempos separados", Boolean(
+          route3?.processo === "Expedida"
+          && route3.tempoProcesso === "0m 45s"
+          && route3.tempoTotal === "12m 24s"
+        ));
+        record("rota somente na Aduana permanece sem doca/processo inventado", Boolean(
+          route4?.rota === "TESTE4_AM1" && route4.doca === "" && route4.processo === ""
+        ));
+
+        const secondPayload = fictionalPayload(true);
+        secondPayload.audits = secondPayload.audits.filter(audit => audit.id === "AUD-TESTE-1");
+        bridge.ingest(secondPayload);
+        await wait(30);
+        const merged = integrationUi.getLastAppliedSnapshot();
+        const mergedRoute1 = merged?.routes.find(route => route.routeId === 1001);
+        record("merge conservador mantém REP, motorista e transportadora", Boolean(
+          mergedRoute1?.repLog === "REP Ficticio"
+          && mergedRoute1.motorista === "Motorista Ficticio"
+          && mergedRoute1.transportadora === "Transportadora Ficticia"
+        ));
+        record("merge conservador mantém rota ausente na atualização", merged?.routes.some(route => route.routeId === 1004));
+
+        integrationUi.disable();
+        await wait(30);
+        record("disable restaura a visualização manual", panelSummary(panelDocument).testRoutes === 0);
+        record("bases manuais permanecem intactas após enable/disable", JSON.stringify(manualFields(panelDocument)) === JSON.stringify(manualBefore));
+      } catch (error) {
+        record(`execução sem exceções (${error.message})`, false);
+      } finally {
+        integrationUi?.disable();
+        bridge?.clear();
+        status.textContent = failures ? `${failures} teste(s) falharam.` : "Todos os testes passaram.";
+        status.dataset.result = failures ? "fail" : "pass";
+      }
+    });
+  </script>
+</body>
+</html>
