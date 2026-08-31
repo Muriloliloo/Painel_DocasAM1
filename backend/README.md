@@ -5,20 +5,28 @@ Este diretório contém um backend local, sem dependências externas, que demons
 ## Estrutura
 
 - `server.js`: servidor HTTP local, rotas, CORS, validação de contexto e respostas seguras.
+- `start-local.js`: inicialização explícita e multiplataforma do modo de fixture local.
 - `operational-service.js`: ponto de substituição futuro para uma fonte autorizada.
 - `sanitize-operational-data.js`: allowlists e limites aplicados antes da resposta.
-- `config.js`: leitura exclusiva de `PORT`, `ALLOWED_ORIGINS` e `USE_FIXTURE`.
+- `config.js`: leitura exclusiva de `PORT`, `ALLOWED_ORIGINS`, `BACKEND_MODE` e `USE_FIXTURE`.
 - `fixtures/operational-snapshot.fixture.js`: dados totalmente fictícios para desenvolvimento e testes.
 
 ## Iniciar localmente
 
 Requer uma versão atual do Node.js e não exige `npm install`.
 
+1. Abra um terminal na pasta do projeto.
+2. Execute:
+
 ```text
-node backend/server.js
+node backend/start-local.js
 ```
 
-Por padrão, o servidor escuta somente em `127.0.0.1`, porta `8787`, com a fixture habilitada.
+3. Acesse `http://127.0.0.1:8787/health` e confirme `{"status":"ok"}`.
+4. Mantenha o terminal aberto enquanto usar a integração local.
+5. Abra o painel. A integração local ainda utiliza somente a fixture fictícia.
+
+O helper ativa explicitamente `BACKEND_MODE=local-fixture`. O servidor escuta somente em `127.0.0.1`, porta `8787`; nunca usa `0.0.0.0` ou um IP da rede local.
 
 Rotas locais:
 
@@ -33,18 +41,18 @@ O endpoint operacional aceita somente `facilityId`, `cycle`, `date` e `wave`. Ou
 
 - `PORT`: porta local, padrão `8787`.
 - `ALLOWED_ORIGINS`: origens exatas separadas por vírgula.
-- `USE_FIXTURE`: `true` ou `false`; o padrão local é `true`.
+- `BACKEND_MODE`: o único modo aceito nesta etapa é `local-fixture`.
+- `USE_FIXTURE`: precisa estar ativo junto com o modo local; `start-local.js` faz isso explicitamente.
 
-Exemplo local em PowerShell:
+Sem o modo local explícito e a fixture ativa, o backend falha fechado e não escuta nenhuma porta. Não existe modo de produção nesta etapa. A forma recomendada e independente de shell é sempre `node backend/start-local.js`.
 
-```powershell
-$env:PORT = "8787"
-$env:ALLOWED_ORIGINS = "http://localhost:8000,http://127.0.0.1:8000"
-$env:USE_FIXTURE = "true"
-node backend/server.js
+Para permitir a origem pública exata do GitHub Pages sem usar CORS curinga, informe-a explicitamente ao helper:
+
+```text
+node backend/start-local.js --allow-origin=https://muriloliloo.github.io
 ```
 
-A fixture é exclusivamente local. Com `USE_FIXTURE=false`, o serviço retorna erro seguro porque nenhuma fonte autorizada foi implementada nesta etapa.
+A origem é somente `https://muriloliloo.github.io`, sem caminho do repositório. O argumento pode ser repetido quando mais de uma origem exata for necessária. Origens inválidas e `*` são rejeitados. A fixture é exclusivamente local; nenhuma fonte autorizada real foi implementada.
 
 ## Política CORS
 
@@ -88,5 +96,18 @@ Campos fora das allowlists são descartados. A resposta raiz contém somente `wa
 ## Uso com o provider do painel
 
 Durante testes locais, o endpoint pode ser configurado explicitamente em runtime no provider HTTP. Essa configuração não existe no carregamento normal do painel e não inicia polling automaticamente.
+
+O `index.html` carrega apenas o helper inerte `window.PainelIntegracaoLocal`. Para configurar manualmente o provider local no console do painel:
+
+```js
+PainelIntegracaoLocal.configure();
+PainelIntegracaoFonte.refreshNow();
+```
+
+`configure()` não inicia a Fonte e não habilita a UI. A opção `targetAddressSpace: "loopback"` é usada somente para `localhost`/`127.0.0.1` quando o navegador declara suporte. Para desconectar e parar a Fonte:
+
+```js
+PainelIntegracaoLocal.disconnect();
+```
 
 O backend não inicia junto com o GitHub Pages e não deve ser tratado como implementação de produção. Plataforma, autenticação e acesso autorizado serão definidos apenas em etapa posterior.

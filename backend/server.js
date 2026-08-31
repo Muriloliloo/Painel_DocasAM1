@@ -2,7 +2,7 @@
 
 const http = require("node:http");
 const { randomUUID } = require("node:crypto");
-const { loadConfig } = require("./config");
+const { assertLocalFixtureConfig, loadConfig } = require("./config");
 const { loadOperationalSnapshot } = require("./operational-service");
 const { sanitizeOperationalData } = require("./sanitize-operational-data");
 
@@ -12,6 +12,7 @@ const CONTEXT_LIMITS = Object.freeze({
   date: 10,
   wave: 32
 });
+const LOOPBACK_HOST = "127.0.0.1";
 
 class ContextValidationError extends Error {}
 
@@ -68,7 +69,7 @@ function sendOptions(response) {
 }
 
 function createRequestHandler(options = {}) {
-  const config = options.config || loadConfig();
+  const config = assertLocalFixtureConfig(options.config || loadConfig());
   const operationalLoader = options.operationalLoader || loadOperationalSnapshot;
   const allowedOrigins = new Set(config.allowedOrigins || []);
 
@@ -128,22 +129,46 @@ function createServer(options = {}) {
   return http.createServer(createRequestHandler(options));
 }
 
-function startServer() {
-  const config = loadConfig();
+function startupMessage(port) {
+  return [
+    "Backend local do Painel de Docas",
+    "MODO LOCAL COM FIXTURE FICTÍCIA",
+    "Modo: fixture fictícia",
+    `Endereço: http://${LOOPBACK_HOST}:${port}`,
+    `Health: http://${LOOPBACK_HOST}:${port}/health`
+  ].join("\n");
+}
+
+function startServer(options = {}) {
+  const config = assertLocalFixtureConfig(options.config || loadConfig());
+  const logger = options.logger || console;
   const server = createServer({ config });
-  server.listen(config.port, "127.0.0.1", () => {
-    console.log(`Backend local de referência ativo na porta ${config.port}.`);
+  server.listen(config.port, LOOPBACK_HOST, () => {
+    if (logger && typeof logger.log === "function") logger.log(startupMessage(config.port));
   });
   return server;
 }
 
-if (require.main === module) startServer();
+if (require.main === module) {
+  try {
+    const server = startServer();
+    server.once("error", () => {
+      console.error("Backend não iniciado. Execute: node backend/start-local.js");
+      process.exitCode = 1;
+    });
+  } catch {
+    console.error("Backend não iniciado. Execute: node backend/start-local.js");
+    process.exitCode = 1;
+  }
+}
 
 module.exports = {
   CONTEXT_LIMITS,
   ContextValidationError,
+  LOOPBACK_HOST,
   createRequestHandler,
   createServer,
   operationalContext,
-  startServer
+  startServer,
+  startupMessage
 };

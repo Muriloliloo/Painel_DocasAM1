@@ -70,6 +70,19 @@
     return parseEndpoint(endpoint).toString();
   }
 
+  function supportsLoopbackTargetAddressSpace() {
+    if (typeof global.Request !== "function") return false;
+    try {
+      const probe = new global.Request("http://127.0.0.1/", {
+        method: "GET",
+        targetAddressSpace: "loopback"
+      });
+      return probe.targetAddressSpace === "loopback";
+    } catch {
+      return false;
+    }
+  }
+
   function validateTimeoutMs(value) {
     if (!Number.isInteger(value) || value < MIN_TIMEOUT_MS || value > MAX_TIMEOUT_MS) {
       throw new RangeError(`O timeout deve ser um número inteiro entre ${MIN_TIMEOUT_MS} e ${MAX_TIMEOUT_MS} ms.`);
@@ -122,7 +135,10 @@
       throw new TypeError("A configuração do provider HTTP deve ser um objeto.");
     }
 
-    const endpoint = validateEndpoint(config.endpoint);
+    const parsedEndpoint = parseEndpoint(config.endpoint);
+    const endpoint = parsedEndpoint.toString();
+    const useLoopbackTargetAddressSpace = LOCAL_HTTP_HOSTS.has(parsedEndpoint.hostname.toLowerCase())
+      && supportsLoopbackTargetAddressSpace();
     const timeoutMs = validateTimeoutMs(
       config.timeoutMs === undefined ? DEFAULT_TIMEOUT_MS : config.timeoutMs
     );
@@ -145,6 +161,7 @@
             Accept: "application/json"
           }
         };
+        if (useLoopbackTargetAddressSpace) requestOptions.targetAddressSpace = "loopback";
         if (controller) requestOptions.signal = controller.signal;
 
         let timedOut = false;
@@ -202,6 +219,7 @@
     MAX_TIMEOUT_MS,
     ALLOWED_CONTEXT_FIELDS,
     create,
+    supportsLoopbackTargetAddressSpace,
     validateEndpoint
   });
 })(typeof window !== "undefined" ? window : globalThis);

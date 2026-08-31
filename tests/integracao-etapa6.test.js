@@ -4,7 +4,7 @@ const path = require("node:path");
 const test = require("node:test");
 const vm = require("node:vm");
 
-const { loadConfig } = require("../backend/config");
+const { LOCAL_FIXTURE_MODE, loadConfig } = require("../backend/config");
 const { loadFixtureSnapshot } = require("../backend/fixtures/operational-snapshot.fixture");
 const { createServer } = require("../backend/server");
 const { LIMITS, sanitizeOperationalData } = require("../backend/sanitize-operational-data");
@@ -74,7 +74,8 @@ function createFrontendHarness() {
 test("configuração usa somente opções permitidas e rejeita CORS curinga", () => {
   const defaults = loadConfig({});
   assert.equal(defaults.port, 8787);
-  assert.equal(defaults.useFixture, true);
+  assert.equal(defaults.backendMode, "");
+  assert.equal(defaults.useFixture, false);
   assert.deepEqual(Array.from(defaults.allowedOrigins), [
     "http://localhost:8000",
     "http://127.0.0.1:8000"
@@ -82,11 +83,12 @@ test("configuração usa somente opções permitidas e rejeita CORS curinga", ()
 
   const configured = loadConfig({
     PORT: "9876",
+    BACKEND_MODE: LOCAL_FIXTURE_MODE,
     ALLOWED_ORIGINS: "http://localhost:9000,https://painel-ficticio.exemplo",
     USE_FIXTURE: "false",
     TOKEN: "IGNORADO"
   });
-  assert.deepEqual(Object.keys(configured).sort(), ["allowedOrigins", "port", "useFixture"]);
+  assert.deepEqual(Object.keys(configured).sort(), ["allowedOrigins", "backendMode", "port", "useFixture"]);
   assert.equal(configured.port, 9876);
   assert.equal(configured.useFixture, false);
   assert.deepEqual(Array.from(configured.allowedOrigins), [
@@ -173,6 +175,7 @@ test("servidor local cumpre contrato HTTP, contexto, métodos e CORS", async () 
   const runtime = await startTestServer({
     config: {
       allowedOrigins: [allowedOrigin],
+      backendMode: LOCAL_FIXTURE_MODE,
       useFixture: true
     },
     operationalLoader: async context => {
@@ -236,7 +239,7 @@ test("servidor local cumpre contrato HTTP, contexto, métodos e CORS", async () 
 
 test("erro do serviço retorna mensagem e requestId seguros", async () => {
   const runtime = await startTestServer({
-    config: { allowedOrigins: [], useFixture: false },
+    config: { allowedOrigins: [], backendMode: LOCAL_FIXTURE_MODE, useFixture: true },
     operationalLoader: async () => {
       throw new Error("Falha em sistema fictício com token=NAO_REPASSAR");
     }
@@ -260,6 +263,7 @@ test("fluxo frontend para backend local cria snapshot no Bridge sem autostart", 
   const runtime = await startTestServer({
     config: {
       allowedOrigins: ["http://localhost:8000"],
+      backendMode: LOCAL_FIXTURE_MODE,
       useFixture: true
     }
   });
