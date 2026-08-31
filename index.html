@@ -10497,6 +10497,7 @@ body.editor-open .global-theme-toggle {
       },
       disable() {
         integrationState.enabled = false;
+        integrationState.lastAppliedSnapshot = null;
         render();
         return false;
       },

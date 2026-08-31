@@ -212,6 +212,56 @@ test("modo desabilitado ignora evento e modo habilitado reutiliza a estrutura at
   assert.equal(JSON.stringify(manualData), manualBefore);
 });
 
+test("disable invalida snapshot visual e exige novo ingest após reabilitar", () => {
+  const harness = createBrowserHarness();
+  const manualData = {
+    extracao: [{ onda: "Onda 1", idRota: "MANUAL-1", rota: "MANUAL_AM1", doca: "1" }],
+    baseOperacional: [],
+    baseAduana: [],
+    base: []
+  };
+  const manualBefore = JSON.stringify(manualData);
+  installIntegrationUi(harness, manualData);
+
+  const bridge = harness.window.PainelIntegracaoBridge;
+  const integrationUi = harness.window.PainelIntegracaoUI;
+  integrationUi.disable();
+  integrationUi.enable();
+
+  bridge.ingest(fictionalPayload());
+  assert.ok(integrationUi.getLastAppliedSnapshot()?.routes.some(route => route.routeId === 1001));
+
+  integrationUi.disable();
+  assert.equal(integrationUi.getLastAppliedSnapshot(), null);
+  assert.equal(vm.runInContext("effectiveExtractionRows().length", harness.context), 1);
+  assert.equal(JSON.stringify(manualData), manualBefore);
+  assert.equal(bridge.hasSnapshot(), true);
+
+  integrationUi.enable();
+  assert.equal(integrationUi.getLastAppliedSnapshot(), null);
+  assert.equal(vm.runInContext("effectiveExtractionRows().length", harness.context), 1);
+
+  const payloadB = fictionalPayload();
+  payloadB.waves[0].planned_routes = 1;
+  payloadB.waves[0].dispatched_routes = 0;
+  payloadB.waves[0].pending_routes = 1;
+  payloadB.dispatch = [{
+    route_id: 2001,
+    route_name: "TESTEB_AM1",
+    dock_number: 30,
+    process: "loading_packages"
+  }];
+  payloadB.audits = [];
+  bridge.ingest(payloadB);
+
+  const snapshotB = integrationUi.getLastAppliedSnapshot();
+  assert.equal(snapshotB.routes.length, 1);
+  assert.equal(snapshotB.routes[0].routeId, 2001);
+  assert.equal(snapshotB.routes[0].processo, "Guardando");
+  assert.equal(vm.runInContext("effectiveExtractionRows().length", harness.context), 2);
+  assert.equal(JSON.stringify(manualData), manualBefore);
+});
+
 test("merge conservador preserva dados válidos e rotas ausentes na atualização seguinte", () => {
   const harness = createBrowserHarness();
   installIntegrationUi(harness, {
