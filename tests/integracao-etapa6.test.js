@@ -75,6 +75,7 @@ test("configuração usa somente opções permitidas e rejeita CORS curinga", ()
   const defaults = loadConfig({});
   assert.equal(defaults.port, 8787);
   assert.equal(defaults.backendMode, "");
+  assert.equal(defaults.snapshotRefreshMs, 30000);
   assert.equal(defaults.useFixture, false);
   assert.deepEqual(Array.from(defaults.allowedOrigins), [
     "http://localhost:8000",
@@ -88,7 +89,13 @@ test("configuração usa somente opções permitidas e rejeita CORS curinga", ()
     USE_FIXTURE: "false",
     TOKEN: "IGNORADO"
   });
-  assert.deepEqual(Object.keys(configured).sort(), ["allowedOrigins", "backendMode", "port", "useFixture"]);
+  assert.deepEqual(Object.keys(configured).sort(), [
+    "allowedOrigins",
+    "backendMode",
+    "port",
+    "snapshotRefreshMs",
+    "useFixture"
+  ]);
   assert.equal(configured.port, 9876);
   assert.equal(configured.useFixture, false);
   assert.deepEqual(Array.from(configured.allowedOrigins), [

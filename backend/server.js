@@ -2,7 +2,11 @@
 
 const http = require("node:http");
 const { randomUUID } = require("node:crypto");
-const { assertLocalFixtureConfig, loadConfig } = require("./config");
+const {
+  assertCentralConfig,
+  assertLocalFixtureConfig,
+  loadConfig
+} = require("./config");
 const { loadOperationalSnapshot } = require("./operational-service");
 const { sanitizeOperationalData } = require("./sanitize-operational-data");
 
@@ -68,8 +72,37 @@ function sendOptions(response) {
   response.end();
 }
 
+function validateSnapshotManager(manager) {
+  if (!manager
+    || typeof manager.getSnapshot !== "function"
+    || typeof manager.getStatus !== "function") {
+    throw new TypeError("Snapshot Manager central inválido.");
+  }
+  return manager;
+}
+
+function publicSnapshot(snapshot) {
+  if (!snapshot
+    || typeof snapshot !== "object"
+    || !Array.isArray(snapshot.waves)
+    || !Array.isArray(snapshot.dispatch)
+    || !Array.isArray(snapshot.audits)) {
+    return null;
+  }
+  return {
+    waves: snapshot.waves,
+    dispatch: snapshot.dispatch,
+    audits: snapshot.audits
+  };
+}
+
 function createRequestHandler(options = {}) {
-  const config = assertLocalFixtureConfig(options.config || loadConfig());
+  const config = options.config || loadConfig();
+  const snapshotManager = options.snapshotManager
+    ? validateSnapshotManager(options.snapshotManager)
+    : null;
+  if (snapshotManager) assertCentralConfig(config);
+  else assertLocalFixtureConfig(config);
   const operationalLoader = options.operationalLoader || loadOperationalSnapshot;
   const allowedOrigins = new Set(config.allowedOrigins || []);
 
@@ -85,7 +118,7 @@ function createRequestHandler(options = {}) {
       return;
     }
 
-    const knownPath = parsedUrl.pathname === "/health" || parsedUrl.pathname === "/operational-snapshot";
+    const knownPath = ["/health", "/ready", "/operational-snapshot"].includes(parsedUrl.pathname);
     if (request.method === "OPTIONS" && knownPath) {
       sendOptions(response);
       return;
@@ -101,6 +134,21 @@ function createRequestHandler(options = {}) {
       return;
     }
 
+    if (parsedUrl.pathname === "/ready") {
+      if (request.method !== "GET") {
+        response.setHeader("Allow", "GET, OPTIONS");
+        sendJson(response, 405, { error: "Método não permitido." });
+        return;
+      }
+      const isReady = snapshotManager
+        ? snapshotManager.getStatus().ready === true
+        : true;
+      sendJson(response, isReady ? 200 : 503, {
+        status: isReady ? "ready" : "not_ready"
+      });
+      return;
+    }
+
     if (parsedUrl.pathname !== "/operational-snapshot") {
       sendJson(response, 404, { error: "Recurso não encontrado." });
       return;
@@ -108,6 +156,20 @@ function createRequestHandler(options = {}) {
     if (request.method !== "GET") {
       response.setHeader("Allow", "GET, OPTIONS");
       sendJson(response, 405, { error: "Método não permitido." });
+      return;
+    }
+
+
+    if (snapshotManager) {
+      const status = snapshotManager.getStatus();
+      const snapshot = status.ready === true
+        ? publicSnapshot(snapshotManager.getSnapshot())
+        : null;
+      if (!snapshot) {
+        sendJson(response, 503, { error: "Dados operacionais ainda não estão disponíveis." });
+        return;
+      }
+      sendJson(response, 200, snapshot);
       return;
     }
 
@@ -169,6 +231,8 @@ module.exports = {
   createRequestHandler,
   createServer,
   operationalContext,
+  publicSnapshot,
   startServer,
-  startupMessage
+  startupMessage,
+  validateSnapshotManager
 };

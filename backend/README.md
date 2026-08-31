@@ -1,15 +1,24 @@
-# Backend local de referência
+# Backend de referência da integração
 
-Este diretório contém um backend local, sem dependências externas, que demonstra o contrato seguro entre uma futura fonte operacional autorizada e o Painel de Docas. Ele não acessa sistemas internos, não implementa autenticação corporativa e não define hospedagem de produção.
+Este diretório contém os núcleos local e central de referência, sem dependências externas. Eles demonstram o contrato seguro entre uma futura fonte operacional autorizada e o Painel de Docas, mas não acessam sistemas internos, não implementam autenticação corporativa e não definem hospedagem de produção.
 
 ## Estrutura
 
-- `server.js`: servidor HTTP local, rotas, CORS, validação de contexto e respostas seguras.
+- `server.js`: servidor HTTP compartilhado, rotas, CORS, readiness e respostas seguras.
 - `start-local.js`: inicialização explícita e multiplataforma do modo de fixture local.
+- `start-central.js`: entrypoint central fail-closed, ainda sem loader autorizado.
+- `snapshot-manager.js`: atualização periódica, sanitização e snapshot central em memória.
 - `operational-service.js`: ponto de substituição futuro para uma fonte autorizada.
 - `sanitize-operational-data.js`: allowlists e limites aplicados antes da resposta.
-- `config.js`: leitura exclusiva de `PORT`, `ALLOWED_ORIGINS`, `BACKEND_MODE` e `USE_FIXTURE`.
+- `config.js`: leitura exclusiva das configurações documentadas abaixo.
 - `fixtures/operational-snapshot.fixture.js`: dados totalmente fictícios para desenvolvimento e testes.
+
+## Modos separados
+
+- **Local — `local-fixture`:** infraestrutura de teste da Etapa 7. Usa somente fixture fictícia e escuta em `127.0.0.1`.
+- **Central — `central`:** arquitetura multiusuário da Etapa 8. Exige um loader autorizado injetado, compartilha um único snapshot sanitizado e nunca utiliza fixture como fallback.
+
+O modo central ainda não representa implantação ou produção. Sem loader injetado, ele falha fechado antes de abrir uma porta.
 
 ## Iniciar localmente
 
@@ -31,18 +40,21 @@ O helper ativa explicitamente `BACKEND_MODE=local-fixture`. O servidor escuta so
 Rotas locais:
 
 - `GET /health`
+- `GET /ready`
 - `GET /operational-snapshot`
 - `OPTIONS /health`
+- `OPTIONS /ready`
 - `OPTIONS /operational-snapshot`
 
 O endpoint operacional aceita somente `facilityId`, `cycle`, `date` e `wave`. Outros parâmetros são ignorados. Requisições POST, PUT, PATCH e DELETE recebem `405 Method Not Allowed`.
 
 ## Configuração permitida
 
-- `PORT`: porta local, padrão `8787`.
+- `PORT`: porta HTTP, padrão `8787`.
 - `ALLOWED_ORIGINS`: origens exatas separadas por vírgula.
-- `BACKEND_MODE`: o único modo aceito nesta etapa é `local-fixture`.
+- `BACKEND_MODE`: `local-fixture` ou `central`; nunca é inferido automaticamente.
 - `USE_FIXTURE`: precisa estar ativo junto com o modo local; `start-local.js` faz isso explicitamente.
+- `SNAPSHOT_REFRESH_MS`: intervalo central entre `10000` e `300000` ms; padrão `30000` ms.
 
 Sem o modo local explícito e a fixture ativa, o backend falha fechado e não escuta nenhuma porta. Não existe modo de produção nesta etapa. A forma recomendada e independente de shell é sempre `node backend/start-local.js`.
 
@@ -53,6 +65,25 @@ node backend/start-local.js --allow-origin=https://muriloliloo.github.io
 ```
 
 A origem é somente `https://muriloliloo.github.io`, sem caminho do repositório. O argumento pode ser repetido quando mais de uma origem exata for necessária. Origens inválidas e `*` são rejeitados. A fixture é exclusivamente local; nenhuma fonte autorizada real foi implementada.
+
+## Modo central preparado
+
+O comando abaixo termina intencionalmente com erro seguro porque ainda não existe um loader operacional autorizado:
+
+```text
+node backend/start-central.js
+```
+
+Nenhuma porta é aberta e a fixture local não é utilizada. Futuramente, um entrypoint autorizado deverá injetar o loader em `createCentralRuntime()` ou `startCentralServer()`. O `Snapshot Manager` então executará uma carga imediata, atualizará a cada 30 segundos por padrão e servirá o mesmo snapshot em memória para todos os clientes.
+
+No modo central:
+
+- `/health` indica somente que o processo HTTP responde;
+- `/ready` retorna `503 not_ready` até existir um snapshot válido e `200 ready` depois;
+- `/operational-snapshot` retorna `503` enquanto não houver dados válidos;
+- requisições dos usuários apenas leem o snapshot e nunca executam o loader.
+
+A arquitetura completa está em `docs/arquitetura-backend-central.md`.
 
 ## Política CORS
 

@@ -2,6 +2,10 @@
 
 const DEFAULT_PORT = 8787;
 const LOCAL_FIXTURE_MODE = "local-fixture";
+const CENTRAL_MODE = "central";
+const DEFAULT_SNAPSHOT_REFRESH_MS = 30000;
+const MIN_SNAPSHOT_REFRESH_MS = 10000;
+const MAX_SNAPSHOT_REFRESH_MS = 300000;
 const DEFAULT_ALLOWED_ORIGINS = Object.freeze([
   "http://localhost:8000",
   "http://127.0.0.1:8000"
@@ -27,10 +31,23 @@ function parseBoolean(value, fallback) {
 function parseBackendMode(value) {
   const mode = String(value || "").trim().toLowerCase();
   if (!mode) return "";
-  if (mode !== LOCAL_FIXTURE_MODE) {
+  if (mode !== LOCAL_FIXTURE_MODE && mode !== CENTRAL_MODE) {
     throw new TypeError("BACKEND_MODE não suportado.");
   }
   return mode;
+}
+
+function parseSnapshotRefreshMs(value) {
+  if (value === undefined || value === null || value === "") return DEFAULT_SNAPSHOT_REFRESH_MS;
+  const interval = Number(value);
+  if (!Number.isInteger(interval)
+    || interval < MIN_SNAPSHOT_REFRESH_MS
+    || interval > MAX_SNAPSHOT_REFRESH_MS) {
+    throw new RangeError(
+      `SNAPSHOT_REFRESH_MS deve ser um número inteiro entre ${MIN_SNAPSHOT_REFRESH_MS} e ${MAX_SNAPSHOT_REFRESH_MS}.`
+    );
+  }
+  return interval;
 }
 
 function normalizedOrigin(value) {
@@ -70,6 +87,7 @@ function loadConfig(env = process.env) {
     backendMode,
     port: parsePort(env.PORT),
     allowedOrigins: parseAllowedOrigins(env.ALLOWED_ORIGINS),
+    snapshotRefreshMs: parseSnapshotRefreshMs(env.SNAPSHOT_REFRESH_MS),
     useFixture
   });
 }
@@ -83,11 +101,26 @@ function assertLocalFixtureConfig(config) {
   return config;
 }
 
+function assertCentralConfig(config) {
+  if (!config
+    || config.backendMode !== CENTRAL_MODE
+    || config.useFixture !== false) {
+    throw new Error("Backend central desabilitado: configuração central explícita é obrigatória.");
+  }
+  return config;
+}
+
 module.exports = {
+  CENTRAL_MODE,
   DEFAULT_PORT,
   LOCAL_FIXTURE_MODE,
+  DEFAULT_SNAPSHOT_REFRESH_MS,
+  MIN_SNAPSHOT_REFRESH_MS,
+  MAX_SNAPSHOT_REFRESH_MS,
   DEFAULT_ALLOWED_ORIGINS,
+  assertCentralConfig,
   assertLocalFixtureConfig,
   loadConfig,
-  parseAllowedOrigins
+  parseAllowedOrigins,
+  parseSnapshotRefreshMs
 };
