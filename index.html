@@ -9365,6 +9365,8 @@ body.editor-open .global-theme-toggle {
     // Bloco 2: bases separadas, mantendo data.base como visão consolidada compatível.
     data.baseOperacional = Array.isArray(data.baseOperacional) ? data.baseOperacional : (Array.isArray(data.base) ? data.base : []);
     data.baseAduana = Array.isArray(data.baseAduana) ? data.baseAduana : [];
+    data.baseOperacionalAutomatica = Array.isArray(data.baseOperacionalAutomatica) ? data.baseOperacionalAutomatica : [];
+    data.baseAduanaAutomatica = Array.isArray(data.baseAduanaAutomatica) ? data.baseAduanaAutomatica : [];
     data.baseHistorico = Array.isArray(data.baseHistorico) ? data.baseHistorico : [];
     data.carregamentoInicio = data.carregamentoInicio || {};
     data.carregamentoFim = data.carregamentoFim || {};
@@ -10347,19 +10349,43 @@ body.editor-open .global-theme-toggle {
     }
 
     function rebuildConsolidatedBase(extractionRows = data.extracao || []) {
-      const operationalRows = (data.baseOperacional || []).map(row =>
-        baseItemForSource(enrichBaseItem({ ...row }), "operacional")
-      );
-      const customsRows = (data.baseAduana || []).map(row =>
-        baseItemForSource(enrichBaseItem({ ...row }), "aduana")
-      );
-      data.baseOperacional = onlyPlannedBaseRows(operationalRows, extractionRows);
-      data.baseAduana = onlyPlannedBaseRows(customsRows, extractionRows);
-      // As duas fontes se complementam; em campos operacionais coincidentes, a Base Operacional vence.
-      data.base = mergeLatestBaseRows(data.baseAduana, data.baseOperacional);
-      data.base = onlyPlannedBaseRows(data.base, extractionRows);
-      return data.base;
-    }
+  const automaticOperationalRows = (data.baseOperacionalAutomatica || []).map(row =>
+    baseItemForSource(enrichBaseItem({ ...row }), "operacional")
+  );
+
+  const manualOperationalRows = (data.baseOperacional || []).map(row =>
+    baseItemForSource(enrichBaseItem({ ...row }), "operacional")
+  );
+
+  const automaticCustomsRows = (data.baseAduanaAutomatica || []).map(row =>
+    baseItemForSource(enrichBaseItem({ ...row }), "aduana")
+  );
+
+  const manualCustomsRows = (data.baseAduana || []).map(row =>
+    baseItemForSource(enrichBaseItem({ ...row }), "aduana")
+  );
+
+  // Automático entra primeiro; manual entra por último e prevalece em conflitos.
+  const operationalRows = mergeLatestBaseRows(
+    automaticOperationalRows,
+    manualOperationalRows
+  );
+
+  const customsRows = mergeLatestBaseRows(
+    automaticCustomsRows,
+    manualCustomsRows
+  );
+
+  data.baseOperacional = onlyPlannedBaseRows(operationalRows, extractionRows);
+  data.baseAduana = onlyPlannedBaseRows(customsRows, extractionRows);
+
+  // As duas fontes se complementam; em campos operacionais coincidentes, a Base Operacional vence.
+  data.base = mergeLatestBaseRows(data.baseAduana, data.baseOperacional);
+  data.base = onlyPlannedBaseRows(data.base, extractionRows);
+
+  return data.base;
+}
+    
 
     function durationTextToMs(value) {
       const text = plainText(value).replace(/,/g, ".");
@@ -13244,6 +13270,8 @@ body.editor-open .global-theme-toggle {
         normalizeJustificationStore();
         data.baseOperacional = Array.isArray(data.baseOperacional) ? data.baseOperacional : (Array.isArray(data.base) ? data.base : []);
         data.baseAduana = Array.isArray(data.baseAduana) ? data.baseAduana : [];
+        data.baseOperacionalAutomatica = Array.isArray(data.baseOperacionalAutomatica) ? data.baseOperacionalAutomatica : [];
+        data.baseAduanaAutomatica = Array.isArray(data.baseAduanaAutomatica) ? data.baseAduanaAutomatica : [];
         data.baseHistorico = Array.isArray(data.baseHistorico) ? data.baseHistorico : [];
         rebuildConsolidatedBase(data.extracao || []);
         data.carregamentoInicio = data.carregamentoInicio || {};
