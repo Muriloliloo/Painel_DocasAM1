@@ -9363,10 +9363,27 @@ body.editor-open .global-theme-toggle {
     data.horarios = { ...(data.horarios || {}), ...(originalData.horarios || {}), ...horariosOficiais };
     data.justificativas = data.justificativas || {};
     // Bloco 2: bases separadas, mantendo data.base como visão consolidada compatível.
-    data.baseOperacional = Array.isArray(data.baseOperacional) ? data.baseOperacional : (Array.isArray(data.base) ? data.base : []);
-    data.baseAduana = Array.isArray(data.baseAduana) ? data.baseAduana : [];
-    data.baseOperacionalAutomatica = Array.isArray(data.baseOperacionalAutomatica) ? data.baseOperacionalAutomatica : [];
-    data.baseAduanaAutomatica = Array.isArray(data.baseAduanaAutomatica) ? data.baseAduanaAutomatica : [];
+   data.baseOperacional = Array.isArray(data.baseOperacional)
+  ? data.baseOperacional
+  : (Array.isArray(data.base) ? data.base : [ ]);
+
+data.baseAduana = Array.isArray(data.baseAduana)
+  ? data.baseAduana
+  : [ ];
+
+data.baseOperacionalManual = Array.isArray(data.baseOperacionalManual)
+  ? data.baseOperacionalManual
+  : [...data.baseOperacional];
+
+data.baseAduanaManual = Array.isArray(data.baseAduanaManual)
+  ? data.baseAduanaManual
+  : [...data.baseAduana];
+
+// Dados automáticos são somente da sessão atual.
+// Após recarregar a página, o painel volta ao manual até receber nova atualização automática.
+data.baseOperacionalAutomatica = [];
+data.baseAduanaAutomatica = [];
+
     data.baseHistorico = Array.isArray(data.baseHistorico) ? data.baseHistorico : [];
     data.carregamentoInicio = data.carregamentoInicio || {};
     data.carregamentoFim = data.carregamentoFim || {};
@@ -9631,15 +9648,25 @@ body.editor-open .global-theme-toggle {
       return /_AM/i.test(normalize(value)) || /^[A-Z]{1,4}\d{0,3}_[A-Z0-9]+$/i.test(normalize(value));
     }
 
-    function normalizeBaseStatus(value) {
-      const text = plainText(value).replace(/\s+/g, " ");
-      if (!text) return "";
-      if (/^(expedir|expedid[ao])$/.test(text)) return "Expedida";
-      if (/^(guardando(?: pacotes?)?|carregando(?: pacotes?)?|guardando\s*\/\s*carregando)$/.test(text)) return "Guardando";
-      if (/^(esperando (?:a )?aduana|aduana em andamento|em andamento|em aduana|contagem de pacotes?|em contagem)$/.test(text)) return "Em aduana";
-      if (text === "pendente" || text === "-") return "Pendente";
-      return "";
-    }
+  function normalizeBaseStatus(value) {
+  const text = plainText(value).replace(/\s+/g, " ");
+  if (!text) return "";
+
+  // Estados vindos diretamente da API Dispatch.
+  if (text === "dispatched") return "Expedida";
+  if (text === "loading_packages") return "Guardando";
+  if (text === "waiting_customs") return "Em aduana";
+  if (text === "customs_in_progress") return "Em aduana";
+
+  // Estados já usados pelo painel.
+  if (/^(expedir|expedid[ao])$/.test(text)) return "Expedida";
+  if (/^(guardando(?: pacotes?)?|carregando(?: pacotes?)?|guardando\s*\/\s*carregando)$/.test(text)) return "Guardando";
+  if (/^(esperando (?:a )?aduana|aduana em andamento|em andamento|em aduana|contagem de pacotes?|em contagem)$/.test(text)) return "Em aduana";
+
+  if (text === "pendente" || text === "-") return "Pendente";
+
+  return "";
+}
 
     function operationalStatus(value) {
       // Processo vazio, "-" ou desconhecido nunca avança a rota.
@@ -9930,9 +9957,17 @@ body.editor-open .global-theme-toggle {
 
       const rawProcess = normalize(item.processo || item.status);
       const status = operationalStatus(rawProcess);
+const apiProcessLabels = {
+  waiting_customs: "Esperando aduana",
+  customs_in_progress: "Aduana em andamento",
+  loading_packages: "Carregando pacotes",
+  dispatched: "Expedida"
+};
+
+const displayProcess = apiProcessLabels[plainText(rawProcess)] || rawProcess;
       return {
         rota: route,
-        processo: status === "Pendente" ? "Pendente" : rawProcess,
+        processo: status === "Pendente" ? "Pendente" : displayProcess,
         tempoProcesso: normalize(item.tempoProcesso),
         tempoTotal: normalize(item.tempoTotal),
         doca: validDockValue(item.doca),
@@ -10202,67 +10237,104 @@ body.editor-open .global-theme-toggle {
       }).filter(item => looksLikeRoute(item.rota));
     }
 
-    function parseBasePaste(text, source = "operacional") {
-      const rows = splitRows(text);
-      if (!rows.length) return [];
-      const { mappedHeader, headerIndex } = headerInfo(rows);
-      const body = mappedHeader ? rows.slice(headerIndex + 1) : rows;
-      const parsed = body.map(row => {
-        const item = {};
-        const line = row.join("\t");
-        const route = routeToken(line);
-        const routeIndex = route ? row.findIndex(cell => routeToken(cell) === route) : row.findIndex(looksLikeRoute);
+   function parseBasePaste(text, source = "operacional") {
+  const rows = splitRows(text);
+  if (!rows.length) return [];
 
-        if (mappedHeader) {
-          row.forEach((cell, index) => {
-            const key = mappedHeader[index];
-            if (key) item[key] = normalize(cell);
-          });
-          item.rota = routeToken(item.rota) || item.rota || route;
-          if (source === "operacional") {
-            item.processo = item.processo || item.status || "";
-            item.doca = validDockValue(item.doca) || lastStandaloneDock(row);
-          }
+  const { mappedHeader, headerIndex } = headerInfo(rows);
+  const body = mappedHeader ? rows.slice(headerIndex + 1) : rows;
+
+  const parsed = body.map(row => {
+    const item = {};
+    const line = row.join("\t");
+    const route = routeToken(line);
+    const routeIndex = route
+      ? row.findIndex(cell => routeToken(cell) === route)
+      : row.findIndex(looksLikeRoute);
+
+    if (mappedHeader) {
+      row.forEach((cell, index) => {
+        const key = mappedHeader[index];
+        if (key) item[key] = normalize(cell);
+      });
+
+      item.rota = routeToken(item.rota) || item.rota || route;
+
+      if (source === "operacional") {
+        item.processo = item.processo || item.status || "";
+        item.doca = validDockValue(item.doca) || lastStandaloneDock(row);
+      }
+    } else {
+      item.rota = route || (routeIndex >= 0 ? row[routeIndex] : row[0]);
+
+      const values = row
+        .slice(Math.max(0, routeIndex) + 1)
+        .map(normalize);
+
+      if (source === "aduana") {
+        // Aceita tanto o formato exportado pelo painel quanto
+        // a ordem natural da Base Aduana.
+        if (isAduanaState(values[0])) {
+          item.estadoAduana = values[0] || "";
+          item.auditTime = values[1] || "";
+          item.aduanaBipadas = values[2] || "";
+          item.repLog = values[4] || "";
+          item.transportadora = values[5] || "";
+          item.placa = values[6] || "";
         } else {
-          item.rota = route || (routeIndex >= 0 ? row[routeIndex] : row[0]);
-          const values = row.slice(Math.max(0, routeIndex) + 1).map(normalize);
-          if (source === "aduana") {
-            // Aceita tanto o formato exportado pelo painel quanto a ordem natural da Base Aduana.
-            if (isAduanaState(values[0])) {
-              item.estadoAduana = values[0] || "";
-              item.auditTime = values[1] || "";
-              item.aduanaBipadas = values[2] || "";
-              item.repLog = values[4] || "";
-              item.transportadora = values[5] || "";
-              item.placa = values[6] || "";
-            } else {
-              item.motorista = values[0] || "";
-              item.repLog = values[1] || "";
-              item.auditTime = values[2] || "";
-              item.aduanaUnidades = values[3] || "";
-              item.estadoAduana = values[4] || "";
-            }
-          } else {
-            // Formato operacional sem cabeçalho: rota, processo, tempo processo, tempo total, doca.
-            item.processo = values[0] || "";
-            item.tempoProcesso = values[1] || "";
-            item.tempoTotal = values[2] || "";
-            item.doca = values[3] || lastStandaloneDock(row);
-          }
+          item.motorista = values[0] || "";
+          item.repLog = values[1] || "";
+          item.auditTime = values[2] || "";
+          item.aduanaUnidades = values[3] || "";
+          item.estadoAduana = values[4] || "";
         }
-        enrichBaseItem(item);
-        return baseItemForSource(item, source);
-      }).filter(item => looksLikeRoute(item.rota));
-      const semanticRows = source === "aduana"
-        ? parseLooseAduanaText(text)
-        : parseLooseOperationalText(text);
-      return uniqueBaseRows([...parsed, ...semanticRows]);
-    }
-    function toPaste(rows) {
-      const header = ["Onda", "ID da Rota", "Rota otimizada", "Rota original", "Doca", "Rep/Log", "Motorista", "Transportadora", "Placa", "Tipo de veículo", "Tipo de rota", "Tipo de área", "SPR", "Pacotes", "Cluster"];
-      return [header.join("\t"), ...rows.map(row => columns.map(key => row[key] || "").join("\t"))].join("\n");
+      } else {
+        // Formato operacional sem cabeçalho:
+        // rota, processo, tempo processo, tempo total, doca.
+        item.processo = values[0] || "";
+        item.tempoProcesso = values[1] || "";
+        item.tempoTotal = values[2] || "";
+        item.doca = values[3] || lastStandaloneDock(row);
+      }
     }
 
+    enrichBaseItem(item);
+    return baseItemForSource(item, source);
+  }).filter(item => looksLikeRoute(item.rota));
+
+  const semanticRows = source === "aduana"
+    ? parseLooseAduanaText(text)
+    : parseLooseOperationalText(text);
+
+  return uniqueBaseRows([...parsed, ...semanticRows]);
+}
+
+function toPaste(rows) {
+  const header = [
+    "Onda",
+    "ID da Rota",
+    "Rota otimizada",
+    "Rota original",
+    "Doca",
+    "Rep/Log",
+    "Motorista",
+    "Transportadora",
+    "Placa",
+    "Tipo de veículo",
+    "Tipo de rota",
+    "Tipo de área",
+    "SPR",
+    "Pacotes",
+    "Cluster"
+  ];
+
+  return [
+    header.join("\t"),
+    ...rows.map(row =>
+      columns.map(key => row[key] || "").join("\t")
+    )
+  ].join("\n");
+}
     function toBasePaste(rows, source = "operacional") {
       const uniqueRows = uniqueBaseRows(rows);
       if (source === "aduana") {
@@ -10348,43 +10420,284 @@ body.editor-open .global-theme-toggle {
         || normalize(row.tempoProcesso) || normalize(row.tempoTotal));
     }
 
-    function rebuildConsolidatedBase(extractionRows = data.extracao || []) {
+   function rebuildConsolidatedBase(extractionRows = data.extracao || []) {
+  const manualOperationalRows = (data.baseOperacionalManual || []).map(row =>
+    baseItemForSource(enrichBaseItem({ ...row }), "operacional")
+  );
+
   const automaticOperationalRows = (data.baseOperacionalAutomatica || []).map(row =>
     baseItemForSource(enrichBaseItem({ ...row }), "operacional")
   );
 
-  const manualOperationalRows = (data.baseOperacional || []).map(row =>
-    baseItemForSource(enrichBaseItem({ ...row }), "operacional")
+  const manualCustomsRows = (data.baseAduanaManual || []).map(row =>
+    baseItemForSource(enrichBaseItem({ ...row }), "aduana")
   );
 
   const automaticCustomsRows = (data.baseAduanaAutomatica || []).map(row =>
     baseItemForSource(enrichBaseItem({ ...row }), "aduana")
   );
 
-  const manualCustomsRows = (data.baseAduana || []).map(row =>
-    baseItemForSource(enrichBaseItem({ ...row }), "aduana")
-  );
-
-  // Automático entra primeiro; manual entra por último e prevalece em conflitos.
+  // Manual entra primeiro e automático depois.
+  // Assim, o automático prevalece quando houver conflito,
+  // mas o manual continua servindo como fallback.
   const operationalRows = mergeLatestBaseRows(
-    automaticOperationalRows,
-    manualOperationalRows
+    manualOperationalRows,
+    automaticOperationalRows
   );
 
   const customsRows = mergeLatestBaseRows(
-    automaticCustomsRows,
-    manualCustomsRows
+    manualCustomsRows,
+    automaticCustomsRows
   );
 
   data.baseOperacional = onlyPlannedBaseRows(operationalRows, extractionRows);
   data.baseAduana = onlyPlannedBaseRows(customsRows, extractionRows);
 
-  // As duas fontes se complementam; em campos operacionais coincidentes, a Base Operacional vence.
+  // Aduana + Operacional formam a visão consolidada final.
   data.base = mergeLatestBaseRows(data.baseAduana, data.baseOperacional);
   data.base = onlyPlannedBaseRows(data.base, extractionRows);
 
   return data.base;
+
 }
+
+function automaticSecondsToClock(value, maxSeconds = 86400) {
+  const seconds = Number(value);
+
+  // Rejeita vazio, negativo, inválido e tempos absurdos acima de 24 horas.
+  if (!Number.isFinite(seconds) || seconds < 0 || seconds > maxSeconds) {
+    return "";
+  }
+
+  const total = Math.floor(seconds);
+  const hours = Math.floor(total / 3600);
+  const minutes = Math.floor((total % 3600) / 60);
+  const secs = total % 60;
+
+  return [
+    String(hours).padStart(2, "0"),
+    String(minutes).padStart(2, "0"),
+    String(secs).padStart(2, "0")
+  ].join(":");
+}
+
+function normalizeDispatchRow(row = {}) {
+  return {
+    ...row,
+
+    // Formato bruto da API -> formato interno do painel.
+    rota: row.rota || row.route_name || "",
+    routeId: row.routeId || row.route_id || "",
+    processo: row.processo || row.process || row.status || "",
+    doca: row.doca || row.dock_number || "",
+
+    tempoProcesso:
+      row.tempoProcesso ||
+      automaticSecondsToClock(row.start_time),
+
+    tempoTotal:
+      row.tempoTotal ||
+      automaticSecondsToClock(row.total_elapsed_time)
+  };
+}
+
+function routeNameByRouteId(routeId) {
+  const id = normalize(routeId);
+  if (!id) return "";
+
+  const extractionRow = (data.extracao || []).find(row =>
+    normalize(row.idRota) === id
+  );
+
+  return extractionRow ? normalize(extractionRow.rota) : "";
+}
+
+function normalizeCustomsRow(row = {}) {
+  const units = Array.isArray(row.units) ? row.units : [];
+
+  const routeId =
+    row.routeId ||
+    row.route_id ||
+    row.driver?.route_id ||
+    row.planned_route_id ||
+    "";
+
+  const auditedUnits = units.filter(unit =>
+    plainText(unit.status) === "audited"
+  ).length;
+
+  return {
+    ...row,
+
+    rota:
+      row.rota ||
+      row.route_name ||
+      routeNameByRouteId(routeId) ||
+      "",
+
+    routeId,
+
+    estadoAduana:
+      row.estadoAduana ||
+      row.status ||
+      row.process ||
+      "",
+
+    repLog:
+      row.repLog ||
+      row.operator_name ||
+      row.operator?.name ||
+      row.operator?.display_name ||
+      "",
+
+    operatorId:
+      row.operatorId ||
+      row.operator_id ||
+      "",
+
+    auditTime:
+      row.auditTime ||
+      row.audit_time ||
+      row.elapsed_time ||
+      "",
+
+    aduanaUnidades:
+      row.aduanaUnidades ||
+      units.length ||
+      "",
+
+    aduanaBipadas:
+      row.aduanaBipadas ||
+      auditedUnits ||
+      "",
+
+    motorista:
+      row.motorista ||
+      row.driver_name ||
+      row.driver?.name ||
+      row.driver?.display_name ||
+      "",
+
+    transportadora:
+      row.transportadora ||
+      row.carrier_name ||
+      row.carrier?.name ||
+      row.carrier?.display_name ||
+      "",
+
+    placa:
+      row.placa ||
+      row.plate ||
+      row.vehicle?.license_plate ||
+      ""
+  };
+}
+
+function applyAutomaticPayload(payload = {}) {
+  const operationalRows = Array.isArray(payload.operacional)
+    ? payload.operacional
+    : [ ];
+
+  const customsRows = Array.isArray(payload.aduana)
+    ? payload.aduana
+    :  [ ];
+
+const replaceAutomaticSnapshot = payload.substituir === true;
+
+ const previousOperationalAutomatic = Array.isArray(data.baseOperacionalAutomatica)
+  ? [...data.baseOperacionalAutomatica]
+  : [ ];
+
+const previousCustomsAutomatic = Array.isArray(data.baseAduanaAutomatica)
+  ? [...data.baseAduanaAutomatica]
+  : [ ];
+
+const incomingOperationalAutomatic = uniqueBaseRows(
+  operationalRows
+    .map(row =>
+      baseItemForSource(
+        enrichBaseItem(normalizeDispatchRow(row)),
+        "operacional"
+      )
+    )
+    .filter(row => looksLikeRoute(row.rota))
+);
+
+data.baseOperacionalAutomatica = replaceAutomaticSnapshot
+  ? incomingOperationalAutomatic
+  : mergeLatestBaseRows(
+      previousOperationalAutomatic,
+      incomingOperationalAutomatic
+    );
+
+  const incomingCustomsAutomatic = uniqueBaseRows(
+  customsRows
+    .map(row =>
+      baseItemForSource(
+        enrichBaseItem(normalizeCustomsRow(row)),
+        "aduana"
+      )
+    )
+    .filter(row => looksLikeRoute(row.rota))
+);
+
+data.baseAduanaAutomatica = replaceAutomaticSnapshot
+  ? incomingCustomsAutomatic
+  : mergeLatestBaseRows(
+      previousCustomsAutomatic,
+      incomingCustomsAutomatic
+    );
+
+const changedOperationalRows = data.baseOperacionalAutomatica.filter(row => {
+  const previous = previousOperationalAutomatic.find(oldRow =>
+    routeKey(oldRow.rota) === routeKey(row.rota)
+  );
+
+  if (!previous) return true;
+
+  return operationalStatus(previous.processo || previous.status) !==
+    operationalStatus(row.processo || row.status);
+});
+
+const changedCustomsRows = data.baseAduanaAutomatica.filter(row => {
+  const previous = previousCustomsAutomatic.find(oldRow =>
+    routeKey(oldRow.rota) === routeKey(row.rota)
+  );
+
+  if (!previous) return true;
+
+  return normalize(previous.estadoAduana || previous.processo || previous.status) !==
+    normalize(row.estadoAduana || row.processo || row.status);
+});
+
+if (changedOperationalRows.length) {
+  appendBaseHistory("operacional", changedOperationalRows, {
+  automatico: true
+});
+}
+
+if (changedCustomsRows.length) {
+  appendBaseHistory("aduana", changedCustomsRows, {
+  automatico: true
+});
+}
+
+  rebuildConsolidatedBase(data.extracao || [ ]);
+  syncLoadingStarts(data.baseOperacional || [ ]);
+
+ saveData({
+  localOnly: true,
+  advanceRevision: false
+});
+  render( );
+
+  return {
+    operacional: data.baseOperacionalAutomatica.length,
+    aduana: data.baseAduanaAutomatica.length
+  };
+}
+
+window.applyAutomaticPayload = applyAutomaticPayload;
     
 
     function durationTextToMs(value) {
@@ -10426,7 +10739,7 @@ body.editor-open .global-theme-toggle {
       return Math.max(0, Math.min(stampMs, calculated));
     }
 
-    function appendBaseHistory(source, rows = []) {
+    function appendBaseHistory(source, rows = [], options = {}) {
       const stampMs = Date.now();
       const stamp = new Date(stampMs).toISOString();
       data.baseHistorico = Array.isArray(data.baseHistorico) ? data.baseHistorico : [];
@@ -10452,6 +10765,7 @@ body.editor-open .global-theme-toggle {
         data.baseHistorico.push({
           ...row,
           fonte: source,
+                             ...(options.automatico ? { origemAutomatica: true } : { }),
           atualizadoEm: stamp,
           ...(dispatchEndMs ? { expedidaEm: new Date(dispatchEndMs).toISOString() } : {}),
           ...(calculatedEventMs ? {
@@ -10795,8 +11109,30 @@ body.editor-open .global-theme-toggle {
 
     function cloudPayloadSnapshot(source = data) {
       const payload = JSON.parse(JSON.stringify(source || {}));
-      const fullHistory = Array.isArray(payload.baseHistorico) ? payload.baseHistorico : [];
-      payload.baseHistorico = fullHistory.slice(-CLOUD_HISTORY_MAX_ROWS);
+      delete payload.baseOperacionalAutomatica;
+      delete payload.baseAduanaAutomatica;
+            payload.baseOperacional = onlyPlannedBaseRows(
+  payload.baseOperacionalManual || [ ],
+  payload.extracao || [ ]
+);
+
+payload.baseAduana = onlyPlannedBaseRows(
+  payload.baseAduanaManual || [ ],
+  payload.extracao || [ ]
+);
+
+payload.base = onlyPlannedBaseRows(
+  mergeLatestBaseRows(
+    payload.baseAduana,
+    payload.baseOperacional
+  ),
+  payload.extracao || [ ]
+);
+      const fullHistory = Array.isArray(payload.baseHistorico)
+  ? payload.baseHistorico.filter(row => row.origemAutomatica !== true)
+  : [ ];
+
+payload.baseHistorico = fullHistory.slice(-CLOUD_HISTORY_MAX_ROWS);
       let payloadBytes = serializedByteLength(payload);
 
       while (payloadBytes > CLOUD_PAYLOAD_SAFE_BYTES && payload.baseHistorico.length > CLOUD_HISTORY_MIN_ROWS) {
@@ -13120,13 +13456,13 @@ body.editor-open .global-theme-toggle {
         data.totalRotas = "0";
         document.getElementById("totalRotasInput").value = "0";
       } else if (targetId === "basePaste") {
-        data.baseOperacional = [];
+        data.baseOperacionalManual = [];
         data.baseHistorico = (data.baseHistorico || []).filter(row => row.fonte !== "operacional");
         data.carregamentoInicio = {};
         data.carregamentoFim = {};
         rebuildConsolidatedBase(data.extracao || []);
       } else {
-        data.baseAduana = [];
+        data.baseAduanaManual = [];
         data.baseHistorico = (data.baseHistorico || []).filter(row => row.fonte !== "aduana");
         rebuildConsolidatedBase(data.extracao || []);
       }
@@ -13263,15 +13599,37 @@ body.editor-open .global-theme-toggle {
       }
       cloudState.applyingRemote = true;
       try {
+        const localOperationalAutomatic = Array.isArray(data.baseOperacionalAutomatica)
+  ? [...data.baseOperacionalAutomatica]
+  : [ ];
+
+const localCustomsAutomatic = Array.isArray(data.baseAduanaAutomatica)
+  ? [...data.baseAduanaAutomatica]
+  : [ ];
         data = { ...JSON.parse(JSON.stringify(originalData)), ...payload };
         data.docas = Math.max(Number(data.docas || 0), Number(originalData.docas || 92));
         data.horarios = { ...(data.horarios || {}), ...(originalData.horarios || {}), ...horariosOficiais };
         data.justificativas = data.justificativas || {};
         normalizeJustificationStore();
-        data.baseOperacional = Array.isArray(data.baseOperacional) ? data.baseOperacional : (Array.isArray(data.base) ? data.base : []);
-        data.baseAduana = Array.isArray(data.baseAduana) ? data.baseAduana : [];
-        data.baseOperacionalAutomatica = Array.isArray(data.baseOperacionalAutomatica) ? data.baseOperacionalAutomatica : [];
-        data.baseAduanaAutomatica = Array.isArray(data.baseAduanaAutomatica) ? data.baseAduanaAutomatica : [];
+        data.baseOperacional = Array.isArray(data.baseOperacional)
+  ? data.baseOperacional
+  : (Array.isArray(data.base) ? data.base : [ ]);
+
+data.baseAduana = Array.isArray(data.baseAduana)
+  ? data.baseAduana
+  : [ ];
+
+data.baseOperacionalManual = Array.isArray(data.baseOperacionalManual)
+  ? data.baseOperacionalManual
+  : [...data.baseOperacional];
+
+data.baseAduanaManual = Array.isArray(data.baseAduanaManual)
+  ? data.baseAduanaManual
+  : [...data.baseAduana];
+
+data.baseOperacionalAutomatica = localOperationalAutomatic;
+data.baseAduanaAutomatica = localCustomsAutomatic;
+
         data.baseHistorico = Array.isArray(data.baseHistorico) ? data.baseHistorico : [];
         rebuildConsolidatedBase(data.extracao || []);
         data.carregamentoInicio = data.carregamentoInicio || {};
@@ -13768,8 +14126,15 @@ body.editor-open .global-theme-toggle {
       const validOperational = incomingOperational.filter(row => planned.has(routeKey(row.rota)));
       const validAduana = incomingAduana.filter(row => planned.has(routeKey(row.rota)));
 
-      data.baseOperacional = mergeLatestBaseRows(data.baseOperacional || data.base || [], validOperational);
-      data.baseAduana = mergeLatestBaseRows(data.baseAduana || [], validAduana);
+      data.baseOperacionalManual = mergeLatestBaseRows(
+  data.baseOperacionalManual || [],
+  validOperational
+);
+
+data.baseAduanaManual = mergeLatestBaseRows(
+  data.baseAduanaManual || [],
+  validAduana
+);
       appendBaseHistory("operacional", validOperational);
       appendBaseHistory("aduana", validAduana);
 
@@ -13780,6 +14145,10 @@ body.editor-open .global-theme-toggle {
         extracao: mergedExtracao,
         baseOperacional: data.baseOperacional,
         baseAduana: data.baseAduana,
+        baseOperacionalManual: data.baseOperacionalManual,
+        baseAduanaManual: data.baseAduanaManual,
+        baseOperacionalAutomatica: data.baseOperacionalAutomatica,
+        baseAduanaAutomatica: data.baseAduanaAutomatica,
         baseHistorico: data.baseHistorico,
         carregamentoInicio: data.carregamentoInicio,
         carregamentoFim: data.carregamentoFim
