@@ -10512,6 +10512,13 @@ function routeNameByRouteId(routeId) {
   return extractionRow ? normalize(extractionRow.rota) : "";
 }
 
+function customsCountOrFallback(value, fallback) {
+  const isBlankString = typeof value === "string" && value.trim() === "";
+  return value === null || value === undefined || isBlankString
+    ? fallback
+    : value;
+}
+
 function normalizeCustomsRow(row = {}) {
   const units = Array.isArray(row.units) ? row.units : [];
 
@@ -10561,15 +10568,9 @@ function normalizeCustomsRow(row = {}) {
       row.elapsed_time ||
       "",
 
-    aduanaUnidades:
-      row.aduanaUnidades ||
-      units.length ||
-      "",
+    aduanaUnidades: String(customsCountOrFallback(row.aduanaUnidades, units.length)),
 
-    aduanaBipadas:
-      row.aduanaBipadas ||
-      auditedUnits ||
-      "",
+    aduanaBipadas: String(customsCountOrFallback(row.aduanaBipadas, auditedUnits)),
 
     motorista:
       row.motorista ||
@@ -10698,6 +10699,522 @@ if (changedCustomsRows.length) {
 }
 
 window.applyAutomaticPayload = applyAutomaticPayload;
+
+const AUTOMATIC_DEFAULT_INTERVAL_MS = 30000;
+const AUTOMATIC_MIN_INTERVAL_MS = 15000;
+const automaticSourceState = {
+  config: null,
+  running: false,
+  inFlight: false,
+  timerId: null,
+  generation: 0,
+  activeRequest: null,
+  lastAttemptAt: "",
+  lastSuccessAt: "",
+  lastError: "",
+  lastCancellationReason: "",
+  lastCancellationAt: "",
+  lastCounts: { operacional: 0, aduana: 0 }
+};
+
+function rejectSensitiveAutomaticConfig(value, path = "config") {
+  if (!value || typeof value !== "object") return;
+
+  const sensitiveKey = /authorization|cookies?|tokens?|secrets?|passwords?|credentials?|api[_-]?keys?|csrf|headers?/i;
+  Object.entries(value).forEach(([key, nestedValue]) => {
+    if (sensitiveKey.test(key)) {
+      throw new Error(`A configuracao automatica nao aceita o campo sensivel "${path}.${key}".`);
+    }
+    rejectSensitiveAutomaticConfig(nestedValue, `${path}.${key}`);
+  });
+}
+
+function normalizeAutomaticGatewayUrl(value) {
+  const rawUrl = normalize(value);
+  if (!rawUrl) throw new Error("Informe gatewayBaseUrl para conectar a automacao.");
+
+  const url = new URL(rawUrl, window.location.href);
+  const hostname = url.hostname.toLowerCase();
+  const isLocalhost = hostname === "localhost" || hostname === "127.0.0.1" || hostname === "[::1]";
+
+  if (url.username || url.password) {
+    throw new Error("gatewayBaseUrl nao pode conter usuario ou senha.");
+  }
+  if (url.search || url.hash) {
+    throw new Error("gatewayBaseUrl nao pode conter parametros ou hash; use apenas a configuracao operacional permitida.");
+  }
+  if (hostname === "adminml.com" || hostname.endsWith(".adminml.com")) {
+    throw new Error("O painel publico nao pode acessar diretamente os sistemas internos da operacao.");
+  }
+  if (url.protocol !== "https:" && !(isLocalhost && url.protocol === "http:")) {
+    throw new Error("O endpoint intermediario deve usar HTTPS (HTTP e aceito somente em localhost).");
+  }
+
+  return url.toString().replace(/\/$/, "");
+}
+
+function normalizeAutomaticPath(value, fallback) {
+  const rawPath = normalize(value || fallback);
+  const path = rawPath.replace(/^\/+/, "");
+  if (!rawPath || rawPath.startsWith("//") || rawPath.includes("\\")
+      || /^[a-z][a-z\d+.-]*:/i.test(rawPath) || rawPath.includes("?") || rawPath.includes("#")
+      || !/^\/?[a-z\d._~/-]+$/i.test(rawPath) || path.split("/").includes("..")) {
+    throw new Error("O caminho do endpoint automatico deve ser relativo ao gateway.");
+  }
+  return path;
+}
+
+function normalizeAutomaticSourceConfig(input = {}) {
+  rejectSensitiveAutomaticConfig(input);
+
+  const mode = input.mode === "split" ? "split" : "combined";
+  const waves = Array.from(new Set((Array.isArray(input.waves) ? input.waves : [])
+    .map(value => normalize(value))
+    .filter(Boolean)));
+
+  if (mode === "split" && !waves.length) {
+    throw new Error("O modo split exige a lista completa de ondas em waves.");
+  }
+
+  return {
+    gatewayBaseUrl: normalizeAutomaticGatewayUrl(input.gatewayBaseUrl),
+    mode,
+    snapshotPath: normalizeAutomaticPath(input.snapshotPath, "snapshot"),
+    dispatchPath: normalizeAutomaticPath(input.dispatchPath, "dispatch"),
+    customsPath: normalizeAutomaticPath(input.customsPath, "customs"),
+    facilityId: normalize(input.facilityId),
+    siteId: normalize(input.siteId),
+    groupId: normalize(input.groupId),
+    cycle: normalize(input.cycle),
+    timezone: normalize(input.timezone || "America/Sao_Paulo"),
+    waves,
+    timeoutMs: Math.max(3000, Math.min(30000, Number(input.timeoutMs) || 12000)),
+    intervalMs: Math.max(AUTOMATIC_MIN_INTERVAL_MS, Number(input.intervalMs) || AUTOMATIC_DEFAULT_INTERVAL_MS),
+    enabled: input.enabled === true
+  };
+}
+
+function automaticGatewayUrl(config, path, query = {}) {
+  const baseUrl = new URL(`${config.gatewayBaseUrl}/`);
+  const url = new URL(normalizeAutomaticPath(path, "snapshot"), baseUrl);
+  if (url.origin !== baseUrl.origin) {
+    throw new Error("O endpoint automatico precisa permanecer no mesmo gateway configurado.");
+  }
+
+  Object.entries(query).forEach(([key, value]) => {
+    if (value === "" || value === null || value === undefined) return;
+    url.searchParams.set(key, String(value));
+  });
+  return url.toString();
+}
+
+function automaticCommonQuery(config) {
+  return {
+    facilityId: config.facilityId,
+    siteId: config.siteId,
+    groupId: config.groupId,
+    cycle: config.cycle,
+    timezone: config.timezone
+  };
+}
+
+async function fetchAutomaticJson(url, config, requestContext) {
+  const controller = new AbortController();
+  const timeoutId = window.setTimeout(() => controller.abort(), config.timeoutMs);
+  requestContext?.controllers?.add(controller);
+
+  try {
+    const response = await fetch(url, {
+      method: "GET",
+      credentials: "omit",
+      cache: "no-store",
+      headers: { Accept: "application/json" },
+      signal: controller.signal
+    });
+
+    if (!response.ok) {
+      throw new Error(`Endpoint automatico respondeu HTTP ${response.status}.`);
+    }
+    return await response.json();
+  } catch (error) {
+    if (error?.name === "AbortError") {
+      throw new Error(`Tempo limite de ${config.timeoutMs} ms excedido na automacao.`);
+    }
+    throw error;
+  } finally {
+    window.clearTimeout(timeoutId);
+    requestContext?.controllers?.delete(controller);
+  }
+}
+
+function automaticRowsFromResponse(payload, keys, sourceName) {
+  if (Array.isArray(payload)) return payload;
+
+  const containers = [payload, payload?.data, payload?.snapshot].filter(Boolean);
+  for (const container of containers) {
+    for (const key of keys) {
+      if (Array.isArray(container?.[key])) return container[key];
+    }
+    if (Array.isArray(container?.items)) return container.items;
+    if (Array.isArray(container?.results)) return container.results;
+  }
+
+  throw new Error(`Resposta ${sourceName} invalida: nenhuma lista de registros foi encontrada.`);
+}
+
+function automaticSnapshotMetadata(payload = {}) {
+  const containers = [payload?.snapshot, payload?.data, payload]
+    .filter(value => value && typeof value === "object" && !Array.isArray(value));
+
+  const booleanFlag = key => {
+    const container = containers.find(value => Object.prototype.hasOwnProperty.call(value, key));
+    return container?.[key] === true;
+  };
+
+  const sourceContainer = containers.find(value =>
+    value.sources && typeof value.sources === "object" && !Array.isArray(value.sources)
+  );
+
+  return {
+    snapshotComplete: booleanFlag("snapshotComplete"),
+    emptyConfirmed: booleanFlag("emptyConfirmed"),
+    sources: sourceContainer
+      ? {
+          dispatch: normalize(sourceContainer.sources.dispatch),
+          aduana: normalize(sourceContainer.sources.aduana)
+        }
+      : {}
+  };
+}
+
+function assertAutomaticSourceSucceeded(metadata, sourceName) {
+  const status = plainText(metadata?.sources?.[sourceName]);
+  if (!status) return;
+
+  const successfulStatuses = new Set(["ok", "success", "successful", "complete", "completed", "sucesso", "concluido"]);
+  if (!successfulStatuses.has(status)) {
+    throw new Error(`O gateway informou falha na fonte ${sourceName}.`);
+  }
+}
+
+async function settleAutomaticRequests(requests) {
+  const results = await Promise.allSettled(requests);
+  const failed = results.find(result => result.status === "rejected");
+  if (failed) throw failed.reason;
+  return results.map(result => result.value);
+}
+
+function sanitizeDispatchAutomaticRow(row = {}) {
+  return {
+    route_name: row.route_name || row.rota || "",
+    route_id: row.route_id || row.routeId || "",
+    process: row.process || row.processo || row.status || "",
+    dock_number: row.dock_number || row.doca || "",
+    start_time: row.start_time ?? row.tempoProcesso ?? "",
+    total_elapsed_time: row.total_elapsed_time ?? row.tempoTotal ?? ""
+  };
+}
+
+function sanitizeCustomsAutomaticRow(row = {}) {
+  const units = Array.isArray(row.units) ? row.units : [];
+  const routeId = row.route_id || row.routeId || row.driver?.route_id || row.planned_route_id || "";
+  const auditedUnits = units.filter(unit => plainText(unit?.status) === "audited").length;
+
+  return {
+    route_name: row.route_name || row.rota || "",
+    route_id: routeId,
+    status: row.status || row.estadoAduana || "",
+    process: row.process || "",
+    operator_name: row.operator_name || row.operator?.name || row.operator?.display_name || row.repLog || "",
+    audit_time: row.audit_time || row.elapsed_time || row.auditTime || "",
+    aduanaUnidades: customsCountOrFallback(row.aduanaUnidades, units.length),
+    aduanaBipadas: customsCountOrFallback(row.aduanaBipadas, auditedUnits),
+    driver_name: row.driver_name || row.driver?.name || row.driver?.display_name || row.motorista || "",
+    carrier_name: row.carrier_name || row.carrier?.name || row.carrier?.display_name || row.transportadora || "",
+    plate: row.plate || row.vehicle?.license_plate || row.placa || ""
+  };
+}
+
+function resolveAutomaticConfig(config) {
+  if (config) return normalizeAutomaticSourceConfig(config);
+  if (automaticSourceState.config) return automaticSourceState.config;
+  throw new Error("A fonte automatica ainda nao foi configurada.");
+}
+
+async function fetchDispatchSnapshotResult(config, requestContext) {
+  const resolved = resolveAutomaticConfig(config);
+  const requests = resolved.waves.map(async wave => {
+    const url = automaticGatewayUrl(resolved, resolved.dispatchPath, {
+      ...automaticCommonQuery(resolved),
+      wave
+    });
+    const payload = await fetchAutomaticJson(url, resolved, requestContext);
+    const metadata = automaticSnapshotMetadata(payload);
+    assertAutomaticSourceSucceeded(metadata, "dispatch");
+    return {
+      rows: automaticRowsFromResponse(payload, ["operacional", "dispatch", "routes"], "do Dispatch")
+        .map(sanitizeDispatchAutomaticRow),
+      metadata
+    };
+  });
+
+  const waveResults = await settleAutomaticRequests(requests);
+  return {
+    rows: waveResults.flatMap(result => result.rows),
+    snapshotComplete: waveResults.every(result => result.metadata.snapshotComplete === true),
+    emptyConfirmed: waveResults.every(result => result.metadata.emptyConfirmed === true),
+    sources: { dispatch: "ok" }
+  };
+}
+
+async function fetchDispatchSnapshot(config) {
+  return (await fetchDispatchSnapshotResult(config)).rows;
+}
+
+async function fetchCustomsSnapshotResult(config, requestContext) {
+  const resolved = resolveAutomaticConfig(config);
+  const url = automaticGatewayUrl(resolved, resolved.customsPath, automaticCommonQuery(resolved));
+  const payload = await fetchAutomaticJson(url, resolved, requestContext);
+  const metadata = automaticSnapshotMetadata(payload);
+  assertAutomaticSourceSucceeded(metadata, "aduana");
+  return {
+    rows: automaticRowsFromResponse(payload, ["aduana", "customs", "audits"], "da Aduana")
+      .map(sanitizeCustomsAutomaticRow),
+    snapshotComplete: metadata.snapshotComplete,
+    emptyConfirmed: metadata.emptyConfirmed,
+    sources: { aduana: "ok" }
+  };
+}
+
+async function fetchCustomsSnapshot(config) {
+  return (await fetchCustomsSnapshotResult(config)).rows;
+}
+
+async function fetchAutomaticSnapshot(config, requestContext) {
+  const resolved = resolveAutomaticConfig(config);
+
+  if (resolved.mode === "split") {
+    const [dispatchResult, customsResult] = await settleAutomaticRequests([
+      fetchDispatchSnapshotResult(resolved, requestContext),
+      fetchCustomsSnapshotResult(resolved, requestContext)
+    ]);
+    return {
+      operacional: dispatchResult.rows,
+      aduana: customsResult.rows,
+      snapshotComplete: dispatchResult.snapshotComplete && customsResult.snapshotComplete,
+      emptyConfirmed: dispatchResult.emptyConfirmed && customsResult.emptyConfirmed,
+      sources: { dispatch: "ok", aduana: "ok" }
+    };
+  }
+
+  const url = automaticGatewayUrl(resolved, resolved.snapshotPath, {
+    ...automaticCommonQuery(resolved),
+    waves: resolved.waves.join(",")
+  });
+  const payload = await fetchAutomaticJson(url, resolved, requestContext);
+  const metadata = automaticSnapshotMetadata(payload);
+  assertAutomaticSourceSucceeded(metadata, "dispatch");
+  assertAutomaticSourceSucceeded(metadata, "aduana");
+  return {
+    operacional: automaticRowsFromResponse(payload, ["operacional", "dispatch"], "operacional")
+      .map(sanitizeDispatchAutomaticRow),
+    aduana: automaticRowsFromResponse(payload, ["aduana", "customs"], "da Aduana")
+      .map(sanitizeCustomsAutomaticRow),
+    ...metadata
+  };
+}
+
+function automaticConnectionStatus() {
+  return {
+    configured: Boolean(automaticSourceState.config),
+    running: automaticSourceState.running,
+    inFlight: automaticSourceState.inFlight,
+    lastAttemptAt: automaticSourceState.lastAttemptAt,
+    lastSuccessAt: automaticSourceState.lastSuccessAt,
+    lastError: automaticSourceState.lastError,
+    lastCancellationReason: automaticSourceState.lastCancellationReason,
+    lastCancellationAt: automaticSourceState.lastCancellationAt,
+    lastCounts: { ...automaticSourceState.lastCounts }
+  };
+}
+
+function emitAutomaticConnectionStatus() {
+  window.dispatchEvent(new CustomEvent("painel:automatic-status", {
+    detail: automaticConnectionStatus()
+  }));
+}
+
+function configureAutomaticSource(config = {}) {
+  automaticSourceState.config = normalizeAutomaticSourceConfig(config);
+  automaticSourceState.lastError = "";
+  emitAutomaticConnectionStatus();
+  return automaticConnectionStatus();
+}
+
+function invalidateAutomaticRequests(reason) {
+  automaticSourceState.generation += 1;
+  const activeRequest = automaticSourceState.activeRequest;
+
+  if (activeRequest) {
+    activeRequest.cancelled = true;
+    activeRequest.cancelReason = reason;
+    activeRequest.controllers.forEach(controller => {
+      try {
+        controller.abort();
+      } catch (_) {}
+    });
+  }
+
+  automaticSourceState.activeRequest = null;
+  automaticSourceState.inFlight = false;
+  automaticSourceState.lastCancellationReason = reason;
+  automaticSourceState.lastCancellationAt = new Date().toISOString();
+  return automaticSourceState.generation;
+}
+
+async function refreshAutomaticSnapshot(options = {}) {
+  if (automaticSourceState.inFlight) {
+    return { skipped: true, reason: "in-flight" };
+  }
+
+  const requestContext = {
+    generation: automaticSourceState.generation,
+    source: options.source === "polling" ? "polling" : "manual",
+    controllers: new Set(),
+    cancelled: false,
+    cancelReason: ""
+  };
+
+  automaticSourceState.activeRequest = requestContext;
+  automaticSourceState.inFlight = true;
+  automaticSourceState.lastAttemptAt = new Date().toISOString();
+  emitAutomaticConnectionStatus();
+
+  try {
+    const snapshot = await fetchAutomaticSnapshot(options.config, requestContext);
+    const requestWasCancelled = requestContext.cancelled
+      || requestContext.generation !== automaticSourceState.generation
+      || automaticSourceState.activeRequest !== requestContext;
+
+    if (requestWasCancelled) {
+      return { skipped: true, reason: requestContext.cancelReason || "cancelled" };
+    }
+
+    const replacingSnapshot = options.substituir !== false;
+    const snapshotIsEmpty = snapshot.operacional.length === 0 && snapshot.aduana.length === 0;
+    const hasAutomaticData = (data.baseOperacionalAutomatica || []).length > 0
+      || (data.baseAduanaAutomatica || []).length > 0;
+    const emptyIsExplicitlyConfirmed = snapshot.snapshotComplete === true
+      && snapshot.emptyConfirmed === true;
+
+    if (replacingSnapshot && snapshotIsEmpty && hasAutomaticData && !emptyIsExplicitlyConfirmed) {
+      automaticSourceState.lastError = "Snapshot vazio ignorado: o gateway nao confirmou snapshotComplete e emptyConfirmed.";
+      return { skipped: true, reason: "empty-unconfirmed" };
+    }
+
+    const counts = applyAutomaticPayload({
+      substituir: replacingSnapshot,
+      operacional: snapshot.operacional,
+      aduana: snapshot.aduana
+    });
+
+    automaticSourceState.lastSuccessAt = new Date().toISOString();
+    automaticSourceState.lastError = "";
+    automaticSourceState.lastCounts = counts;
+    return { skipped: false, ...counts };
+  } catch (error) {
+    const requestWasCancelled = requestContext.cancelled
+      || requestContext.generation !== automaticSourceState.generation
+      || automaticSourceState.activeRequest !== requestContext;
+
+    if (requestWasCancelled) {
+      return { skipped: true, reason: requestContext.cancelReason || "cancelled" };
+    }
+
+    automaticSourceState.lastError = error?.message || "Falha desconhecida na atualizacao automatica.";
+    throw error;
+  } finally {
+    if (automaticSourceState.activeRequest === requestContext) {
+      automaticSourceState.activeRequest = null;
+      automaticSourceState.inFlight = false;
+    }
+    emitAutomaticConnectionStatus();
+  }
+}
+
+function scheduleNextAutomaticRefresh(generation = automaticSourceState.generation) {
+  if (!automaticSourceState.running || !automaticSourceState.config
+      || generation !== automaticSourceState.generation) return;
+  window.clearTimeout(automaticSourceState.timerId);
+  automaticSourceState.timerId = window.setTimeout(async () => {
+    if (!automaticSourceState.running || generation !== automaticSourceState.generation) return;
+    try {
+      await refreshAutomaticSnapshot({ source: "polling" });
+    } catch (error) {
+      console.warn("Atualizacao automatica preservada no ultimo estado valido:", error);
+    } finally {
+      scheduleNextAutomaticRefresh(generation);
+    }
+  }, automaticSourceState.config.intervalMs);
+}
+
+function startAutomaticPolling(config) {
+  if (config) configureAutomaticSource(config);
+  resolveAutomaticConfig();
+  if (automaticSourceState.running) return automaticConnectionStatus();
+
+  automaticSourceState.running = true;
+  const generation = automaticSourceState.generation;
+  emitAutomaticConnectionStatus();
+  refreshAutomaticSnapshot({ source: "polling" })
+    .catch(error => console.warn("Primeira atualizacao automatica falhou; o modo manual foi preservado:", error))
+    .finally(() => scheduleNextAutomaticRefresh(generation));
+  return automaticConnectionStatus();
+}
+
+function stopAutomaticPolling() {
+  automaticSourceState.running = false;
+  window.clearTimeout(automaticSourceState.timerId);
+  automaticSourceState.timerId = null;
+  invalidateAutomaticRequests("stopped");
+  emitAutomaticConnectionStatus();
+  return automaticConnectionStatus();
+}
+
+function clearAutomaticSessionData() {
+  const pollingWasRunning = automaticSourceState.running;
+  window.clearTimeout(automaticSourceState.timerId);
+  automaticSourceState.timerId = null;
+  const generation = invalidateAutomaticRequests("cleared");
+  const counts = applyAutomaticPayload({ substituir: true, operacional: [], aduana: [] });
+  automaticSourceState.lastError = "";
+  automaticSourceState.lastCounts = counts;
+  if (pollingWasRunning) scheduleNextAutomaticRefresh(generation);
+  emitAutomaticConnectionStatus();
+  return counts;
+}
+
+function initializeAutomaticSource() {
+  if (!window.PAINEL_AUTOMATION_CONFIG) return;
+  try {
+    configureAutomaticSource(window.PAINEL_AUTOMATION_CONFIG);
+    if (automaticSourceState.config.enabled) startAutomaticPolling();
+  } catch (error) {
+    automaticSourceState.lastError = error?.message || "Configuracao automatica invalida.";
+    emitAutomaticConnectionStatus();
+    console.warn("Automacao nao iniciada:", error);
+  }
+}
+
+window.configureAutomaticSource = configureAutomaticSource;
+window.fetchDispatchSnapshot = fetchDispatchSnapshot;
+window.fetchCustomsSnapshot = fetchCustomsSnapshot;
+window.fetchAutomaticSnapshot = fetchAutomaticSnapshot;
+window.refreshAutomaticSnapshot = refreshAutomaticSnapshot;
+window.startAutomaticPolling = startAutomaticPolling;
+window.stopAutomaticPolling = stopAutomaticPolling;
+window.clearAutomaticSessionData = clearAutomaticSessionData;
+window.automaticConnectionStatus = automaticConnectionStatus;
     
 
     function durationTextToMs(value) {
@@ -14174,6 +14691,7 @@ data.baseAduanaManual = mergeLatestBaseRows(
 
     rebuildConsolidatedBase(data.extracao || []);
     render();
+    initializeAutomaticSource();
     initializeFirebase();
     setInterval(() => {
       document.getElementById("footerUpdate").textContent = `${data.data || ""} ${currentTimeLabel()}`.trim();
