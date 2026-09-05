@@ -9634,7 +9634,7 @@ body.editor-open .global-theme-toggle {
       if (!text) return "";
       if (/^(expedir|expedid[ao])$/.test(text)) return "Expedida";
       if (/^(guardando(?: pacotes?)?|carregando(?: pacotes?)?|guardando\s*\/\s*carregando)$/.test(text)) return "Guardando";
-      if (/^(esperando (?:a )?aduana|aduana em andamento|em andamento|em aduana|contagem de pacotes?|em contagem)$/.test(text)) return "Em aduana";
+      if (/^(aduana|esperando (?:a )?aduana|aduana em andamento|em andamento|em aduana|contagem de pacotes?|em contagem)$/.test(text)) return "Em aduana";
       if (text === "pendente" || text === "-") return "Pendente";
       return "";
     }
@@ -11082,10 +11082,10 @@ body.editor-open .global-theme-toggle {
       const key = routeKey(row.rota);
       if (!key) return "pending";
       const status = normalizeBaseStatus(statusMap.get(key));
+      if (status === "Expedida" || shipped.has(key)) return "loaded";
       if (status === "Pendente") return "pending";
       if (status === "Guardando") return "guard";
       if (status === "Em aduana") return "customs";
-      if (status === "Expedida" || shipped.has(key)) return "loaded";
       if (!loaded.has(key)) return "pending";
       // Sem processo/status reconhecido: permanece pendente (vermelho).
       return "pending";
@@ -11095,8 +11095,8 @@ body.editor-open .global-theme-toggle {
       return {
         pending: "Pendente",
         loaded: "Expedida",
-        customs: "Em aduana",
-        guard: "Guardando"
+        customs: "Aduana em andamento",
+        guard: "Guardando pacote"
       }[state] || "Docas livres";
     }
 
@@ -11185,10 +11185,7 @@ body.editor-open .global-theme-toggle {
       const primary = displayRows[0];
       const key = primary ? routeKey(primary.rota) : "";
       const state = primary ? routeDockState(primary, loaded, shipped, statusMap) : "free";
-      const statusLabel = normalizeBaseStatus(primary?.processo)
-        || normalizeBaseStatus(primary?.status)
-        || normalizeBaseStatus(primary?.estadoAduana)
-        || dockStatusLabel(state);
+      const statusLabel = dockStatusLabel(state);
       const carrier = cleanTransportadora(primary?.transportadora || "") || "-";
       const carrierShort = firstCarrierName(carrier) || "-";
       const personName = routePersonName(primary || {});
@@ -11228,7 +11225,7 @@ body.editor-open .global-theme-toggle {
         loaded: { className: "loaded", label: "Expedida" },
         pending: { className: "pending", label: "Pendente" },
         customs: { className: "customs", label: "Aduana em andamento" },
-        guard: { className: "loading", label: "Carregando" },
+        guard: { className: "loading", label: "Guardando pacote" },
         free: { className: "free", label: "Doca livre" }
       }[state] || { className: "free", label: "Doca livre" };
     }
@@ -12120,10 +12117,10 @@ body.editor-open .global-theme-toggle {
     }
 
     function historyStatusMeta(details = {}) {
-      const status = normalizeBaseStatus(details.processo || details.status) || normalize(details.estadoAduana);
-      if (status === "Expedida") return { label: "Carregada", className: "loaded" };
-      if (status === "Guardando") return { label: "Em carregamento", className: "loading" };
-      if (status === "Em aduana") return { label: "Em aduana", className: "customs" };
+      const status = normalizeBaseStatus(details.processo || details.status) || normalizeBaseStatus(details.estadoAduana);
+      if (status === "Expedida") return { label: "Expedida", className: "loaded" };
+      if (status === "Guardando") return { label: "Guardando pacote", className: "loading" };
+      if (status === "Em aduana") return { label: "Aduana em andamento", className: "customs" };
       if (status === "Pendente") return { label: "Pendente", className: "pending" };
       return { label: status || "Planejada", className: "planned" };
     }
