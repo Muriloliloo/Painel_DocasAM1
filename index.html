@@ -11064,17 +11064,29 @@ body.editor-open .global-theme-toggle {
         const key = routeKey(row.rota);
         if (key) map.set(key, operationalStatus(row.processo || row.status));
       });
+      uniqueBaseRows(data.baseAduana || []).forEach(row => {
+        const key = routeKey(row.rota);
+        if (!key) return;
+        const customsStatus = normalizeBaseStatus(row.estadoAduana)
+          || normalizeBaseStatus(row.processo)
+          || normalizeBaseStatus(row.status);
+        const operational = map.get(key) || "";
+        if (customsStatus === "Em aduana" && operational !== "Guardando" && operational !== "Expedida") {
+          map.set(key, customsStatus);
+        }
+      });
       return map;
     }
 
     function routeDockState(row, loaded, shipped, statusMap) {
       const key = routeKey(row.rota);
-      if (!key || !loaded.has(key)) return "pending";
-      const status = operationalStatus(statusMap.get(key));
+      if (!key) return "pending";
+      const status = normalizeBaseStatus(statusMap.get(key));
       if (status === "Pendente") return "pending";
       if (status === "Guardando") return "guard";
       if (status === "Em aduana") return "customs";
       if (status === "Expedida" || shipped.has(key)) return "loaded";
+      if (!loaded.has(key)) return "pending";
       // Sem processo/status reconhecido: permanece pendente (vermelho).
       return "pending";
     }
@@ -11140,7 +11152,7 @@ body.editor-open .global-theme-toggle {
     }
 
     function routePersonName(row = {}) {
-      return firstWords(row.repLog || row.rep || row.log || row.representante || row.motorista || row.nome || "", 2);
+      return firstWords(row.repLog || row.rep || row.log || row.representante || "", 2);
     }
 
     function firstCarrierName(value) {
@@ -11173,7 +11185,10 @@ body.editor-open .global-theme-toggle {
       const primary = displayRows[0];
       const key = primary ? routeKey(primary.rota) : "";
       const state = primary ? routeDockState(primary, loaded, shipped, statusMap) : "free";
-      const statusLabel = normalize(primary?.processo || "") || dockStatusLabel(state);
+      const statusLabel = normalizeBaseStatus(primary?.processo)
+        || normalizeBaseStatus(primary?.status)
+        || normalizeBaseStatus(primary?.estadoAduana)
+        || dockStatusLabel(state);
       const carrier = cleanTransportadora(primary?.transportadora || "") || "-";
       const carrierShort = firstCarrierName(carrier) || "-";
       const personName = routePersonName(primary || {});
