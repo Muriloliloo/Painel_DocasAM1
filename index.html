@@ -9940,6 +9940,7 @@ data.baseAduanaAutomatica = [];
       if (source === "aduana") {
         return {
           rota: route,
+          routeId: normalize(item.routeId || item.route_id),
           processo: normalize(item.processo || item.status),
           tempoProcesso: normalize(item.tempoProcesso),
           tempoTotal: normalize(item.tempoTotal),
@@ -9967,6 +9968,7 @@ const apiProcessLabels = {
 const displayProcess = apiProcessLabels[plainText(rawProcess)] || rawProcess;
       return {
         rota: route,
+        routeId: normalize(item.routeId || item.route_id),
         processo: status === "Pendente" ? "Pendente" : displayProcess,
         tempoProcesso: normalize(item.tempoProcesso),
         tempoTotal: normalize(item.tempoTotal),
@@ -12040,6 +12042,19 @@ payload.baseHistorico = fullHistory.slice(-CLOUD_HISTORY_MAX_ROWS);
       return "";
     }
 
+    function dockProcessLabel(row = {}) {
+      const process = normalize(row.processo || row.status);
+      const processState = normalizeBaseStatus(process);
+      const customsState = plainText(row.estadoAduana).replace(/[_\s]+/g, " ");
+      if (processState === "Expedida") return "Expedida";
+      if (processState === "Guardando") return "Carregando pacotes";
+      if (/^(?:in progress|customs in progress|aduana em andamento|em andamento|em aduana|contagem de pacotes?|em contagem)$/.test(customsState)) {
+        return "Aduana em andamento";
+      }
+      if (plainText(process) === "waiting_customs") return "Esperando aduana";
+      return process;
+    }
+
     function compactElapsedLabel(key, wave) {
       const seconds = key ? elapsedSeconds(key, wave) : 0;
       if (!seconds) return "";
@@ -12052,7 +12067,7 @@ payload.baseHistorico = fullHistory.slice(-CLOUD_HISTORY_MAX_ROWS);
       const primary = displayRows[0];
       const key = primary ? routeKey(primary.rota) : "";
       const state = primary ? routeDockState(primary, loaded, shipped, statusMap) : "free";
-      const statusLabel = normalize(primary?.processo || "") || dockStatusLabel(state);
+      const statusLabel = dockProcessLabel(primary || {}) || dockStatusLabel(state);
       const carrier = cleanTransportadora(primary?.transportadora || "") || "-";
       const carrierShort = firstCarrierName(carrier) || "-";
       const personName = routePersonName(primary || {});
