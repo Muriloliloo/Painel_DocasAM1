@@ -1,0 +1,14 @@
+{
+  "name": "painel-docas-gateway",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Gateway intermediario seguro para o Painel_DocasAM1",
+  "type": "commonjs",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node src/server.js",
+    "test": "node --test"
+  }
+}
