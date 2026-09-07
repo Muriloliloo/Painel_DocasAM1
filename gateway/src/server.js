@@ -3,7 +3,10 @@
 const http = require("node:http");
 const { URL } = require("node:url");
 const { createConfig } = require("./config");
+const { createAuthProvider } = require("./auth");
 const { GatewayError } = require("./errors");
+const { createUpstreamClient } = require("./http/upstream-client");
+const { createSafeLogger } = require("./logging");
 const {
   buildSnapshot,
   buildDispatchSnapshot,
@@ -189,7 +192,15 @@ function validateOperationalQuery(searchParams, config, endpoint) {
   return { facilityId, siteId, groupId, cycle, timezone, scenario, waves };
 }
 
-function createGatewayServer(config = createConfig()) {
+function createGatewayServer(config = createConfig(), dependencies = {}) {
+  const sourceDependencies = Object.freeze({
+    authProvider: dependencies.authProvider || createAuthProvider(config),
+    upstreamClient: dependencies.upstreamClient || createUpstreamClient({
+      config,
+      fetchImpl: dependencies.fetchImpl || globalThis.fetch
+    })
+  });
+
   return http.createServer(async (request, response) => {
     let pathname = "";
     try {
@@ -217,22 +228,45 @@ function createGatewayServer(config = createConfig()) {
 
       if (pathname === "/health") {
         rejectUnknownParameters(url.searchParams, new Set());
-        sendJson(response, 200, { status: "ok", mode: config.mode }, config);
+        sendJson(response, 200, {
+          status: "ok",
+          gatewayMode: config.mode,
+          authMode: config.authMode
+        }, config);
+        return;
+      }
+      if (pathname === "/ready") {
+        rejectUnknownParameters(url.searchParams, new Set());
+        const ready = config.mode === "mock" || config.authMode !== "unconfigured";
+        sendJson(response, ready ? 200 : 503, {
+          ready,
+          gatewayMode: config.mode,
+          authMode: config.authMode
+        }, config);
         return;
       }
       if (pathname === "/snapshot") {
         const query = validateOperationalQuery(url.searchParams, config, pathname);
-        sendJson(response, 200, await buildSnapshot({ config, ...query }), config);
+        sendJson(response, 200, await buildSnapshot({ config, ...query, dependencies: sourceDependencies }), config);
         return;
       }
       if (pathname === "/dispatch") {
         const query = validateOperationalQuery(url.searchParams, config, pathname);
-        sendJson(response, 200, await buildDispatchSnapshot({ config, scenario: query.scenario, wave: query.waves[0] }), config);
+        sendJson(response, 200, await buildDispatchSnapshot({
+          config,
+          ...query,
+          wave: query.waves[0],
+          dependencies: sourceDependencies
+        }), config);
         return;
       }
       if (pathname === "/customs") {
         const query = validateOperationalQuery(url.searchParams, config, pathname);
-        sendJson(response, 200, await buildCustomsSnapshot({ config, scenario: query.scenario }), config);
+        sendJson(response, 200, await buildCustomsSnapshot({
+          config,
+          ...query,
+          dependencies: sourceDependencies
+        }), config);
         return;
       }
 
@@ -246,9 +280,15 @@ function createGatewayServer(config = createConfig()) {
 
 if (require.main === module) {
   const config = createConfig();
+  const logger = createSafeLogger();
   const server = createGatewayServer(config);
   server.listen(config.port, "127.0.0.1", () => {
-    console.log(`Gateway seguro em http://localhost:${config.port} (${config.mode}).`);
+    logger.info("Gateway seguro iniciado.", {
+      host: "127.0.0.1",
+      port: config.port,
+      gatewayMode: config.mode,
+      authMode: config.authMode
+    });
   });
 }
 

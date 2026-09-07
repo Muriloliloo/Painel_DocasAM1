@@ -16,6 +16,7 @@ $env:PORT = "8787"
 $env:NODE_ENV = "development"
 $env:PANEL_ALLOWED_ORIGIN = "http://localhost:8000"
 $env:GATEWAY_MODE = "mock"
+$env:AUTH_MODE = "unconfigured"
 $env:MOCK_SCENARIO = "normal"
 npm start
 ```
@@ -24,6 +25,7 @@ O gateway escuta apenas em `127.0.0.1` nesta etapa. Para consultar:
 
 ```text
 GET http://localhost:8787/health
+GET http://localhost:8787/ready
 GET http://localhost:8787/snapshot?facilityId=SSP15&siteId=MLB&groupId=TESTE&cycle=AM1&waves=1,2,3,4,5&timezone=America%2FSao_Paulo
 GET http://localhost:8787/dispatch?facilityId=SSP15&siteId=MLB&groupId=TESTE&cycle=AM1&wave=1&timezone=America%2FSao_Paulo
 GET http://localhost:8787/customs?facilityId=SSP15&siteId=MLB&groupId=TESTE&cycle=AM1&timezone=America%2FSao_Paulo
@@ -75,10 +77,22 @@ A query de cenario e rejeitada fora de `development/mock`. Para testar o fronten
 - Sanitizadores trabalham com listas positivas de campos.
 - Erros nao incluem stack trace.
 - Nao ha cookies, tokens, headers internos, credenciais ou dados pessoais reais.
+- Hosts e caminhos upstream sao definidos exclusivamente no servidor e validados por allowlist.
+- O cliente upstream aceita somente GET, nao segue redirects e limita timeout, tipo e tamanho da resposta.
 
-## Adaptador real
+## Health e readiness
 
-As interfaces `fetchDispatch(...)` e `fetchCustoms(...)` ja isolam a aquisicao das fontes. `GATEWAY_MODE=real` falha com HTTP 503 e a mensagem segura `Real internal authentication adapter is not configured.` Ate um metodo corporativo ser aprovado, nao existe captura de sessao, leitura de cookies ou configuracao de segredo no repositorio.
+`GET /health` continua respondendo enquanto o processo estiver ativo e informa apenas `gatewayMode` e `authMode`. `GET /ready` responde `ready=true` em mock. Em `real/unconfigured`, responde HTTP 503 com `ready=false`, sem revelar detalhes de autenticacao.
+
+## Preparado para autenticacao corporativa
+
+O contrato de autenticacao fica isolado em `src/auth/`. Atualmente, `AUTH_MODE` aceita somente `unconfigured`. Por isso, `GATEWAY_MODE=real` falha fechado com HTTP 503 e o codigo `AUTH_NOT_CONFIGURED` antes de qualquer chamada upstream.
+
+Os adaptadores reais ja montam no servidor as URLs e queries permitidas para Dispatch e Aduana. O cliente em `src/http/upstream-client.js` aceita somente destinos da allowlist, usa GET, timeout, limite de resposta, JSON obrigatorio e redirects manuais. Nenhuma requisicao real e feita enquanto a autenticacao permanecer desconfigurada.
+
+Quando o metodo oficial for aprovado, um provider autorizado podera entregar o contexto minimo ao cliente upstream. O segredo devera vir da infraestrutura segura ou de um secrets manager, nunca do frontend. Nao copie Cookie, Authorization, CSRF, token ou sessao do navegador. O frontend nunca deve receber credenciais corporativas.
+
+Veja tambem [docs/AUTHORIZATION.md](docs/AUTHORIZATION.md).
 
 ## Testes
 
@@ -86,4 +100,4 @@ As interfaces `fetchDispatch(...)` e `fetchCustoms(...)` ja isolam a aquisicao d
 npm test
 ```
 
-Os testes cobrem G1-G17, incluindo contrato, atomicidade, timeout, CORS, metodos, validacao, sanitizacao e ausencia de stack em producao.
+Os testes cobrem a suite original G1-G17 e os cenarios A1-A15 da preparacao corporativa, incluindo fail-closed, allowlist, redacao, redirects, timeout, limite de resposta e compatibilidade mock.

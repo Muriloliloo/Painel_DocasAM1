@@ -1,5 +1,14 @@
 "use strict";
 
+const ERROR_CODES = Object.freeze({
+  AUTH_NOT_CONFIGURED: "AUTH_NOT_CONFIGURED",
+  AUTH_FAILED: "AUTH_FAILED",
+  UPSTREAM_UNAVAILABLE: "UPSTREAM_UNAVAILABLE",
+  UPSTREAM_TIMEOUT: "UPSTREAM_TIMEOUT",
+  UPSTREAM_INVALID_RESPONSE: "UPSTREAM_INVALID_RESPONSE",
+  UPSTREAM_HOST_NOT_ALLOWED: "UPSTREAM_HOST_NOT_ALLOWED"
+});
+
 class GatewayError extends Error {
   constructor(status, code, message, details = {}) {
     super(message);
@@ -10,4 +19,4 @@ class GatewayError extends Error {
   }
 }
 
-module.exports = { GatewayError };
+module.exports = { ERROR_CODES, GatewayError };

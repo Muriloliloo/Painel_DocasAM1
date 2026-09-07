@@ -1,6 +1,10 @@
 "use strict";
 
 const { GatewayError } = require("../errors");
+const { createAuthProvider, getAuthContext } = require("../auth");
+const { createUpstreamClient } = require("../http/upstream-client");
+
+const DISPATCH_QUERY_KEYS = Object.freeze(["facilityId", "groupId", "siteId", "wave"]);
 
 const DISPATCH_BY_WAVE = Object.freeze({
   "1": {
@@ -41,12 +45,10 @@ function delay(milliseconds, signal) {
   });
 }
 
-function realAdapterNotConfigured() {
-  throw new GatewayError(
-    503,
-    "REAL_ADAPTER_NOT_CONFIGURED",
-    "Real internal authentication adapter is not configured."
-  );
+function dispatchRows(payload) {
+  if (Array.isArray(payload)) return payload;
+  if (Array.isArray(payload?.data)) return payload.data;
+  throw new GatewayError(502, "UPSTREAM_INVALID_RESPONSE", "Resposta Dispatch invalida.");
 }
 
 function selectRows(scenario, waves) {
@@ -61,8 +63,32 @@ function selectRows(scenario, waves) {
   return waves.flatMap(wave => DISPATCH_BY_WAVE[wave] ? [{ ...DISPATCH_BY_WAVE[wave] }] : []);
 }
 
-async function fetchDispatch({ config, scenario, waves, signal }) {
-  if (config.mode === "real") realAdapterNotConfigured();
+async function fetchRealDispatch({
+  config,
+  facilityId,
+  groupId,
+  siteId,
+  waves,
+  signal,
+  authProvider,
+  upstreamClient
+}) {
+  const authorized = await getAuthContext(authProvider || createAuthProvider(config));
+  const client = upstreamClient || createUpstreamClient({ config });
+  const payloads = await Promise.all(waves.map(wave => client.get({
+    baseUrl: config.dispatchBaseUrl,
+    path: config.dispatchPath,
+    query: { facilityId, groupId, siteId, wave },
+    allowedQueryKeys: DISPATCH_QUERY_KEYS,
+    authContext: authorized,
+    signal
+  })));
+  return payloads.flatMap(dispatchRows);
+}
+
+async function fetchDispatch(options) {
+  const { config, scenario, waves, signal } = options;
+  if (config.mode === "real") return fetchRealDispatch(options);
   if (scenario === "failure-dispatch") {
     throw new GatewayError(502, "DISPATCH_UPSTREAM_FAILURE", "Dispatch indisponivel no cenario mock.");
   }
@@ -72,4 +98,4 @@ async function fetchDispatch({ config, scenario, waves, signal }) {
   return selectRows(scenario, waves);
 }
 
-module.exports = { fetchDispatch };
+module.exports = { DISPATCH_QUERY_KEYS, dispatchRows, fetchDispatch, fetchRealDispatch };

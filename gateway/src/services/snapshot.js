@@ -29,18 +29,28 @@ function sourceFailure(result, sourceName) {
   if (result.status === "fulfilled") return null;
   const reason = result.reason;
   if (reason instanceof GatewayError) return reason;
-  return new GatewayError(502, "UPSTREAM_FAILURE", `Falha segura na fonte ${sourceName}.`);
+  return new GatewayError(502, "UPSTREAM_UNAVAILABLE", `Falha segura na fonte ${sourceName}.`);
 }
 
-async function acquireBoth({ config, scenario, waves }) {
+async function acquireBoth({
+  config,
+  scenario,
+  waves,
+  facilityId,
+  groupId,
+  siteId,
+  timezone,
+  dependencies = {}
+}) {
   return withinTimeout(config, signal => Promise.allSettled([
-    fetchDispatch({ config, scenario, waves, signal }),
-    fetchCustoms({ config, scenario, signal })
+    fetchDispatch({ config, scenario, waves, facilityId, groupId, siteId, signal, ...dependencies }),
+    fetchCustoms({ config, scenario, timezone, signal, ...dependencies })
   ]));
 }
 
-async function buildSnapshot({ config, scenario, waves }) {
-  const [dispatchResult, customsResult] = await acquireBoth({ config, scenario, waves });
+async function buildSnapshot(options) {
+  const { config, scenario } = options;
+  const [dispatchResult, customsResult] = await acquireBoth(options);
   const dispatchFailure = sourceFailure(dispatchResult, "dispatch");
   const customsFailure = sourceFailure(customsResult, "aduana");
 
@@ -72,12 +82,24 @@ async function buildSnapshot({ config, scenario, waves }) {
   };
 }
 
-async function buildDispatchSnapshot({ config, scenario, wave }) {
+async function buildDispatchSnapshot({
+  config,
+  scenario,
+  wave,
+  facilityId,
+  groupId,
+  siteId,
+  dependencies = {}
+}) {
   const rows = await withinTimeout(config, signal => fetchDispatch({
     config,
     scenario,
     waves: [wave],
-    signal
+    facilityId,
+    groupId,
+    siteId,
+    signal,
+    ...dependencies
   }));
   const operacional = rows.map(sanitizeDispatch);
   return {
@@ -88,8 +110,14 @@ async function buildDispatchSnapshot({ config, scenario, wave }) {
   };
 }
 
-async function buildCustomsSnapshot({ config, scenario }) {
-  const rows = await withinTimeout(config, signal => fetchCustoms({ config, scenario, signal }));
+async function buildCustomsSnapshot({ config, scenario, timezone, dependencies = {} }) {
+  const rows = await withinTimeout(config, signal => fetchCustoms({
+    config,
+    scenario,
+    timezone,
+    signal,
+    ...dependencies
+  }));
   const aduana = rows.map(sanitizeCustoms);
   return {
     snapshotComplete: true,

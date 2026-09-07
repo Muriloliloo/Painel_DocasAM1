@@ -1,6 +1,10 @@
 "use strict";
 
 const { GatewayError } = require("../errors");
+const { createAuthProvider, getAuthContext } = require("../auth");
+const { createUpstreamClient } = require("../http/upstream-client");
+
+const CUSTOMS_QUERY_KEYS = Object.freeze(["auditType", "timezone"]);
 
 const CUSTOMS_IN_PROGRESS = Object.freeze({
   route_name: "VJ3_AM1",
@@ -28,12 +32,11 @@ function delay(milliseconds, signal) {
   });
 }
 
-function realAdapterNotConfigured() {
-  throw new GatewayError(
-    503,
-    "REAL_ADAPTER_NOT_CONFIGURED",
-    "Real internal authentication adapter is not configured."
-  );
+function customsRows(payload) {
+  if (Array.isArray(payload)) return payload;
+  if (Array.isArray(payload?.data)) return payload.data;
+  if (Array.isArray(payload?.audits)) return payload.audits;
+  throw new GatewayError(502, "UPSTREAM_INVALID_RESPONSE", "Resposta Aduana invalida.");
 }
 
 function selectRows(scenario) {
@@ -50,8 +53,23 @@ function selectRows(scenario) {
   return [{ ...CUSTOMS_IN_PROGRESS }];
 }
 
-async function fetchCustoms({ config, scenario, signal }) {
-  if (config.mode === "real") realAdapterNotConfigured();
+async function fetchRealCustoms({ config, timezone, signal, authProvider, upstreamClient }) {
+  const authorized = await getAuthContext(authProvider || createAuthProvider(config));
+  const client = upstreamClient || createUpstreamClient({ config });
+  const payload = await client.get({
+    baseUrl: config.customsBaseUrl,
+    path: config.customsPath,
+    query: { auditType: "driver", timezone },
+    allowedQueryKeys: CUSTOMS_QUERY_KEYS,
+    authContext: authorized,
+    signal
+  });
+  return customsRows(payload);
+}
+
+async function fetchCustoms(options) {
+  const { config, scenario, signal } = options;
+  if (config.mode === "real") return fetchRealCustoms(options);
   if (scenario === "failure-customs") {
     throw new GatewayError(502, "CUSTOMS_UPSTREAM_FAILURE", "Aduana indisponivel no cenario mock.");
   }
@@ -61,4 +79,4 @@ async function fetchCustoms({ config, scenario, signal }) {
   return selectRows(scenario);
 }
 
-module.exports = { fetchCustoms };
+module.exports = { CUSTOMS_QUERY_KEYS, customsRows, fetchCustoms, fetchRealCustoms };

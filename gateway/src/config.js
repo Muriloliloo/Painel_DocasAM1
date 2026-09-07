@@ -2,6 +2,13 @@
 
 const { GatewayError } = require("./errors");
 
+const AUTH_MODES = Object.freeze(["unconfigured"]);
+const UPSTREAM_HOST_ALLOWLIST = Object.freeze(["envios.adminml.com"]);
+const DEFAULT_DISPATCH_BASE_URL = "https://envios.adminml.com";
+const DEFAULT_CUSTOMS_BASE_URL = "https://envios.adminml.com";
+const DEFAULT_DISPATCH_PATH = "/logistics/last-mile/monitoring/frm-provider/api/dispatch";
+const DEFAULT_CUSTOMS_PATH = "/logistics/audit/api/audits/search";
+
 function csvValues(value, fallback) {
   return String(value || fallback)
     .split(",")
@@ -58,6 +65,50 @@ function configuredOrigins(env, overrides, nodeEnv) {
   return new Set(normalized);
 }
 
+function validatedUpstreamBaseUrl(name, value, nodeEnv) {
+  let url;
+  try {
+    url = new URL(String(value || ""));
+  } catch {
+    throw new GatewayError(500, "INVALID_CONFIGURATION", `${name} possui URL invalida.`);
+  }
+
+  if (url.username || url.password) {
+    throw new GatewayError(500, "INVALID_CONFIGURATION", `${name} nao aceita usuario ou senha na URL.`);
+  }
+  if (!new Set(["http:", "https:"]).has(url.protocol)) {
+    throw new GatewayError(500, "INVALID_CONFIGURATION", `${name} deve usar protocolo HTTP(S).`);
+  }
+  if (nodeEnv === "production" && url.protocol !== "https:") {
+    throw new GatewayError(500, "INVALID_CONFIGURATION", `${name} deve usar HTTPS em production.`);
+  }
+  if (!UPSTREAM_HOST_ALLOWLIST.includes(url.hostname.toLowerCase())) {
+    throw new GatewayError(500, "UPSTREAM_HOST_NOT_ALLOWED", `${name} possui host nao autorizado.`);
+  }
+  if (url.pathname !== "/" || url.search || url.hash) {
+    throw new GatewayError(500, "INVALID_CONFIGURATION", `${name} deve conter somente a origem autorizada.`);
+  }
+
+  return url.origin;
+}
+
+function validatedUpstreamPath(name, value, expectedPath) {
+  const path = String(value || "").trim();
+  let decodedPath;
+  try {
+    decodedPath = decodeURIComponent(path);
+  } catch {
+    throw new GatewayError(500, "INVALID_CONFIGURATION", `${name} possui caminho invalido.`);
+  }
+
+  if (path !== expectedPath || !path.startsWith("/") || path.startsWith("//")
+      || path.includes("\\") || path.includes("?") || path.includes("#")
+      || decodedPath.split("/").includes("..")) {
+    throw new GatewayError(500, "INVALID_CONFIGURATION", `${name} possui caminho nao autorizado.`);
+  }
+  return path;
+}
+
 function createConfig(env = process.env, overrides = {}) {
   const mode = String(overrides.mode ?? env.GATEWAY_MODE ?? "mock").trim().toLowerCase();
   if (!new Set(["mock", "real"]).has(mode)) {
@@ -65,6 +116,11 @@ function createConfig(env = process.env, overrides = {}) {
   }
 
   const nodeEnv = String(overrides.nodeEnv ?? env.NODE_ENV ?? "development").trim().toLowerCase();
+  const authMode = String(overrides.authMode ?? env.AUTH_MODE ?? "unconfigured").trim().toLowerCase();
+  if (!AUTH_MODES.includes(authMode)) {
+    throw new GatewayError(500, "INVALID_CONFIGURATION", "AUTH_MODE ainda aceita somente unconfigured.");
+  }
+
   const mockScenario = String(overrides.mockScenario ?? env.MOCK_SCENARIO ?? "normal").trim().toLowerCase();
   const configuredPort = Number(overrides.port ?? env.PORT ?? 8787);
   if (!Number.isSafeInteger(configuredPort) || configuredPort < 0 || configuredPort > 65535) {
@@ -75,7 +131,29 @@ function createConfig(env = process.env, overrides = {}) {
     port: configuredPort,
     nodeEnv,
     mode,
+    authMode,
     mockScenario,
+    allowedUpstreamHosts: new Set(UPSTREAM_HOST_ALLOWLIST),
+    dispatchBaseUrl: validatedUpstreamBaseUrl(
+      "DISPATCH_BASE_URL",
+      overrides.dispatchBaseUrl ?? env.DISPATCH_BASE_URL ?? DEFAULT_DISPATCH_BASE_URL,
+      nodeEnv
+    ),
+    customsBaseUrl: validatedUpstreamBaseUrl(
+      "CUSTOMS_BASE_URL",
+      overrides.customsBaseUrl ?? env.CUSTOMS_BASE_URL ?? DEFAULT_CUSTOMS_BASE_URL,
+      nodeEnv
+    ),
+    dispatchPath: validatedUpstreamPath(
+      "DISPATCH_PATH",
+      overrides.dispatchPath ?? env.DISPATCH_PATH ?? DEFAULT_DISPATCH_PATH,
+      DEFAULT_DISPATCH_PATH
+    ),
+    customsPath: validatedUpstreamPath(
+      "CUSTOMS_PATH",
+      overrides.customsPath ?? env.CUSTOMS_PATH ?? DEFAULT_CUSTOMS_PATH,
+      DEFAULT_CUSTOMS_PATH
+    ),
     allowedOrigins: configuredOrigins(env, overrides, nodeEnv),
     allowedFacilityIds: validatedSet(
       "ALLOWED_FACILITY_IDS",
@@ -117,4 +195,10 @@ function createConfig(env = process.env, overrides = {}) {
   });
 }
 
-module.exports = { createConfig };
+module.exports = {
+  AUTH_MODES,
+  UPSTREAM_HOST_ALLOWLIST,
+  createConfig,
+  validatedUpstreamBaseUrl,
+  validatedUpstreamPath
+};
