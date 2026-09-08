@@ -39,6 +39,27 @@ function customsRows(payload) {
   throw new GatewayError(502, "UPSTREAM_INVALID_RESPONSE", "Resposta Aduana invalida.");
 }
 
+function normalizeCustomsRow(raw = {}) {
+  const hasUnits = Array.isArray(raw.units);
+  const units = hasUnits ? raw.units : [];
+  const auditedUnits = units.filter(unit => String(unit?.status || "").toLowerCase() === "audited").length;
+
+  return {
+    route_name: raw.route_name || raw.routeName || raw.rota
+      || raw.driver?.cluster_id || raw.driver?.clusterId || "",
+    route_id: raw.route_id || raw.routeId || raw.driver?.route_id || "",
+    status: raw.status ?? "",
+    process: raw.process ?? "",
+    operator_name: raw.operator_name ?? "",
+    audit_time: raw.audit_time ?? "",
+    aduanaUnidades: raw.aduanaUnidades ?? "",
+    aduanaBipadas: raw.aduanaBipadas ?? (hasUnits ? auditedUnits : ""),
+    driver_name: raw.driver_name ?? "",
+    carrier_name: raw.carrier_name ?? "",
+    plate: raw.plate ?? ""
+  };
+}
+
 function selectRows(scenario) {
   if (new Set(["empty-unconfirmed", "empty-confirmed", "loading", "dispatched"]).has(scenario)) return [];
   if (scenario === "customs-complete") {
@@ -64,7 +85,7 @@ async function fetchRealCustoms({ config, timezone, signal, authProvider, upstre
     authContext: authorized,
     signal
   });
-  return customsRows(payload);
+  return customsRows(payload).map(normalizeCustomsRow);
 }
 
 async function fetchCustoms(options) {
@@ -76,7 +97,13 @@ async function fetchCustoms(options) {
 
   const delayMs = scenario === "timeout" ? config.mockTimeoutDelayMs : config.mockDelayMs;
   await delay(delayMs, signal);
-  return selectRows(scenario);
+  return selectRows(scenario).map(normalizeCustomsRow);
 }
 
-module.exports = { CUSTOMS_QUERY_KEYS, customsRows, fetchCustoms, fetchRealCustoms };
+module.exports = {
+  CUSTOMS_QUERY_KEYS,
+  customsRows,
+  normalizeCustomsRow,
+  fetchCustoms,
+  fetchRealCustoms
+};

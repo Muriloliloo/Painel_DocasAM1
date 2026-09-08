@@ -1,12 +1,11 @@
 "use strict";
 
 const { ERROR_CODES, GatewayError } = require("../errors");
+const { createCorporateAuthProvider } = require("./corporate-provider");
 
-function createAuthProvider(config) {
-  const mode = config?.authMode || "unconfigured";
-
+function createUnconfiguredAuthProvider() {
   return Object.freeze({
-    mode,
+    mode: "unconfigured",
     async getAuthContext() {
       throw new GatewayError(
         503,
@@ -17,4 +16,10 @@ function createAuthProvider(config) {
   });
 }
 
-module.exports = { createAuthProvider };
+function createAuthProvider(config) {
+  const mode = config?.authMode || "unconfigured";
+  if (mode === "corporate") return createCorporateAuthProvider();
+  return createUnconfiguredAuthProvider();
+}
+
+module.exports = { createAuthProvider, createUnconfiguredAuthProvider };

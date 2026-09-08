@@ -1,6 +1,6 @@
 # Gateway intermediario do Painel_DocasAM1
 
-Gateway HTTP somente leitura que separa o painel publico dos sistemas internos. Nesta etapa, ele opera apenas com dados mock ficticios e entrega ao frontend somente campos explicitamente permitidos.
+Gateway HTTP somente leitura que separa o painel publico dos sistemas internos. O modo mock usa somente dados ficticios; o modo real permanece fechado ate a TI implementar o provider corporativo oficial.
 
 ## Requisitos
 
@@ -86,18 +86,22 @@ A query de cenario e rejeitada fora de `development/mock`. Para testar o fronten
 
 ## Preparado para autenticacao corporativa
 
-O contrato de autenticacao fica isolado em `src/auth/`. Atualmente, `AUTH_MODE` aceita somente `unconfigured`. Por isso, `GATEWAY_MODE=real` falha fechado com HTTP 503 e o codigo `AUTH_NOT_CONFIGURED` antes de qualquer chamada upstream.
+O contrato de autenticacao fica isolado em `src/auth/`. `AUTH_MODE` aceita `unconfigured` e `corporate`, mas selecionar `corporate` nao concede acesso: o stub em `src/auth/corporate-provider.js` continua falhando fechado com HTTP 503 e `AUTH_NOT_CONFIGURED` antes de qualquer chamada upstream.
 
 Os adaptadores reais ja montam no servidor as URLs e queries permitidas para Dispatch e Aduana. O cliente em `src/http/upstream-client.js` aceita somente destinos da allowlist, usa GET, timeout, limite de resposta, JSON obrigatorio e redirects manuais. Nenhuma requisicao real e feita enquanto a autenticacao permanecer desconfigurada.
 
-Quando o metodo oficial for aprovado, um provider autorizado podera entregar o contexto minimo ao cliente upstream. O segredo devera vir da infraestrutura segura ou de um secrets manager, nunca do frontend. Nao copie Cookie, Authorization, CSRF, token ou sessao do navegador. O frontend nunca deve receber credenciais corporativas.
+Quando o metodo oficial for aprovado, a TI devera implementar somente o provider indicado para entregar o contexto minimo ao cliente upstream. O segredo devera vir da infraestrutura segura ou de um secrets manager, nunca do frontend. Nao copie Cookie, Authorization, CSRF, token ou sessao do navegador. O frontend nunca deve receber credenciais corporativas.
 
-Veja tambem [docs/AUTHORIZATION.md](docs/AUTHORIZATION.md).
+Veja [docs/HANDOFF-TI.md](docs/HANDOFF-TI.md), [docs/API-CONTRACT.md](docs/API-CONTRACT.md), [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) e [docs/AUTHORIZATION.md](docs/AUTHORIZATION.md).
 
 ## Testes
 
 ```powershell
 npm test
+npm run verify
+npm run smoke:mock
 ```
 
-Os testes cobrem a suite original G1-G17 e os cenarios A1-A15 da preparacao corporativa, incluindo fail-closed, allowlist, redacao, redirects, timeout, limite de resposta e compatibilidade mock.
+`npm run verify` executa os checks sintaticos de todos os arquivos JavaScript e a suite completa. `npm run smoke:mock` inicia um servidor efemero em loopback, valida health, readiness e snapshot 3/1 e encerra o processo.
+
+Para o preflight da futura configuracao corporativa, defina as variaveis de producao e execute `npm run preflight:corporate`. O comando inspeciona somente configuracao e estrutura do provider, sem obter autorizacao ou chamar servicos externos. Enquanto o provider for stub, encerra de forma controlada com `AUTH_NOT_CONFIGURED`.

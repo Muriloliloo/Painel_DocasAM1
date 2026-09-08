@@ -3,7 +3,7 @@
 const http = require("node:http");
 const { URL } = require("node:url");
 const { createConfig } = require("./config");
-const { createAuthProvider } = require("./auth");
+const { createAuthProvider, getAuthContext } = require("./auth");
 const { GatewayError } = require("./errors");
 const { createUpstreamClient } = require("./http/upstream-client");
 const { createSafeLogger } = require("./logging");
@@ -237,7 +237,15 @@ function createGatewayServer(config = createConfig(), dependencies = {}) {
       }
       if (pathname === "/ready") {
         rejectUnknownParameters(url.searchParams, new Set());
-        const ready = config.mode === "mock" || config.authMode !== "unconfigured";
+        let ready = config.mode === "mock";
+        if (!ready) {
+          try {
+            await getAuthContext(sourceDependencies.authProvider);
+            ready = true;
+          } catch {
+            ready = false;
+          }
+        }
         sendJson(response, ready ? 200 : 503, {
           ready,
           gatewayMode: config.mode,

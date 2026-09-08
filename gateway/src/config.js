@@ -2,7 +2,7 @@
 
 const { GatewayError } = require("./errors");
 
-const AUTH_MODES = Object.freeze(["unconfigured"]);
+const AUTH_MODES = Object.freeze(["unconfigured", "corporate"]);
 const UPSTREAM_HOST_ALLOWLIST = Object.freeze(["envios.adminml.com"]);
 const DEFAULT_DISPATCH_BASE_URL = "https://envios.adminml.com";
 const DEFAULT_CUSTOMS_BASE_URL = "https://envios.adminml.com";
@@ -118,7 +118,7 @@ function createConfig(env = process.env, overrides = {}) {
   const nodeEnv = String(overrides.nodeEnv ?? env.NODE_ENV ?? "development").trim().toLowerCase();
   const authMode = String(overrides.authMode ?? env.AUTH_MODE ?? "unconfigured").trim().toLowerCase();
   if (!AUTH_MODES.includes(authMode)) {
-    throw new GatewayError(500, "INVALID_CONFIGURATION", "AUTH_MODE ainda aceita somente unconfigured.");
+    throw new GatewayError(500, "INVALID_CONFIGURATION", "AUTH_MODE deve ser unconfigured ou corporate.");
   }
 
   const mockScenario = String(overrides.mockScenario ?? env.MOCK_SCENARIO ?? "normal").trim().toLowerCase();

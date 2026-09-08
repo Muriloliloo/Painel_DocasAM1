@@ -9,6 +9,9 @@
   },
   "scripts": {
     "start": "node src/server.js",
-    "test": "node --test"
+    "test": "node --test",
+    "verify": "node scripts/verify.js",
+    "smoke:mock": "node scripts/smoke-mock.js",
+    "preflight:corporate": "node scripts/preflight-corporate.js"
   }
 }

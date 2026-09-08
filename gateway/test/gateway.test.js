@@ -4,8 +4,12 @@ const assert = require("node:assert/strict");
 const { after, before, test } = require("node:test");
 const { createConfig } = require("../src/config");
 const { createGatewayServer, validateRequestTarget } = require("../src/server");
+const { createAuthProvider, getAuthContext } = require("../src/auth");
+const { normalizeCustomsRow } = require("../src/adapters/customs");
 const { createUpstreamClient } = require("../src/http/upstream-client");
 const { createSafeLogger } = require("../src/logging");
+const { runPreflight } = require("../scripts/preflight-corporate");
+const { buildDispatchSnapshot, buildCustomsSnapshot } = require("../src/services/snapshot");
 const { sanitizeDispatch } = require("../src/sanitizers/dispatch");
 const { sanitizeCustoms } = require("../src/sanitizers/customs");
 
@@ -528,5 +532,288 @@ test("A15 modo mock permanece compativel com o frontend atual", async () => {
     const mockResponse = await fetch(`${url}/snapshot?${query()}`);
     assert.equal(mockResponse.status, 200);
   });
+  assert.equal(upstreamCalls, 0);
+});
+
+test("T1 corporate stub falha fechado sem chamada upstream", async () => {
+  const config = testConfig({ mode: "real", authMode: "corporate" });
+  const provider = createAuthProvider(config);
+  assert.equal(provider.mode, "corporate");
+  assert.deepEqual(provider.inspectConfiguration(), {
+    configured: false,
+    mode: "corporate",
+    reason: "AUTH_NOT_CONFIGURED"
+  });
+  await assert.rejects(
+    getAuthContext(provider),
+    error => error.code === "AUTH_NOT_CONFIGURED" && error.status === 503
+  );
+
+  let upstreamCalls = 0;
+  await withGateway(config, {
+    upstreamClient: {
+      async get() {
+        upstreamCalls += 1;
+        return [];
+      }
+    }
+  }, async url => {
+    const health = await fetch(`${url}/health`);
+    assert.equal(health.status, 200);
+
+    const ready = await fetch(`${url}/ready`);
+    assert.equal(ready.status, 503);
+    assert.equal((await ready.json()).ready, false);
+
+    const snapshot = await fetch(`${url}/snapshot?${query()}`);
+    const body = await snapshot.json();
+    assert.equal(snapshot.status, 503);
+    assert.equal(body.error.code, "AUTH_NOT_CONFIGURED");
+  });
+  assert.equal(upstreamCalls, 0);
+});
+
+test("T2 provider fake valido passa pelo contrato sem expor valor em logs", async () => {
+  const fictionalValue = "VALOR-FICTICIO-DE-TESTE";
+  const context = await getAuthContext({
+    async getAuthContext() {
+      return { headers: { authorization: fictionalValue } };
+    }
+  });
+  assert.equal(context.headers.authorization, fictionalValue);
+
+  const calls = [];
+  const logger = createSafeLogger({ info: (...values) => calls.push(values) });
+  logger.info("provider-validado", { headers: context.headers });
+  const logged = JSON.stringify(calls);
+  assert.equal(logged.includes(fictionalValue), false);
+  assert.equal(logged.includes("[REDACTED]"), true);
+});
+
+test("T3 header com CRLF e rejeitado", async () => {
+  await assert.rejects(
+    getAuthContext({ async getAuthContext() { return { headers: { authorization: "teste\r\ninjetado" } }; } }),
+    error => error.code === "AUTH_FAILED"
+  );
+});
+
+test("T4 Cookie e rejeitado no contexto corporativo", async () => {
+  await assert.rejects(
+    getAuthContext({ async getAuthContext() { return { headers: { cookie: "VALOR-FICTICIO" } }; } }),
+    error => error.code === "AUTH_FAILED"
+  );
+});
+
+test("T5 Host e rejeitado no contexto corporativo", async () => {
+  await assert.rejects(
+    getAuthContext({ async getAuthContext() { return { headers: { host: "destino.example" } }; } }),
+    error => error.code === "AUTH_FAILED"
+  );
+});
+
+test("T6 Origin e rejeitado no contexto corporativo", async () => {
+  await assert.rejects(
+    getAuthContext({ async getAuthContext() { return { headers: { origin: "https://painel.example" } }; } }),
+    error => error.code === "AUTH_FAILED"
+  );
+});
+
+test("T7 contexto corporativo invalido resulta em AUTH_FAILED", async () => {
+  for (const invalidContext of [null, [], { headers: [] }]) {
+    await assert.rejects(
+      getAuthContext({ async getAuthContext() { return invalidContext; } }),
+      error => error.code === "AUTH_FAILED" && error.status === 503
+    );
+  }
+});
+
+test("T8 readiness real fica disponivel somente com contexto corporativo valido", async () => {
+  let upstreamCalls = 0;
+  await withGateway(testConfig({ mode: "real", authMode: "corporate" }), {
+    authProvider: {
+      async getAuthContext() {
+        return { headers: { authorization: "VALOR-FICTICIO-DE-TESTE" } };
+      }
+    },
+    upstreamClient: {
+      async get() {
+        upstreamCalls += 1;
+        return [];
+      }
+    }
+  }, async url => {
+    const ready = await fetch(`${url}/ready`);
+    assert.equal(ready.status, 200);
+    assert.equal((await ready.json()).ready, true);
+  });
+  assert.equal(upstreamCalls, 0);
+});
+
+test("T9 caminho real Dispatch usa auth, client, extracao e sanitizacao", async () => {
+  const config = testConfig({ mode: "real", authMode: "corporate" });
+  let authCalls = 0;
+  const requests = [];
+  const result = await buildDispatchSnapshot({
+    config,
+    scenario: "normal",
+    wave: "1",
+    facilityId: "SSP15",
+    groupId: "TESTE",
+    siteId: "MLB",
+    dependencies: {
+      authProvider: {
+        async getAuthContext() {
+          authCalls += 1;
+          return { headers: { authorization: "VALOR-FICTICIO-DE-TESTE" } };
+        }
+      },
+      upstreamClient: {
+        async get(request) {
+          requests.push(request);
+          return { data: [{
+            route_name: "TESTE1_AM1",
+            route_id: 1001,
+            process: "loading_packages",
+            dock_number: 3,
+            start_time: 10,
+            total_elapsed_time: 20,
+            campo_privado: "REMOVER"
+          }] };
+        }
+      }
+    }
+  });
+
+  assert.equal(authCalls, 1);
+  assert.equal(requests.length, 1);
+  assert.equal(requests[0].authContext.headers.authorization, "VALOR-FICTICIO-DE-TESTE");
+  assert.deepEqual(Object.keys(result.operacional[0]), [
+    "route_name", "route_id", "process", "dock_number", "start_time", "total_elapsed_time"
+  ]);
+  assert.equal("campo_privado" in result.operacional[0], false);
+});
+
+test("T10 caminho real Aduana normaliza payload bruto e remove IDs internos", async () => {
+  const config = testConfig({ mode: "real", authMode: "corporate" });
+  let authCalls = 0;
+  const requests = [];
+  const result = await buildCustomsSnapshot({
+    config,
+    scenario: "normal",
+    timezone: "America/Sao_Paulo",
+    dependencies: {
+      authProvider: {
+        async getAuthContext() {
+          authCalls += 1;
+          return { headers: { authorization: "VALOR-FICTICIO-DE-TESTE" } };
+        }
+      },
+      upstreamClient: {
+        async get(request) {
+          requests.push(request);
+          return { audits: [{
+            status: "in_progress",
+            process: "customs_in_progress",
+            audit_time: 12,
+            operator_id: "OPERADOR-INTERNO",
+            driver: {
+              route_id: "502731583004",
+              cluster_id: "VJ3_AM1",
+              driver_id: "DRIVER-INTERNO",
+              vehicle_id: "VEICULO-INTERNO",
+              carrier_id: "TRANSPORTADORA-INTERNA"
+            },
+            units: [
+              { status: "audited", documento: "REMOVER" },
+              { status: "pending", cpf: "REMOVER" }
+            ]
+          }] };
+        }
+      }
+    }
+  });
+
+  assert.equal(authCalls, 1);
+  assert.equal(requests.length, 1);
+  assert.equal(requests[0].authContext.headers.authorization, "VALOR-FICTICIO-DE-TESTE");
+  assert.equal(result.aduana[0].route_name, "VJ3_AM1");
+  assert.equal(result.aduana[0].route_id, "502731583004");
+  assert.equal(result.aduana[0].aduanaUnidades, "");
+  assert.equal(result.aduana[0].aduanaBipadas, 1);
+  assert.deepEqual(Object.keys(result.aduana[0]), [
+    "route_name", "route_id", "status", "process", "operator_name", "audit_time",
+    "aduanaUnidades", "aduanaBipadas", "driver_name", "carrier_name", "plate"
+  ]);
+  const serialized = JSON.stringify(result.aduana[0]);
+  for (const privateField of ["driver_id", "operator_id", "vehicle_id", "carrier_id", "documento", "cpf"]) {
+    assert.equal(serialized.includes(privateField), false);
+  }
+});
+
+test("T11 normalizacao Aduana preserva compatibilidade com payload plano", () => {
+  const result = sanitizeCustoms(normalizeCustomsRow({
+    route_name: "TESTE1_AM1",
+    route_id: "1001",
+    status: "in_progress",
+    process: "customs_in_progress",
+    operator_name: "OPERADOR TESTE",
+    audit_time: 12,
+    aduanaUnidades: 190,
+    aduanaBipadas: 3,
+    driver_name: "MOTORISTA TESTE",
+    carrier_name: "TRANSPORTADORA TESTE",
+    plate: "ABC1D23"
+  }));
+
+  assert.equal(result.route_name, "TESTE1_AM1");
+  assert.equal(result.route_id, "1001");
+  assert.equal(result.aduanaUnidades, 190);
+  assert.equal(result.aduanaBipadas, 3);
+});
+
+test("T12 preflight e estrutural e nao chama auth ou upstream", () => {
+  const env = {
+    NODE_ENV: "production",
+    GATEWAY_MODE: "real",
+    AUTH_MODE: "corporate",
+    PANEL_ALLOWED_ORIGIN: "https://painel-preflight.invalid"
+  };
+  const messages = [];
+  const logger = {
+    log: message => messages.push(message),
+    error: message => messages.push(message)
+  };
+
+  const stubExitCode = runPreflight({ env, logger });
+  assert.equal(stubExitCode, 2);
+  assert.equal(messages.some(message => message.startsWith("AUTH_NOT_CONFIGURED:")), true);
+
+  let authCalls = 0;
+  let upstreamCalls = 0;
+  const configuredExitCode = runPreflight({
+    env,
+    logger,
+    providerFactory() {
+      return {
+        mode: "corporate",
+        inspectConfiguration() {
+          return { configured: true, mode: "corporate" };
+        },
+        async getAuthContext() {
+          authCalls += 1;
+          throw new Error("getAuthContext nao deve ser chamado pelo preflight");
+        },
+        upstreamClient: {
+          async get() {
+            upstreamCalls += 1;
+            throw new Error("upstream nao deve ser chamado pelo preflight");
+          }
+        }
+      };
+    }
+  });
+
+  assert.equal(configuredExitCode, 0);
+  assert.equal(authCalls, 0);
   assert.equal(upstreamCalls, 0);
 });
