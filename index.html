@@ -9927,10 +9927,16 @@ body.editor-open .global-theme-toggle {
       }
 
       const rawProcess = normalize(item.processo || item.status);
-      const status = operationalStatus(rawProcess);
+      const normalizedStatus = normalizeBaseStatus(rawProcess);
+      // Em atualizações cumulativas, campo vazio, "-" ou texto desconhecido significa
+      // ausência de atualização. Somente "Pendente" escrito explicitamente pode
+      // substituir um estado anterior da rota.
+      const status = normalizedStatus === "Pendente" && plainText(rawProcess) !== "pendente"
+        ? ""
+        : normalizedStatus;
       return {
         rota: route,
-        processo: status === "Pendente" ? "Pendente" : rawProcess,
+        processo: status ? (status === "Pendente" ? "Pendente" : rawProcess) : "",
         tempoProcesso: normalize(item.tempoProcesso),
         tempoTotal: normalize(item.tempoTotal),
         doca: validDockValue(item.doca),
@@ -9939,7 +9945,8 @@ body.editor-open .global-theme-toggle {
     }
 
     function isAduanaState(value) {
-      return /^(aduana em andamento|em andamento|contagem de pacotes?|em contagem|conclu[ií]da|cancelada|pendente)$/i.test(normalize(value));
+      const status = normalizeBaseStatus(value);
+      return status === "Em aduana" || status === "Pendente" || /^(concluida|cancelada)$/.test(plainText(value));
     }
     function lastStandaloneDock(row = []) {
       const docks = row
@@ -11070,10 +11077,8 @@ body.editor-open .global-theme-toggle {
         const customsStatus = normalizeBaseStatus(row.estadoAduana)
           || normalizeBaseStatus(row.processo)
           || normalizeBaseStatus(row.status);
-        const operational = map.get(key) || "";
-        if (customsStatus === "Em aduana" && operational !== "Guardando" && operational !== "Expedida") {
-          map.set(key, customsStatus);
-        }
+        // Enquanto a auditoria estiver ativa, a Aduana é o estado mais atual da rota.
+        if (customsStatus === "Em aduana") map.set(key, customsStatus);
       });
       return map;
     }
@@ -11082,10 +11087,11 @@ body.editor-open .global-theme-toggle {
       const key = routeKey(row.rota);
       if (!key) return "pending";
       const status = normalizeBaseStatus(statusMap.get(key));
-      if (status === "Expedida" || shipped.has(key)) return "loaded";
-      if (status === "Pendente") return "pending";
-      if (status === "Guardando") return "guard";
       if (status === "Em aduana") return "customs";
+      if (status === "Guardando") return "guard";
+      if (status === "Expedida") return "loaded";
+      if (status === "Pendente") return "pending";
+      if (shipped.has(key)) return "loaded";
       if (!loaded.has(key)) return "pending";
       // Sem processo/status reconhecido: permanece pendente (vermelho).
       return "pending";
@@ -11151,10 +11157,6 @@ body.editor-open .global-theme-toggle {
         .join(" ");
     }
 
-    function routePersonName(row = {}) {
-      return firstWords(row.repLog || row.rep || row.log || row.representante || "", 2);
-    }
-
     function firstCarrierName(value) {
       return firstWords(cleanTransportadora(value), 1);
     }
@@ -11188,9 +11190,7 @@ body.editor-open .global-theme-toggle {
       const statusLabel = dockStatusLabel(state);
       const carrier = cleanTransportadora(primary?.transportadora || "") || "-";
       const carrierShort = firstCarrierName(carrier) || "-";
-      const personName = routePersonName(primary || {});
       const routeText = displayRows.map(row => row.rota).filter(Boolean).join(" / ");
-      const personHtml = personName ? `<span class="dock-person">${escapeHtml(personName)}</span>` : "";
       const footerTimer = normalize(primary?.auditTime || "");
       const packages = primary ? dockPackageLabel(primary) : "";
       const slot = document.createElement("div");
@@ -11201,7 +11201,7 @@ body.editor-open .global-theme-toggle {
         slot.setAttribute("role", "button");
         slot.setAttribute("aria-label", `Abrir histórico da rota ${primary.rota}`);
       }
-      slot.title = rows.length ? displayRows.map(row => `${row.rota} | Doca ${row.doca} | ${routePersonName(row) || "Sem rep/log"} | ${row.auditTime || "Sem tempo de auditoria"} | ${row.aduanaBipadas ? `${row.aduanaBipadas} corretas` : "Sem unidades corretas"} | ${dockPackageLabel(row) || "Sem pacotes"}`).join("\n") : `Doca ${dock} livre`;
+      slot.title = rows.length ? displayRows.map(row => `${row.rota} | Doca ${row.doca} | ${row.auditTime || "Sem tempo de auditoria"} | ${row.aduanaBipadas ? `${row.aduanaBipadas} corretas` : "Sem unidades corretas"} | ${dockPackageLabel(row) || "Sem pacotes"}`).join("\n") : `Doca ${dock} livre`;
       if (!primary) {
         slot.innerHTML = `
           <div class="dock-number">${dock}</div>
@@ -11210,7 +11210,7 @@ body.editor-open .global-theme-toggle {
         return slot;
       }
       slot.innerHTML = `
-        <div class="dock-card-head"><span class="dock-number-inline">${dock}</span>${personHtml}</div>
+        <div class="dock-card-head"><span class="dock-number-inline">${dock}</span></div>
         <div class="route">${escapeHtml(routeText)}</div>
         <div class="dock-minutes">${escapeHtml(dockMinuteLabel(primary, key))}</div>
         <div class="dock-status">${escapeHtml(statusLabel)}</div>
