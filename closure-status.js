@@ -2,6 +2,7 @@
   const STYLE_ID = "closure-status-module-style";
   const CARD_ID = "closureWaveGaugeCard";
   const CHART_ID = "closureWaveGaugeGrid";
+  const IMPACT_CARD_ID = "closureImpactCard";
   let resizeObserver = null;
   let bodyObserver = null;
   let drawQueued = false;
@@ -188,7 +189,241 @@
         white-space: nowrap;
       }
 
+      .closure-impact-card {
+        grid-column: 1 / -1;
+        min-width: 0;
+        overflow: hidden;
+        padding: 18px;
+        border: 1px solid #c7d3df;
+        border-radius: 8px;
+        background: #ffffff;
+        color: #063354;
+        box-shadow: 0 3px 10px rgba(5, 41, 77, .09);
+      }
+
+      .closure-impact-header {
+        display: grid;
+        justify-items: center;
+        gap: 6px;
+        text-align: center;
+      }
+
+      .closure-impact-title {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        color: #263746;
+        font: 900 16px/1.05 "Segoe UI", Arial, sans-serif;
+        text-transform: uppercase;
+      }
+
+      .closure-impact-title i {
+        color: #0b7fc2;
+        font-size: 18px;
+      }
+
+      .closure-impact-header small {
+        color: #70808d;
+        font: 800 10px/1.2 "Segoe UI", Arial, sans-serif;
+      }
+
+      .closure-impact-scope {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 4px 9px;
+        border: 1px solid #b9ccd9;
+        border-radius: 999px;
+        background: #edf6fb;
+        color: #063354;
+        font: 900 9px/1 "Segoe UI", Arial, sans-serif;
+        text-transform: uppercase;
+      }
+
+      .closure-impact-summary {
+        display: grid;
+        grid-template-columns: minmax(150px, .55fr) repeat(2, minmax(220px, 1fr));
+        gap: 10px;
+        margin-top: 14px;
+      }
+
+      .closure-impact-kpi {
+        min-width: 0;
+        display: grid;
+        grid-template-columns: 42px minmax(0, 1fr);
+        align-items: center;
+        gap: 10px;
+        min-height: 78px;
+        padding: 12px;
+        border: 1px solid #d8e1e8;
+        border-radius: 8px;
+        background: #f8fbfd;
+      }
+
+      .closure-impact-kpi-icon {
+        width: 42px;
+        height: 42px;
+        display: grid;
+        place-items: center;
+        border-radius: 8px;
+        background: #e4f4fc;
+        color: #0b7fc2;
+        font-size: 19px;
+      }
+
+      .closure-impact-kpi.total .closure-impact-kpi-icon {
+        background: #fff0f1;
+        color: #d82432;
+      }
+
+      .closure-impact-kpi.carrier .closure-impact-kpi-icon {
+        background: #fff7dc;
+        color: #a97000;
+      }
+
+      .closure-impact-kpi-copy {
+        min-width: 0;
+        display: grid;
+        gap: 4px;
+      }
+
+      .closure-impact-kpi-copy span {
+        color: #70808d;
+        font: 900 9px/1.1 "Segoe UI", Arial, sans-serif;
+        text-transform: uppercase;
+      }
+
+      .closure-impact-kpi-copy strong {
+        overflow: hidden;
+        color: #063354;
+        font: 950 18px/1.05 "Segoe UI", Arial, sans-serif;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .closure-impact-kpi.total .closure-impact-kpi-copy strong {
+        color: #d82432;
+        font-size: 28px;
+      }
+
+      .closure-impact-rankings {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+        margin-top: 10px;
+      }
+
+      .closure-impact-ranking {
+        min-width: 0;
+        overflow: hidden;
+        border: 1px solid #d8e1e8;
+        border-radius: 8px;
+        background: #ffffff;
+      }
+
+      .closure-impact-ranking header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        min-height: 38px;
+        padding: 9px 12px;
+        background: #edf6fb;
+        color: #063354;
+      }
+
+      .closure-impact-ranking header strong {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        font: 900 11px/1 "Segoe UI", Arial, sans-serif;
+        text-transform: uppercase;
+      }
+
+      .closure-impact-ranking header i { color: #0b7fc2; }
+
+      .closure-impact-ranking header span {
+        flex: 0 0 auto;
+        min-width: 26px;
+        padding: 4px 7px;
+        border-radius: 999px;
+        background: #063354;
+        color: #ffffff;
+        font: 900 9px/1 "Segoe UI", Arial, sans-serif;
+        text-align: center;
+      }
+
+      .closure-impact-table-wrap {
+        overflow-x: auto;
+      }
+
+      .closure-impact-table {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+      }
+
+      .closure-impact-table th,
+      .closure-impact-table td {
+        padding: 7px 12px;
+        border-top: 1px solid #e1e8ee;
+        color: #263746;
+        font: 800 10px/1.2 "Segoe UI", Arial, sans-serif;
+        text-align: left;
+      }
+
+      .closure-impact-table th:last-child,
+      .closure-impact-table td:last-child {
+        width: 62px;
+        text-align: center;
+      }
+
+      .closure-impact-ranking:last-child .closure-impact-table th:last-child,
+      .closure-impact-ranking:last-child .closure-impact-table td:last-child {
+        width: 132px;
+        padding-right: 78px;
+      }
+
+      .closure-impact-table thead th {
+        border-top: 0;
+        background: #f8fbfd;
+        color: #70808d;
+        font-size: 8px;
+        text-transform: uppercase;
+      }
+
+      .closure-impact-table tbody tr:first-child td:first-child {
+        color: #063354;
+        font-weight: 950;
+      }
+
+      .closure-impact-count {
+        display: inline-grid;
+        place-items: center;
+        min-width: 30px;
+        min-height: 22px;
+        padding: 3px 6px;
+        border-radius: 6px;
+        background: #e4f4fc;
+        color: #0872ad;
+        font-weight: 950;
+      }
+
+      .closure-impact-empty {
+        padding: 20px 12px !important;
+        color: #70808d !important;
+        text-align: center !important;
+      }
+
       body.dark-mode .closure-gauges-card {
+        border-color: #294b66;
+        background: #0d263b;
+        color: #edf7ff;
+      }
+
+      body.dark-mode .closure-impact-card,
+      body.dark-mode .closure-impact-ranking {
         border-color: #294b66;
         background: #0d263b;
         color: #edf7ff;
@@ -196,17 +431,46 @@
 
       body.dark-mode .closure-gauges-title,
       body.dark-mode .closure-gauge-wave-name,
-      body.dark-mode .closure-gauge-percent { color: #edf7ff; }
+      body.dark-mode .closure-gauge-percent,
+      body.dark-mode .closure-impact-title,
+      body.dark-mode .closure-impact-kpi-copy strong,
+      body.dark-mode .closure-impact-ranking header,
+      body.dark-mode .closure-impact-table th,
+      body.dark-mode .closure-impact-table td { color: #edf7ff; }
 
       body.dark-mode .closure-gauges-header small,
       body.dark-mode .closure-gauges-legend,
       body.dark-mode .closure-gauge-wave-time,
-      body.dark-mode .closure-gauge-counts { color: #afc0cd; }
+      body.dark-mode .closure-gauge-counts,
+      body.dark-mode .closure-impact-header small,
+      body.dark-mode .closure-impact-kpi-copy span,
+      body.dark-mode .closure-impact-empty { color: #afc0cd !important; }
 
       body.dark-mode .closure-gauges-meta {
         border-color: #365b75;
         background: #153a54;
         color: #edf7ff;
+      }
+
+      body.dark-mode .closure-impact-scope {
+        border-color: #365b75;
+        background: #153a54;
+        color: #edf7ff;
+      }
+
+      body.dark-mode .closure-impact-kpi,
+      body.dark-mode .closure-impact-table thead th {
+        border-color: #294b66;
+        background: #102f46;
+      }
+
+      body.dark-mode .closure-impact-ranking header {
+        background: #153a54;
+      }
+
+      body.dark-mode .closure-impact-table th,
+      body.dark-mode .closure-impact-table td {
+        border-color: #294b66;
       }
 
       body.dark-mode .closure-gauge-wave {
@@ -234,11 +498,16 @@
         }
 
         #fechamentoView .closure-gauges-card { grid-column: auto; }
+        #fechamentoView .closure-impact-card { grid-column: auto; }
         .closure-gauges-grid { grid-template-columns: repeat(2, minmax(126px, 1fr)); }
+        .closure-impact-summary { grid-template-columns: minmax(0, 1fr); }
+        .closure-impact-rankings { grid-template-columns: minmax(0, 1fr); }
       }
 
       @media (max-width: 480px) {
         .closure-gauges-grid { grid-template-columns: minmax(0, 1fr); }
+        .closure-impact-card { padding: 14px; }
+        .closure-impact-kpi-copy strong { font-size: 15px; }
       }
     `;
 
@@ -316,6 +585,144 @@
     return card;
   }
 
+  function ensureImpactCard() {
+    const layout = document.querySelector("#fechamentoView .closure-layout");
+    if (!layout) return null;
+
+    let card = document.getElementById(IMPACT_CARD_ID);
+    if (card) return card;
+
+    card = document.createElement("section");
+    card.id = IMPACT_CARD_ID;
+    card.className = "closure-impact-card";
+    card.setAttribute("aria-label", "Impactos por transportadora e motivo");
+    layout.appendChild(card);
+    return card;
+  }
+
+  function closureImpactRows() {
+    const rows = typeof pendingRows === "function" ? pendingRows(null, true) : [];
+    const uniqueRows = new Map();
+
+    rows.forEach((row, index) => {
+      const wave = typeof waveLabel === "function" ? waveLabel(row.onda) : String(row.onda || "");
+      const route = typeof routeKey === "function" ? routeKey(row.rota) : String(row.rota || "").trim().toUpperCase();
+      const key = route ? `${wave}::${route}` : `${wave}::${row.doca || ""}::${index}`;
+      if (!uniqueRows.has(key)) uniqueRows.set(key, row);
+    });
+
+    return Array.from(uniqueRows.values()).map(row => ({
+      ...row,
+      impactCarrier: (typeof cleanTransportadora === "function"
+        ? cleanTransportadora(row.transportadora)
+        : String(row.transportadora || "").trim()) || "Sem transportadora",
+      impactReason: (typeof getJustification === "function" ? getJustification(row.rota) : "") || "Sem justificativa"
+    }));
+  }
+
+  function rankedImpacts(rows, getLabel) {
+    const counts = new Map();
+
+    rows.forEach(row => {
+      const label = String(getLabel(row) || "-").replace(/\s+/g, " ").trim() || "-";
+      counts.set(label, (counts.get(label) || 0) + 1);
+    });
+
+    return Array.from(counts.entries())
+      .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], "pt-BR", { sensitivity: "base" }));
+  }
+
+  function impactRankingRows(entries, emptyLabel) {
+    if (!entries.length) {
+      return `<tr><td class="closure-impact-empty" colspan="2">${escapeHtml(emptyLabel)}</td></tr>`;
+    }
+
+    return entries.slice(0, 8).map(([label, count]) => `
+      <tr>
+        <td title="${escapeHtml(label)}">${escapeHtml(label)}</td>
+        <td><span class="closure-impact-count">${String(count).padStart(2, "0")}</span></td>
+      </tr>
+    `).join("");
+  }
+
+  function renderClosureImpacts() {
+    const card = ensureImpactCard();
+    if (!card) return;
+
+    const rows = closureImpactRows();
+    const carrierRanking = rankedImpacts(rows, row => row.impactCarrier);
+    const reasonRanking = rankedImpacts(rows, row => row.impactReason);
+    const topCarrier = carrierRanking[0]?.[0] || "Sem impactos";
+    const topReason = reasonRanking[0]?.[0] || "Sem impactos";
+    const waveCount = Array.isArray(data?.ondas) ? data.ondas.length : 0;
+
+    card.innerHTML = `
+      <header class="closure-impact-header">
+        <strong class="closure-impact-title">
+          <i class="bi bi-bar-chart-line-fill" aria-hidden="true"></i>
+          Impactos por transportadora e motivo
+        </strong>
+        <small>Estratificação automática das rotas ainda não expedidas</small>
+        <span class="closure-impact-scope">
+          <i class="bi bi-layers-fill" aria-hidden="true"></i>
+          Todas as ondas · ${waveCount} analisadas
+        </span>
+      </header>
+
+      <div class="closure-impact-summary">
+        <article class="closure-impact-kpi total">
+          <span class="closure-impact-kpi-icon"><i class="bi bi-exclamation-triangle-fill" aria-hidden="true"></i></span>
+          <span class="closure-impact-kpi-copy">
+            <span>Total de impactos</span>
+            <strong>${rows.length}</strong>
+          </span>
+        </article>
+        <article class="closure-impact-kpi carrier">
+          <span class="closure-impact-kpi-icon"><i class="bi bi-truck" aria-hidden="true"></i></span>
+          <span class="closure-impact-kpi-copy">
+            <span>Maior ofensor transportadora</span>
+            <strong title="${escapeHtml(topCarrier)}">${escapeHtml(topCarrier)}</strong>
+          </span>
+        </article>
+        <article class="closure-impact-kpi reason">
+          <span class="closure-impact-kpi-icon"><i class="bi bi-chat-left-text-fill" aria-hidden="true"></i></span>
+          <span class="closure-impact-kpi-copy">
+            <span>Maior ofensor motivo</span>
+            <strong title="${escapeHtml(topReason)}">${escapeHtml(topReason)}</strong>
+          </span>
+        </article>
+      </div>
+
+      <div class="closure-impact-rankings">
+        <section class="closure-impact-ranking" aria-label="Ranking de motivos">
+          <header>
+            <strong><i class="bi bi-list-ol" aria-hidden="true"></i>Ranking motivos</strong>
+            <span>${reasonRanking.length}</span>
+          </header>
+          <div class="closure-impact-table-wrap">
+            <table class="closure-impact-table">
+              <thead><tr><th>Descrição</th><th>Qtd</th></tr></thead>
+              <tbody>${impactRankingRows(reasonRanking, "Nenhum motivo pendente")}</tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="closure-impact-ranking" aria-label="Ranking de transportadoras">
+          <header>
+            <strong><i class="bi bi-buildings-fill" aria-hidden="true"></i>Ranking transportadoras</strong>
+            <span>${carrierRanking.length}</span>
+          </header>
+          <div class="closure-impact-table-wrap">
+            <table class="closure-impact-table">
+              <thead><tr><th>Descrição</th><th>Qtd</th></tr></thead>
+              <tbody>${impactRankingRows(carrierRanking, "Nenhuma transportadora pendente")}</tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+    `;
+  }
+
   function renderClosureWaveGauges() {
     injectStyles();
 
@@ -385,6 +792,7 @@
       </div>
     `;
 
+    renderClosureImpacts();
     queueGaugeDraw();
   }
 
