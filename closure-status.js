@@ -1,8 +1,10 @@
 (() => {
   const STYLE_ID = "closure-status-module-style";
+  const ANALYTICS_COLUMN_ID = "closureAnalyticsColumn";
   const CARD_ID = "closureWaveGaugeCard";
   const CHART_ID = "closureWaveGaugeGrid";
   const IMPACT_CARD_ID = "closureImpactCard";
+  const IMPACT_TREND_ID = "closureImpactTrendChart";
   let resizeObserver = null;
   let bodyObserver = null;
   let drawQueued = false;
@@ -189,8 +191,17 @@
         white-space: nowrap;
       }
 
+      #fechamentoView .closure-analytics-column {
+        grid-column: 3;
+        grid-row: 1;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        align-content: start;
+        gap: 16px;
+        min-width: 0;
+      }
+
       .closure-impact-card {
-        grid-column: 1 / -1;
         min-width: 0;
         overflow: hidden;
         padding: 18px;
@@ -243,7 +254,7 @@
 
       .closure-impact-summary {
         display: grid;
-        grid-template-columns: minmax(150px, .55fr) repeat(2, minmax(220px, 1fr));
+        grid-template-columns: minmax(92px, .48fr) repeat(2, minmax(0, 1fr));
         gap: 10px;
         margin-top: 14px;
       }
@@ -251,25 +262,25 @@
       .closure-impact-kpi {
         min-width: 0;
         display: grid;
-        grid-template-columns: 42px minmax(0, 1fr);
+        grid-template-columns: 36px minmax(0, 1fr);
         align-items: center;
-        gap: 10px;
-        min-height: 78px;
-        padding: 12px;
+        gap: 8px;
+        min-height: 66px;
+        padding: 9px;
         border: 1px solid #d8e1e8;
         border-radius: 8px;
         background: #f8fbfd;
       }
 
       .closure-impact-kpi-icon {
-        width: 42px;
-        height: 42px;
+        width: 36px;
+        height: 36px;
         display: grid;
         place-items: center;
         border-radius: 8px;
         background: #e4f4fc;
         color: #0b7fc2;
-        font-size: 19px;
+        font-size: 16px;
       }
 
       .closure-impact-kpi.total .closure-impact-kpi-icon {
@@ -297,14 +308,60 @@
       .closure-impact-kpi-copy strong {
         overflow: hidden;
         color: #063354;
-        font: 950 18px/1.05 "Segoe UI", Arial, sans-serif;
+        font: 950 15px/1.05 "Segoe UI", Arial, sans-serif;
         text-overflow: ellipsis;
         white-space: nowrap;
       }
 
       .closure-impact-kpi.total .closure-impact-kpi-copy strong {
         color: #d82432;
-        font-size: 28px;
+        font-size: 24px;
+      }
+
+      .closure-impact-trend {
+        overflow: hidden;
+        margin-top: 10px;
+        border: 1px solid #d8e1e8;
+        border-radius: 8px;
+        background: #ffffff;
+      }
+
+      .closure-impact-trend header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        min-height: 38px;
+        padding: 9px 12px;
+        background: #edf6fb;
+        color: #063354;
+      }
+
+      .closure-impact-trend header strong {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        font: 900 11px/1 "Segoe UI", Arial, sans-serif;
+        text-transform: uppercase;
+      }
+
+      .closure-impact-trend header i { color: #0b7fc2; }
+
+      .closure-impact-trend header span {
+        color: #70808d;
+        font: 900 9px/1 "Segoe UI", Arial, sans-serif;
+        text-transform: uppercase;
+      }
+
+      .closure-impact-trend-stage {
+        height: 172px;
+        padding: 8px 10px 2px;
+      }
+
+      .closure-impact-trend-canvas {
+        display: block;
+        width: 100%;
+        height: 162px;
       }
 
       .closure-impact-rankings {
@@ -354,66 +411,70 @@
         text-align: center;
       }
 
-      .closure-impact-table-wrap {
-        overflow-x: auto;
+      .closure-impact-lines {
+        display: grid;
+        gap: 8px;
+        padding: 10px 12px 12px;
       }
 
-      .closure-impact-table {
-        width: 100%;
-        border-collapse: collapse;
-        table-layout: fixed;
+      .closure-impact-line {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 30px;
+        gap: 5px 8px;
+        align-items: center;
       }
 
-      .closure-impact-table th,
-      .closure-impact-table td {
-        padding: 7px 12px;
-        border-top: 1px solid #e1e8ee;
+      .closure-impact-line-label {
+        overflow: hidden;
         color: #263746;
-        font: 800 10px/1.2 "Segoe UI", Arial, sans-serif;
-        text-align: left;
+        font: 850 9px/1.1 "Segoe UI", Arial, sans-serif;
+        text-overflow: ellipsis;
+        white-space: nowrap;
       }
 
-      .closure-impact-table th:last-child,
-      .closure-impact-table td:last-child {
-        width: 62px;
-        text-align: center;
-      }
-
-      .closure-impact-ranking:last-child .closure-impact-table th:last-child,
-      .closure-impact-ranking:last-child .closure-impact-table td:last-child {
-        width: 132px;
-        padding-right: 78px;
-      }
-
-      .closure-impact-table thead th {
-        border-top: 0;
-        background: #f8fbfd;
-        color: #70808d;
-        font-size: 8px;
-        text-transform: uppercase;
-      }
-
-      .closure-impact-table tbody tr:first-child td:first-child {
-        color: #063354;
-        font-weight: 950;
-      }
-
-      .closure-impact-count {
-        display: inline-grid;
-        place-items: center;
-        min-width: 30px;
-        min-height: 22px;
-        padding: 3px 6px;
-        border-radius: 6px;
-        background: #e4f4fc;
+      .closure-impact-line strong {
+        grid-column: 2;
+        grid-row: 1 / span 2;
         color: #0872ad;
-        font-weight: 950;
+        font: 950 11px/1 "Segoe UI", Arial, sans-serif;
+        text-align: right;
       }
 
-      .closure-impact-empty {
-        padding: 20px 12px !important;
-        color: #70808d !important;
-        text-align: center !important;
+      .closure-impact-progress {
+        grid-column: 1;
+        width: 100%;
+        height: 6px;
+        overflow: hidden;
+        border: 0;
+        border-radius: 999px;
+        background: #dce8f0;
+        color: #0b7fc2;
+        appearance: none;
+      }
+
+      .closure-impact-progress::-webkit-progress-bar {
+        border-radius: 999px;
+        background: #dce8f0;
+      }
+
+      .closure-impact-progress::-webkit-progress-value {
+        border-radius: 999px;
+        background: #0b7fc2;
+      }
+
+      .closure-impact-progress::-moz-progress-bar {
+        border-radius: 999px;
+        background: #0b7fc2;
+      }
+
+      .closure-impact-ranking.reason .closure-impact-progress::-webkit-progress-value { background: #ee4254; }
+      .closure-impact-ranking.reason .closure-impact-progress::-moz-progress-bar { background: #ee4254; }
+
+      .closure-impact-line-empty {
+        padding: 14px 12px;
+        color: #70808d;
+        font: 800 10px/1.2 "Segoe UI", Arial, sans-serif;
+        text-align: center;
       }
 
       body.dark-mode .closure-gauges-card {
@@ -423,7 +484,8 @@
       }
 
       body.dark-mode .closure-impact-card,
-      body.dark-mode .closure-impact-ranking {
+      body.dark-mode .closure-impact-ranking,
+      body.dark-mode .closure-impact-trend {
         border-color: #294b66;
         background: #0d263b;
         color: #edf7ff;
@@ -435,8 +497,8 @@
       body.dark-mode .closure-impact-title,
       body.dark-mode .closure-impact-kpi-copy strong,
       body.dark-mode .closure-impact-ranking header,
-      body.dark-mode .closure-impact-table th,
-      body.dark-mode .closure-impact-table td { color: #edf7ff; }
+      body.dark-mode .closure-impact-trend header,
+      body.dark-mode .closure-impact-line-label { color: #edf7ff; }
 
       body.dark-mode .closure-gauges-header small,
       body.dark-mode .closure-gauges-legend,
@@ -444,7 +506,8 @@
       body.dark-mode .closure-gauge-counts,
       body.dark-mode .closure-impact-header small,
       body.dark-mode .closure-impact-kpi-copy span,
-      body.dark-mode .closure-impact-empty { color: #afc0cd !important; }
+      body.dark-mode .closure-impact-trend header span,
+      body.dark-mode .closure-impact-line-empty { color: #afc0cd !important; }
 
       body.dark-mode .closure-gauges-meta {
         border-color: #365b75;
@@ -458,8 +521,7 @@
         color: #edf7ff;
       }
 
-      body.dark-mode .closure-impact-kpi,
-      body.dark-mode .closure-impact-table thead th {
+      body.dark-mode .closure-impact-kpi {
         border-color: #294b66;
         background: #102f46;
       }
@@ -468,10 +530,10 @@
         background: #153a54;
       }
 
-      body.dark-mode .closure-impact-table th,
-      body.dark-mode .closure-impact-table td {
-        border-color: #294b66;
-      }
+      body.dark-mode .closure-impact-trend header { background: #153a54; }
+
+      body.dark-mode .closure-impact-progress,
+      body.dark-mode .closure-impact-progress::-webkit-progress-bar { background: #294b66; }
 
       body.dark-mode .closure-gauge-wave {
         border-color: #294b66;
@@ -489,7 +551,10 @@
             minmax(290px, 330px) !important;
         }
 
-        #fechamentoView .closure-gauges-card { grid-column: 1 / -1; }
+        #fechamentoView .closure-analytics-column {
+          grid-column: 1 / -1;
+          grid-row: auto;
+        }
       }
 
       @media (max-width: 900px) {
@@ -497,8 +562,10 @@
           grid-template-columns: minmax(0, 1fr) !important;
         }
 
-        #fechamentoView .closure-gauges-card { grid-column: auto; }
-        #fechamentoView .closure-impact-card { grid-column: auto; }
+        #fechamentoView .closure-analytics-column {
+          grid-column: auto;
+          grid-row: auto;
+        }
         .closure-gauges-grid { grid-template-columns: repeat(2, minmax(126px, 1fr)); }
         .closure-impact-summary { grid-template-columns: minmax(0, 1fr); }
         .closure-impact-rankings { grid-template-columns: minmax(0, 1fr); }
@@ -508,6 +575,8 @@
         .closure-gauges-grid { grid-template-columns: minmax(0, 1fr); }
         .closure-impact-card { padding: 14px; }
         .closure-impact-kpi-copy strong { font-size: 15px; }
+        .closure-impact-trend-stage { height: 154px; padding-inline: 4px; }
+        .closure-impact-trend-canvas { height: 146px; }
       }
     `;
 
@@ -558,9 +627,33 @@
     return { key: "critical", label: "Abaixo da meta" };
   }
 
+  function ensureAnalyticsColumn(layout) {
+    let column = document.getElementById(ANALYTICS_COLUMN_ID);
+    if (!column) {
+      column = document.createElement("div");
+      column.id = ANALYTICS_COLUMN_ID;
+      column.className = "closure-analytics-column";
+      column.setAttribute("aria-label", "Indicadores gráficos do fechamento");
+      layout.appendChild(column);
+    }
+
+    [CARD_ID, IMPACT_CARD_ID].forEach(id => {
+      const existingCard = document.getElementById(id);
+      if (existingCard && existingCard.parentElement !== column) column.appendChild(existingCard);
+    });
+
+    if (typeof ResizeObserver === "function" && !resizeObserver) {
+      resizeObserver = new ResizeObserver(queueGaugeDraw);
+      resizeObserver.observe(column);
+    }
+
+    return column;
+  }
+
   function ensureCard() {
     const layout = document.querySelector("#fechamentoView .closure-layout");
     if (!layout) return null;
+    const analyticsColumn = ensureAnalyticsColumn(layout);
 
     layout.classList.remove("closure-status-enabled");
     layout.classList.add("closure-gauges-enabled");
@@ -575,12 +668,7 @@
     card.id = CARD_ID;
     card.className = "closure-gauges-card";
     card.setAttribute("aria-label", "Atualização de fechamento por ondas");
-    layout.appendChild(card);
-
-    if (typeof ResizeObserver === "function") {
-      resizeObserver = new ResizeObserver(queueGaugeDraw);
-      resizeObserver.observe(card);
-    }
+    analyticsColumn.appendChild(card);
 
     return card;
   }
@@ -588,6 +676,7 @@
   function ensureImpactCard() {
     const layout = document.querySelector("#fechamentoView .closure-layout");
     if (!layout) return null;
+    const analyticsColumn = ensureAnalyticsColumn(layout);
 
     let card = document.getElementById(IMPACT_CARD_ID);
     if (card) return card;
@@ -596,7 +685,7 @@
     card.id = IMPACT_CARD_ID;
     card.className = "closure-impact-card";
     card.setAttribute("aria-label", "Impactos por transportadora e motivo");
-    layout.appendChild(card);
+    analyticsColumn.appendChild(card);
     return card;
   }
 
@@ -632,17 +721,31 @@
       .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], "pt-BR", { sensitivity: "base" }));
   }
 
-  function impactRankingRows(entries, emptyLabel) {
-    if (!entries.length) {
-      return `<tr><td class="closure-impact-empty" colspan="2">${escapeHtml(emptyLabel)}</td></tr>`;
-    }
+  function impactLineRows(entries, emptyLabel) {
+    if (!entries.length) return `<div class="closure-impact-line-empty">${escapeHtml(emptyLabel)}</div>`;
+    const maximum = Math.max(1, ...entries.map(([, count]) => Number(count) || 0));
 
-    return entries.slice(0, 8).map(([label, count]) => `
-      <tr>
-        <td title="${escapeHtml(label)}">${escapeHtml(label)}</td>
-        <td><span class="closure-impact-count">${String(count).padStart(2, "0")}</span></td>
-      </tr>
+    return entries.slice(0, 7).map(([label, count]) => `
+      <div class="closure-impact-line" title="${escapeHtml(label)}: ${count}">
+        <span class="closure-impact-line-label">${escapeHtml(label)}</span>
+        <progress class="closure-impact-progress" max="${maximum}" value="${count}" aria-label="${escapeHtml(label)}: ${count} impactos"></progress>
+        <strong>${String(count).padStart(2, "0")}</strong>
+      </div>
     `).join("");
+  }
+
+  function impactTrendSeries(rows) {
+    const waves = Array.isArray(data?.ondas) ? data.ondas : [];
+
+    return waves.map(wave => {
+      const normalizedWave = typeof waveLabel === "function" ? waveLabel(wave) : String(wave || "");
+      const label = typeof displayWave === "function" ? displayWave(wave) : String(wave || "");
+      const count = rows.reduce((total, row) => {
+        const rowWave = typeof waveLabel === "function" ? waveLabel(row.onda) : String(row.onda || "");
+        return total + (rowWave === normalizedWave ? 1 : 0);
+      }, 0);
+      return { label, count };
+    });
   }
 
   function renderClosureImpacts() {
@@ -655,6 +758,8 @@
     const topCarrier = carrierRanking[0]?.[0] || "Sem impactos";
     const topReason = reasonRanking[0]?.[0] || "Sem impactos";
     const waveCount = Array.isArray(data?.ondas) ? data.ondas.length : 0;
+    const trendSeries = impactTrendSeries(rows);
+    const trendAccessibleLabel = trendSeries.map(item => `${item.label}: ${item.count}`).join(", ");
 
     card.innerHTML = `
       <header class="closure-impact-header">
@@ -693,17 +798,30 @@
         </article>
       </div>
 
+      <section class="closure-impact-trend" aria-label="Impactos pendentes por onda">
+        <header>
+          <strong><i class="bi bi-graph-up" aria-hidden="true"></i>Impactos por onda</strong>
+          <span>Evolução das pendências</span>
+        </header>
+        <div class="closure-impact-trend-stage">
+          <canvas
+            class="closure-impact-trend-canvas"
+            id="${IMPACT_TREND_ID}"
+            data-labels="${escapeHtml(trendSeries.map(item => item.label).join("|"))}"
+            data-values="${trendSeries.map(item => item.count).join(",")}"
+            role="img"
+            aria-label="${escapeHtml(trendAccessibleLabel || "Nenhum impacto por onda")}"></canvas>
+        </div>
+      </section>
+
       <div class="closure-impact-rankings">
-        <section class="closure-impact-ranking" aria-label="Ranking de motivos">
+        <section class="closure-impact-ranking reason" aria-label="Ranking de motivos">
           <header>
             <strong><i class="bi bi-list-ol" aria-hidden="true"></i>Ranking motivos</strong>
             <span>${reasonRanking.length}</span>
           </header>
-          <div class="closure-impact-table-wrap">
-            <table class="closure-impact-table">
-              <thead><tr><th>Descrição</th><th>Qtd</th></tr></thead>
-              <tbody>${impactRankingRows(reasonRanking, "Nenhum motivo pendente")}</tbody>
-            </table>
+          <div class="closure-impact-lines">
+            ${impactLineRows(reasonRanking, "Nenhum motivo pendente")}
           </div>
         </section>
 
@@ -712,15 +830,14 @@
             <strong><i class="bi bi-buildings-fill" aria-hidden="true"></i>Ranking transportadoras</strong>
             <span>${carrierRanking.length}</span>
           </header>
-          <div class="closure-impact-table-wrap">
-            <table class="closure-impact-table">
-              <thead><tr><th>Descrição</th><th>Qtd</th></tr></thead>
-              <tbody>${impactRankingRows(carrierRanking, "Nenhuma transportadora pendente")}</tbody>
-            </table>
+          <div class="closure-impact-lines">
+            ${impactLineRows(carrierRanking, "Nenhuma transportadora pendente")}
           </div>
         </section>
       </div>
     `;
+
+    queueGaugeDraw();
   }
 
   function renderClosureWaveGauges() {
@@ -803,6 +920,101 @@
     requestAnimationFrame(() => {
       drawQueued = false;
       document.querySelectorAll(`#${CARD_ID} .closure-gauge-canvas`).forEach(drawGauge);
+      const impactTrend = document.getElementById(IMPACT_TREND_ID);
+      if (impactTrend) drawImpactTrend(impactTrend);
+    });
+  }
+
+  function drawImpactTrend(canvas) {
+    const width = Math.round(canvas.getBoundingClientRect().width);
+    const height = Math.round(canvas.getBoundingClientRect().height);
+    if (!width || !height) return;
+
+    const pixelRatio = Math.min(window.devicePixelRatio || 1, 2);
+    const renderWidth = Math.round(width * pixelRatio);
+    const renderHeight = Math.round(height * pixelRatio);
+    if (canvas.width !== renderWidth || canvas.height !== renderHeight) {
+      canvas.width = renderWidth;
+      canvas.height = renderHeight;
+    }
+
+    const context = canvas.getContext("2d");
+    if (!context) return;
+
+    const labels = String(canvas.dataset.labels || "").split("|").filter(Boolean);
+    const values = String(canvas.dataset.values || "").split(",").map(value => Math.max(0, Number(value) || 0));
+    const dark = document.body.classList.contains("dark-mode");
+    const padding = { top: 22, right: 18, bottom: 31, left: 34 };
+    const chartWidth = Math.max(1, width - padding.left - padding.right);
+    const chartHeight = Math.max(1, height - padding.top - padding.bottom);
+    const rawMaximum = Math.max(1, ...values);
+    const step = rawMaximum <= 4 ? 1 : rawMaximum <= 10 ? 2 : Math.ceil(rawMaximum / 4 / 5) * 5;
+    const maximum = Math.max(step * 4, Math.ceil(rawMaximum / step) * step);
+    const axisColor = dark ? "rgba(175,192,205,.34)" : "rgba(89,107,120,.22)";
+    const textColor = dark ? "#afc0cd" : "#647684";
+    const lineColor = dark ? "#48bfff" : "#087fbd";
+    const pointFill = dark ? "#0d263b" : "#ffffff";
+
+    context.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+    context.clearRect(0, 0, width, height);
+    context.font = '800 8px "Segoe UI", Arial, sans-serif';
+    context.lineWidth = 1;
+    context.textBaseline = "middle";
+
+    for (let index = 0; index <= 4; index += 1) {
+      const value = (maximum / 4) * index;
+      const y = padding.top + chartHeight - (index / 4) * chartHeight;
+      context.beginPath();
+      context.moveTo(padding.left, y);
+      context.lineTo(width - padding.right, y);
+      context.strokeStyle = axisColor;
+      context.stroke();
+      context.fillStyle = textColor;
+      context.textAlign = "right";
+      context.fillText(String(Math.round(value)), padding.left - 7, y);
+    }
+
+    if (!labels.length || !values.length) return;
+    const xFor = index => labels.length === 1
+      ? padding.left + chartWidth / 2
+      : padding.left + (index / (labels.length - 1)) * chartWidth;
+    const yFor = value => padding.top + chartHeight - (clamp(value, 0, maximum) / maximum) * chartHeight;
+
+    context.beginPath();
+    values.forEach((value, index) => {
+      const x = xFor(index);
+      const y = yFor(value);
+      if (index === 0) context.moveTo(x, y);
+      else context.lineTo(x, y);
+    });
+    context.strokeStyle = lineColor;
+    context.lineWidth = 3;
+    context.lineJoin = "round";
+    context.lineCap = "round";
+    context.stroke();
+
+    values.forEach((value, index) => {
+      const x = xFor(index);
+      const y = yFor(value);
+      context.beginPath();
+      context.arc(x, y, 4.5, 0, Math.PI * 2);
+      context.fillStyle = pointFill;
+      context.fill();
+      context.strokeStyle = lineColor;
+      context.lineWidth = 3;
+      context.stroke();
+
+      context.fillStyle = dark ? "#edf7ff" : "#063354";
+      context.font = '950 10px "Segoe UI", Arial, sans-serif';
+      context.textAlign = "center";
+      context.textBaseline = "bottom";
+      context.fillText(String(value), x, Math.max(11, y - 8));
+
+      context.fillStyle = textColor;
+      context.font = '850 8px "Segoe UI", Arial, sans-serif';
+      context.textBaseline = "top";
+      const shortLabel = String(labels[index] || "").replace(/^ONDA\s*/i, "");
+      context.fillText(shortLabel, x, height - padding.bottom + 10);
     });
   }
 
