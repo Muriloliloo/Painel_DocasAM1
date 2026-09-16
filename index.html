@@ -3581,6 +3581,489 @@
       font: 950 13px "Segoe UI", Arial, sans-serif;
       text-transform: uppercase;
     }
+
+    /* Fechamento executivo: painel 16:9 baseado no consolidado real das ondas. */
+    #fechamentoExecutivoView {
+      box-sizing: border-box;
+      padding: 10px 12px;
+      background: #dfeaf3;
+      overflow: auto;
+    }
+
+    .executive-board {
+      --executive-navy: #073455;
+      --executive-ink: #001f3d;
+      --executive-red: #ef3340;
+      --executive-green: #11a858;
+      width: min(100%, calc((100dvh - 196px) * 16 / 9));
+      min-width: 1180px;
+      aspect-ratio: 16 / 9;
+      margin: 0 auto;
+      display: grid;
+      grid-template-rows: 8.5% 28% 35.5% 28%;
+      overflow: hidden;
+      border: 1px solid #a9bdce;
+      border-radius: 8px;
+      background: #f8fbfe;
+      color: var(--executive-ink);
+      box-shadow: 0 12px 30px rgba(2, 35, 63, .14);
+      font-family: "Segoe UI", Arial, sans-serif;
+    }
+
+    .executive-board * { box-sizing: border-box; }
+
+    .executive-topbar {
+      display: grid;
+      grid-template-columns: minmax(390px, 1fr) auto auto;
+      align-items: center;
+      gap: 22px;
+      padding: 0 22px;
+      background: linear-gradient(135deg, #0a456e 0%, #062b49 75%, #041e34 100%);
+      color: #fff;
+    }
+
+    .executive-heading {
+      display: grid;
+      grid-template-columns: 46px minmax(0, 1fr);
+      column-gap: 12px;
+      align-items: center;
+    }
+
+    .executive-heading > i {
+      grid-row: 1 / 3;
+      font-size: 36px;
+      color: #fff;
+    }
+
+    .executive-heading strong {
+      font: 950 clamp(20px, 1.55vw, 34px)/1 "Arial Black", "Segoe UI Black", "Segoe UI", sans-serif;
+      letter-spacing: -.02em;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .executive-heading small {
+      color: #72c9f0;
+      font: 800 clamp(9px, .57vw, 13px)/1.15 "Segoe UI", Arial, sans-serif;
+      letter-spacing: .11em;
+      text-transform: uppercase;
+    }
+
+    .executive-status {
+      min-width: 260px;
+      min-height: 48px;
+      display: grid;
+      grid-template-columns: 32px auto;
+      grid-template-rows: auto auto;
+      align-items: center;
+      column-gap: 10px;
+      padding: 8px 20px;
+      border-radius: 999px;
+      background: #fff6f7;
+      color: var(--executive-red);
+      box-shadow: inset 0 0 0 1px rgba(239, 51, 64, .18);
+    }
+
+    .executive-status::before {
+      content: "";
+      grid-row: 1 / 3;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+
+    .executive-status strong {
+      font: 950 15px/1 "Segoe UI", Arial, sans-serif;
+      text-transform: uppercase;
+    }
+
+    .executive-status small {
+      color: var(--executive-ink);
+      font: 900 11px/1.1 "Segoe UI", Arial, sans-serif;
+    }
+
+    .executive-status.on-target {
+      background: #effcf4;
+      color: var(--executive-green);
+      box-shadow: inset 0 0 0 1px rgba(17, 168, 88, .2);
+    }
+
+    .executive-share {
+      min-width: 210px;
+      height: 48px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      border: 0;
+      border-radius: 11px;
+      background: linear-gradient(180deg, #ffdb47, #ffc51a);
+      color: #03294a;
+      box-shadow: inset 0 -3px 0 rgba(151, 103, 0, .2), 0 4px 12px rgba(0, 0, 0, .18);
+      font: 950 16px/1 "Segoe UI", Arial, sans-serif;
+      text-transform: uppercase;
+      cursor: pointer;
+    }
+
+    .executive-share:hover { filter: brightness(1.04); transform: translateY(-1px); }
+    .executive-share:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
+    .executive-share i { font-size: 20px; }
+
+    .executive-hero {
+      display: grid;
+      grid-template-columns: 34% minmax(0, 1fr);
+      gap: 18px;
+      padding: 12px;
+      border-bottom: 1px solid #c7d7e4;
+      background: #fff;
+    }
+
+    .executive-score-card {
+      display: grid;
+      grid-template-columns: minmax(210px, 1fr) minmax(190px, .85fr);
+      align-items: center;
+      min-width: 0;
+      border-right: 1px solid #c7d7e4;
+      padding-right: 18px;
+    }
+
+    .executive-ring {
+      --ring-angle: 0deg;
+      --ring-color: var(--executive-red);
+      width: clamp(145px, 12vw, 225px);
+      aspect-ratio: 1;
+      margin: auto;
+      display: grid;
+      place-items: center;
+      position: relative;
+    }
+
+    .executive-ring canvas {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+    }
+
+    .executive-ring-copy {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      place-items: center;
+      text-align: center;
+    }
+
+    .executive-ring-copy strong {
+      font: 950 clamp(40px, 4.1vw, 72px)/.9 "Arial Black", "Segoe UI Black", "Segoe UI", sans-serif;
+      letter-spacing: -.06em;
+    }
+
+    .executive-ring-copy span {
+      margin-top: 8px;
+      font: 950 clamp(17px, 1.35vw, 26px)/1 "Segoe UI", Arial, sans-serif;
+      text-transform: uppercase;
+    }
+
+    .executive-target {
+      display: grid;
+      gap: 14px;
+      align-content: center;
+      justify-items: center;
+      text-align: center;
+    }
+
+    .executive-target-label {
+      display: grid;
+      grid-template-columns: 34px auto;
+      align-items: center;
+      column-gap: 8px;
+      text-align: left;
+    }
+
+    .executive-target-label i { grid-row: 1 / 3; font-size: 30px; color: #0a4a77; }
+    .executive-target-label span { font: 950 14px/1 "Segoe UI", Arial, sans-serif; text-transform: uppercase; }
+    .executive-target-label strong { font: 950 clamp(32px, 2.5vw, 48px)/1 "Arial Black", "Segoe UI Black", sans-serif; }
+
+    .executive-gap {
+      min-width: 176px;
+      padding: 9px 14px;
+      border-radius: 7px;
+      background: #ffe9eb;
+      color: var(--executive-red);
+      font: 950 clamp(18px, 1.55vw, 29px)/1 "Segoe UI", Arial, sans-serif;
+    }
+
+    .executive-gap small {
+      display: block;
+      margin-top: 5px;
+      color: var(--executive-ink);
+      font: 900 9px/1 "Segoe UI", Arial, sans-serif;
+      text-transform: uppercase;
+    }
+
+    .executive-hero-copy {
+      min-width: 0;
+      display: grid;
+      grid-template-rows: auto 1fr;
+      gap: 16px;
+      align-content: center;
+      padding: 10px 12px 4px 4px;
+    }
+
+    .executive-callout {
+      margin: 0;
+      font: 950 clamp(24px, 2.15vw, 43px)/1.08 "Arial Black", "Segoe UI Black", "Segoe UI", sans-serif;
+      letter-spacing: -.035em;
+    }
+
+    .executive-callout em { color: var(--executive-red); font-style: normal; }
+
+    .executive-kpis {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .executive-kpi {
+      min-width: 0;
+      display: grid;
+      grid-template-columns: 62px minmax(0, 1fr);
+      align-items: center;
+      gap: 12px;
+      padding: 10px 14px;
+      border-radius: 8px;
+      background: #eaf6ff;
+    }
+
+    .executive-kpi.loaded { background: #e8faef; }
+    .executive-kpi.loss { background: #ffebed; }
+
+    .executive-kpi-icon {
+      width: 58px;
+      height: 58px;
+      display: grid;
+      place-items: center;
+      border-radius: 8px;
+      background: #cfeaff;
+      color: #073c65;
+      font-size: 29px;
+    }
+
+    .executive-kpi.loaded .executive-kpi-icon { background: #c7f1d8; }
+    .executive-kpi.loss .executive-kpi-icon { background: #ffcfd3; color: var(--executive-red); }
+    .executive-kpi span { font: 950 13px/1 "Segoe UI", Arial, sans-serif; text-transform: uppercase; }
+    .executive-kpi strong { display: block; margin-top: 4px; font: 950 clamp(33px, 2.8vw, 54px)/.9 "Arial Black", "Segoe UI Black", sans-serif; }
+
+    .executive-main-grid,
+    .executive-bottom-grid {
+      min-height: 0;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      padding: 0 12px 10px;
+      background: #f8fbfe;
+    }
+
+    .executive-main-grid { padding-top: 10px; }
+
+    .executive-panel {
+      min-width: 0;
+      min-height: 0;
+      display: grid;
+      grid-template-rows: 42px minmax(0, 1fr);
+      overflow: hidden;
+      border: 1px solid #b8cad8;
+      border-radius: 7px;
+      background: #fff;
+    }
+
+    .executive-panel-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 0 14px;
+      background: linear-gradient(180deg, #0a4a78, #073455);
+      color: #fff;
+      font: 950 clamp(14px, 1vw, 21px)/1 "Segoe UI", Arial, sans-serif;
+      text-transform: uppercase;
+    }
+
+    .executive-panel-title i { font-size: 19px; }
+
+    .executive-wave-table,
+    .executive-offender-table {
+      width: 100%;
+      height: 100%;
+      border-collapse: collapse;
+      table-layout: fixed;
+      font: 850 clamp(9px, .62vw, 13px)/1.05 "Segoe UI", Arial, sans-serif;
+    }
+
+    .executive-wave-table th,
+    .executive-wave-table td,
+    .executive-offender-table th,
+    .executive-offender-table td {
+      padding: 4px 8px;
+      border: 1px solid #c9d9e6;
+      text-align: center;
+    }
+
+    .executive-wave-table th,
+    .executive-offender-table th {
+      background: #e4f1fb;
+      font-weight: 950;
+      text-transform: uppercase;
+    }
+
+    .executive-wave-table td:first-child,
+    .executive-offender-table td:first-child { text-align: left; font-weight: 950; }
+    .executive-wave-table tbody tr:nth-child(even),
+    .executive-offender-table tbody tr:nth-child(even) { background: #f1f7fb; }
+    .executive-wave-table tfoot td,
+    .executive-offender-table tfoot td { background: #eaf4fb; font-weight: 950; font-size: 1.12em; }
+    .executive-rate.bad { color: var(--executive-red); }
+    .executive-rate.good { color: #009543; }
+
+    .executive-chart-layout {
+      min-height: 0;
+      display: grid;
+      grid-template-columns: minmax(0, 1.15fr) minmax(240px, .85fr);
+      align-items: center;
+      gap: 6px;
+      padding: 8px 12px;
+    }
+
+    .executive-donut-wrap {
+      position: relative;
+      min-height: 0;
+      height: 100%;
+      display: grid;
+      place-items: center;
+    }
+
+    .executive-donut-wrap canvas { width: 100%; height: 100%; min-height: 210px; }
+
+    .executive-chart-legend {
+      display: grid;
+      gap: 7px;
+      align-content: center;
+    }
+
+    .executive-chart-legend-item {
+      display: grid;
+      grid-template-columns: 10px minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 8px;
+      font: 850 clamp(9px, .58vw, 12px)/1.12 "Segoe UI", Arial, sans-serif;
+      text-transform: uppercase;
+    }
+
+    .executive-chart-legend-item i { width: 10px; height: 10px; border-radius: 50%; }
+    .executive-chart-legend-item strong { font-size: 1.1em; }
+    .executive-chart-legend-item small { grid-column: 2 / 4; color: #536e83; font-weight: 850; }
+
+    .executive-offender-table td:first-child { width: 60%; }
+    .executive-offender-reason { display: flex; align-items: center; gap: 8px; }
+    .executive-offender-reason i { width: 11px; height: 11px; flex: 0 0 11px; border-radius: 50%; }
+
+    .executive-insights {
+      min-height: 0;
+      display: grid;
+      grid-template-rows: repeat(3, minmax(0, 1fr)) auto;
+      gap: 6px;
+      padding: 8px 12px;
+    }
+
+    .executive-insight {
+      min-height: 0;
+      display: grid;
+      grid-template-columns: 32px minmax(0, 1fr);
+      align-items: center;
+      gap: 10px;
+      padding: 5px 10px;
+      border: 1px solid #d3e0ea;
+      border-radius: 7px;
+      background: #f2f8fc;
+    }
+
+    .executive-insight-number {
+      width: 27px;
+      height: 27px;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      background: var(--executive-red);
+      color: #fff;
+      font: 950 15px/1 "Segoe UI", Arial, sans-serif;
+    }
+
+    .executive-insight:nth-child(2) .executive-insight-number { background: #ffd22e; color: #001b35; }
+    .executive-insight:nth-child(3) .executive-insight-number { background: var(--executive-green); }
+    .executive-insight strong { display: block; font: 950 clamp(10px, .72vw, 14px)/1.08 "Segoe UI", Arial, sans-serif; }
+    .executive-insight small { display: block; margin-top: 3px; color: #536e83; font: 750 clamp(8px, .54vw, 11px)/1.12 "Segoe UI", Arial, sans-serif; }
+
+    .executive-owners {
+      display: grid;
+      grid-template-columns: auto repeat(3, minmax(100px, 1fr));
+      align-items: center;
+      gap: 8px;
+      padding: 3px 2px 0;
+      font: 950 9px/1 "Segoe UI", Arial, sans-serif;
+      text-transform: uppercase;
+    }
+
+    .executive-owner {
+      min-height: 26px;
+      display: grid;
+      place-items: center;
+      border-radius: 999px;
+      background: #0d88d5;
+      color: #fff;
+    }
+
+    .executive-owner:nth-child(3) { background: #ffd22e; color: #001b35; }
+    .executive-owner:nth-child(4) { background: #0b5a91; }
+
+    body.dark-mode .executive-board { background: #0b1f2d; border-color: #48687d; }
+    body.dark-mode .executive-hero,
+    body.dark-mode .executive-panel { background: #102b3b; color: #f6fbff; }
+    body.dark-mode .executive-main-grid,
+    body.dark-mode .executive-bottom-grid { background: #0b1f2d; }
+    body.dark-mode .executive-score-card { border-color: #48687d; }
+    body.dark-mode .executive-wave-table tbody tr:nth-child(even),
+    body.dark-mode .executive-offender-table tbody tr:nth-child(even),
+    body.dark-mode .executive-insight { background: #173748; }
+    body.dark-mode .executive-wave-table th,
+    body.dark-mode .executive-offender-table th,
+    body.dark-mode .executive-wave-table tfoot td,
+    body.dark-mode .executive-offender-table tfoot td { background: #1e465c; color: #fff; }
+    body.dark-mode .executive-wave-table :is(th, td),
+    body.dark-mode .executive-offender-table :is(th, td),
+    body.dark-mode .executive-insight { border-color: #48687d; }
+    body.dark-mode .executive-insight small,
+    body.dark-mode .executive-chart-legend-item small { color: #b9cbd8; }
+
+    @media (max-width: 1300px), (max-height: 760px) {
+      .executive-board {
+        width: 1180px;
+        min-width: 1180px;
+        zoom: .8;
+      }
+    }
+
+    @media (max-width: 1100px) {
+      .executive-board { zoom: .68; }
+    }
+
+    @media (max-width: 760px) {
+      .executive-board { zoom: .52; }
+    }
+
+    @media (max-width: 1280px) {
+      #fechamentoExecutivoView { padding: 8px; }
+      .executive-board { margin: 0; }
+    }
     .print-table {
       width: 100%;
       border-collapse: collapse;
@@ -8719,6 +9202,7 @@ body.editor-open .global-theme-toggle {
       <section class="view-switch" aria-label="Navegação do painel">
         <button type="button" data-view="justificativas">Justificativas</button>
         <button type="button" data-view="fechamento">Fechamento</button>
+        <button type="button" data-view="fechamentoExecutivo">Fechamento Executivo</button>
       </section>
       <div class="actions">
         <button id="refreshSyncBtn" class="sync-refresh-btn" type="button" title="Atualizar dados do painel" aria-label="Atualizar dados do painel">
@@ -9202,6 +9686,9 @@ body.editor-open .global-theme-toggle {
         <div class="closure tw-grid tw-gap-1.5" id="closureContent"></div>
         <div class="closure-message tw-overflow-hidden tw-rounded-lg tw-border tw-border-[#c7d3df] tw-bg-[#edf4fb]" id="closureMessage"></div>
       </div>
+    </section>
+    <section class="panel-view tailwind-mode" id="fechamentoExecutivoView" aria-label="Fechamento executivo 16 por 9">
+      <div class="executive-board" id="executiveClosureBoard"></div>
     </section>
     <section class="print-table-wrap" aria-label="Tabela para PDF">
       <div id="printRows"></div>
@@ -13039,6 +13526,280 @@ body.editor-open .global-theme-toggle {
       `;
       document.getElementById("closureMessage").innerHTML = renderClosureMessageHtml();
     }
+
+    function executiveSummaryRows() {
+      const waveRows = (data.ondas || []).map(wave => {
+        const planned = plannedRows(wave).length;
+        const shipped = operationalShippedRows(wave);
+        return {
+          ciclo: "AM1",
+          label: displayWave(wave).replace("ONDA 0", "Onda ").replace("ONDA ", "Onda "),
+          planned,
+          shipped,
+          delay: Math.max(0, planned - shipped)
+        };
+      });
+      const complements = extraRows().map(row => ({
+        ciclo: row.ciclo,
+        label: `Onda 1 ${row.ciclo}`,
+        planned: row.planned,
+        shipped: row.shipped,
+        delay: row.delay
+      }));
+      return [...waveRows, ...complements].filter(row => row.planned > 0 || row.shipped > 0);
+    }
+
+    function executiveReasonRows() {
+      const counts = new Map();
+      (data.ondas || []).forEach(wave => {
+        pendingRows(wave, true).forEach(row => {
+          const reason = getJustification(row.rota) || "Sem justificativa";
+          counts.set(reason, (counts.get(reason) || 0) + 1);
+        });
+      });
+      const sorted = [...counts.entries()]
+        .map(([reason, count]) => ({ reason, count }))
+        .sort((a, b) => b.count - a.count || a.reason.localeCompare(b.reason, "pt-BR", { sensitivity: "base" }));
+      if (sorted.length <= 5) return sorted;
+      const visible = sorted.slice(0, 4);
+      visible.push({ reason: "Outros motivos", count: sorted.slice(4).reduce((sum, item) => sum + item.count, 0) });
+      return visible;
+    }
+
+    function drawExecutiveProgressRing(percent, color) {
+      const canvas = document.getElementById("executiveProgressRing");
+      if (!canvas) return;
+      const rect = canvas.getBoundingClientRect();
+      if (!rect.width || !rect.height) return;
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      canvas.width = Math.round(rect.width * dpr);
+      canvas.height = Math.round(rect.height * dpr);
+      const ctx = canvas.getContext("2d");
+      ctx.scale(dpr, dpr);
+      const size = Math.min(rect.width, rect.height);
+      const radius = size * .39;
+      const lineWidth = Math.max(14, size * .105);
+      const cx = rect.width / 2;
+      const cy = rect.height / 2;
+      ctx.lineCap = "butt";
+      ctx.lineWidth = lineWidth;
+      ctx.strokeStyle = "#dce6ee";
+      ctx.beginPath();
+      ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.strokeStyle = color;
+      ctx.beginPath();
+      ctx.arc(cx, cy, radius, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * Math.min(Math.max(percent, 0), 100) / 100);
+      ctx.stroke();
+    }
+
+    function drawExecutiveDonut(reasons, total) {
+      const canvas = document.getElementById("executiveDonutChart");
+      if (!canvas) return;
+      const rect = canvas.getBoundingClientRect();
+      if (!rect.width || !rect.height) return;
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      canvas.width = Math.round(rect.width * dpr);
+      canvas.height = Math.round(rect.height * dpr);
+      const ctx = canvas.getContext("2d");
+      ctx.scale(dpr, dpr);
+      const colors = ["#f44752", "#ff973e", "#ffd22e", "#3469ef", "#72d36a"];
+      const cx = rect.width / 2;
+      const cy = rect.height / 2;
+      const radius = Math.min(rect.width, rect.height) * .39;
+      const inner = radius * .56;
+      let start = -Math.PI / 2;
+      const denominator = Math.max(total, 1);
+      reasons.forEach((item, index) => {
+        const angle = Math.PI * 2 * item.count / denominator;
+        ctx.fillStyle = colors[index % colors.length];
+        ctx.beginPath();
+        ctx.arc(cx, cy, radius, start, start + angle);
+        ctx.arc(cx, cy, inner, start + angle, start, true);
+        ctx.closePath();
+        ctx.fill();
+        if (angle > .35) {
+          const middle = start + angle / 2;
+          const labelRadius = (radius + inner) / 2;
+          ctx.fillStyle = index === 1 || index === 2 || index === 4 ? "#052743" : "#fff";
+          ctx.font = `900 ${Math.max(13, radius * .13)}px Segoe UI`;
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          ctx.fillText(String(item.count), cx + Math.cos(middle) * labelRadius, cy + Math.sin(middle) * labelRadius);
+        }
+        start += angle;
+      });
+      ctx.fillStyle = document.body.classList.contains("dark-mode") ? "#102b3b" : "#fff";
+      ctx.beginPath();
+      ctx.arc(cx, cy, inner - 1, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = document.body.classList.contains("dark-mode") ? "#fff" : "#001f3d";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.font = `950 ${Math.max(26, radius * .28)}px Segoe UI`;
+      ctx.fillText(String(total), cx, cy - 9);
+      ctx.font = `950 ${Math.max(11, radius * .105)}px Segoe UI`;
+      ctx.fillText(total === 1 ? "PERDA" : "PERDAS", cx, cy + 18);
+      ctx.fillStyle = document.body.classList.contains("dark-mode") ? "#b9cbd8" : "#536e83";
+      ctx.font = `850 ${Math.max(9, radius * .08)}px Segoe UI`;
+      ctx.fillText("100%", cx, cy + 37);
+    }
+
+    async function shareExecutiveClosure() {
+      const button = document.getElementById("executiveShareBtn");
+      const totals = summaryTotals();
+      const percent = formatPercent(totals.planned ? totals.shipped / totals.planned * 100 : 0);
+      const text = `Fechamento AM ${data.data || ""}: ${totals.shipped}/${totals.planned} rotas expedidas, OOT ${percent}, ${totals.delay} perdas.`;
+      try {
+        if (navigator.share) await navigator.share({ title: "Fechamento AM", text });
+        else await navigator.clipboard.writeText(text);
+        if (button) button.innerHTML = `<i class="bi bi-check2-circle" aria-hidden="true"></i><span>${navigator.share ? "Compartilhado" : "Resumo copiado"}</span>`;
+      } catch (error) {
+        if (error?.name === "AbortError") return;
+        if (button) button.innerHTML = `<i class="bi bi-exclamation-circle" aria-hidden="true"></i><span>Não foi possível</span>`;
+      }
+      window.setTimeout(() => {
+        if (button) button.innerHTML = `<i class="bi bi-share-fill" aria-hidden="true"></i><span>Compartilhar</span>`;
+      }, 1800);
+    }
+
+    function renderExecutiveClosure() {
+      const board = document.getElementById("executiveClosureBoard");
+      if (!board) return;
+      const rows = executiveSummaryRows();
+      const totals = rows.reduce((acc, row) => ({
+        planned: acc.planned + row.planned,
+        shipped: acc.shipped + row.shipped,
+        delay: acc.delay + row.delay
+      }), { planned: 0, shipped: 0, delay: 0 });
+      const meta = numberValue(data.metaOot) || 85;
+      const percent = totals.planned ? totals.shipped / totals.planned * 100 : 0;
+      const belowTarget = percent < meta;
+      const gap = percent - meta;
+      const reasonRows = executiveReasonRows();
+      const reasonTotal = reasonRows.reduce((sum, item) => sum + item.count, 0);
+      const chartTotal = Math.max(totals.delay, reasonTotal);
+      if (reasonTotal < chartTotal) reasonRows.push({ reason: "Sem classificação", count: chartTotal - reasonTotal });
+      const chartReasons = reasonRows.slice(0, 5);
+      if (reasonRows.length > 5) {
+        chartReasons[4] = {
+          reason: "Outros motivos",
+          count: reasonRows.slice(4).reduce((sum, item) => sum + item.count, 0)
+        };
+      }
+      const colors = ["#f44752", "#ff973e", "#ffd22e", "#3469ef", "#72d36a"];
+      const highestWaves = rows.filter(row => row.ciclo === "AM1").slice().sort((a, b) => b.delay - a.delay).slice(0, 2);
+      const topWaveLoss = highestWaves.reduce((sum, row) => sum + row.delay, 0);
+      const topWaveShare = totals.delay ? topWaveLoss / totals.delay * 100 : 0;
+      const topReasons = chartReasons.slice(0, 2);
+      const topReasonLoss = topReasons.reduce((sum, row) => sum + row.count, 0);
+      const topReasonShare = chartTotal ? topReasonLoss / chartTotal * 100 : 0;
+      const targetRows = rows.filter(row => row.ciclo === "AM1" && row.planned && row.shipped / row.planned * 100 >= meta);
+      const statusText = belowTarget ? "Abaixo da meta" : "Meta atingida";
+      const statusColor = belowTarget ? "#ef3340" : "#11a858";
+      const compactPercent = value => formatPercent(value).replace(",00%", "%");
+
+      board.innerHTML = `
+        <header class="executive-topbar">
+          <div class="executive-heading">
+            <i class="bi bi-truck" aria-hidden="true"></i>
+            <strong>Fechamento AM <span aria-hidden="true">|</span> ${escapeHtml(data.data || "--/--/----")}</strong>
+            <small>Visão executiva - expedição e transportes</small>
+          </div>
+          <div class="executive-status ${belowTarget ? "" : "on-target"}">
+            <strong>${statusText}</strong>
+            <small>OOT ${compactPercent(percent)} (meta ${compactPercent(meta)})</small>
+          </div>
+          <button class="executive-share" id="executiveShareBtn" type="button">
+            <i class="bi bi-share-fill" aria-hidden="true"></i><span>Compartilhar</span>
+          </button>
+        </header>
+
+        <section class="executive-hero">
+          <div class="executive-score-card">
+            <div class="executive-ring">
+              <canvas id="executiveProgressRing" aria-hidden="true"></canvas>
+              <div class="executive-ring-copy"><strong>${compactPercent(percent)}</strong><span>OOT</span></div>
+            </div>
+            <div class="executive-target">
+              <div class="executive-target-label">
+                <i class="bi bi-bullseye" aria-hidden="true"></i>
+                <span>Meta</span><strong>${compactPercent(meta)}</strong>
+              </div>
+              <div class="executive-gap">${gap > 0 ? "+" : ""}${gap.toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} p.p.<small>${belowTarget ? "abaixo da meta" : "acima da meta"}</small></div>
+            </div>
+          </div>
+          <div class="executive-hero-copy">
+            <p class="executive-callout"><em>${totals.delay} ${totals.delay === 1 ? "perda" : "perdas"}</em> em ${totals.planned} rotas planejadas.<br>${highestWaves.length ? `As ${highestWaves.map(row => row.label).join(" e ")} concentram <em>${compactPercent(topWaveShare)}</em> das perdas.` : "Sem perdas registradas nas ondas."}</p>
+            <div class="executive-kpis">
+              <article class="executive-kpi">
+                <span class="executive-kpi-icon"><i class="bi bi-clipboard2-check" aria-hidden="true"></i></span>
+                <span>Planejadas<strong>${totals.planned}</strong></span>
+              </article>
+              <article class="executive-kpi loaded">
+                <span class="executive-kpi-icon"><i class="bi bi-truck" aria-hidden="true"></i></span>
+                <span>Expedidas<strong>${totals.shipped}</strong></span>
+              </article>
+              <article class="executive-kpi loss">
+                <span class="executive-kpi-icon"><i class="bi bi-exclamation-triangle-fill" aria-hidden="true"></i></span>
+                <span>Perdas<strong>${totals.delay}</strong></span>
+              </article>
+            </div>
+          </div>
+        </section>
+
+        <section class="executive-main-grid">
+          <article class="executive-panel">
+            <h3 class="executive-panel-title"><i class="bi bi-list-ul" aria-hidden="true"></i>Fechamento por onda</h3>
+            <table class="executive-wave-table">
+              <thead><tr><th>Onda</th><th>Planejadas</th><th>Expedidas</th><th>Perdas</th><th>OOT</th></tr></thead>
+              <tbody>${rows.map(row => {
+                const rate = row.planned ? row.shipped / row.planned * 100 : 0;
+                return `<tr><td>${escapeHtml(row.label)}</td><td>${row.planned}</td><td>${row.shipped}</td><td>${row.delay}</td><td class="executive-rate ${rate >= meta ? "good" : "bad"}">${compactPercent(rate)}</td></tr>`;
+              }).join("")}</tbody>
+              <tfoot><tr><td>Total</td><td>${totals.planned}</td><td>${totals.shipped}</td><td>${totals.delay}</td><td class="executive-rate ${belowTarget ? "bad" : "good"}">${compactPercent(percent)}</td></tr></tfoot>
+            </table>
+          </article>
+          <article class="executive-panel">
+            <h3 class="executive-panel-title"><i class="bi bi-pie-chart-fill" aria-hidden="true"></i>${chartTotal} perdas - participação por motivo</h3>
+            <div class="executive-chart-layout">
+              <div class="executive-donut-wrap"><canvas id="executiveDonutChart" role="img" aria-label="Distribuição das perdas por motivo"></canvas></div>
+              <div class="executive-chart-legend">${chartReasons.length ? chartReasons.map((item, index) => `
+                <div class="executive-chart-legend-item">
+                  <i style="background:${colors[index % colors.length]}"></i>
+                  <span>${escapeHtml(item.reason)}</span><strong>${item.count}</strong>
+                  <small>${compactPercent(chartTotal ? item.count / chartTotal * 100 : 0)}</small>
+                </div>`).join("") : `<strong>Sem perdas registradas</strong>`}</div>
+            </div>
+          </article>
+        </section>
+
+        <section class="executive-bottom-grid">
+          <article class="executive-panel">
+            <h3 class="executive-panel-title"><i class="bi bi-exclamation-triangle-fill" aria-hidden="true"></i>Ofensores</h3>
+            <table class="executive-offender-table">
+              <thead><tr><th>Motivo</th><th>Rotas afetadas</th><th>% do total</th></tr></thead>
+              <tbody>${chartReasons.length ? chartReasons.map((item, index) => `<tr><td><span class="executive-offender-reason"><i style="background:${colors[index % colors.length]}"></i>${escapeHtml(item.reason)}</span></td><td>${item.count}</td><td>${compactPercent(chartTotal ? item.count / chartTotal * 100 : 0)}</td></tr>`).join("") : `<tr><td colspan="3">Sem ofensores registrados</td></tr>`}</tbody>
+              <tfoot><tr><td>Total</td><td>${chartTotal}</td><td>${compactPercent(chartTotal ? 100 : 0)}</td></tr></tfoot>
+            </table>
+          </article>
+          <article class="executive-panel">
+            <h3 class="executive-panel-title"><i class="bi bi-bar-chart-fill" aria-hidden="true"></i>Leitura do fechamento</h3>
+            <div class="executive-insights">
+              <div class="executive-insight"><span class="executive-insight-number">1</span><span><strong>${highestWaves.length ? `${highestWaves.map(row => row.label).join(" e ")} precisam de plano imediato.` : "Ondas sem perdas críticas."}</strong><small>${highestWaves.length ? `${highestWaves.map(row => `${compactPercent(row.planned ? row.shipped / row.planned * 100 : 0)} OOT`).join(" e ")}, com ${topWaveLoss} perdas (${compactPercent(topWaveShare)} do total).` : "Todas as rotas previstas foram expedidas."}</small></span></div>
+              <div class="executive-insight"><span class="executive-insight-number">2</span><span><strong>${topReasons.length ? `${topReasons.map(row => row.reason).join(" + ")} representam ${compactPercent(topReasonShare)} das perdas.` : "Sem motivos ofensores."}</strong><small>${topReasons.length ? `${topReasonLoss} de ${chartTotal} perdas exigem ação coordenada entre as áreas responsáveis.` : "Nenhuma ação corretiva adicional necessária."}</small></span></div>
+              <div class="executive-insight"><span class="executive-insight-number">3</span><span><strong>${targetRows.length ? `${targetRows.map(row => row.label).join(", ")} ${targetRows.length === 1 ? "ficou" : "ficaram"} acima da meta de ${compactPercent(meta)}.` : `Nenhuma onda atingiu a meta de ${compactPercent(meta)}.`}</strong><small>${targetRows.length ? targetRows.map(row => compactPercent(row.shipped / row.planned * 100)).join(", ") : "Priorizar recuperação do plano nas próximas ondas."}</small></span></div>
+              <div class="executive-owners"><span><i class="bi bi-bullseye" aria-hidden="true"></i> Donos dos planos de ação</span><span class="executive-owner">Operação</span><span class="executive-owner">Aduana</span><span class="executive-owner">Transportes</span></div>
+            </div>
+          </article>
+        </section>
+      `;
+      document.getElementById("executiveShareBtn")?.addEventListener("click", shareExecutiveClosure);
+      window.requestAnimationFrame(() => {
+        drawExecutiveProgressRing(percent, statusColor);
+        drawExecutiveDonut(chartReasons, chartTotal);
+      });
+    }
     function renderViews() {
       const app = document.querySelector(".app");
       const simpleMode = currentView === "docas" && dockDisplayMode === "simple";
@@ -13060,6 +13821,7 @@ body.editor-open .global-theme-toggle {
       document.querySelector(".legend")?.classList.toggle("active", currentView === "docas" && !simpleMode);
       document.getElementById("justificativasView").classList.toggle("active", currentView === "justificativas");
       document.getElementById("fechamentoView").classList.toggle("active", currentView === "fechamento");
+      document.getElementById("fechamentoExecutivoView").classList.toggle("active", currentView === "fechamentoExecutivo");
       if (simpleMode) renderSimpleDocks();
       if (routesMode) renderRoutesMode();
       if (dashboardMode) renderDashboard();
@@ -13067,6 +13829,7 @@ body.editor-open .global-theme-toggle {
       renderJustifications();
       renderSummary();
       renderClosure();
+      renderExecutiveClosure();
     }
     function render() {
       document.getElementById("titulo").textContent = data.titulo;
@@ -13570,6 +14333,12 @@ body.editor-open .global-theme-toggle {
       renderViews();
     });
     window.addEventListener("resize", scheduleSimpleDocksLayout, { passive: true });
+    let executiveResizeFrame = 0;
+    window.addEventListener("resize", () => {
+      if (currentView !== "fechamentoExecutivo") return;
+      window.cancelAnimationFrame(executiveResizeFrame);
+      executiveResizeFrame = window.requestAnimationFrame(renderExecutiveClosure);
+    }, { passive: true });
     document.getElementById("simpleDocksGrid")?.addEventListener("click", event => {
       const button = event.target.closest("[data-simple-route]");
       if (button?.dataset.simpleRoute) openRouteHistory(button.dataset.simpleRoute);
@@ -13820,6 +14589,10 @@ body.editor-open .global-theme-toggle {
       try {
         localStorage.setItem("painel-global-theme", dark ? "dark" : "light");
       } catch (_) {}
+
+      if (document.getElementById("fechamentoExecutivoView")?.classList.contains("active")) {
+        window.requestAnimationFrame(() => window.renderExecutiveClosure?.());
+      }
     }
 
     function initGlobalTheme() {
