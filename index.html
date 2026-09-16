@@ -3927,11 +3927,8 @@
 
     .executive-chart-layout {
       min-height: 0;
-      display: grid;
-      grid-template-columns: minmax(0, 1.15fr) minmax(240px, .85fr);
-      align-items: center;
-      gap: 6px;
-      padding: 8px 12px;
+      height: 100%;
+      padding: 4px 8px 6px;
     }
 
     .executive-donut-wrap {
@@ -3942,7 +3939,11 @@
       place-items: center;
     }
 
-    .executive-donut-wrap canvas { width: 100%; height: 100%; min-height: 210px; }
+    .executive-donut-wrap canvas {
+      width: 100%;
+      height: 100%;
+      min-height: 0;
+    }
 
     .executive-chart-legend {
       display: grid;
@@ -13604,14 +13605,19 @@ body.editor-open .global-theme-toggle {
       const ctx = canvas.getContext("2d");
       ctx.scale(dpr, dpr);
       const colors = ["#f44752", "#ff973e", "#ffd22e", "#3469ef", "#72d36a"];
+      const darkMode = document.body.classList.contains("dark-mode");
+      const ink = darkMode ? "#ffffff" : "#001f3d";
+      const muted = darkMode ? "#b9cbd8" : "#536e83";
       const cx = rect.width / 2;
-      const cy = rect.height / 2;
-      const radius = Math.min(rect.width, rect.height) * .39;
-      const inner = radius * .56;
+      const cy = rect.height * .51;
+      const radius = Math.min(rect.height * .43, rect.width * .19);
+      const inner = radius * .48;
       let start = -Math.PI / 2;
       const denominator = Math.max(total, 1);
+      const anchors = [];
       reasons.forEach((item, index) => {
         const angle = Math.PI * 2 * item.count / denominator;
+        const middle = start + angle / 2;
         ctx.fillStyle = colors[index % colors.length];
         ctx.beginPath();
         ctx.arc(cx, cy, radius, start, start + angle);
@@ -13619,7 +13625,6 @@ body.editor-open .global-theme-toggle {
         ctx.closePath();
         ctx.fill();
         if (angle > .35) {
-          const middle = start + angle / 2;
           const labelRadius = (radius + inner) / 2;
           ctx.fillStyle = index === 1 || index === 2 || index === 4 ? "#052743" : "#fff";
           ctx.font = `900 ${Math.max(13, radius * .13)}px Segoe UI`;
@@ -13627,22 +13632,107 @@ body.editor-open .global-theme-toggle {
           ctx.textBaseline = "middle";
           ctx.fillText(String(item.count), cx + Math.cos(middle) * labelRadius, cy + Math.sin(middle) * labelRadius);
         }
+        anchors.push({
+          x: cx + Math.cos(middle) * (radius + 3),
+          y: cy + Math.sin(middle) * (radius + 3)
+        });
         start += angle;
       });
-      ctx.fillStyle = document.body.classList.contains("dark-mode") ? "#102b3b" : "#fff";
+      ctx.fillStyle = darkMode ? "#102b3b" : "#fff";
       ctx.beginPath();
       ctx.arc(cx, cy, inner - 1, 0, Math.PI * 2);
       ctx.fill();
-      ctx.fillStyle = document.body.classList.contains("dark-mode") ? "#fff" : "#001f3d";
+      ctx.fillStyle = ink;
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
-      ctx.font = `950 ${Math.max(26, radius * .28)}px Segoe UI`;
-      ctx.fillText(String(total), cx, cy - 9);
-      ctx.font = `950 ${Math.max(11, radius * .105)}px Segoe UI`;
-      ctx.fillText(total === 1 ? "PERDA" : "PERDAS", cx, cy + 18);
-      ctx.fillStyle = document.body.classList.contains("dark-mode") ? "#b9cbd8" : "#536e83";
-      ctx.font = `850 ${Math.max(9, radius * .08)}px Segoe UI`;
-      ctx.fillText("100%", cx, cy + 37);
+      ctx.font = `950 ${Math.max(30, radius * .31)}px Segoe UI`;
+      ctx.fillText(String(total), cx, cy - radius * .13);
+      ctx.font = `950 ${Math.max(12, radius * .11)}px Segoe UI`;
+      ctx.fillText(total === 1 ? "PERDA" : "PERDAS", cx, cy + radius * .13);
+      ctx.fillStyle = muted;
+      ctx.font = `850 ${Math.max(10, radius * .085)}px Segoe UI`;
+      ctx.fillText("100%", cx, cy + radius * .32);
+
+      const fiveSlots = [
+        { side: "right", y: .20 },
+        { side: "right", y: .76 },
+        { side: "left", y: .76 },
+        { side: "left", y: .42 },
+        { side: "left", y: .14 }
+      ];
+      const fourSlots = [
+        { side: "right", y: .20 },
+        { side: "right", y: .76 },
+        { side: "left", y: .76 },
+        { side: "left", y: .20 }
+      ];
+      const fallbackSlots = [
+        { side: "right", y: .23 },
+        { side: "right", y: .73 },
+        { side: "left", y: .73 },
+        { side: "left", y: .23 },
+        { side: "left", y: .48 }
+      ];
+      const slots = reasons.length === 4 ? fourSlots : reasons.length === 5 ? fiveSlots : fallbackSlots;
+      const titleSize = Math.max(9, Math.min(13, rect.height * .045));
+      const valueSize = Math.max(9, Math.min(12, rect.height * .041));
+      const maxLabelWidth = rect.width * .29;
+      const wrapLabel = (label, maxWidth) => {
+        const words = String(label || "").toUpperCase().split(/\s+/).filter(Boolean);
+        const lines = [];
+        let line = "";
+        words.forEach(word => {
+          const candidate = line ? `${line} ${word}` : word;
+          if (line && ctx.measureText(candidate).width > maxWidth && lines.length < 1) {
+            lines.push(line);
+            line = word;
+          } else {
+            line = candidate;
+          }
+        });
+        if (line) lines.push(line);
+        if (lines.length > 2) lines.splice(1, lines.length - 1, lines.slice(1).join(" "));
+        return lines.slice(0, 2);
+      };
+
+      reasons.forEach((item, index) => {
+        const slot = slots[index] || fallbackSlots[index % fallbackSlots.length];
+        const color = colors[index % colors.length];
+        const sideRight = slot.side === "right";
+        const targetY = rect.height * slot.y;
+        const targetX = sideRight ? rect.width - 12 : 12;
+        const elbowX = sideRight ? cx + radius + rect.width * .055 : cx - radius - rect.width * .055;
+        const anchor = anchors[index] || { x: cx, y: cy };
+
+        ctx.strokeStyle = color;
+        ctx.lineWidth = Math.max(1.5, rect.height * .007);
+        ctx.lineJoin = "round";
+        ctx.beginPath();
+        ctx.moveTo(anchor.x, anchor.y);
+        ctx.lineTo(elbowX, targetY);
+        ctx.lineTo(targetX, targetY);
+        ctx.stroke();
+
+        ctx.fillStyle = color;
+        ctx.beginPath();
+        ctx.arc(anchor.x, anchor.y, Math.max(3, rect.height * .013), 0, Math.PI * 2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(targetX, targetY, Math.max(3, rect.height * .013), 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.textAlign = sideRight ? "right" : "left";
+        ctx.textBaseline = "alphabetic";
+        ctx.fillStyle = ink;
+        ctx.font = `950 ${titleSize}px Segoe UI`;
+        const lines = wrapLabel(item.reason, maxLabelWidth);
+        const textX = sideRight ? rect.width - 8 : 8;
+        const lineHeight = titleSize * 1.08;
+        const firstY = targetY - 7 - (lines.length - 1) * lineHeight;
+        lines.forEach((line, lineIndex) => ctx.fillText(line, textX, firstY + lineIndex * lineHeight));
+        ctx.font = `900 ${valueSize}px Segoe UI`;
+        ctx.fillText(`${item.count} (${formatPercent(total ? item.count / total * 100 : 0).replace(",00%", "%")})`, textX, targetY + valueSize + 5);
+      });
     }
 
     async function shareExecutiveClosure() {
@@ -13763,13 +13853,7 @@ body.editor-open .global-theme-toggle {
           <article class="executive-panel">
             <h3 class="executive-panel-title"><i class="bi bi-pie-chart-fill" aria-hidden="true"></i>${chartTotal} perdas - participação por motivo</h3>
             <div class="executive-chart-layout">
-              <div class="executive-donut-wrap"><canvas id="executiveDonutChart" role="img" aria-label="Distribuição das perdas por motivo"></canvas></div>
-              <div class="executive-chart-legend">${chartReasons.length ? chartReasons.map((item, index) => `
-                <div class="executive-chart-legend-item">
-                  <i style="background:${colors[index % colors.length]}"></i>
-                  <span>${escapeHtml(item.reason)}</span><strong>${item.count}</strong>
-                  <small>${compactPercent(chartTotal ? item.count / chartTotal * 100 : 0)}</small>
-                </div>`).join("") : `<strong>Sem perdas registradas</strong>`}</div>
+              <div class="executive-donut-wrap"><canvas id="executiveDonutChart" role="img" aria-label="${escapeHtml(chartReasons.length ? `Distribuição das perdas por motivo: ${chartReasons.map(item => `${item.reason}, ${item.count}`).join("; ")}` : "Sem perdas registradas")}"></canvas></div>
             </div>
           </article>
         </section>
