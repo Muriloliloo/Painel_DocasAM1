@@ -1,0 +1,303 @@
+/*
+ * Fechamento Executivo - refinamento visual para captura de tela / WhatsApp.
+ * Escopo intencionalmente limitado ao #fechamentoExecutivoView.
+ * Nao altera calculos, dados, Firebase ou regras operacionais.
+ */
+
+#fechamentoExecutivoView {
+  padding: 5px 7px !important;
+  max-height: none !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+}
+
+#fechamentoExecutivoView .executive-board {
+  width: 100% !important;
+  max-width: none !important;
+  min-width: 0 !important;
+  height: 100% !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  aspect-ratio: auto !important;
+  grid-template-rows: 8% 24% 38% 30% !important;
+  border-radius: 6px !important;
+}
+
+/* Cabeçalho: ligeiramente mais compacto para devolver área ao conteúdo. */
+#fechamentoExecutivoView .executive-topbar {
+  gap: clamp(12px, 1vw, 20px) !important;
+  padding: 0 clamp(14px, 1.1vw, 22px) !important;
+}
+
+#fechamentoExecutivoView .executive-heading {
+  grid-template-columns: clamp(34px, 2.35vw, 44px) minmax(0, 1fr) !important;
+  column-gap: 10px !important;
+}
+
+#fechamentoExecutivoView .executive-heading > i {
+  font-size: clamp(28px, 2vw, 35px) !important;
+}
+
+#fechamentoExecutivoView .executive-heading strong {
+  font-size: clamp(18px, 1.35vw, 29px) !important;
+  line-height: .98 !important;
+}
+
+#fechamentoExecutivoView .executive-heading small {
+  font-size: clamp(9px, .56vw, 12px) !important;
+  font-weight: 900 !important;
+}
+
+#fechamentoExecutivoView .executive-status {
+  min-width: clamp(215px, 15vw, 255px) !important;
+  min-height: 42px !important;
+  grid-template-columns: 27px auto !important;
+  column-gap: 8px !important;
+  padding: 6px 15px !important;
+}
+
+#fechamentoExecutivoView .executive-status::before {
+  width: 20px !important;
+  height: 20px !important;
+}
+
+#fechamentoExecutivoView .executive-status strong {
+  font-size: clamp(13px, .8vw, 15px) !important;
+}
+
+#fechamentoExecutivoView .executive-status small {
+  font-size: clamp(10px, .62vw, 12px) !important;
+  font-weight: 950 !important;
+}
+
+#fechamentoExecutivoView .executive-share {
+  min-width: clamp(165px, 12vw, 205px) !important;
+  height: 42px !important;
+  gap: 9px !important;
+  font-size: clamp(13px, .82vw, 16px) !important;
+}
+
+/* Hero: mantém os números grandes, mas reduz o excesso do texto narrativo. */
+#fechamentoExecutivoView .executive-hero {
+  grid-template-columns: 33% minmax(0, 1fr) !important;
+  gap: 12px !important;
+  padding: 8px 10px !important;
+}
+
+#fechamentoExecutivoView .executive-score-card {
+  grid-template-columns: minmax(170px, 1fr) minmax(155px, .8fr) !important;
+  padding-right: 12px !important;
+}
+
+#fechamentoExecutivoView .executive-ring {
+  width: clamp(128px, 10.1vw, 188px) !important;
+}
+
+#fechamentoExecutivoView .executive-ring-copy strong {
+  font-size: clamp(38px, 3.55vw, 62px) !important;
+}
+
+#fechamentoExecutivoView .executive-ring-copy span {
+  margin-top: 5px !important;
+  font-size: clamp(15px, 1.08vw, 21px) !important;
+}
+
+#fechamentoExecutivoView .executive-target {
+  gap: 8px !important;
+}
+
+#fechamentoExecutivoView .executive-target-label {
+  grid-template-columns: 29px auto !important;
+  column-gap: 6px !important;
+}
+
+#fechamentoExecutivoView .executive-target-label i {
+  font-size: 25px !important;
+}
+
+#fechamentoExecutivoView .executive-target-label span {
+  font-size: clamp(12px, .74vw, 14px) !important;
+}
+
+#fechamentoExecutivoView .executive-target-label strong {
+  font-size: clamp(29px, 2.05vw, 41px) !important;
+}
+
+#fechamentoExecutivoView .executive-gap {
+  min-width: 158px !important;
+  padding: 7px 11px !important;
+  font-size: clamp(17px, 1.28vw, 24px) !important;
+}
+
+#fechamentoExecutivoView .executive-gap small {
+  margin-top: 3px !important;
+  font-size: clamp(9px, .52vw, 11px) !important;
+  font-weight: 950 !important;
+}
+
+#fechamentoExecutivoView .executive-hero-copy {
+  gap: 9px !important;
+  padding: 5px 8px 2px 2px !important;
+}
+
+#fechamentoExecutivoView .executive-callout {
+  font-size: clamp(21px, 1.72vw, 34px) !important;
+  line-height: 1.04 !important;
+  letter-spacing: -.025em !important;
+}
+
+#fechamentoExecutivoView .executive-kpis {
+  gap: 8px !important;
+}
+
+#fechamentoExecutivoView .executive-kpi {
+  grid-template-columns: clamp(44px, 3.5vw, 56px) minmax(0, 1fr) !important;
+  gap: 9px !important;
+  padding: 7px 10px !important;
+}
+
+#fechamentoExecutivoView .executive-kpi-icon {
+  width: clamp(42px, 3.35vw, 54px) !important;
+  height: clamp(42px, 3.35vw, 54px) !important;
+  font-size: clamp(22px, 1.65vw, 28px) !important;
+}
+
+#fechamentoExecutivoView .executive-kpi span {
+  font-size: clamp(13px, .78vw, 16px) !important;
+  font-weight: 950 !important;
+}
+
+#fechamentoExecutivoView .executive-kpi strong {
+  margin-top: 2px !important;
+  font-size: clamp(31px, 2.45vw, 48px) !important;
+}
+
+/* Parte inferior: prioridade de legibilidade para prints comprimidos. */
+#fechamentoExecutivoView .executive-main-grid,
+#fechamentoExecutivoView .executive-bottom-grid {
+  gap: 8px !important;
+  padding: 0 8px 7px !important;
+}
+
+#fechamentoExecutivoView .executive-main-grid {
+  padding-top: 7px !important;
+}
+
+#fechamentoExecutivoView .executive-panel {
+  grid-template-rows: clamp(38px, 3.2vh, 44px) minmax(0, 1fr) !important;
+  border-radius: 6px !important;
+}
+
+#fechamentoExecutivoView .executive-panel-title {
+  gap: 8px !important;
+  padding: 0 11px !important;
+  font-size: clamp(15px, 1.02vw, 20px) !important;
+  font-weight: 950 !important;
+  letter-spacing: .01em !important;
+}
+
+#fechamentoExecutivoView .executive-panel-title i {
+  font-size: clamp(17px, 1.05vw, 20px) !important;
+}
+
+#fechamentoExecutivoView .executive-wave-table,
+#fechamentoExecutivoView .executive-offender-table {
+  font-size: clamp(11px, .72vw, 14px) !important;
+  font-weight: 900 !important;
+  line-height: 1.08 !important;
+}
+
+#fechamentoExecutivoView .executive-wave-table th,
+#fechamentoExecutivoView .executive-wave-table td,
+#fechamentoExecutivoView .executive-offender-table th,
+#fechamentoExecutivoView .executive-offender-table td {
+  padding: 4px 7px !important;
+  font-weight: 900 !important;
+}
+
+#fechamentoExecutivoView .executive-wave-table th,
+#fechamentoExecutivoView .executive-offender-table th,
+#fechamentoExecutivoView .executive-wave-table td:first-child,
+#fechamentoExecutivoView .executive-offender-table td:first-child,
+#fechamentoExecutivoView .executive-wave-table tfoot td,
+#fechamentoExecutivoView .executive-offender-table tfoot td {
+  font-weight: 950 !important;
+}
+
+#fechamentoExecutivoView .executive-rate {
+  font-weight: 950 !important;
+}
+
+#fechamentoExecutivoView .executive-chart-layout {
+  padding: 2px 5px 3px !important;
+}
+
+#fechamentoExecutivoView .executive-donut-wrap canvas {
+  min-height: 0 !important;
+}
+
+#fechamentoExecutivoView .executive-offender-reason {
+  gap: 7px !important;
+  font-weight: 950 !important;
+}
+
+/* Leitura do fechamento: maior ganho de legibilidade. */
+#fechamentoExecutivoView .executive-insights {
+  grid-template-rows: repeat(3, minmax(0, 1fr)) auto !important;
+  gap: 5px !important;
+  padding: 6px 9px !important;
+}
+
+#fechamentoExecutivoView .executive-insight {
+  grid-template-columns: 34px minmax(0, 1fr) !important;
+  gap: 9px !important;
+  padding: 5px 9px !important;
+}
+
+#fechamentoExecutivoView .executive-insight-number {
+  width: 30px !important;
+  height: 30px !important;
+  font-size: 16px !important;
+  font-weight: 950 !important;
+}
+
+#fechamentoExecutivoView .executive-insight strong {
+  font-size: clamp(12px, .79vw, 15.5px) !important;
+  line-height: 1.08 !important;
+  font-weight: 950 !important;
+}
+
+#fechamentoExecutivoView .executive-insight small {
+  margin-top: 2px !important;
+  font-size: clamp(10px, .62vw, 12.5px) !important;
+  line-height: 1.12 !important;
+  font-weight: 850 !important;
+}
+
+#fechamentoExecutivoView .executive-owners {
+  grid-template-columns: auto repeat(3, minmax(95px, 1fr)) !important;
+  gap: 7px !important;
+  padding-top: 2px !important;
+  font-size: clamp(10px, .64vw, 12.5px) !important;
+  font-weight: 950 !important;
+}
+
+#fechamentoExecutivoView .executive-owner {
+  min-height: 28px !important;
+  padding: 0 8px !important;
+  font-weight: 950 !important;
+}
+
+/* Em telas menores, respeita o zoom responsivo legado sem reintroduzir cortes. */
+@media (max-width: 1300px), (max-height: 760px) {
+  #fechamentoExecutivoView {
+    overflow: auto !important;
+  }
+
+  #fechamentoExecutivoView .executive-board {
+    width: 1180px !important;
+    min-width: 1180px !important;
+    height: auto !important;
+    aspect-ratio: 16 / 9 !important;
+  }
+}
