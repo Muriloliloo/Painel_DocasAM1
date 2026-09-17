@@ -3600,7 +3600,7 @@
       aspect-ratio: 16 / 9;
       margin: 0 auto;
       display: grid;
-      grid-template-rows: 8.5% 28% 35.5% 28%;
+      grid-template-rows: 8.5% 24.5% 36% 31%;
       overflow: hidden;
       border: 1px solid #a9bdce;
       border-radius: 8px;
@@ -3813,7 +3813,7 @@
 
     .executive-callout {
       margin: 0;
-      font: 950 clamp(24px, 2.15vw, 43px)/1.08 "Arial Black", "Segoe UI Black", "Segoe UI", sans-serif;
+      font: 950 clamp(21px, 1.82vw, 36px)/1.07 "Arial Black", "Segoe UI Black", "Segoe UI", sans-serif;
       letter-spacing: -.035em;
     }
 
@@ -3852,8 +3852,8 @@
 
     .executive-kpi.loaded .executive-kpi-icon { background: #c7f1d8; }
     .executive-kpi.loss .executive-kpi-icon { background: #ffcfd3; color: var(--executive-red); }
-    .executive-kpi span { font: 950 13px/1 "Segoe UI", Arial, sans-serif; text-transform: uppercase; }
-    .executive-kpi strong { display: block; margin-top: 4px; font: 950 clamp(33px, 2.8vw, 54px)/.9 "Arial Black", "Segoe UI Black", sans-serif; }
+    .executive-kpi span { font: 950 12px/1 "Segoe UI", Arial, sans-serif; text-transform: uppercase; }
+    .executive-kpi strong { display: block; margin-top: 4px; font: 950 clamp(30px, 2.45vw, 48px)/.9 "Arial Black", "Segoe UI Black", sans-serif; }
 
     .executive-main-grid,
     .executive-bottom-grid {
@@ -3885,7 +3885,7 @@
       padding: 0 14px;
       background: linear-gradient(180deg, #0a4a78, #073455);
       color: #fff;
-      font: 950 clamp(14px, 1vw, 21px)/1 "Segoe UI", Arial, sans-serif;
+      font: 950 clamp(16px, 1vw, 21px)/1 "Segoe UI", Arial, sans-serif;
       text-transform: uppercase;
     }
 
@@ -3897,15 +3897,16 @@
       height: 100%;
       border-collapse: collapse;
       table-layout: fixed;
-      font: 850 clamp(9px, .62vw, 13px)/1.05 "Segoe UI", Arial, sans-serif;
+      color: #001f3d;
+      font: 950 clamp(11px, .72vw, 15px)/1.04 "Segoe UI", Arial, sans-serif;
     }
 
     .executive-wave-table th,
     .executive-wave-table td,
     .executive-offender-table th,
     .executive-offender-table td {
-      padding: 4px 8px;
-      border: 1px solid #c9d9e6;
+      padding: 3px 8px;
+      border: 1px solid #b7ccdc;
       text-align: center;
     }
 
@@ -4001,8 +4002,8 @@
 
     .executive-insight:nth-child(2) .executive-insight-number { background: #ffd22e; color: #001b35; }
     .executive-insight:nth-child(3) .executive-insight-number { background: var(--executive-green); }
-    .executive-insight strong { display: block; font: 950 clamp(10px, .72vw, 14px)/1.08 "Segoe UI", Arial, sans-serif; }
-    .executive-insight small { display: block; margin-top: 3px; color: #536e83; font: 750 clamp(8px, .54vw, 11px)/1.12 "Segoe UI", Arial, sans-serif; }
+    .executive-insight strong { display: block; font: 950 clamp(12px, .78vw, 16px)/1.07 "Segoe UI", Arial, sans-serif; }
+    .executive-insight small { display: block; margin-top: 3px; color: #344f64; font: 900 clamp(10px, .62vw, 13px)/1.1 "Segoe UI", Arial, sans-serif; }
 
     .executive-owners {
       display: grid;
@@ -4010,7 +4011,7 @@
       align-items: center;
       gap: 8px;
       padding: 3px 2px 0;
-      font: 950 9px/1 "Segoe UI", Arial, sans-serif;
+      font: 950 11px/1 "Segoe UI", Arial, sans-serif;
       text-transform: uppercase;
     }
 
@@ -13609,8 +13610,8 @@ body.editor-open .global-theme-toggle {
       const ink = darkMode ? "#ffffff" : "#001f3d";
       const muted = darkMode ? "#b9cbd8" : "#536e83";
       const cx = rect.width / 2;
-      const cy = rect.height * .51;
-      const radius = Math.min(rect.height * .43, rect.width * .19);
+      const cy = rect.height * .50;
+      const radius = Math.min(rect.height * .465, rect.width * .205);
       const inner = radius * .48;
       let start = -Math.PI / 2;
       const denominator = Math.max(total, 1);
@@ -13674,9 +13675,9 @@ body.editor-open .global-theme-toggle {
         { side: "left", y: .48 }
       ];
       const slots = reasons.length === 4 ? fourSlots : reasons.length === 5 ? fiveSlots : fallbackSlots;
-      const titleSize = Math.max(9, Math.min(13, rect.height * .045));
-      const valueSize = Math.max(9, Math.min(12, rect.height * .041));
-      const maxLabelWidth = rect.width * .29;
+      const titleSize = Math.max(8, Math.min(11, rect.height * .039));
+      const valueSize = Math.max(11, Math.min(14, rect.height * .052));
+      const maxLabelWidth = rect.width * .31;
       const wrapLabel = (label, maxWidth) => {
         const words = String(label || "").toUpperCase().split(/\s+/).filter(Boolean);
         const lines = [];
@@ -13724,13 +13725,13 @@ body.editor-open .global-theme-toggle {
         ctx.textAlign = sideRight ? "right" : "left";
         ctx.textBaseline = "alphabetic";
         ctx.fillStyle = ink;
-        ctx.font = `950 ${titleSize}px Segoe UI`;
+        ctx.font = `900 ${titleSize}px Segoe UI`;
         const lines = wrapLabel(item.reason, maxLabelWidth);
         const textX = sideRight ? rect.width - 8 : 8;
         const lineHeight = titleSize * 1.08;
         const firstY = targetY - 7 - (lines.length - 1) * lineHeight;
         lines.forEach((line, lineIndex) => ctx.fillText(line, textX, firstY + lineIndex * lineHeight));
-        ctx.font = `900 ${valueSize}px Segoe UI`;
+        ctx.font = `950 ${valueSize}px Segoe UI`;
         ctx.fillText(`${item.count} (${formatPercent(total ? item.count / total * 100 : 0).replace(",00%", "%")})`, textX, targetY + valueSize + 5);
       });
     }
