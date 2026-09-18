@@ -11657,6 +11657,10 @@ body.editor-open .global-theme-toggle {
         .join(" ");
     }
 
+    function routePersonName(row = {}) {
+      return firstWords(row.repLog || row.rep || row.log || row.representante || "", 2);
+    }
+
     function firstCarrierName(value) {
       return firstWords(cleanTransportadora(value), 1);
     }
@@ -11690,7 +11694,9 @@ body.editor-open .global-theme-toggle {
       const statusLabel = dockStatusLabel(state);
       const carrier = cleanTransportadora(primary?.transportadora || "") || "-";
       const carrierShort = firstCarrierName(carrier) || "-";
+      const personName = routePersonName(primary || {});
       const routeText = displayRows.map(row => row.rota).filter(Boolean).join(" / ");
+      const personHtml = personName ? `<span class="dock-person">${escapeHtml(personName)}</span>` : "";
       const footerTimer = normalize(primary?.auditTime || "");
       const packages = primary ? dockPackageLabel(primary) : "";
       const slot = document.createElement("div");
@@ -11701,7 +11707,7 @@ body.editor-open .global-theme-toggle {
         slot.setAttribute("role", "button");
         slot.setAttribute("aria-label", `Abrir histórico da rota ${primary.rota}`);
       }
-      slot.title = rows.length ? displayRows.map(row => `${row.rota} | Doca ${row.doca} | ${row.auditTime || "Sem tempo de auditoria"} | ${row.aduanaBipadas ? `${row.aduanaBipadas} corretas` : "Sem unidades corretas"} | ${dockPackageLabel(row) || "Sem pacotes"}`).join("\n") : `Doca ${dock} livre`;
+      slot.title = rows.length ? displayRows.map(row => `${row.rota} | Doca ${row.doca} | ${routePersonName(row) || "Sem rep/log"} | ${row.auditTime || "Sem tempo de auditoria"} | ${row.aduanaBipadas ? `${row.aduanaBipadas} corretas` : "Sem unidades corretas"} | ${dockPackageLabel(row) || "Sem pacotes"}`).join("\n") : `Doca ${dock} livre`;
       if (!primary) {
         slot.innerHTML = `
           <div class="dock-number">${dock}</div>
@@ -11710,7 +11716,7 @@ body.editor-open .global-theme-toggle {
         return slot;
       }
       slot.innerHTML = `
-        <div class="dock-card-head"><span class="dock-number-inline">${dock}</span></div>
+        <div class="dock-card-head"><span class="dock-number-inline">${dock}</span>${personHtml}</div>
         <div class="route">${escapeHtml(routeText)}</div>
         <div class="dock-minutes">${escapeHtml(dockMinuteLabel(primary, key))}</div>
         <div class="dock-status">${escapeHtml(statusLabel)}</div>
