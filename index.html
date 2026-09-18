@@ -13655,6 +13655,28 @@ body.editor-open .global-theme-toggle {
       return visible;
     }
 
+    function executiveCarrierRows() {
+      const counts = new Map();
+      (data.ondas || []).forEach(wave => {
+        pendingRows(wave, true).forEach(row => {
+          const carrier = cleanTransportadora(row.transportadora || "") || "Sem transportadora";
+          counts.set(carrier, (counts.get(carrier) || 0) + 1);
+        });
+      });
+
+      const sorted = [...counts.entries()]
+        .map(([carrier, count]) => ({ carrier, count }))
+        .sort((a, b) => b.count - a.count || a.carrier.localeCompare(b.carrier, "pt-BR", { sensitivity: "base" }));
+
+      if (sorted.length <= 5) return sorted;
+      const visible = sorted.slice(0, 4);
+      visible.push({
+        carrier: "Outras transportadoras",
+        count: sorted.slice(4).reduce((sum, item) => sum + item.count, 0)
+      });
+      return visible;
+    }
+
     function drawExecutiveProgressRing(percent, color) {
       const canvas = document.getElementById("executiveProgressRing");
       if (!canvas) return;
@@ -13851,6 +13873,10 @@ body.editor-open .global-theme-toggle {
         ...item,
         percent: totals.delay ? item.count / totals.delay * 100 : 0
       }));
+      const carrierOffenders = executiveCarrierRows().slice(0, 5).map(item => ({
+        ...item,
+        percent: totals.delay ? item.count / totals.delay * 100 : 0
+      }));
       const topReason = offenders[0] || null;
 
       const health = percent >= meta
@@ -13886,6 +13912,7 @@ body.editor-open .global-theme-toggle {
         limitingWave,
         classifiedLosses,
         offenders,
+        carrierOffenders,
         health,
         actions,
         compactPercent,
@@ -13897,7 +13924,7 @@ body.editor-open .global-theme-toggle {
       const snapshot = executiveFarolSnapshot();
       const {
         rows, totals, meta, percent, gap, bestWave, limitingWave,
-        classifiedLosses, offenders, health, actions, compactPercent, rateOf
+        classifiedLosses, offenders, carrierOffenders, health, actions, compactPercent, rateOf
       } = snapshot;
 
       const gapLabel = `${gap >= 0 ? "+" : "-"}${Math.abs(gap).toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} p.p.`;
@@ -13919,6 +13946,12 @@ body.editor-open .global-theme-toggle {
             `${index + 1}. *${item.reason}* — ${item.count} perda(s) (${compactPercent(item.percent)})`
           ).join("\n")
         : "• Sem perdas classificadas.";
+
+      const carrierOffenderLines = carrierOffenders.length
+        ? carrierOffenders.map((item, index) =>
+            `${index + 1}. *${item.carrier}* — ${item.count} perda(s) (${compactPercent(item.percent)})`
+          ).join("\n")
+        : "• Sem transportadoras ofensoras.";
 
       const actionLines = actions.map((item, index) =>
         `${index + 1}. *${item.title}*\n   ${item.text}`
@@ -13943,8 +13976,11 @@ body.editor-open .global-theme-toggle {
         "📈 *CURVA DE PLANEJADO POR ONDA*",
         curveLines,
         "",
-        "🚨 *PRINCIPAIS OFENSORES*",
-        offenderLines
+        "🚨 *OFENSORES POR MOTIVOS*",
+        offenderLines,
+        "",
+        "🚚 *OFENSORES POR TRANSPORTADORAS*",
+        carrierOffenderLines
       ].join("\n");
     }
 
