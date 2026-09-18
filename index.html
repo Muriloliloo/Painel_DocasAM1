@@ -13953,6 +13953,17 @@ body.editor-open .global-theme-toggle {
           ).join("\n")
         : "• Sem transportadoras ofensoras.";
 
+      const waveOffenderRows = rows
+        .filter(row => row.delay > 0)
+        .slice()
+        .sort((a, b) => b.delay - a.delay || rateOf(a) - rateOf(b) || a.label.localeCompare(b.label, "pt-BR"));
+
+      const waveOffenderLines = waveOffenderRows.length
+        ? waveOffenderRows.map((row, index) =>
+            `${index + 1}. *${row.label}* — ${row.delay} perda(s) (${compactPercent(totals.delay ? row.delay / totals.delay * 100 : 0)}) · OOT ${compactPercent(rateOf(row))}`
+          ).join("\n")
+        : "• Sem ondas ofensoras.";
+
       const actionLines = actions.map((item, index) =>
         `${index + 1}. *${item.title}*\n   ${item.text}`
       ).join("\n");
@@ -13980,7 +13991,10 @@ body.editor-open .global-theme-toggle {
         offenderLines,
         "",
         "🚚 *OFENSORES POR TRANSPORTADORAS*",
-        carrierOffenderLines
+        carrierOffenderLines,
+        "",
+        "🌊 *OFENSORES POR ONDAS*",
+        waveOffenderLines
       ].join("\n");
     }
 
