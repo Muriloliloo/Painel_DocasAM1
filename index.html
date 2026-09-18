@@ -4077,6 +4077,163 @@
       #fechamentoExecutivoView { padding: 8px; }
       .executive-board { margin: 0; }
     }
+    /* Fechamento Executivo: topo mais compacto e contraste reforçado para JPEG/WhatsApp. */
+    .executive-board {
+      --executive-ink: #00162b;
+      --executive-red: #e51f32;
+      --executive-green: #078f46;
+    }
+
+    .executive-hero,
+    .executive-panel,
+    .executive-wave-table,
+    .executive-offender-table,
+    .executive-insight {
+      color: #00162b;
+    }
+
+    .executive-ring-copy strong {
+      color: #00162b;
+      font-size: clamp(36px, 3.55vw, 64px);
+      letter-spacing: -.055em;
+    }
+
+    .executive-ring-copy span {
+      color: #00162b;
+      font-size: clamp(15px, 1.12vw, 22px);
+      font-weight: 950;
+    }
+
+    .executive-target-label span {
+      color: #00162b;
+      font-size: 12px;
+      font-weight: 950;
+    }
+
+    .executive-target-label strong {
+      color: #00162b;
+      font-size: clamp(28px, 2.15vw, 42px);
+    }
+
+    .executive-target-label i {
+      color: #063f6c;
+    }
+
+    .executive-gap {
+      min-width: 156px;
+      padding: 8px 12px;
+      color: #e51f32;
+      font-size: clamp(16px, 1.3vw, 25px);
+    }
+
+    .executive-gap small {
+      color: #00162b;
+      font-size: 8px;
+      font-weight: 950;
+    }
+
+    .executive-hero-copy {
+      gap: 11px;
+      padding-top: 7px;
+    }
+
+    .executive-callout {
+      color: #00162b;
+      font-size: clamp(15px, 1.2vw, 24px);
+      line-height: 1.04;
+      letter-spacing: -.025em;
+    }
+
+    .executive-callout em {
+      color: #e51f32;
+    }
+
+    .executive-kpi {
+      grid-template-columns: 54px minmax(0, 1fr);
+      gap: 10px;
+      padding: 8px 12px;
+    }
+
+    .executive-kpi-icon {
+      width: 50px;
+      height: 50px;
+      color: #00345e;
+      font-size: 24px;
+    }
+
+    .executive-kpi span {
+      color: #00162b;
+      font-size: 10px;
+      font-weight: 950;
+    }
+
+    .executive-kpi strong {
+      color: #00162b;
+      margin-top: 3px;
+      font-size: clamp(27px, 2.12vw, 42px);
+    }
+
+    .executive-kpi.loss strong {
+      color: #00162b;
+    }
+
+    .executive-panel-title {
+      background: linear-gradient(180deg, #063e68, #042d4c);
+      color: #ffffff;
+      font-weight: 950;
+    }
+
+    .executive-wave-table,
+    .executive-offender-table {
+      color: #00162b;
+      font-weight: 950;
+    }
+
+    .executive-wave-table th,
+    .executive-offender-table th {
+      color: #00162b;
+      background: #d8ebf8;
+    }
+
+    .executive-wave-table tbody tr:nth-child(even),
+    .executive-offender-table tbody tr:nth-child(even) {
+      background: #edf5fa;
+    }
+
+    .executive-wave-table tfoot td,
+    .executive-offender-table tfoot td {
+      color: #00162b;
+      background: #deedf7;
+    }
+
+    .executive-rate.good {
+      color: #007f3b;
+    }
+
+    .executive-rate.bad {
+      color: #d91d2f;
+    }
+
+    .executive-insight strong {
+      color: #00162b;
+      font-weight: 950;
+    }
+
+    .executive-insight small {
+      color: #183d57;
+      font-weight: 950;
+    }
+
+    .executive-chart-legend-item {
+      color: #00162b;
+      font-weight: 950;
+    }
+
+    .executive-chart-legend-item small {
+      color: #294b63;
+      font-weight: 950;
+    }
+
     /* Ações complementares do Fechamento Executivo: JPEG + Farol para WhatsApp. */
     .executive-actions {
       display: flex;
@@ -13716,8 +13873,8 @@ body.editor-open .global-theme-toggle {
       ctx.scale(dpr, dpr);
       const colors = ["#f44752", "#ff973e", "#ffd22e", "#3469ef", "#72d36a"];
       const darkMode = document.body.classList.contains("dark-mode");
-      const ink = darkMode ? "#ffffff" : "#001f3d";
-      const muted = darkMode ? "#b9cbd8" : "#536e83";
+      const ink = darkMode ? "#ffffff" : "#00162b";
+      const muted = darkMode ? "#c8d8e3" : "#294b63";
       const cx = rect.width / 2;
       const cy = rect.height * .50;
       const radius = Math.min(rect.height * .465, rect.width * .205);
