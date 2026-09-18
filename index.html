@@ -22,6 +22,7 @@
     };
   </script>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" defer></script>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
   <style>
     :root {
@@ -3612,6 +3613,15 @@
 
     .executive-board * { box-sizing: border-box; }
 
+    .executive-board.executive-exporting {
+      width: 1600px !important;
+      min-width: 1600px !important;
+      height: 900px !important;
+      aspect-ratio: 16 / 9 !important;
+      zoom: 1 !important;
+      transform: none !important;
+    }
+
     .executive-topbar {
       display: grid;
       grid-template-columns: minmax(390px, 1fr) auto auto;
@@ -3709,6 +3719,7 @@
     .executive-share:hover { filter: brightness(1.04); transform: translateY(-1px); }
     .executive-share:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
     .executive-share i { font-size: 20px; }
+    .executive-share:disabled { cursor: wait; filter: saturate(.7); transform: none; }
 
     .executive-hero {
       display: grid;
@@ -3813,7 +3824,7 @@
 
     .executive-callout {
       margin: 0;
-      font: 950 clamp(21px, 1.82vw, 36px)/1.07 "Arial Black", "Segoe UI Black", "Segoe UI", sans-serif;
+      font: 950 clamp(18px, 1.48vw, 30px)/1.05 "Arial Black", "Segoe UI Black", "Segoe UI", sans-serif;
       letter-spacing: -.035em;
     }
 
@@ -3972,7 +3983,7 @@
     .executive-insights {
       min-height: 0;
       display: grid;
-      grid-template-rows: repeat(3, minmax(0, 1fr)) auto;
+      grid-template-rows: repeat(3, minmax(0, 1fr));
       gap: 6px;
       padding: 8px 12px;
     }
@@ -13736,21 +13747,62 @@ body.editor-open .global-theme-toggle {
       });
     }
 
-    async function shareExecutiveClosure() {
+    async function downloadExecutiveClosureImage() {
       const button = document.getElementById("executiveShareBtn");
-      const totals = summaryTotals();
-      const percent = formatPercent(totals.planned ? totals.shipped / totals.planned * 100 : 0);
-      const text = `Fechamento AM ${data.data || ""}: ${totals.shipped}/${totals.planned} rotas expedidas, OOT ${percent}, ${totals.delay} perdas.`;
-      try {
-        if (navigator.share) await navigator.share({ title: "Fechamento AM", text });
-        else await navigator.clipboard.writeText(text);
-        if (button) button.innerHTML = `<i class="bi bi-check2-circle" aria-hidden="true"></i><span>${navigator.share ? "Compartilhado" : "Resumo copiado"}</span>`;
-      } catch (error) {
-        if (error?.name === "AbortError") return;
+      const board = document.getElementById("executiveClosureBoard");
+      if (!board || typeof window.html2canvas !== "function") {
         if (button) button.innerHTML = `<i class="bi bi-exclamation-circle" aria-hidden="true"></i><span>Não foi possível</span>`;
+        window.setTimeout(() => {
+          if (button) button.innerHTML = `<i class="bi bi-download" aria-hidden="true"></i><span>Baixar imagem</span>`;
+        }, 1800);
+        return;
+      }
+
+      const originalButtonContent = button?.innerHTML || "";
+      if (button) {
+        button.disabled = true;
+        button.innerHTML = `<i class="bi bi-hourglass-split" aria-hidden="true"></i><span>Gerando imagem</span>`;
+      }
+
+      try {
+        await document.fonts?.ready;
+        board.classList.add("executive-exporting");
+        await new Promise(resolve => window.requestAnimationFrame(() => window.requestAnimationFrame(resolve)));
+        const capture = await window.html2canvas(board, {
+          backgroundColor: "#f8fbfe",
+          scale: 1.2,
+          width: 1600,
+          height: 900,
+          windowWidth: 1600,
+          windowHeight: 900,
+          useCORS: true,
+          logging: false,
+          imageTimeout: 15000,
+          removeContainer: true
+        });
+        const blob = await new Promise(resolve => capture.toBlob(resolve, "image/png", 1));
+        if (!blob) throw new Error("Falha ao gerar o arquivo PNG.");
+        const dateSlug = String(data.data || new Date().toLocaleDateString("pt-BR")).replace(/[^0-9]+/g, "-").replace(/^-|-$/g, "");
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `fechamento-am-${dateSlug || "relatorio"}.png`;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+        if (button) button.innerHTML = `<i class="bi bi-check2-circle" aria-hidden="true"></i><span>Imagem baixada</span>`;
+      } catch (error) {
+        console.error("Não foi possível baixar a imagem do fechamento:", error);
+        if (button) button.innerHTML = `<i class="bi bi-exclamation-circle" aria-hidden="true"></i><span>Não foi possível</span>`;
+      } finally {
+        board.classList.remove("executive-exporting");
       }
       window.setTimeout(() => {
-        if (button) button.innerHTML = `<i class="bi bi-share-fill" aria-hidden="true"></i><span>Compartilhar</span>`;
+        if (button) {
+          button.disabled = false;
+          button.innerHTML = originalButtonContent || `<i class="bi bi-download" aria-hidden="true"></i><span>Baixar imagem</span>`;
+        }
       }, 1800);
     }
 
@@ -13801,8 +13853,8 @@ body.editor-open .global-theme-toggle {
             <strong>${statusText}</strong>
             <small>OOT ${compactPercent(percent)} (meta ${compactPercent(meta)})</small>
           </div>
-          <button class="executive-share" id="executiveShareBtn" type="button">
-            <i class="bi bi-share-fill" aria-hidden="true"></i><span>Compartilhar</span>
+          <button class="executive-share" id="executiveShareBtn" type="button" data-html2canvas-ignore="true" title="Baixar o fechamento em PNG para enviar no WhatsApp">
+            <i class="bi bi-download" aria-hidden="true"></i><span>Baixar imagem</span>
           </button>
         </header>
 
@@ -13874,12 +13926,11 @@ body.editor-open .global-theme-toggle {
               <div class="executive-insight"><span class="executive-insight-number">1</span><span><strong>${highestWaves.length ? `${highestWaves.map(row => row.label).join(" e ")} precisam de plano imediato.` : "Ondas sem perdas críticas."}</strong><small>${highestWaves.length ? `${highestWaves.map(row => `${compactPercent(row.planned ? row.shipped / row.planned * 100 : 0)} OOT`).join(" e ")}, com ${topWaveLoss} perdas (${compactPercent(topWaveShare)} do total).` : "Todas as rotas previstas foram expedidas."}</small></span></div>
               <div class="executive-insight"><span class="executive-insight-number">2</span><span><strong>${topReasons.length ? `${topReasons.map(row => row.reason).join(" + ")} representam ${compactPercent(topReasonShare)} das perdas.` : "Sem motivos ofensores."}</strong><small>${topReasons.length ? `${topReasonLoss} de ${chartTotal} perdas exigem ação coordenada entre as áreas responsáveis.` : "Nenhuma ação corretiva adicional necessária."}</small></span></div>
               <div class="executive-insight"><span class="executive-insight-number">3</span><span><strong>${targetRows.length ? `${targetRows.map(row => row.label).join(", ")} ${targetRows.length === 1 ? "ficou" : "ficaram"} acima da meta de ${compactPercent(meta)}.` : `Nenhuma onda atingiu a meta de ${compactPercent(meta)}.`}</strong><small>${targetRows.length ? targetRows.map(row => compactPercent(row.shipped / row.planned * 100)).join(", ") : "Priorizar recuperação do plano nas próximas ondas."}</small></span></div>
-              <div class="executive-owners"><span><i class="bi bi-bullseye" aria-hidden="true"></i> Donos dos planos de ação</span><span class="executive-owner">Operação</span><span class="executive-owner">Aduana</span><span class="executive-owner">Transportes</span></div>
             </div>
           </article>
         </section>
       `;
-      document.getElementById("executiveShareBtn")?.addEventListener("click", shareExecutiveClosure);
+      document.getElementById("executiveShareBtn")?.addEventListener("click", downloadExecutiveClosureImage);
       window.requestAnimationFrame(() => {
         drawExecutiveProgressRing(percent, statusColor);
         drawExecutiveDonut(chartReasons, chartTotal);
