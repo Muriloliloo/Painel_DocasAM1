@@ -14081,78 +14081,96 @@ body.editor-open .global-theme-toggle {
       const snapshot = executiveFarolSnapshot();
       const {
         rows, totals, meta, percent, gap, bestWave, limitingWave,
-        classifiedLosses, offenders, carrierOffenders, health, actions, compactPercent, rateOf
+        offenders, carrierOffenders, health, compactPercent, rateOf
       } = snapshot;
 
-      const gapLabel = `${gap >= 0 ? "+" : "-"}${Math.abs(gap).toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} p.p.`;
-
-      const waveLines = rows.map(row => {
-        const rate = rateOf(row);
-        const waveGap = rate - meta;
-        const status = rate >= meta ? "✅ OK" : rate >= meta - 5 ? "⚠️ ATENÇÃO" : "🔴 CRÍTICO";
-        const gapText = `${waveGap >= 0 ? "+" : "-"}${Math.abs(waveGap).toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} p.p.`;
-        return `• *${row.label}* — ${compactPercent(rate)} ${status}\n  Planejadas: ${row.planned} · Expedidas: ${row.shipped} · Perdas: ${row.delay} · Gap: ${gapText}`;
-      }).join("\n");
-
-      const curveLines = rows.map(row =>
-        `• ${row.label}: ${row.planned} planejadas · ${row.shipped} expedidas · ${row.delay} perdas · OOT ${compactPercent(rateOf(row))}`
-      ).join("\n");
-
-      const offenderLines = offenders.length
-        ? offenders.map((item, index) =>
-            `${index + 1}. *${item.reason}* — ${item.count} perda(s) (${compactPercent(item.percent)})`
-          ).join("\n")
-        : "• Sem perdas classificadas.";
-
-      const carrierOffenderLines = carrierOffenders.length
-        ? carrierOffenders.map((item, index) =>
-            `${index + 1}. *${item.carrier}* — ${item.count} perda(s) (${compactPercent(item.percent)})`
-          ).join("\n")
-        : "• Sem transportadoras ofensoras.";
+      const gapLabel = `${gap >= 0 ? "+" : "-"}${Math.abs(gap).toLocaleString("pt-BR", {
+        minimumFractionDigits: 1,
+        maximumFractionDigits: 1
+      })} p.p.`;
 
       const waveOffenderRows = rows
         .filter(row => row.delay > 0)
         .slice()
         .sort((a, b) => b.delay - a.delay || rateOf(a) - rateOf(b) || a.label.localeCompare(b.label, "pt-BR"));
 
-      const waveOffenderLines = waveOffenderRows.length
-        ? waveOffenderRows.map((row, index) =>
-            `${index + 1}. *${row.label}* — ${row.delay} perda(s) (${compactPercent(totals.delay ? row.delay / totals.delay * 100 : 0)}) · OOT ${compactPercent(rateOf(row))}`
-          ).join("\n")
-        : "• Sem ondas ofensoras.";
+      const makeRankedLines = (items, formatter, limit = items.length) => {
+        const visible = items.slice(0, limit);
+        const lines = visible.map((item, index) => `${index + 1}. ${formatter(item)}`);
+        if (items.length > limit) lines.push(`+ ${items.length - limit} outro(s)`);
+        return lines.join("\n");
+      };
 
-      const actionLines = actions.map((item, index) =>
-        `${index + 1}. *${item.title}*\n   ${item.text}`
-      ).join("\n");
+      const buildText = limits => {
+        const reasonLines = offenders.length
+          ? makeRankedLines(
+              offenders,
+              item => `*${item.reason}* — ${item.count} (${compactPercent(item.percent)})`,
+              limits.reasons
+            )
+          : "• Sem perdas classificadas.";
 
-      return [
-        "📊 *FAROL DA EXPEDIÇÃO SSP15*",
-        `📅 ${data.data || new Date().toLocaleDateString("pt-BR")} · FECHAMENTO`,
-        "",
-        "🏁 *RESULTADO FINAL DA EXPEDIÇÃO*",
-        `${health.icon} OOT: *${compactPercent(percent)}* — ${health.label} · ${health.message}`,
-        `🎯 Meta OOT: *${compactPercent(meta)}* · Gap: *${gapLabel}*`,
-        `⚠️ Onda limitante: *${limitingWave?.label || "—"}*${limitingWave ? ` — ${limitingWave.delay} perda(s)` : ""}`,
-        "",
-        "📦 *RESUMO GERAL*",
-        `• Rotas planejadas: *${totals.planned}*`,
-        `• Expedidas: *${totals.shipped}*`,
-        `• Perdas: *${totals.delay}*`,
-        `• Melhor onda: *${bestWave?.label || "—"}*${bestWave ? ` — ${compactPercent(rateOf(bestWave))}` : ""}`,
-        `• Perdas classificadas: *${classifiedLosses} de ${totals.delay}*`,
-        "",
-        "📈 *CURVA DE PLANEJADO POR ONDA*",
-        curveLines,
-        "",
-        "🚨 *OFENSORES POR MOTIVOS*",
-        offenderLines,
-        "",
-        "🚚 *OFENSORES POR TRANSPORTADORAS*",
-        carrierOffenderLines,
-        "",
-        "🌊 *OFENSORES POR ONDAS*",
-        waveOffenderLines
-      ].join("\n");
+        const carrierLines = carrierOffenders.length
+          ? makeRankedLines(
+              carrierOffenders,
+              item => `*${item.carrier}* — ${item.count} (${compactPercent(item.percent)})`,
+              limits.carriers
+            )
+          : "• Sem transportadoras ofensoras.";
+
+        const waveLines = waveOffenderRows.length
+          ? makeRankedLines(
+              waveOffenderRows,
+              row => `*${row.label}* — ${row.delay} (${compactPercent(totals.delay ? row.delay / totals.delay * 100 : 0)}) · OOT ${compactPercent(rateOf(row))}`,
+              limits.waves
+            )
+          : "• Sem ondas ofensoras.";
+
+        return [
+          "📊 *FAROL DA EXPEDIÇÃO SSP15*",
+          `📅 ${data.data || new Date().toLocaleDateString("pt-BR")} · FECHAMENTO`,
+          "",
+          `🏁 OOT *${compactPercent(percent)}* · Meta *${compactPercent(meta)}* · Gap *${gapLabel}*`,
+          `${health.icon} ${health.label} · ${health.message}`,
+          `📦 ${totals.planned} planejadas · ${totals.shipped} expedidas · ${totals.delay} perdas`,
+          `⭐ Melhor: *${bestWave?.label || "—"}*${bestWave ? ` · ${compactPercent(rateOf(bestWave))}` : ""}`,
+          `⚠️ Limitante: *${limitingWave?.label || "—"}*${limitingWave ? ` · ${limitingWave.delay} perda(s) · OOT ${compactPercent(rateOf(limitingWave))}` : ""}`,
+          "",
+          "🚨 *OFENSORES POR MOTIVOS*",
+          reasonLines,
+          "",
+          "🚚 *OFENSORES POR TRANSPORTADORAS*",
+          carrierLines,
+          "",
+          "🌊 *OFENSORES POR ONDAS*",
+          waveLines
+        ].join("\n");
+      };
+
+      // Mantém o texto curto o suficiente para acompanhar uma imagem no WhatsApp.
+      // Primeiro tenta todos os itens; se passar do limite, reduz gradualmente os rankings.
+      const safeLimit = 900;
+      const attempts = [
+        { reasons: offenders.length, carriers: carrierOffenders.length, waves: waveOffenderRows.length },
+        { reasons: Math.min(3, offenders.length), carriers: Math.min(3, carrierOffenders.length), waves: Math.min(3, waveOffenderRows.length) },
+        { reasons: Math.min(2, offenders.length), carriers: Math.min(2, carrierOffenders.length), waves: Math.min(3, waveOffenderRows.length) },
+        { reasons: Math.min(2, offenders.length), carriers: Math.min(2, carrierOffenders.length), waves: Math.min(2, waveOffenderRows.length) }
+      ];
+
+      for (const limits of attempts) {
+        const text = buildText(limits);
+        if (text.length <= safeLimit) return text;
+      }
+
+      const fallback = buildText({
+        reasons: Math.min(1, offenders.length),
+        carriers: Math.min(1, carrierOffenders.length),
+        waves: Math.min(2, waveOffenderRows.length)
+      });
+
+      return fallback.length <= safeLimit
+        ? fallback
+        : `${fallback.slice(0, safeLimit - 1).trimEnd()}…`;
     }
 
     async function writeExecutiveClipboard(text) {
