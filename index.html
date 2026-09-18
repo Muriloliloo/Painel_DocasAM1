@@ -4077,6 +4077,331 @@
       #fechamentoExecutivoView { padding: 8px; }
       .executive-board { margin: 0; }
     }
+    /* Farol da Expedição SSP15 — fechamento executivo vertical */
+    #fechamentoExecutivoView {
+      padding: 12px !important;
+      background: #edf3f8 !important;
+      overflow: auto !important;
+    }
+
+    .executive-board.farol-expedicao {
+      --farol-ink: #14273a;
+      --farol-muted: #607386;
+      --farol-blue: #3178e8;
+      --farol-green: #22b874;
+      --farol-yellow: #d7a000;
+      --farol-orange: #ef8b2c;
+      --farol-red: #e23d4d;
+      width: min(100%, 760px);
+      min-width: 680px;
+      height: auto;
+      min-height: 0;
+      aspect-ratio: auto;
+      margin: 0 auto;
+      display: block;
+      overflow: visible;
+      border: 0;
+      border-radius: 0;
+      background: #f3f7fb;
+      color: var(--farol-ink);
+      box-shadow: 0 12px 34px rgba(15, 39, 67, .14);
+      font-family: "Segoe UI", Arial, sans-serif;
+    }
+
+    .executive-board.farol-expedicao.executive-exporting {
+      width: 1080px !important;
+      min-width: 1080px !important;
+      height: auto !important;
+      min-height: 1920px !important;
+      aspect-ratio: auto !important;
+      margin: 0 !important;
+      zoom: 1 !important;
+      transform: none !important;
+      box-shadow: none !important;
+    }
+
+    .farol-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      padding: 26px 28px 18px;
+    }
+
+    .farol-header h2 {
+      margin: 0;
+      color: var(--farol-ink);
+      font: 950 clamp(25px, 3vw, 34px)/1 "Arial Black", "Segoe UI Black", "Segoe UI", sans-serif;
+      letter-spacing: .02em;
+    }
+
+    .farol-header p {
+      margin: 8px 0 0;
+      color: var(--farol-muted);
+      font: 850 13px/1 "Segoe UI", Arial, sans-serif;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+    }
+
+    .farol-download {
+      min-width: 162px;
+      height: 44px;
+      flex: 0 0 auto;
+      font-size: 13px;
+      border-radius: 10px;
+    }
+
+    .farol-result-card {
+      margin: 0 28px 18px;
+      display: grid;
+      grid-template-columns: minmax(220px, .8fr) minmax(0, 1.2fr);
+      gap: 18px;
+      align-items: center;
+      padding: 20px 22px;
+      border: 1px solid #eadfa8;
+      border-radius: 18px;
+      background: #fffdf2;
+    }
+
+    .farol-result-main {
+      display: grid;
+      align-content: center;
+    }
+
+    .farol-result-main > span {
+      color: #9b7b16;
+      font: 950 12px/1 "Segoe UI", Arial, sans-serif;
+      text-transform: uppercase;
+    }
+
+    .farol-result-main > strong {
+      margin-top: 8px;
+      color: var(--farol-green);
+      font: 950 clamp(48px, 6vw, 72px)/.9 "Arial Black", "Segoe UI Black", sans-serif;
+      letter-spacing: -.05em;
+    }
+
+    .farol-result-main > small {
+      margin-top: 5px;
+      color: var(--farol-ink);
+      font: 950 16px/1 "Segoe UI", Arial, sans-serif;
+    }
+
+    .farol-result-card.warning .farol-result-main > strong { color: var(--farol-orange); }
+    .farol-result-card.critical .farol-result-main > strong { color: var(--farol-red); }
+
+    .farol-result-copy {
+      display: grid;
+      gap: 9px;
+      align-content: center;
+      border-left: 1px solid #eadfa8;
+      padding-left: 20px;
+    }
+
+    .farol-result-copy > strong {
+      color: var(--farol-green);
+      font: 950 19px/1 "Segoe UI", Arial, sans-serif;
+    }
+
+    .farol-result-card.warning .farol-result-copy > strong { color: var(--farol-orange); }
+    .farol-result-card.critical .farol-result-copy > strong { color: var(--farol-red); }
+    .farol-result-copy > span { font: 850 14px/1.15 "Segoe UI", Arial, sans-serif; }
+    .farol-result-copy > span.healthy { color: var(--farol-green); font-weight: 950; }
+    .farol-result-copy > span.warning { color: var(--farol-orange); font-weight: 950; }
+    .farol-result-copy > span.critical { color: var(--farol-red); font-weight: 950; }
+    .farol-result-copy > small { color: var(--farol-muted); font: 850 12px/1.2 "Segoe UI", Arial, sans-serif; }
+
+    .farol-kpis,
+    .farol-mini-kpis {
+      margin: 0 28px 14px;
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .farol-kpis article,
+    .farol-mini-kpis article {
+      min-width: 0;
+      padding: 16px 18px;
+      border: 1px solid #d4dfe9;
+      border-radius: 12px;
+      background: #fff;
+    }
+
+    .farol-kpis article { border-top: 4px solid var(--farol-blue); }
+    .farol-kpis article.healthy { border-top-color: var(--farol-green); }
+    .farol-kpis article.critical { border-top-color: var(--farol-red); }
+    .farol-kpis span,
+    .farol-mini-kpis span { display: block; color: var(--farol-muted); font: 950 10px/1 "Segoe UI", Arial, sans-serif; text-transform: uppercase; }
+    .farol-kpis strong { display: block; margin-top: 9px; color: var(--farol-blue); font: 950 30px/1 "Arial Black", "Segoe UI Black", sans-serif; }
+    .farol-kpis .healthy strong { color: var(--farol-green); }
+    .farol-kpis .critical strong { color: var(--farol-red); }
+    .farol-mini-kpis article { padding: 12px 14px; border-left: 4px solid #8b63f6; }
+    .farol-mini-kpis article:nth-child(2) { border-left-color: var(--farol-orange); }
+    .farol-mini-kpis article:nth-child(3) { border-left-color: #16b8bd; }
+    .farol-mini-kpis strong { display: block; margin-top: 6px; font: 950 17px/1 "Segoe UI", Arial, sans-serif; }
+    .farol-mini-kpis small { display: block; margin-top: 4px; color: var(--farol-muted); font: 850 11px/1 "Segoe UI", Arial, sans-serif; }
+
+    .farol-section-title {
+      margin: 18px 28px 10px;
+      color: var(--farol-ink);
+      font: 950 17px/1 "Arial Black", "Segoe UI Black", sans-serif;
+      text-transform: uppercase;
+      letter-spacing: .02em;
+    }
+
+    .farol-wave-list {
+      margin: 0 28px;
+      display: grid;
+      gap: 10px;
+    }
+
+    .farol-wave-card {
+      position: relative;
+      min-height: 112px;
+      display: grid;
+      grid-template-columns: 180px minmax(0, 1fr);
+      gap: 16px;
+      overflow: hidden;
+      padding: 15px 18px 15px 22px;
+      border: 1px solid #d5e0e9;
+      border-radius: 12px;
+      background: #fff;
+    }
+
+    .farol-wave-accent { position: absolute; inset: 0 auto 0 0; width: 5px; background: var(--farol-green); }
+    .farol-wave-card.warning .farol-wave-accent { background: var(--farol-orange); }
+    .farol-wave-card.critical .farol-wave-accent { background: var(--farol-red); }
+    .farol-wave-left { display: grid; align-content: center; }
+    .farol-wave-left > strong { color: var(--farol-blue); font: 950 16px/1 "Segoe UI", Arial, sans-serif; text-transform: uppercase; }
+    .farol-wave-rate { margin-top: 6px; color: var(--farol-green); font: 950 31px/.95 "Arial Black", "Segoe UI Black", sans-serif; }
+    .farol-wave-card.warning .farol-wave-rate { color: var(--farol-orange); }
+    .farol-wave-card.critical .farol-wave-rate { color: var(--farol-red); }
+    .farol-wave-status { margin-top: 8px; font: 950 11px/1 "Segoe UI", Arial, sans-serif; }
+    .farol-wave-right { display: grid; align-content: center; gap: 6px; }
+    .farol-wave-right > strong { color: var(--farol-green); font: 950 13px/1 "Segoe UI", Arial, sans-serif; }
+    .farol-wave-card.warning .farol-wave-right > strong { color: var(--farol-orange); }
+    .farol-wave-card.critical .farol-wave-right > strong { color: var(--farol-red); }
+    .farol-wave-right span { color: var(--farol-ink); font: 800 12px/1.15 "Segoe UI", Arial, sans-serif; }
+    .farol-wave-right small { color: var(--farol-green); font: 900 11px/1.15 "Segoe UI", Arial, sans-serif; }
+    .farol-wave-card.warning .farol-wave-right small { color: var(--farol-orange); }
+    .farol-wave-card.critical .farol-wave-right small { color: var(--farol-red); }
+
+    .farol-curve-card {
+      margin: 0 28px;
+      overflow: hidden;
+      border: 1px solid #d5e0e9;
+      border-left: 5px solid var(--farol-blue);
+      border-radius: 12px;
+      background: #fff;
+    }
+
+    .farol-curve-head,
+    .farol-curve-row,
+    .farol-curve-total {
+      display: grid;
+      grid-template-columns: 1.25fr .8fr .8fr .65fr 1.25fr .7fr;
+      gap: 8px;
+      align-items: center;
+      padding: 9px 12px;
+    }
+
+    .farol-curve-head {
+      color: var(--farol-muted);
+      font: 950 9px/1 "Segoe UI", Arial, sans-serif;
+      text-transform: uppercase;
+    }
+
+    .farol-curve-row { border-top: 1px solid #edf1f5; font: 850 11px/1 "Segoe UI", Arial, sans-serif; }
+    .farol-curve-row > strong { color: var(--farol-blue); }
+    .farol-curve-rate { position: relative; height: 12px; overflow: hidden; border-radius: 2px; background: #e8edf2; }
+    .farol-curve-rate i { display: block; height: 100%; background: var(--farol-green); }
+    .farol-curve-rate i.warning { background: var(--farol-orange); }
+    .farol-curve-rate i.critical { background: var(--farol-red); }
+    .farol-curve-total { border-top: 1px solid #d5e0e9; font: 950 11px/1 "Segoe UI", Arial, sans-serif; }
+
+    .farol-reasons {
+      margin: 0 28px;
+      display: grid;
+      gap: 7px;
+    }
+
+    .farol-reasons article {
+      display: grid;
+      grid-template-columns: 30px minmax(0, 1fr) 44px 110px;
+      gap: 8px;
+      align-items: center;
+      padding: 9px 12px;
+      border: 1px solid #d9e2ea;
+      border-radius: 9px;
+      background: #fff;
+      font: 850 11px/1.1 "Segoe UI", Arial, sans-serif;
+    }
+
+    .farol-reason-rank {
+      width: 24px;
+      height: 24px;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      background: #edf3f8;
+      color: var(--farol-blue);
+      font-weight: 950;
+    }
+
+    .farol-reasons article > b { color: var(--farol-red); font-size: 16px; text-align: center; }
+    .farol-reasons article > small { color: var(--farol-muted); text-align: right; }
+    .farol-reasons article.empty { grid-template-columns: 1fr; }
+
+    .farol-actions {
+      margin: 0 28px 20px;
+      display: grid;
+      gap: 9px;
+    }
+
+    .farol-actions article {
+      display: grid;
+      grid-template-columns: 28px minmax(0, 1fr);
+      gap: 10px;
+      padding: 11px 13px;
+      border: 1px solid #d6e1ea;
+      border-left: 4px solid var(--farol-green);
+      border-radius: 9px;
+      background: #fff;
+    }
+
+    .farol-actions article.warning { border-left-color: var(--farol-orange); }
+    .farol-actions article.critical { border-left-color: var(--farol-red); }
+    .farol-actions article > span { font: 950 17px/1 "Arial Black", "Segoe UI Black", sans-serif; }
+    .farol-actions strong { font: 950 12px/1 "Segoe UI", Arial, sans-serif; }
+    .farol-actions p { margin: 4px 0 0; color: var(--farol-ink); font: 800 11px/1.25 "Segoe UI", Arial, sans-serif; }
+
+    .farol-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-top: 20px;
+      padding: 15px 28px;
+      background: #e8eef4;
+      color: var(--farol-muted);
+      font: 850 10px/1 "Segoe UI", Arial, sans-serif;
+    }
+
+    .farol-footer strong { color: var(--farol-ink); }
+
+    body.dark-mode .executive-board.farol-expedicao {
+      background: #f3f7fb;
+      color: var(--farol-ink);
+    }
+
+    @media (max-width: 760px) {
+      .executive-board.farol-expedicao {
+        min-width: 680px;
+        zoom: .72;
+      }
+    }
+
     .print-table {
       width: 100%;
       border-collapse: collapse;
@@ -13759,7 +14084,7 @@ body.editor-open .global-theme-toggle {
       if (!board || typeof window.html2canvas !== "function") {
         if (button) button.innerHTML = `<i class="bi bi-exclamation-circle" aria-hidden="true"></i><span>Não foi possível</span>`;
         window.setTimeout(() => {
-          if (button) button.innerHTML = `<i class="bi bi-download" aria-hidden="true"></i><span>Baixar imagem</span>`;
+          if (button) button.innerHTML = `<i class="bi bi-download" aria-hidden="true"></i><span>Baixar JPEG</span>`;
         }, 1800);
         return;
       }
@@ -13767,47 +14092,56 @@ body.editor-open .global-theme-toggle {
       const originalButtonContent = button?.innerHTML || "";
       if (button) {
         button.disabled = true;
-        button.innerHTML = `<i class="bi bi-hourglass-split" aria-hidden="true"></i><span>Gerando imagem</span>`;
+        button.innerHTML = `<i class="bi bi-hourglass-split" aria-hidden="true"></i><span>Gerando JPEG</span>`;
       }
 
       try {
         await document.fonts?.ready;
         board.classList.add("executive-exporting");
         await new Promise(resolve => window.requestAnimationFrame(() => window.requestAnimationFrame(resolve)));
+
+        const exportWidth = 1080;
+        const exportHeight = Math.max(1920, board.scrollHeight);
         const capture = await window.html2canvas(board, {
-          backgroundColor: "#f8fbfe",
-          scale: 1.2,
-          width: 1600,
-          height: 900,
-          windowWidth: 1600,
-          windowHeight: 900,
+          backgroundColor: "#f3f7fb",
+          scale: 1.5,
+          width: exportWidth,
+          height: exportHeight,
+          windowWidth: exportWidth,
+          windowHeight: exportHeight,
           useCORS: true,
           logging: false,
           imageTimeout: 15000,
           removeContainer: true
         });
-        const blob = await new Promise(resolve => capture.toBlob(resolve, "image/png", 1));
-        if (!blob) throw new Error("Falha ao gerar o arquivo PNG.");
-        const dateSlug = String(data.data || new Date().toLocaleDateString("pt-BR")).replace(/[^0-9]+/g, "-").replace(/^-|-$/g, "");
+
+        const blob = await new Promise(resolve => capture.toBlob(resolve, "image/jpeg", 0.94));
+        if (!blob) throw new Error("Falha ao gerar o arquivo JPEG.");
+
+        const dateSlug = String(data.data || new Date().toLocaleDateString("pt-BR"))
+          .replace(/[^0-9]+/g, "-")
+          .replace(/^-|-$/g, "");
         const url = URL.createObjectURL(blob);
         const link = document.createElement("a");
         link.href = url;
-        link.download = `fechamento-am-${dateSlug || "relatorio"}.png`;
+        link.download = `farol-expedicao-ssp15-${dateSlug || "fechamento"}.jpeg`;
         document.body.appendChild(link);
         link.click();
         link.remove();
         window.setTimeout(() => URL.revokeObjectURL(url), 1000);
-        if (button) button.innerHTML = `<i class="bi bi-check2-circle" aria-hidden="true"></i><span>Imagem baixada</span>`;
+
+        if (button) button.innerHTML = `<i class="bi bi-check2-circle" aria-hidden="true"></i><span>JPEG baixado</span>`;
       } catch (error) {
-        console.error("Não foi possível baixar a imagem do fechamento:", error);
+        console.error("Não foi possível baixar o JPEG do Farol da Expedição:", error);
         if (button) button.innerHTML = `<i class="bi bi-exclamation-circle" aria-hidden="true"></i><span>Não foi possível</span>`;
       } finally {
         board.classList.remove("executive-exporting");
       }
+
       window.setTimeout(() => {
         if (button) {
           button.disabled = false;
-          button.innerHTML = originalButtonContent || `<i class="bi bi-download" aria-hidden="true"></i><span>Baixar imagem</span>`;
+          button.innerHTML = originalButtonContent || `<i class="bi bi-download" aria-hidden="true"></i><span>Baixar JPEG</span>`;
         }
       }, 1800);
     }
@@ -13815,133 +14149,199 @@ body.editor-open .global-theme-toggle {
     function renderExecutiveClosure() {
       const board = document.getElementById("executiveClosureBoard");
       if (!board) return;
+
+      board.classList.add("farol-expedicao");
+
       const rows = executiveSummaryRows();
       const totals = rows.reduce((acc, row) => ({
         planned: acc.planned + row.planned,
         shipped: acc.shipped + row.shipped,
         delay: acc.delay + row.delay
       }), { planned: 0, shipped: 0, delay: 0 });
+
       const meta = numberValue(data.metaOot) || 85;
       const percent = totals.planned ? totals.shipped / totals.planned * 100 : 0;
-      const belowTarget = percent < meta;
       const gap = percent - meta;
-      const reasonRows = executiveReasonRows();
-      const reasonTotal = reasonRows.reduce((sum, item) => sum + item.count, 0);
-      const chartTotal = Math.max(totals.delay, reasonTotal);
-      if (reasonTotal < chartTotal) reasonRows.push({ reason: "Sem classificação", count: chartTotal - reasonTotal });
-      const chartReasons = reasonRows.slice(0, 5);
-      if (reasonRows.length > 5) {
-        chartReasons[4] = {
-          reason: "Outros motivos",
-          count: reasonRows.slice(4).reduce((sum, item) => sum + item.count, 0)
-        };
-      }
-      const colors = ["#f44752", "#ff973e", "#ffd22e", "#3469ef", "#72d36a"];
-      const highestWaves = rows.filter(row => row.ciclo === "AM1").slice().sort((a, b) => b.delay - a.delay).slice(0, 2);
-      const topWaveLoss = highestWaves.reduce((sum, row) => sum + row.delay, 0);
-      const topWaveShare = totals.delay ? topWaveLoss / totals.delay * 100 : 0;
-      const topReasons = chartReasons.slice(0, 2);
-      const topReasonLoss = topReasons.reduce((sum, row) => sum + row.count, 0);
-      const topReasonShare = chartTotal ? topReasonLoss / chartTotal * 100 : 0;
-      const targetRows = rows.filter(row => row.ciclo === "AM1" && row.planned && row.shipped / row.planned * 100 >= meta);
-      const statusText = belowTarget ? "Abaixo da meta" : "Meta atingida";
-      const statusColor = belowTarget ? "#ef3340" : "#11a858";
       const compactPercent = value => formatPercent(value).replace(",00%", "%");
+      const compactNumber = value => Number(value || 0).toLocaleString("pt-BR");
+
+      const am1Rows = rows.filter(row => row.ciclo === "AM1" && row.planned > 0);
+      const limitingWave = am1Rows.slice().sort((a, b) => {
+        const rateA = a.planned ? a.shipped / a.planned * 100 : 0;
+        const rateB = b.planned ? b.shipped / b.planned * 100 : 0;
+        return rateA - rateB || b.delay - a.delay;
+      })[0];
+      const bestWave = am1Rows.slice().sort((a, b) => {
+        const rateA = a.planned ? a.shipped / a.planned * 100 : 0;
+        const rateB = b.planned ? b.shipped / b.planned * 100 : 0;
+        return rateB - rateA || a.delay - b.delay;
+      })[0];
+
+      const health = percent >= meta
+        ? { label: "Saudável", icon: "bi-check-circle-fill", tone: "healthy", message: "Dentro da meta" }
+        : percent >= meta - 5
+          ? { label: "Atenção", icon: "bi-exclamation-triangle-fill", tone: "warning", message: "Próximo da meta" }
+          : { label: "Crítico", icon: "bi-x-octagon-fill", tone: "critical", message: "Abaixo da meta" };
+
+      const reasonRows = executiveReasonRows();
+      const classifiedLosses = reasonRows.reduce((sum, item) => sum + item.count, 0);
+      const reasons = reasonRows.slice(0, 5);
+      const topReason = reasons[0] || null;
+
+      const waveStatus = row => {
+        const rate = row.planned ? row.shipped / row.planned * 100 : 0;
+        if (rate >= meta) return { label: "OK", className: "healthy", icon: "bi-check-square-fill" };
+        if (rate >= meta - 5) return { label: "ATENÇÃO", className: "warning", icon: "bi-exclamation-triangle-fill" };
+        return { label: "CRÍTICO", className: "critical", icon: "bi-x-square-fill" };
+      };
+
+      const waveSituation = row => {
+        const rate = row.planned ? row.shipped / row.planned * 100 : 0;
+        const delta = rate - meta;
+        if (delta >= 0) return `Dentro da meta — +${delta.toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} p.p.`;
+        return `Recuperar ${Math.abs(delta).toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} p.p. para a meta`;
+      };
+
+      const waveCards = rows.map(row => {
+        const rate = row.planned ? row.shipped / row.planned * 100 : 0;
+        const status = waveStatus(row);
+        const delta = rate - meta;
+        return `
+          <article class="farol-wave-card ${status.className}">
+            <div class="farol-wave-accent"></div>
+            <div class="farol-wave-left">
+              <strong>${escapeHtml(row.label)}</strong>
+              <span class="farol-wave-rate">${compactPercent(rate)}</span>
+              <span class="farol-wave-status"><i class="bi ${status.icon}" aria-hidden="true"></i> ${status.label}</span>
+            </div>
+            <div class="farol-wave-right">
+              <strong>Gap: ${delta >= 0 ? "+" : ""}${delta.toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} p.p.</strong>
+              <span>Planejadas: <b>${row.planned}</b> · Expedidas: <b>${row.shipped}</b></span>
+              <span>Perdas: <b>${row.delay}</b> · Meta OOT: <b>${compactPercent(meta)}</b></span>
+              <small>Situação: ${escapeHtml(waveSituation(row))}</small>
+            </div>
+          </article>
+        `;
+      }).join("");
+
+      const curveRows = rows.map(row => {
+        const rate = row.planned ? row.shipped / row.planned * 100 : 0;
+        const capped = Math.max(0, Math.min(100, rate));
+        const tone = rate >= meta ? "healthy" : rate >= meta - 5 ? "warning" : "critical";
+        return `
+          <div class="farol-curve-row">
+            <strong>${escapeHtml(row.label)}</strong>
+            <span>${row.planned}</span>
+            <span>${row.shipped}</span>
+            <span>${row.delay}</span>
+            <span class="farol-curve-rate"><i class="${tone}" style="width:${capped}%"></i></span>
+            <b>${compactPercent(rate)}</b>
+          </div>
+        `;
+      }).join("");
+
+      const actionRows = [
+        limitingWave ? {
+          title: limitingWave.label,
+          tone: waveStatus(limitingWave).className,
+          text: `Priorizar recuperação da ${limitingWave.label}: ${limitingWave.delay} perda(s), OOT ${compactPercent(limitingWave.planned ? limitingWave.shipped / limitingWave.planned * 100 : 0)}.`
+        } : null,
+        topReason ? {
+          title: topReason.reason,
+          tone: "warning",
+          text: `${topReason.count} perda(s) ligadas a este motivo. Atacar causa, responsável e janela de reação antes da próxima onda.`
+        } : null,
+        {
+          title: "Meta OOT",
+          tone: health.tone,
+          text: gap >= 0
+            ? `Fechamento ${compactPercent(percent)}, +${gap.toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} p.p. acima da meta. Preservar padrão operacional.`
+            : `Fechamento ${compactPercent(percent)}, ${Math.abs(gap).toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} p.p. abaixo da meta. Consolidar plano de recuperação.`
+        }
+      ].filter(Boolean);
 
       board.innerHTML = `
-        <header class="executive-topbar">
-          <div class="executive-heading">
-            <i class="bi bi-truck" aria-hidden="true"></i>
-            <strong>Fechamento AM <span aria-hidden="true">|</span> ${escapeHtml(data.data || "--/--/----")}</strong>
-            <small>Visão executiva - expedição e transportes</small>
+        <header class="farol-header">
+          <div>
+            <h2>FAROL DA EXPEDIÇÃO SSP15</h2>
+            <p>${escapeHtml(data.data || "--/--/----")} · FECHAMENTO</p>
           </div>
-          <div class="executive-status ${belowTarget ? "" : "on-target"}">
-            <strong>${statusText}</strong>
-            <small>OOT ${compactPercent(percent)} (meta ${compactPercent(meta)})</small>
-          </div>
-          <button class="executive-share" id="executiveShareBtn" type="button" data-html2canvas-ignore="true" title="Baixar o fechamento em PNG para enviar no WhatsApp">
-            <i class="bi bi-download" aria-hidden="true"></i><span>Baixar imagem</span>
+          <button class="executive-share farol-download" id="executiveShareBtn" type="button" data-html2canvas-ignore="true" title="Baixar Farol da Expedição em JPEG para enviar no WhatsApp">
+            <i class="bi bi-file-earmark-image" aria-hidden="true"></i><span>Baixar JPEG</span>
           </button>
         </header>
 
-        <section class="executive-hero">
-          <div class="executive-score-card">
-            <div class="executive-ring">
-              <canvas id="executiveProgressRing" aria-hidden="true"></canvas>
-              <div class="executive-ring-copy"><strong>${compactPercent(percent)}</strong><span>OOT</span></div>
-            </div>
-            <div class="executive-target">
-              <div class="executive-target-label">
-                <i class="bi bi-bullseye" aria-hidden="true"></i>
-                <span>Meta</span><strong>${compactPercent(meta)}</strong>
-              </div>
-              <div class="executive-gap">${gap > 0 ? "+" : ""}${gap.toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} p.p.<small>${belowTarget ? "abaixo da meta" : "acima da meta"}</small></div>
-            </div>
+        <section class="farol-result-card ${health.tone}">
+          <div class="farol-result-main">
+            <span>RESULTADO FINAL DA EXPEDIÇÃO</span>
+            <strong>${compactPercent(percent)}</strong>
+            <small>OOT</small>
           </div>
-          <div class="executive-hero-copy">
-            <p class="executive-callout"><em>${totals.delay} ${totals.delay === 1 ? "perda" : "perdas"}</em> em ${totals.planned} rotas planejadas.<br>${highestWaves.length ? `As ${highestWaves.map(row => row.label).join(" e ")} concentram <em>${compactPercent(topWaveShare)}</em> das perdas.` : "Sem perdas registradas nas ondas."}</p>
-            <div class="executive-kpis">
-              <article class="executive-kpi">
-                <span class="executive-kpi-icon"><i class="bi bi-clipboard2-check" aria-hidden="true"></i></span>
-                <span>Planejadas<strong>${totals.planned}</strong></span>
-              </article>
-              <article class="executive-kpi loaded">
-                <span class="executive-kpi-icon"><i class="bi bi-truck" aria-hidden="true"></i></span>
-                <span>Expedidas<strong>${totals.shipped}</strong></span>
-              </article>
-              <article class="executive-kpi loss">
-                <span class="executive-kpi-icon"><i class="bi bi-exclamation-triangle-fill" aria-hidden="true"></i></span>
-                <span>Perdas<strong>${totals.delay}</strong></span>
-              </article>
-            </div>
+          <div class="farol-result-copy">
+            <strong><i class="bi ${health.icon}" aria-hidden="true"></i> ${health.label}</strong>
+            <span>Onda limitante: <b>${escapeHtml(limitingWave?.label || "—")}</b></span>
+            <span class="${health.tone}">${health.message}</span>
+            <small>Meta OOT: ${compactPercent(meta)} · ${gap >= 0 ? "+" : ""}${gap.toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} p.p.</small>
           </div>
         </section>
 
-        <section class="executive-main-grid">
-          <article class="executive-panel">
-            <h3 class="executive-panel-title"><i class="bi bi-list-ul" aria-hidden="true"></i>Fechamento por onda</h3>
-            <table class="executive-wave-table">
-              <thead><tr><th>Onda</th><th>Planejadas</th><th>Expedidas</th><th>Perdas</th><th>OOT</th></tr></thead>
-              <tbody>${rows.map(row => {
-                const rate = row.planned ? row.shipped / row.planned * 100 : 0;
-                return `<tr><td>${escapeHtml(row.label)}</td><td>${row.planned}</td><td>${row.shipped}</td><td>${row.delay}</td><td class="executive-rate ${rate >= meta ? "good" : "bad"}">${compactPercent(rate)}</td></tr>`;
-              }).join("")}</tbody>
-              <tfoot><tr><td>Total</td><td>${totals.planned}</td><td>${totals.shipped}</td><td>${totals.delay}</td><td class="executive-rate ${belowTarget ? "bad" : "good"}">${compactPercent(percent)}</td></tr></tfoot>
-            </table>
-          </article>
-          <article class="executive-panel">
-            <h3 class="executive-panel-title"><i class="bi bi-pie-chart-fill" aria-hidden="true"></i>${chartTotal} perdas - participação por motivo</h3>
-            <div class="executive-chart-layout">
-              <div class="executive-donut-wrap"><canvas id="executiveDonutChart" role="img" aria-label="${escapeHtml(chartReasons.length ? `Distribuição das perdas por motivo: ${chartReasons.map(item => `${item.reason}, ${item.count}`).join("; ")}` : "Sem perdas registradas")}"></canvas></div>
-            </div>
-          </article>
+        <section class="farol-kpis">
+          <article><span>ROTAS PLANEJADAS</span><strong>${compactNumber(totals.planned)}</strong></article>
+          <article class="healthy"><span>EXPEDIDAS</span><strong>${compactNumber(totals.shipped)}</strong></article>
+          <article class="${totals.delay ? "critical" : "healthy"}"><span>PERDAS</span><strong>${compactNumber(totals.delay)}</strong></article>
         </section>
 
-        <section class="executive-bottom-grid">
-          <article class="executive-panel">
-            <h3 class="executive-panel-title"><i class="bi bi-exclamation-triangle-fill" aria-hidden="true"></i>Ofensores</h3>
-            <table class="executive-offender-table">
-              <thead><tr><th>Motivo</th><th>Rotas afetadas</th><th>% do total</th></tr></thead>
-              <tbody>${chartReasons.length ? chartReasons.map((item, index) => `<tr><td><span class="executive-offender-reason"><i style="background:${colors[index % colors.length]}"></i>${escapeHtml(item.reason)}</span></td><td>${item.count}</td><td>${compactPercent(chartTotal ? item.count / chartTotal * 100 : 0)}</td></tr>`).join("") : `<tr><td colspan="3">Sem ofensores registrados</td></tr>`}</tbody>
-              <tfoot><tr><td>Total</td><td>${chartTotal}</td><td>${compactPercent(chartTotal ? 100 : 0)}</td></tr></tfoot>
-            </table>
-          </article>
-          <article class="executive-panel">
-            <h3 class="executive-panel-title"><i class="bi bi-bar-chart-fill" aria-hidden="true"></i>Leitura do fechamento</h3>
-            <div class="executive-insights">
-              <div class="executive-insight"><span class="executive-insight-number">1</span><span><strong>${highestWaves.length ? `${highestWaves.map(row => row.label).join(" e ")} precisam de plano imediato.` : "Ondas sem perdas críticas."}</strong><small>${highestWaves.length ? `${highestWaves.map(row => `${compactPercent(row.planned ? row.shipped / row.planned * 100 : 0)} OOT`).join(" e ")}, com ${topWaveLoss} perdas (${compactPercent(topWaveShare)} do total).` : "Todas as rotas previstas foram expedidas."}</small></span></div>
-              <div class="executive-insight"><span class="executive-insight-number">2</span><span><strong>${topReasons.length ? `${topReasons.map(row => row.reason).join(" + ")} representam ${compactPercent(topReasonShare)} das perdas.` : "Sem motivos ofensores."}</strong><small>${topReasons.length ? `${topReasonLoss} de ${chartTotal} perdas exigem ação coordenada entre as áreas responsáveis.` : "Nenhuma ação corretiva adicional necessária."}</small></span></div>
-              <div class="executive-insight"><span class="executive-insight-number">3</span><span><strong>${targetRows.length ? `${targetRows.map(row => row.label).join(", ")} ${targetRows.length === 1 ? "ficou" : "ficaram"} acima da meta de ${compactPercent(meta)}.` : `Nenhuma onda atingiu a meta de ${compactPercent(meta)}.`}</strong><small>${targetRows.length ? targetRows.map(row => compactPercent(row.shipped / row.planned * 100)).join(", ") : "Priorizar recuperação do plano nas próximas ondas."}</small></span></div>
-            </div>
-          </article>
+        <section class="farol-mini-kpis">
+          <article><span>MELHOR ONDA</span><strong>${escapeHtml(bestWave?.label || "—")}</strong><small>${bestWave ? compactPercent(bestWave.shipped / bestWave.planned * 100) : "—"}</small></article>
+          <article><span>ONDA LIMITANTE</span><strong>${escapeHtml(limitingWave?.label || "—")}</strong><small>${limitingWave ? `${limitingWave.delay} perda(s)` : "—"}</small></article>
+          <article><span>PERDAS CLASSIFICADAS</span><strong>${classifiedLosses}</strong><small>de ${totals.delay}</small></article>
         </section>
+
+        <h3 class="farol-section-title">ONDAS / ATIVIDADES</h3>
+        <section class="farol-wave-list">${waveCards}</section>
+
+        <h3 class="farol-section-title">CURVA DE PLANEJADO POR ONDA</h3>
+        <section class="farol-curve-card">
+          <div class="farol-curve-head">
+            <strong>Onda</strong><span>Planejado</span><span>Expedido</span><span>Perdas</span><span>Aderência</span><span>OOT</span>
+          </div>
+          ${curveRows}
+          <div class="farol-curve-total">
+            <strong>TOTAL</strong><span>${totals.planned}</span><span>${totals.shipped}</span><span>${totals.delay}</span><span></span><b>${compactPercent(percent)}</b>
+          </div>
+        </section>
+
+        <h3 class="farol-section-title">PRINCIPAIS OFENSORES</h3>
+        <section class="farol-reasons">
+          ${reasons.length ? reasons.map((item, index) => `
+            <article>
+              <span class="farol-reason-rank">${index + 1}</span>
+              <strong>${escapeHtml(item.reason)}</strong>
+              <b>${item.count}</b>
+              <small>${compactPercent(totals.delay ? item.count / totals.delay * 100 : 0)} das perdas</small>
+            </article>
+          `).join("") : `<article class="empty"><strong>Sem perdas classificadas no fechamento.</strong></article>`}
+        </section>
+
+        <h3 class="farol-section-title">AÇÕES SUGERIDAS</h3>
+        <section class="farol-actions">
+          ${actionRows.map((item, index) => `
+            <article class="${item.tone}">
+              <span>${index + 1}</span>
+              <div><strong>${escapeHtml(item.title)}</strong><p>${escapeHtml(item.text)}</p></div>
+            </article>
+          `).join("")}
+        </section>
+
+        <footer class="farol-footer">
+          <strong>FAROL EXPEDIÇÃO SSP15</strong>
+          <span>OOT ${compactPercent(percent)} · Meta ${compactPercent(meta)} · ${totals.shipped}/${totals.planned} rotas expedidas</span>
+        </footer>
       `;
+
       document.getElementById("executiveShareBtn")?.addEventListener("click", downloadExecutiveClosureImage);
-      window.requestAnimationFrame(() => {
-        drawExecutiveProgressRing(percent, statusColor);
-        drawExecutiveDonut(chartReasons, chartTotal);
-      });
     }
+
     function renderViews() {
       const app = document.querySelector(".app");
       const simpleMode = currentView === "docas" && dockDisplayMode === "simple";
