@@ -4483,6 +4483,60 @@
       text-shadow: none;
     }
 
+    /* Refinamento dos ícones dos KPIs: mais limpos e legíveis. */
+    .executive-kpi {
+      grid-template-columns: 42px minmax(0, 1fr);
+      gap: 11px;
+    }
+
+    .executive-kpi-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: #ffffff;
+      color: #075b9c;
+      border: 2px solid #1689d8;
+      font-size: 20px;
+      box-shadow: 0 3px 8px rgba(7, 91, 156, .12);
+    }
+
+    .executive-kpi-icon i {
+      line-height: 1;
+      transform: translateY(.5px);
+    }
+
+    .executive-kpi.loaded .executive-kpi-icon {
+      background: #ffffff;
+      color: #087c42;
+      border-color: #11a858;
+      box-shadow: 0 3px 8px rgba(8, 124, 66, .12);
+    }
+
+    .executive-kpi.loss .executive-kpi-icon {
+      background: #ffffff;
+      color: #bd1828;
+      border-color: #e51f32;
+      box-shadow: 0 3px 8px rgba(189, 24, 40, .12);
+    }
+
+    body.dark-mode .executive-kpi-icon {
+      background: #0e2c40;
+      color: #6ec2ff;
+      border-color: #3ba3e9;
+    }
+
+    body.dark-mode .executive-kpi.loaded .executive-kpi-icon {
+      background: #102f24;
+      color: #63d69b;
+      border-color: #2fbd75;
+    }
+
+    body.dark-mode .executive-kpi.loss .executive-kpi-icon {
+      background: #3b2026;
+      color: #ff7a88;
+      border-color: #e84d5d;
+    }
+
     /* Ações complementares do Fechamento Executivo: JPEG + Farol para WhatsApp. */
     .executive-actions {
       display: flex;
@@ -14720,11 +14774,11 @@ body.editor-open .global-theme-toggle {
             <p class="executive-callout"><em>${totals.delay} ${totals.delay === 1 ? "perda" : "perdas"}</em> em ${totals.planned} rotas planejadas.<br>${highestWaves.length ? `As ${highestWaves.map(row => row.label).join(" e ")} concentram <em>${compactPercent(topWaveShare)}</em> das perdas.` : "Sem perdas registradas nas ondas."}</p>
             <div class="executive-kpis">
               <article class="executive-kpi">
-                <span class="executive-kpi-icon"><i class="bi bi-clipboard2-check" aria-hidden="true"></i></span>
+                <span class="executive-kpi-icon"><i class="bi bi-list-check" aria-hidden="true"></i></span>
                 <span>Planejadas<strong>${totals.planned}</strong></span>
               </article>
               <article class="executive-kpi loaded">
-                <span class="executive-kpi-icon"><i class="bi bi-truck" aria-hidden="true"></i></span>
+                <span class="executive-kpi-icon"><i class="bi bi-truck-front-fill" aria-hidden="true"></i></span>
                 <span>Expedidas<strong>${totals.shipped}</strong></span>
               </article>
               <article class="executive-kpi loss">
