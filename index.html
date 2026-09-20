@@ -4323,6 +4323,166 @@
       font-weight: 950;
     }
 
+    /* KPIs do Fechamento Executivo: cards compactos, modernos e com cores mais fortes. */
+    .executive-kpis {
+      align-self: center;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .executive-kpi {
+      position: relative;
+      height: 78px;
+      min-height: 78px;
+      grid-template-columns: 48px minmax(0, 1fr);
+      gap: 12px;
+      padding: 10px 15px 10px 13px;
+      overflow: hidden;
+      border: 1px solid #6eb8ef;
+      border-radius: 14px;
+      background: linear-gradient(135deg, #d9efff 0%, #eef8ff 68%, #ffffff 100%);
+      box-shadow: 0 7px 18px rgba(3, 62, 103, .12), inset 0 1px 0 rgba(255,255,255,.8);
+    }
+
+    .executive-kpi::before {
+      content: "";
+      position: absolute;
+      inset: 0 auto 0 0;
+      width: 5px;
+      background: #1689d8;
+    }
+
+    .executive-kpi::after {
+      content: "";
+      position: absolute;
+      width: 78px;
+      height: 78px;
+      right: -28px;
+      top: -34px;
+      border-radius: 50%;
+      background: rgba(22, 137, 216, .11);
+      pointer-events: none;
+    }
+
+    .executive-kpi.loaded {
+      border-color: #58c889;
+      background: linear-gradient(135deg, #d8f7e5 0%, #effcf4 68%, #ffffff 100%);
+    }
+
+    .executive-kpi.loaded::before {
+      background: #11a858;
+    }
+
+    .executive-kpi.loaded::after {
+      background: rgba(17, 168, 88, .12);
+    }
+
+    .executive-kpi.loss {
+      border-color: #f07885;
+      background: linear-gradient(135deg, #ffe0e4 0%, #fff1f3 68%, #ffffff 100%);
+    }
+
+    .executive-kpi.loss::before {
+      background: #e51f32;
+    }
+
+    .executive-kpi.loss::after {
+      background: rgba(229, 31, 50, .11);
+    }
+
+    .executive-kpi-icon {
+      position: relative;
+      z-index: 1;
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      background: linear-gradient(145deg, #1689d8, #075b9c);
+      color: #fff;
+      font-size: 20px;
+      box-shadow: 0 5px 12px rgba(7, 91, 156, .22);
+    }
+
+    .executive-kpi.loaded .executive-kpi-icon {
+      background: linear-gradient(145deg, #19b865, #087c42);
+      color: #fff;
+      box-shadow: 0 5px 12px rgba(8, 124, 66, .20);
+    }
+
+    .executive-kpi.loss .executive-kpi-icon {
+      background: linear-gradient(145deg, #ef4052, #bd1828);
+      color: #fff;
+      box-shadow: 0 5px 12px rgba(189, 24, 40, .20);
+    }
+
+    .executive-kpi > span:last-child {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      align-content: center;
+      min-width: 0;
+    }
+
+    .executive-kpi span {
+      color: #063354;
+      font-size: 10px;
+      font-weight: 950;
+      letter-spacing: .045em;
+    }
+
+    .executive-kpi.loaded span {
+      color: #075f36;
+    }
+
+    .executive-kpi.loss span {
+      color: #9f1322;
+    }
+
+    .executive-kpi strong {
+      color: #00162b;
+      margin-top: 4px;
+      font-size: clamp(25px, 1.95vw, 38px);
+      line-height: .92;
+      letter-spacing: -.035em;
+      text-shadow: 0 1px 0 rgba(255,255,255,.7);
+    }
+
+    .executive-kpi.loaded strong {
+      color: #075a34;
+    }
+
+    .executive-kpi.loss strong {
+      color: #a91020;
+    }
+
+    body.dark-mode .executive-kpi {
+      border-color: #277bb5;
+      background: linear-gradient(135deg, #103d5b 0%, #122d40 72%, #102634 100%);
+      box-shadow: 0 7px 18px rgba(0,0,0,.22);
+    }
+
+    body.dark-mode .executive-kpi.loaded {
+      border-color: #249660;
+      background: linear-gradient(135deg, #123f2e 0%, #163629 72%, #122b23 100%);
+    }
+
+    body.dark-mode .executive-kpi.loss {
+      border-color: #b94754;
+      background: linear-gradient(135deg, #4b2229 0%, #392128 72%, #2e1b21 100%);
+    }
+
+    body.dark-mode .executive-kpi span,
+    body.dark-mode .executive-kpi.loaded span,
+    body.dark-mode .executive-kpi.loss span {
+      color: #dceaf4;
+    }
+
+    body.dark-mode .executive-kpi strong,
+    body.dark-mode .executive-kpi.loaded strong,
+    body.dark-mode .executive-kpi.loss strong {
+      color: #ffffff;
+      text-shadow: none;
+    }
+
     /* Ações complementares do Fechamento Executivo: JPEG + Farol para WhatsApp. */
     .executive-actions {
       display: flex;
