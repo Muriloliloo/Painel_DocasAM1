@@ -2521,106 +2521,94 @@
       font-weight: 550;
     }
 
-    .justification-inline {
+    .justification-reason-cell {
+      min-width: 300px;
+    }
+
+    .justification-reason-inline {
       display: grid;
-      grid-template-columns: minmax(0, 1fr) auto;
-      gap: 8px;
+      grid-template-columns: minmax(180px, 1fr) auto;
+      gap: 7px;
       align-items: center;
-      min-width: 420px;
     }
 
-    .justification-preview {
-      min-width: 0;
-      color: #18384f;
-      font: 750 12px/1.3 "Segoe UI", Arial, sans-serif;
-      overflow-wrap: anywhere;
+    .justification-reason-inline select {
+      min-width: 180px;
     }
 
-    .justification-preview.empty {
-      color: #7a8c9b;
-      font-style: italic;
-      font-weight: 650;
-    }
-
-    .justification-edit-button,
-    .justification-editor-actions button {
+    .reason-edit-button,
+    .reason-editor-actions button {
       height: 30px;
       border: 0;
       border-radius: 6px;
-      padding: 0 10px;
-      font: 900 11px/1 "Segoe UI", Arial, sans-serif;
+      padding: 0 9px;
+      font: 900 10px/1 "Segoe UI", Arial, sans-serif;
       text-transform: uppercase;
       cursor: pointer;
       white-space: nowrap;
     }
 
-    .justification-edit-button {
+    .reason-edit-button {
       background: #0b5f93;
       color: #fff;
     }
 
-    .justification-editor {
+    .reason-editor {
       grid-column: 1 / -1;
       display: grid;
       grid-template-columns: minmax(0, 1fr) auto;
-      gap: 8px;
-      align-items: end;
-      padding: 8px;
+      gap: 7px;
+      align-items: center;
+      padding: 7px;
       border: 1px solid #9eb4c6;
-      border-radius: 8px;
+      border-radius: 7px;
       background: #edf5fb;
     }
 
-    .justification-editor[hidden] {
+    .reason-editor[hidden] {
       display: none !important;
     }
 
-    .justification-editor textarea {
+    .reason-editor input {
       width: 100%;
-      min-height: 58px;
-      resize: vertical;
+      min-width: 0;
+      height: 34px;
       border: 1px solid #9eb4c6;
       border-radius: 6px;
-      padding: 8px 10px;
+      padding: 0 9px;
+      text-align: left;
       color: #001f3d;
       background: #fff;
-      font: 750 12px/1.3 "Segoe UI", Arial, sans-serif;
+      font: 800 12px/1 "Segoe UI", Arial, sans-serif;
     }
 
-    .justification-editor-actions {
-      display: grid;
-      gap: 6px;
+    .reason-editor-actions {
+      display: flex;
+      gap: 5px;
     }
 
-    .justification-editor-actions .save {
+    .reason-editor-actions .save {
       background: #0b5f93;
       color: #fff;
     }
 
-    .justification-editor-actions .cancel {
+    .reason-editor-actions .cancel {
       border: 1px solid #9eb4c6;
       background: #fff;
       color: #0b3558;
     }
 
-    body.dark-mode .justification-preview {
-      color: #e8f2f8;
-    }
-
-    body.dark-mode .justification-preview.empty {
-      color: #94aabc;
-    }
-
-    body.dark-mode .justification-editor {
+    body.dark-mode .reason-editor {
       border-color: #48687d;
       background: #173748;
     }
 
-    body.dark-mode .justification-editor textarea {
+    body.dark-mode .reason-editor input {
       border-color: #56778d;
       background: #0f2c3d;
       color: #fff;
     }
+
 
     .bulk-justification {
       display: grid;
@@ -10190,7 +10178,7 @@ body.editor-open .global-theme-toggle {
     originalData.horarios = { ...(originalData.horarios || {}), ...horariosOficiais };
     data.horarios = { ...(data.horarios || {}), ...(originalData.horarios || {}), ...horariosOficiais };
     data.justificativas = data.justificativas || {};
-    data.justificativaDetalhes = data.justificativaDetalhes || {};
+    data.motivosCustomizados = Array.isArray(data.motivosCustomizados) ? data.motivosCustomizados : [];
     // Bloco 2: bases separadas, mantendo data.base como visão consolidada compatível.
     data.baseOperacional = Array.isArray(data.baseOperacional) ? data.baseOperacional : (Array.isArray(data.base) ? data.base : []);
     data.baseAduana = Array.isArray(data.baseAduana) ? data.baseAduana : [];
@@ -11583,17 +11571,20 @@ body.editor-open .global-theme-toggle {
       const cleaned = {};
       Object.entries(data.justificativas || {}).forEach(([route, motivo]) => {
         const key = routeKey(route);
-        if (key && motivo) cleaned[key] = motivo;
+        const value = normalize(motivo);
+        if (key && value) cleaned[key] = value;
       });
       data.justificativas = cleaned;
 
-      const detailCleaned = {};
-      Object.entries(data.justificativaDetalhes || {}).forEach(([route, text]) => {
-        const key = routeKey(route);
-        const value = normalize(text);
-        if (key && value) detailCleaned[key] = value;
-      });
-      data.justificativaDetalhes = detailCleaned;
+      const seen = new Set();
+      data.motivosCustomizados = (Array.isArray(data.motivosCustomizados) ? data.motivosCustomizados : [])
+        .map(normalize)
+        .filter(value => {
+          const key = plainText(value);
+          if (!key || seen.has(key)) return false;
+          seen.add(key);
+          return true;
+        });
     }
 
     function getJustification(route) {
@@ -11601,9 +11592,29 @@ body.editor-open .global-theme-toggle {
       return Object.entries(data.justificativas || {}).find(([savedKey]) => routeKey(savedKey) === key)?.[1] || "";
     }
 
-    function getJustificationDetail(route) {
-      const key = routeKey(route);
-      return Object.entries(data.justificativaDetalhes || {}).find(([savedKey]) => routeKey(savedKey) === key)?.[1] || "";
+    function justificationReasonOptions() {
+      const seen = new Set();
+      return [
+        ...motivos,
+        ...(data.motivosCustomizados || []),
+        ...Object.values(data.justificativas || {})
+      ].map(normalize).filter(value => {
+        const key = plainText(value);
+        if (!key || seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+    }
+
+    function registerCustomReason(value) {
+      const reason = normalize(value);
+      if (!reason) return "";
+      const standard = motivos.some(item => plainText(item) === plainText(reason));
+      const existing = (data.motivosCustomizados || []).some(item => plainText(item) === plainText(reason));
+      if (!standard && !existing) {
+        data.motivosCustomizados = [...(data.motivosCustomizados || []), reason];
+      }
+      return reason;
     }
 
     function nextSyncRevision() {
@@ -11747,8 +11758,6 @@ body.editor-open .global-theme-toggle {
     }
 
     function justificationSentence(row) {
-      const custom = getJustificationDetail(row.rota);
-      if (custom) return custom;
       const motivo = getJustification(row.rota);
       return motivo
         ? `A rota ${row.rota} da ${waveLabel(row.onda)}, transportadora ${row.transportadora || "-"}, programada para a doca ${row.doca}, foi impactada por ${motivo}.`
@@ -13108,7 +13117,7 @@ body.editor-open .global-theme-toggle {
       const entryBase = historyMomentParts(milestones.entryBase);
       const qrBip = historyMomentParts(milestones.qrBip);
       const completed = historyMomentParts(milestones.completed);
-      const justification = getJustificationDetail(selectedRoute) || getJustification(selectedRoute) || "Fluxo normal de carregamento";
+      const justification = getJustification(selectedRoute) || "Fluxo normal de carregamento";
       const responsible = details.repLog || "Não informado";
       const observations = details.observacoes || details.observacao || "-";
 
@@ -13573,7 +13582,7 @@ body.editor-open .global-theme-toggle {
           : waveRows;
         if (type === "docas") docasRowCount += rows.length;
         if (type === "justificativas") {
-          const justified = rows.filter(row => getJustification(row.rota) || getJustificationDetail(row.rota));
+          const justified = rows.filter(row => getJustification(row.rota));
           const reasonSummary = justificationSummaryLines(wave, true);
           const reasonSummaryHtml = reasonSummary === "#N/A"
             ? "<span>Sem motivos contabilizados nesta onda.</span>"
@@ -13586,11 +13595,11 @@ body.editor-open .global-theme-toggle {
                 <div>${reasonSummaryHtml}</div>
               </div>
               <table class="print-table">
-                <thead><tr><th>Onda</th><th>Doca</th><th>Rota</th><th>Transportadora</th><th>Motivo</th><th>Justificativa</th></tr></thead>
+                <thead><tr><th>Onda</th><th>Doca</th><th>Rota</th><th>Transportadora</th><th>Motivo</th></tr></thead>
                 <tbody>
                   ${justified.length
-                    ? justified.map(row => `<tr><td class="wave-cell">${waveLabel(row.onda)}</td><td>${row.doca || ""}</td><td>${row.rota || ""}</td><td>${cleanTransportadora(row.transportadora) || ""}</td><td>${getJustification(row.rota) || "-"}</td><td>${escapeHtml(justificationSentence(row) || "-")}</td></tr>`).join("")
-                    : `<tr><td colspan="6">Sem justificativas cadastradas nesta onda.</td></tr>`}
+                    ? justified.map(row => `<tr><td class="wave-cell">${waveLabel(row.onda)}</td><td>${row.doca || ""}</td><td>${row.rota || ""}</td><td>${cleanTransportadora(row.transportadora) || ""}</td><td>${getJustification(row.rota)}</td></tr>`).join("")
+                    : `<tr><td colspan="5">Sem justificativas cadastradas nesta onda.</td></tr>`}
                 </tbody>
               </table>
             </section>
@@ -13605,7 +13614,7 @@ body.editor-open .global-theme-toggle {
                 <thead><tr><th>Onda</th><th>Doca</th><th>Rota</th><th>Transportadora</th><th>Justificativa</th></tr></thead>
                 <tbody>
                   ${pending.length
-                    ? pending.map(row => `<tr><td class="wave-cell">${waveLabel(row.onda)}</td><td>${row.doca || ""}</td><td>${row.rota || ""}</td><td>${cleanTransportadora(row.transportadora) || ""}</td><td>${escapeHtml(justificationSentence(row) || getJustification(row.rota) || "-")}</td></tr>`).join("")
+                    ? pending.map(row => `<tr><td class="wave-cell">${waveLabel(row.onda)}</td><td>${row.doca || ""}</td><td>${row.rota || ""}</td><td>${cleanTransportadora(row.transportadora) || ""}</td><td>${getJustification(row.rota)}</td></tr>`).join("")
                     : `<tr><td colspan="5">Sem impactos pendentes nesta onda.</td></tr>`}
                   <tr><th colspan="5">Resumo de motivos</th></tr>
                   <tr><td colspan="5">${justificationSummaryLines(wave, true).replace(/\n/g, "<br>")}</td></tr>
@@ -13641,57 +13650,57 @@ body.editor-open .global-theme-toggle {
 
     function renderJustifications() {
       const rows = pendingRows(currentWave, true).slice().sort((a, b) => Number(a.doca || 0) - Number(b.doca || 0));
+      const reasonOptions = justificationReasonOptions();
       const massSelect = document.getElementById("massReason");
-      if (massSelect && !massSelect.dataset.ready) {
-        massSelect.innerHTML = `<option value=""></option>${motivos.map(motivo => `<option value="${motivo}">${motivo}</option>`).join("")}`;
-        massSelect.dataset.ready = "true";
+      if (massSelect) {
+        const previousMassValue = massSelect.value;
+        massSelect.innerHTML = `<option value=""></option>${reasonOptions.map(motivo => `<option value="${escapeHtml(motivo)}">${escapeHtml(motivo)}</option>`).join("")}`;
+        if (previousMassValue && reasonOptions.some(motivo => plainText(motivo) === plainText(previousMassValue))) {
+          const canonical = reasonOptions.find(motivo => plainText(motivo) === plainText(previousMassValue));
+          massSelect.value = canonical || "";
+        }
       }
 
       document.getElementById("justificationRows").innerHTML = rows.length ? rows.map(row => {
         const key = routeKey(row.rota);
         const selected = getJustification(row.rota);
-        const customDetail = getJustificationDetail(row.rota);
-        const preview = justificationSentence(row);
-        const hasAnyJustification = Boolean(selected || customDetail);
         return `
           <tr class="tw-h-16 tw-bg-white tw-text-center tw-font-bold" data-just-route="${key}">
-            <td class="tw-w-20">${hasAnyJustification ? `<input class="clear-check tw-h-10 tw-w-10 tw-rounded tw-border tw-border-slate-500" type="checkbox" data-clear-route="${key}">` : ""}</td>
+            <td class="tw-w-20">${selected ? `<input class="clear-check tw-h-10 tw-w-10 tw-rounded tw-border tw-border-slate-500" type="checkbox" data-clear-route="${key}">` : ""}</td>
             <td class="tw-w-20 tw-font-extrabold">${waveLabel(row.onda)}</td>
             <td class="tw-w-28 tw-font-extrabold">${row.rota || ""}</td>
             <td class="tw-w-48 tw-font-extrabold">${row.transportadora || ""}</td>
             <td class="tw-w-16 tw-font-extrabold">${row.doca || ""}</td>
-            <td class="tw-w-64">
-              <select class="admin-only tw-h-10 tw-w-full tw-rounded-full tw-border tw-border-slate-300 tw-bg-slate-100 tw-px-3 tw-font-bold" data-route="${key}" ${canEditData() ? "" : "disabled"}>
-                <option value=""></option>
-                ${motivos.map(motivo => `<option value="${motivo}" ${motivo === selected ? "selected" : ""}>${motivo}</option>`).join("")}
-              </select>
-            </td>
-            <td class="justification-text tw-text-left tw-font-semibold">
-              <div class="justification-inline" data-justification-cell="${key}">
-                <div class="justification-preview ${preview ? "" : "empty"}">${escapeHtml(preview || "Sem justificativa detalhada.")}</div>
-                <button class="justification-edit-button admin-only" type="button" data-edit-justification="${key}" ${canEditData() ? "" : "disabled"}>
-                  ${customDetail ? "Editar" : "Adicionar"}
+            <td class="tw-w-64 justification-reason-cell">
+              <div class="justification-reason-inline">
+                <select class="admin-only tw-h-10 tw-w-full tw-rounded-full tw-border tw-border-slate-300 tw-bg-slate-100 tw-px-3 tw-font-bold" data-route="${key}" ${canEditData() ? "" : "disabled"}>
+                  <option value=""></option>
+                  ${reasonOptions.map(motivo => `<option value="${escapeHtml(motivo)}" ${plainText(motivo) === plainText(selected) ? "selected" : ""}>${escapeHtml(motivo)}</option>`).join("")}
+                </select>
+                <button class="reason-edit-button admin-only" type="button" data-edit-reason="${key}" ${canEditData() ? "" : "disabled"}>
+                  ${selected ? "Editar" : "Adicionar"}
                 </button>
-                <div class="justification-editor" data-justification-editor="${key}" hidden>
-                  <textarea data-justification-input="${key}" maxlength="500" placeholder="Digite ou edite a justificativa desta rota...">${escapeHtml(customDetail || preview || "")}</textarea>
-                  <div class="justification-editor-actions">
-                    <button class="save admin-only" type="button" data-save-justification="${key}">Salvar</button>
-                    <button class="cancel" type="button" data-cancel-justification="${key}">Cancelar</button>
+                <div class="reason-editor" data-reason-editor="${key}" hidden>
+                  <input data-reason-input="${key}" maxlength="120" value="${escapeHtml(selected)}" placeholder="Digite o motivo da rota">
+                  <div class="reason-editor-actions">
+                    <button class="save admin-only" type="button" data-save-reason="${key}">Salvar</button>
+                    <button class="cancel" type="button" data-cancel-reason="${key}">Cancelar</button>
                   </div>
                 </div>
               </div>
             </td>
+            <td class="justification-text tw-text-left tw-font-semibold">${justificationSentence(row)}</td>
           </tr>
         `;
       }).join("") : `<tr class="tw-h-16"><td colspan="7">Nenhuma rota pendente nesta onda.</td></tr>`;
 
       document.querySelectorAll("#justificationRows select[data-route]").forEach(select => {
         select.addEventListener("change", event => {
-          const route = event.target.dataset.route;
           if (!requireAdminAction()) {
             renderJustifications();
             return;
           }
+          const route = event.target.dataset.route;
           if (event.target.value) {
             data.justificativas[route] = event.target.value;
           } else {
@@ -13701,51 +13710,52 @@ body.editor-open .global-theme-toggle {
         });
       });
 
-      document.querySelectorAll("[data-edit-justification]").forEach(button => {
+      document.querySelectorAll("[data-edit-reason]").forEach(button => {
         button.addEventListener("click", event => {
           if (!requireAdminAction()) return;
-          const route = event.currentTarget.dataset.editJustification;
-          const editor = document.querySelector(`[data-justification-editor="${route}"]`);
-          const input = document.querySelector(`[data-justification-input="${route}"]`);
+          const route = event.currentTarget.dataset.editReason;
+          const editor = document.querySelector(`[data-reason-editor="${route}"]`);
+          const input = document.querySelector(`[data-reason-input="${route}"]`);
           if (!editor || !input) return;
           editor.hidden = false;
           input.focus();
-          input.setSelectionRange(input.value.length, input.value.length);
+          input.select();
         });
       });
 
-      document.querySelectorAll("[data-cancel-justification]").forEach(button => {
+      document.querySelectorAll("[data-cancel-reason]").forEach(button => {
         button.addEventListener("click", event => {
-          const route = event.currentTarget.dataset.cancelJustification;
-          const editor = document.querySelector(`[data-justification-editor="${route}"]`);
+          const route = event.currentTarget.dataset.cancelReason;
+          const editor = document.querySelector(`[data-reason-editor="${route}"]`);
           if (editor) editor.hidden = true;
         });
       });
 
-      const saveInlineJustification = route => {
+      const saveInlineReason = route => {
         if (!requireAdminAction()) return;
-        const input = document.querySelector(`[data-justification-input="${route}"]`);
+        const input = document.querySelector(`[data-reason-input="${route}"]`);
         if (!input) return;
-        const value = normalize(input.value);
-        data.justificativaDetalhes = data.justificativaDetalhes || {};
-        if (value) data.justificativaDetalhes[route] = value;
-        else delete data.justificativaDetalhes[route];
+        const reason = registerCustomReason(input.value);
+        if (!reason) {
+          input.focus();
+          return;
+        }
+        data.justificativas[route] = reason;
         refreshJustificationViews();
       };
 
-      document.querySelectorAll("[data-save-justification]").forEach(button => {
-        button.addEventListener("click", event => saveInlineJustification(event.currentTarget.dataset.saveJustification));
+      document.querySelectorAll("[data-save-reason]").forEach(button => {
+        button.addEventListener("click", event => saveInlineReason(event.currentTarget.dataset.saveReason));
       });
 
-      document.querySelectorAll("[data-justification-input]").forEach(input => {
+      document.querySelectorAll("[data-reason-input]").forEach(input => {
         input.addEventListener("keydown", event => {
-          if ((event.ctrlKey || event.metaKey) && event.key === "Enter") {
+          const route = event.currentTarget.dataset.reasonInput;
+          if (event.key === "Enter") {
             event.preventDefault();
-            saveInlineJustification(event.currentTarget.dataset.justificationInput);
-          }
-          if (event.key === "Escape") {
-            const route = event.currentTarget.dataset.justificationInput;
-            const editor = document.querySelector(`[data-justification-editor="${route}"]`);
+            saveInlineReason(route);
+          } else if (event.key === "Escape") {
+            const editor = document.querySelector(`[data-reason-editor="${route}"]`);
             if (editor) editor.hidden = true;
           }
         });
@@ -13802,9 +13812,7 @@ body.editor-open .global-theme-toggle {
 
     function hasJustification(route) {
       const key = routeKey(route);
-      const hasReason = Object.keys(data.justificativas || {}).some(savedKey => routeKey(savedKey) === key);
-      const hasDetail = Object.keys(data.justificativaDetalhes || {}).some(savedKey => routeKey(savedKey) === key);
-      return hasReason || hasDetail;
+      return Object.keys(data.justificativas || {}).some(savedKey => routeKey(savedKey) === key);
     }
 
     function deleteJustification(route) {
@@ -13816,12 +13824,6 @@ body.editor-open .global-theme-toggle {
           changed = true;
         }
       });
-      Object.keys(data.justificativaDetalhes || {}).forEach(savedKey => {
-        if (routeKey(savedKey) === key) {
-          delete data.justificativaDetalhes[savedKey];
-          changed = true;
-        }
-      });
       return changed;
     }
 
@@ -13830,6 +13832,7 @@ body.editor-open .global-theme-toggle {
       renderJustifications();
       renderSummary();
       renderClosure();
+      renderExecutiveClosure();
       renderPrintTable();
     }
 
@@ -13954,9 +13957,7 @@ body.editor-open .global-theme-toggle {
           const pendingImpactRows = pendingRows(wave, true);
           const lineItems = pendingImpactRows.map(row => {
             const motivo = getJustification(row.rota);
-            const detalhe = getJustificationDetail(row.rota);
-            const texto = detalhe || motivo;
-            return `${row.rota} | ${row.transportadora || "-"}${texto ? ` | ${texto}` : ""}`;
+            return `${row.rota} | ${row.transportadora || "-"}${motivo ? ` | ${motivo}` : ""}`;
           });
           const lines = lineItems.map(item => `<span class="closure-line tw-block">${item}</span>`).join("") || `<span class="closure-empty tw-font-bold tw-text-slate-500">Sem impactos pendentes nesta onda.</span>`;
           return `
@@ -14836,7 +14837,7 @@ body.editor-open .global-theme-toggle {
         data.docas = Math.max(Number(data.docas || 0), Number(originalData.docas || 92));
         data.horarios = { ...(data.horarios || {}), ...(originalData.horarios || {}), ...horariosOficiais };
         data.justificativas = data.justificativas || {};
-        data.justificativaDetalhes = data.justificativaDetalhes || {};
+        data.motivosCustomizados = Array.isArray(data.motivosCustomizados) ? data.motivosCustomizados : [];
         normalizeJustificationStore();
         data.baseOperacional = Array.isArray(data.baseOperacional) ? data.baseOperacional : (Array.isArray(data.base) ? data.base : []);
         data.baseAduana = Array.isArray(data.baseAduana) ? data.baseAduana : [];
