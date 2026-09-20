@@ -4537,6 +4537,119 @@
       border-color: #e84d5d;
     }
 
+    /* Teste visual dos KPIs: nomenclatura primeiro, sem ícone e valor ao lado. */
+    .executive-kpis {
+      gap: 12px;
+      align-self: center;
+      align-items: center;
+    }
+
+    .executive-kpi {
+      height: 60px;
+      min-height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 16px;
+      padding: 8px 18px 8px 20px;
+      border-radius: 10px;
+      background: #f7fbff;
+      border: 1px solid #2f9ee6;
+      box-shadow: 0 4px 12px rgba(3, 62, 103, .10);
+    }
+
+    .executive-kpi.loaded {
+      background: #f4fcf7;
+      border-color: #20b866;
+    }
+
+    .executive-kpi.loss {
+      background: #fff7f8;
+      border-color: #eb4052;
+    }
+
+    .executive-kpi::before {
+      width: 5px;
+      background: #1689d8;
+    }
+
+    .executive-kpi.loaded::before {
+      background: #11a858;
+    }
+
+    .executive-kpi.loss::before {
+      background: #e51f32;
+    }
+
+    .executive-kpi::after {
+      display: none;
+    }
+
+    .executive-kpi-icon {
+      display: none !important;
+    }
+
+    .executive-kpi > span:last-child,
+    .executive-kpi-label {
+      position: relative;
+      z-index: 1;
+      display: inline-block;
+      min-width: 0;
+      color: #073c65;
+      font: 950 12px/1 "Segoe UI", Arial, sans-serif;
+      letter-spacing: .055em;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .executive-kpi.loaded .executive-kpi-label {
+      color: #08743f;
+    }
+
+    .executive-kpi.loss .executive-kpi-label {
+      color: #b01828;
+    }
+
+    .executive-kpi strong {
+      position: relative;
+      z-index: 1;
+      display: inline-block;
+      margin: 0;
+      color: #00162b;
+      font: 950 clamp(27px, 2vw, 39px)/1 "Arial Black", "Segoe UI Black", "Segoe UI", sans-serif;
+      letter-spacing: -.04em;
+      text-shadow: none;
+      white-space: nowrap;
+    }
+
+    .executive-kpi.loaded strong {
+      color: #08743f;
+    }
+
+    .executive-kpi.loss strong {
+      color: #b01828;
+    }
+
+    body.dark-mode .executive-kpi {
+      background: #102b3b;
+      border-color: #2f9ee6;
+    }
+
+    body.dark-mode .executive-kpi.loaded {
+      background: #12372a;
+      border-color: #20b866;
+    }
+
+    body.dark-mode .executive-kpi.loss {
+      background: #3a2026;
+      border-color: #eb4052;
+    }
+
+    body.dark-mode .executive-kpi-label,
+    body.dark-mode .executive-kpi strong {
+      color: #ffffff;
+    }
+
     /* Ações complementares do Fechamento Executivo: JPEG + Farol para WhatsApp. */
     .executive-actions {
       display: flex;
@@ -14774,16 +14887,16 @@ body.editor-open .global-theme-toggle {
             <p class="executive-callout"><em>${totals.delay} ${totals.delay === 1 ? "perda" : "perdas"}</em> em ${totals.planned} rotas planejadas.<br>${highestWaves.length ? `As ${highestWaves.map(row => row.label).join(" e ")} concentram <em>${compactPercent(topWaveShare)}</em> das perdas.` : "Sem perdas registradas nas ondas."}</p>
             <div class="executive-kpis">
               <article class="executive-kpi">
-                <span class="executive-kpi-icon"><i class="bi bi-list-check" aria-hidden="true"></i></span>
-                <span>Planejadas<strong>${totals.planned}</strong></span>
+                <span class="executive-kpi-label">Planejadas</span>
+                <strong>${totals.planned}</strong>
               </article>
               <article class="executive-kpi loaded">
-                <span class="executive-kpi-icon"><i class="bi bi-truck-front-fill" aria-hidden="true"></i></span>
-                <span>Expedidas<strong>${totals.shipped}</strong></span>
+                <span class="executive-kpi-label">Expedidas</span>
+                <strong>${totals.shipped}</strong>
               </article>
               <article class="executive-kpi loss">
-                <span class="executive-kpi-icon"><i class="bi bi-exclamation-triangle-fill" aria-hidden="true"></i></span>
-                <span>Perdas<strong>${totals.delay}</strong></span>
+                <span class="executive-kpi-label">Perdas</span>
+                <strong>${totals.delay}</strong>
               </article>
             </div>
           </div>
