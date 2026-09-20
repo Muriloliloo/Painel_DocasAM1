@@ -14687,7 +14687,7 @@ body.editor-open .global-theme-toggle {
       const {
         totals, meta, percent, gap, bestWave, limitingWave,
         classifiedLosses, pendingJustifications, offenders, carrierOffenders,
-        waveOffenders, pendingWaves, health, compactPercent, rateOf
+        waveOffenders, health, compactPercent, rateOf
       } = snapshot;
 
       const gapLabel = `${gap >= 0 ? "+" : "-"}${Math.abs(gap).toLocaleString("pt-BR", {
@@ -14695,53 +14695,38 @@ body.editor-open .global-theme-toggle {
         maximumFractionDigits: 1
       })} p.p.`;
 
-      const shortWave = value => String(value || "")
-        .replace(/^Onda\s+/i, "O")
-        .replace(/\s+/g, " ");
-
-      const waveWeights = item => {
-        const pieces = (item.waves || []).map(wave =>
-          `${shortWave(wave.wave)} ${compactPercent(wave.weight)}`
-        );
-        return pieces.length ? pieces.join(" · ") : "—";
-      };
-
       const rankedLines = (items, formatter) => items
         .map((item, index) => `${index + 1}. ${formatter(item)}`)
         .join("\n");
 
-      const pendingLine = () => {
-        if (!pendingJustifications) return "";
-        const waveText = pendingWaves.length
-          ? pendingWaves.map(item => `${shortWave(item.label)} ${item.pending}`).join(" · ")
-          : "sem detalhamento por onda";
-        return [
-          "",
-          "⏳ *PENDENTES DE JUSTIFICATIVA*",
-          `${pendingJustifications} rota(s) · ${compactPercent(totals.delay ? pendingJustifications / totals.delay * 100 : 0)} das perdas · ${waveText}`
-        ].join("\n");
-      };
-
       const reasonLines = offenders.length
         ? rankedLines(
             offenders,
-            item => `*${item.reason}* — ${item.count} | ${compactPercent(item.percent)} ofensora | ${waveWeights(item)}`
+            item => `*${item.reason}* — ${item.count} | ${compactPercent(item.percent)} ofensora |`
           )
         : "• Sem perdas justificadas.";
 
       const carrierLines = carrierOffenders.length
         ? rankedLines(
             carrierOffenders,
-            item => `*${item.carrier}* — ${item.count} | ${compactPercent(item.percent)} ofensora | ${waveWeights(item)}`
+            item => `*${item.carrier}* — ${item.count} | ${compactPercent(item.percent)} ofensora |`
           )
         : "• Sem transportadoras justificadas.";
 
       const waveLines = waveOffenders.length
         ? rankedLines(
             waveOffenders,
-            item => `*${item.label}* — ${item.classified} just. | ${compactPercent(item.percent)} ofensora | peso onda ${compactPercent(item.weightInWave)} | OOT ${compactPercent(item.oot)}`
+            item => `*${item.label}* — ${item.classified} just. | ${compactPercent(item.percent)} ofensora | peso onda ${compactPercent(item.weightInWave)} |`
           )
-        : "• Sem ondas ofensoras justificadas.";
+        : "• Sem ondas ofensoras.";
+
+      const pendingLines = pendingJustifications
+        ? [
+            "",
+            "⏳ *PENDENTES DE JUSTIFICATIVA*",
+            `${pendingJustifications} rota(s) · ${compactPercent(totals.delay ? pendingJustifications / totals.delay * 100 : 0)} das perdas ·`
+          ]
+        : [];
 
       return [
         "📊 *FAROL DA EXPEDIÇÃO SSP15*",
@@ -14761,8 +14746,8 @@ body.editor-open .global-theme-toggle {
         "",
         "🌊 *OFENSORES POR ONDAS*",
         waveLines,
-        pendingLine()
-      ].filter(Boolean).join("\n");
+        ...pendingLines
+      ].join("\n");
     }
 
     async function writeExecutiveClipboard(text) {
