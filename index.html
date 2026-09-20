@@ -14708,7 +14708,7 @@ body.editor-open .global-theme-toggle {
 
       const rankedLines = (items, formatter) => items
         .map((item, index) => `${index + 1}. ${formatter(item)}`)
-        .join("\n\n");
+        .join("\n");
 
       const pendingLine = () => {
         if (!pendingJustifications) return "";
