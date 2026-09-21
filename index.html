@@ -14895,7 +14895,10 @@ body.editor-open .global-theme-toggle {
           weightInWave: item.planned ? item.delay / item.planned * 100 : 0,
           justifiedWeight: item.delay ? item.classified / item.delay * 100 : 0
         }))
-        .sort((a, b) => b.classified - a.classified || b.delay - a.delay || a.label.localeCompare(b.label, "pt-BR"));
+        .sort((a, b) => {
+          const waveNumber = item => Number(String(item.label || "").match(/\d+/)?.[0] || 999);
+          return waveNumber(a) - waveNumber(b) || a.label.localeCompare(b.label, "pt-BR", { numeric: true, sensitivity: "base" });
+        });
 
       const pendingWaves = [...waveStats.values()]
         .filter(item => item.pending > 0)
