@@ -14523,13 +14523,32 @@ body.editor-open .global-theme-toggle {
       document.getElementById("closureMessage").innerHTML = renderClosureMessageHtml();
     }
 
+    function executiveWaveIdentity(value) {
+      const label = waveLabel(value);
+      const number = normalize(label || value).match(/\d+/)?.[0];
+      if (number) {
+        const normalizedNumber = Number(number);
+        return {
+          key: `onda-${normalizedNumber}`,
+          label: `Onda ${normalizedNumber}`
+        };
+      }
+      const fallback = normalize(label || value) || "Onda";
+      return {
+        key: plainText(fallback),
+        label: fallback
+      };
+    }
+
     function executiveSummaryRows() {
       const waveRows = (data.ondas || []).map(wave => {
         const planned = plannedRows(wave).length;
         const shipped = operationalShippedRows(wave);
+        const identity = executiveWaveIdentity(wave);
         return {
           ciclo: "AM1",
-          label: displayWave(wave).replace("ONDA 0", "Onda ").replace("ONDA ", "Onda "),
+          waveKey: identity.key,
+          label: identity.label,
           planned,
           shipped,
           delay: Math.max(0, planned - shipped)
@@ -14537,6 +14556,7 @@ body.editor-open .global-theme-toggle {
       });
       const complements = extraRows().map(row => ({
         ciclo: row.ciclo,
+        waveKey: `extra-${plainText(row.ciclo)}`,
         label: `Onda 1 ${row.ciclo}`,
         planned: row.planned,
         shipped: row.shipped,
@@ -14583,11 +14603,12 @@ body.editor-open .global-theme-toggle {
     function executiveImpactRows() {
       const result = [];
       (data.ondas || []).forEach(wave => {
-        const waveName = displayWave(wave).replace("ONDA 0", "Onda ").replace("ONDA ", "Onda ");
         pendingRows(wave, true).forEach(row => {
+          const identity = executiveWaveIdentity(row.onda || wave);
           result.push({
             route: routeKey(row.rota),
-            wave: waveName,
+            waveKey: identity.key,
+            wave: identity.label,
             carrier: cleanTransportadora(row.transportadora || "") || "Sem transportadora",
             reason: getJustification(row.rota) || ""
           });
@@ -14807,7 +14828,8 @@ body.editor-open .global-theme-toggle {
 
       const waveStats = new Map();
       am1Rows.forEach(row => {
-        waveStats.set(row.label, {
+        waveStats.set(row.waveKey, {
+          waveKey: row.waveKey,
           label: row.label,
           planned: row.planned,
           delay: row.delay,
@@ -14817,10 +14839,10 @@ body.editor-open .global-theme-toggle {
         });
       });
       classifiedImpacts.forEach(item => {
-        if (waveStats.has(item.wave)) waveStats.get(item.wave).classified += 1;
+        if (waveStats.has(item.waveKey)) waveStats.get(item.waveKey).classified += 1;
       });
       pendingImpacts.forEach(item => {
-        if (waveStats.has(item.wave)) waveStats.get(item.wave).pending += 1;
+        if (waveStats.has(item.waveKey)) waveStats.get(item.waveKey).pending += 1;
       });
 
       const aggregateWithWaveWeight = (items, keySelector, nameKey) => {
@@ -14830,19 +14852,22 @@ body.editor-open .global-theme-toggle {
           if (!map.has(key)) map.set(key, { [nameKey]: key, count: 0, waveCounts: new Map() });
           const entry = map.get(key);
           entry.count += 1;
-          entry.waveCounts.set(item.wave, (entry.waveCounts.get(item.wave) || 0) + 1);
+          const waveKey = item.waveKey || plainText(item.wave);
+          const currentWave = entry.waveCounts.get(waveKey) || { wave: item.wave, count: 0 };
+          currentWave.count += 1;
+          entry.waveCounts.set(waveKey, currentWave);
         });
 
         return [...map.values()].map(entry => ({
           ...entry,
           percent: classifiedLosses ? entry.count / classifiedLosses * 100 : 0,
           waves: [...entry.waveCounts.entries()]
-            .map(([wave, count]) => {
-              const waveDelay = waveStats.get(wave)?.delay || 0;
+            .map(([waveKey, info]) => {
+              const waveDelay = waveStats.get(waveKey)?.delay || 0;
               return {
-                wave,
-                count,
-                weight: waveDelay ? count / waveDelay * 100 : 0
+                wave: info.wave,
+                count: info.count,
+                weight: waveDelay ? info.count / waveDelay * 100 : 0
               };
             })
             .sort((a, b) => b.count - a.count || a.wave.localeCompare(b.wave, "pt-BR", { sensitivity: "base" }))
