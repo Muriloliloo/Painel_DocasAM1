@@ -14835,11 +14835,15 @@ body.editor-open .global-theme-toggle {
           delay: row.delay,
           oot: rateOf(row),
           classified: 0,
-          pending: 0
+          pending: 0,
+          reasonCounts: new Map()
         });
       });
       classifiedImpacts.forEach(item => {
-        if (waveStats.has(item.waveKey)) waveStats.get(item.waveKey).classified += 1;
+        if (!waveStats.has(item.waveKey)) return;
+        const wave = waveStats.get(item.waveKey);
+        wave.classified += 1;
+        wave.reasonCounts.set(item.reason, (wave.reasonCounts.get(item.reason) || 0) + 1);
       });
       pendingImpacts.forEach(item => {
         if (waveStats.has(item.waveKey)) waveStats.get(item.waveKey).pending += 1;
@@ -14884,6 +14888,9 @@ body.editor-open .global-theme-toggle {
         .filter(item => item.delay > 0)
         .map(item => ({
           ...item,
+          reasons: [...item.reasonCounts.entries()]
+            .map(([reason, count]) => ({ reason, count }))
+            .sort((a, b) => b.count - a.count || a.reason.localeCompare(b.reason, "pt-BR", { sensitivity: "base" })),
           percent: classifiedLosses ? item.classified / classifiedLosses * 100 : 0,
           weightInWave: item.planned ? item.delay / item.planned * 100 : 0,
           justifiedWeight: item.delay ? item.classified / item.delay * 100 : 0
@@ -14967,7 +14974,13 @@ body.editor-open .global-theme-toggle {
       const waveLines = waveOffenders.length
         ? rankedLines(
             waveOffenders,
-            item => `*${item.label}* — ${item.classified} just. | ${compactPercent(item.percent)} ofensora | peso onda ${compactPercent(item.weightInWave)} |`
+            item => {
+              const reasonText = item.reasons?.length
+                ? item.reasons.map(reason => `*${reason.reason}* — ${reason.count}`).join(" · ")
+                : "Sem motivo justificado";
+              const reasonLabel = item.reasons?.length === 1 ? "Ofensor" : "Ofensores";
+              return `*${item.label}* — ${item.classified} just. | ${compactPercent(item.percent)} ofensora | peso onda ${compactPercent(item.weightInWave)} |\n   ↳ ${reasonLabel}: ${reasonText}`;
+            }
           )
         : "• Sem ondas ofensoras.";
 
