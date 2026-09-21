@@ -3672,7 +3672,7 @@
       text-transform: uppercase;
     }
 
-    /* Fechamento executivo: painel 16:9 baseado no consolidado real das ondas. */
+    /* Fechamento executivo: ocupa a área disponível; JPEG mantém o formato 16:9. */
     #fechamentoExecutivoView {
       box-sizing: border-box;
       padding: 10px 12px;
@@ -3685,9 +3685,10 @@
       --executive-ink: #001f3d;
       --executive-red: #ef3340;
       --executive-green: #11a858;
-      width: min(100%, calc((100dvh - 196px) * 16 / 9));
-      min-width: 1180px;
-      aspect-ratio: 16 / 9;
+      width: 100%;
+      min-width: 0;
+      height: 100%;
+      min-height: 640px;
       margin: 0 auto;
       display: grid;
       grid-template-rows: 8.5% 24.5% 36% 31%;
@@ -4146,10 +4147,13 @@
     body.dark-mode .executive-insight small,
     body.dark-mode .executive-chart-legend-item small { color: #b9cbd8; }
 
-    @media (max-width: 1300px), (max-height: 760px) {
+    @media (max-width: 1300px) {
       .executive-board {
         width: 1180px;
         min-width: 1180px;
+        height: auto;
+        min-height: 0;
+        aspect-ratio: 16 / 9;
         zoom: .8;
       }
     }
