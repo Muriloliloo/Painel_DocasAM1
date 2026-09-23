@@ -14981,28 +14981,27 @@ body.editor-open .global-theme-toggle {
       const reasonLines = offenders.length
         ? rankedLines(
             offenders,
-            item => `*${item.reason}* — ${item.count} | ${compactPercent(item.percent)} ofensora |`
+            item => `*${item.reason}* — ${item.count} rota(s) · ${compactPercent(item.percent)} do total justificado`
           )
         : "• Sem perdas justificadas.";
 
       const carrierLines = carrierOffenders.length
         ? rankedLines(
             carrierOffenders,
-            item => `*${item.carrier}* — ${item.count} | ${compactPercent(item.percent)} ofensora |`
+            item => `*${item.carrier}* — ${item.count} rota(s) · ${compactPercent(item.percent)} do total justificado`
           )
         : "• Sem transportadoras justificadas.";
 
       const waveLines = waveOffenders.length
-        ? rankedLines(
-            waveOffenders,
-            item => {
-              const reasonText = item.reasons?.length
-                ? item.reasons.map(reason => `*${reason.reason}* — ${reason.count}`).join(" · ")
-                : "Sem motivo justificado";
-              const reasonLabel = item.reasons?.length === 1 ? "Ofensor" : "Ofensores";
-              return `*${item.label}* — ${item.classified} just. | ${compactPercent(item.percent)} ofensora | peso onda ${compactPercent(item.weightInWave)} |\n   ↳ ${reasonLabel}: ${reasonText}`;
-            }
-          )
+        ? waveOffenders.map((item, index) => {
+            const header = `${index + 1}. *${item.label}* — ${item.classified} just. · ${compactPercent(item.percent)} do total justificado · peso da onda ${compactPercent(item.weightInWave)}`;
+            const reasonLinesForWave = item.reasons?.length
+              ? item.reasons
+                  .map(reason => `   ↳ *${reason.reason}* — ${reason.count}`)
+                  .join("\n")
+              : "   ↳ Sem motivo justificado";
+            return `${header}\n${reasonLinesForWave}`;
+          }).join("\n\n")
         : "• Sem ondas ofensoras.";
 
       const pendingLines = pendingJustifications
@@ -15023,14 +15022,14 @@ body.editor-open .global-theme-toggle {
         `⭐ Melhor: *${bestWave?.label || "—"}*${bestWave ? ` · ${compactPercent(rateOf(bestWave))}` : ""}`,
         `⚠️ Limitante: *${limitingWave?.label || "—"}*${limitingWave ? ` · ${limitingWave.delay} perda(s) · OOT ${compactPercent(rateOf(limitingWave))}` : ""}`,
         "",
-        `🚨 *OFENSORES POR MOTIVOS* · ${classifiedLosses} justificada(s)`,
-        reasonLines,
+        `🌊 *OFENSORES POR ONDAS* · ${classifiedLosses} justificada(s)`,
+        waveLines,
         "",
         "🚚 *OFENSORES POR TRANSPORTADORAS*",
         carrierLines,
         "",
-        "🌊 *OFENSORES POR ONDAS*",
-        waveLines,
+        "🚨 *OFENSORES POR MOTIVOS*",
+        reasonLines,
         ...pendingLines
       ].join("\n");
     }
