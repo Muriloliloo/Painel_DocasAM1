@@ -14696,10 +14696,21 @@ body.editor-open .global-theme-toggle {
         anchors.push({
           x: cx + Math.cos(middle) * (radius + 3),
           y: cy + Math.sin(middle) * (radius + 3),
-          side: Math.cos(middle) >= 0 ? "right" : "left",
+          side: "",
           color
         });
         start += angle;
+      });
+
+      // Divide os ofensores de forma equilibrada entre os dois lados.
+      // A ordenacao pelo X preserva, sempre que possivel, os itens mais proximos
+      // de cada lado do grafico e evita concentrar todas as justificativas em um lado.
+      const balancedAnchors = anchors
+        .map((anchor, index) => ({ ...anchor, index }))
+        .sort((a, b) => a.x - b.x || a.y - b.y);
+      const leftCount = Math.ceil(balancedAnchors.length / 2);
+      balancedAnchors.forEach((anchor, position) => {
+        anchors[anchor.index].side = position < leftCount ? "left" : "right";
       });
 
       ctx.fillStyle = darkMode ? "#102b3b" : "#fff";
@@ -15282,7 +15293,7 @@ body.editor-open .global-theme-toggle {
             </table>
           </article>
           <article class="executive-panel">
-            <h3 class="executive-panel-title"><i class="bi bi-pie-chart-fill" aria-hidden="true"></i>${justifiedLosses} perdas justificadas${pendingJustifications ? ` + ${pendingJustifications} pendentes` : ""} - participação por motivo</h3>
+            <h3 class="executive-panel-title"><i class="bi bi-pie-chart-fill" aria-hidden="true"></i>Total geral - todas as ondas · ${justifiedLosses} perdas justificadas${pendingJustifications ? ` + ${pendingJustifications} pendentes` : ""} · participação por motivo</h3>
             <div class="executive-chart-layout">
               <div class="executive-donut-wrap"><canvas id="executiveDonutChart" role="img" aria-label="${escapeHtml(chartReasons.length ? `Distribuição dos impactos: ${chartReasons.map(item => `${item.reason}, ${item.count}`).join("; ")}` : "Sem impactos registrados")}"></canvas></div>
             </div>
