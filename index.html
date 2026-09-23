@@ -14992,15 +14992,36 @@ body.editor-open .global-theme-toggle {
           )
         : "• Sem transportadoras justificadas.";
 
+      const wrapFarolLine = (text, firstPrefix = "   • ", continuationPrefix = "     ", maxLength = 46) => {
+        const words = String(text || "").trim().split(/\s+/).filter(Boolean);
+        if (!words.length) return firstPrefix.trimEnd();
+        const lines = [];
+        let line = "";
+        words.forEach(word => {
+          const candidate = line ? `${line} ${word}` : word;
+          if (line && candidate.length > maxLength) {
+            lines.push(line);
+            line = word;
+          } else {
+            line = candidate;
+          }
+        });
+        if (line) lines.push(line);
+        return lines
+          .map((part, index) => `${index === 0 ? firstPrefix : continuationPrefix}${part}`)
+          .join("\n");
+      };
+
       const waveLines = waveOffenders.length
         ? waveOffenders.map((item, index) => {
-            const header = `${index + 1}. *${item.label}* — ${item.classified} just. · ${compactPercent(item.percent)} do total justificado · peso da onda ${compactPercent(item.weightInWave)}`;
+            const header = `${index + 1}. *${item.label}* — ${item.classified} just.`;
+            const metrics = `   ${compactPercent(item.percent)} do total justificado · Peso da onda ${compactPercent(item.weightInWave)}`;
             const reasonLinesForWave = item.reasons?.length
               ? item.reasons
-                  .map(reason => `   ↳ *${reason.reason}* — ${reason.count}`)
+                  .map(reason => wrapFarolLine(`${reason.count}x ${reason.reason}`))
                   .join("\n")
-              : "   ↳ Sem motivo justificado";
-            return `${header}\n${reasonLinesForWave}`;
+              : "   • Sem motivo justificado";
+            return `${header}\n${metrics}\n${reasonLinesForWave}`;
           }).join("\n\n")
         : "• Sem ondas ofensoras.";
 
