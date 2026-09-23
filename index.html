@@ -3706,10 +3706,75 @@
     .executive-board.executive-exporting {
       width: 1600px !important;
       min-width: 1600px !important;
-      height: 900px !important;
-      aspect-ratio: 16 / 9 !important;
+      height: 1200px !important;
+      aspect-ratio: 4 / 3 !important;
+      grid-template-rows: 90px 260px 430px 420px !important;
       zoom: 1 !important;
       transform: none !important;
+    }
+
+    .executive-board.executive-exporting .executive-panel {
+      grid-template-rows: 48px minmax(0, 1fr);
+    }
+
+    .executive-board.executive-exporting .executive-panel-title {
+      padding: 0 16px;
+      font-size: 18px;
+      line-height: 1.05;
+      letter-spacing: .01em;
+    }
+
+    .executive-board.executive-exporting .executive-wave-table {
+      font-size: 15px;
+      line-height: 1.18;
+    }
+
+    .executive-board.executive-exporting .executive-wave-table th,
+    .executive-board.executive-exporting .executive-wave-table td {
+      padding: 6px 9px;
+      line-height: 1.18;
+    }
+
+    .executive-board.executive-exporting .executive-offender-table,
+    .executive-board.executive-exporting .executive-offender-table.dense {
+      font-size: 14px;
+      line-height: 1.22;
+    }
+
+    .executive-board.executive-exporting .executive-offender-table th,
+    .executive-board.executive-exporting .executive-offender-table td,
+    .executive-board.executive-exporting .executive-offender-table.dense th,
+    .executive-board.executive-exporting .executive-offender-table.dense td {
+      padding: 4px 8px;
+      line-height: 1.22;
+    }
+
+    .executive-board.executive-exporting .executive-insights {
+      gap: 10px;
+      padding: 12px 14px;
+    }
+
+    .executive-board.executive-exporting .executive-insight {
+      grid-template-columns: 38px minmax(0, 1fr);
+      gap: 12px;
+      padding: 9px 12px;
+    }
+
+    .executive-board.executive-exporting .executive-insight-number {
+      width: 31px;
+      height: 31px;
+      font-size: 16px;
+    }
+
+    .executive-board.executive-exporting .executive-insight strong {
+      font-size: 16px;
+      line-height: 1.15;
+    }
+
+    .executive-board.executive-exporting .executive-insight small {
+      margin-top: 5px;
+      font-size: 13px;
+      line-height: 1.18;
     }
 
     .executive-topbar {
@@ -14774,9 +14839,14 @@ body.editor-open .global-theme-toggle {
       ctx.font = `850 ${Math.max(9, radius * .08)}px Segoe UI`;
       ctx.fillText("100%", cx, cy + radius * .32);
 
-      const titleSize = Math.max(11.5, Math.min(15.5, rect.height * .050));
-      const valueSize = Math.max(12.5, Math.min(16, rect.height * .056));
-      const maxLabelWidth = rect.width * .34;
+      const exporting = !!canvas.closest(".executive-board")?.classList.contains("executive-exporting");
+      const titleSize = exporting
+        ? Math.max(15, Math.min(19, rect.height * .046))
+        : Math.max(11.5, Math.min(15.5, rect.height * .050));
+      const valueSize = exporting
+        ? Math.max(16, Math.min(20, rect.height * .050))
+        : Math.max(12.5, Math.min(16, rect.height * .056));
+      const maxLabelWidth = rect.width * (exporting ? .35 : .34);
 
       const wrapLabel = (label, maxWidth) => {
         ctx.font = `950 ${titleSize}px Segoe UI`;
@@ -14803,8 +14873,8 @@ body.editor-open .global-theme-toggle {
           .sort((a, b) => a.y - b.y);
 
         if (!indexes.length) return;
-        const top = rect.height * .12;
-        const bottom = rect.height * .86;
+        const top = rect.height * (exporting ? .10 : .12);
+        const bottom = rect.height * (exporting ? .90 : .86);
         const step = indexes.length === 1 ? 0 : (bottom - top) / (indexes.length - 1);
 
         indexes.forEach((anchorInfo, orderIndex) => {
@@ -15178,11 +15248,11 @@ body.editor-open .global-theme-toggle {
 
         const capture = await window.html2canvas(board, {
           backgroundColor: "#f8fbfe",
-          scale: 1.2,
+          scale: 1.35,
           width: 1600,
-          height: 900,
+          height: 1200,
           windowWidth: 1600,
-          windowHeight: 900,
+          windowHeight: 1200,
           useCORS: true,
           logging: false,
           imageTimeout: 15000,
