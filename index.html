@@ -4066,9 +4066,54 @@
     .executive-chart-legend-item strong { font-size: 1.1em; }
     .executive-chart-legend-item small { grid-column: 2 / 4; color: #536e83; font-weight: 850; }
 
-    .executive-offender-table td:first-child { width: 60%; }
-    .executive-offender-reason { display: flex; align-items: center; gap: 8px; }
-    .executive-offender-reason i { width: 11px; height: 11px; flex: 0 0 11px; border-radius: 50%; }
+    .executive-offender-table {
+      font-size: clamp(10px, .64vw, 13px);
+      line-height: 1.18;
+    }
+
+    .executive-offender-table th,
+    .executive-offender-table td {
+      padding: 2px 7px;
+      vertical-align: middle;
+      line-height: 1.18;
+    }
+
+    .executive-offender-table th {
+      white-space: normal;
+      overflow-wrap: anywhere;
+    }
+
+    .executive-offender-table td:first-child {
+      width: 60%;
+      white-space: normal;
+      overflow-wrap: anywhere;
+    }
+
+    .executive-offender-reason {
+      display: grid;
+      grid-template-columns: 10px minmax(0, 1fr);
+      align-items: start;
+      gap: 7px;
+      line-height: 1.18;
+    }
+
+    .executive-offender-reason i {
+      width: 10px;
+      height: 10px;
+      margin-top: .12em;
+      border-radius: 50%;
+    }
+
+    .executive-offender-table.dense {
+      font-size: clamp(9px, .56vw, 11.5px);
+      line-height: 1.14;
+    }
+
+    .executive-offender-table.dense th,
+    .executive-offender-table.dense td {
+      padding: 1px 6px;
+      line-height: 1.14;
+    }
 
     .executive-insights {
       min-height: 0;
@@ -15323,7 +15368,7 @@ body.editor-open .global-theme-toggle {
         <section class="executive-bottom-grid">
           <article class="executive-panel">
             <h3 class="executive-panel-title"><i class="bi bi-exclamation-triangle-fill" aria-hidden="true"></i>Ofensores</h3>
-            <table class="executive-offender-table">
+            <table class="executive-offender-table ${reasonRows.length >= 7 ? "dense" : ""}">
               <thead><tr><th>Motivo</th><th>Rotas afetadas</th><th>% do total</th></tr></thead>
               <tbody>${reasonRows.length ? reasonRows.map((item, index) => `<tr><td><span class="executive-offender-reason"><i style="background:${colors[index % colors.length]}"></i>${escapeHtml(item.reason)}</span></td><td>${item.count}</td><td>${compactPercent(justifiedLosses ? item.count / justifiedLosses * 100 : 0)}</td></tr>`).join("") : `<tr><td colspan="3">Sem perdas justificadas</td></tr>`}</tbody>
               <tfoot><tr><td>Total justificado</td><td>${justifiedLosses}</td><td>${compactPercent(justifiedLosses ? 100 : 0)}</td></tr></tfoot>
