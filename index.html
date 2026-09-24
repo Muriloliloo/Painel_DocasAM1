@@ -3691,7 +3691,7 @@
       min-height: 640px;
       margin: 0 auto;
       display: grid;
-      grid-template-rows: 8.5% 22% 37% 32.5%;
+      grid-template-rows: 8.5% 23% 36.5% 32%;
       overflow: hidden;
       border: 1px solid #a9bdce;
       border-radius: 8px;
@@ -3708,7 +3708,7 @@
       min-width: 2200px !important;
       height: 1650px !important;
       aspect-ratio: 4 / 3 !important;
-      grid-template-rows: 110px 220px 645px 675px !important;
+      grid-template-rows: 110px 230px 640px 670px !important;
       zoom: 1 !important;
       transform: none !important;
     }
@@ -5194,20 +5194,30 @@
       min-width: 0;
       min-height: 0;
       display: grid;
-      grid-template-rows: minmax(0, 1fr) 48px;
-      gap: 8px;
-      align-content: stretch;
-      padding: 5px 8px 4px 2px;
-      overflow: hidden;
+      grid-template-rows: minmax(44px, auto) 48px;
+      gap: 10px;
+      align-content: center;
+      padding: 5px 8px 5px 2px;
+      overflow: visible;
     }
 
     .executive-callout {
       align-self: center;
       margin: 0;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      gap: 2px 12px;
+      color: #00162b;
       font-size: clamp(14px, 1.02vw, 20px);
-      line-height: 1.08;
-      max-height: 2.3em;
-      overflow: hidden;
+      line-height: 1.12;
+      overflow: visible;
+    }
+
+    .executive-callout-primary,
+    .executive-callout-secondary {
+      display: inline;
+      min-width: 0;
     }
 
     .executive-kpis {
@@ -5255,33 +5265,37 @@
     }
 
     .executive-board.executive-exporting .executive-hero-copy {
-      grid-template-rows: minmax(0, 1fr) 46px;
-      gap: 8px;
-      align-content: stretch;
-      padding: 4px 8px 4px 2px;
-      overflow: hidden;
+      grid-template-rows: 50px 50px;
+      gap: 12px;
+      align-content: center;
+      padding: 6px 8px 6px 2px;
+      overflow: visible;
     }
 
     .executive-board.executive-exporting .executive-callout {
       align-self: center;
-      font-size: 22px;
-      line-height: 1.06;
-      max-height: 2.25em;
-      overflow: hidden;
+      display: flex;
+      flex-wrap: nowrap;
+      align-items: baseline;
+      gap: 14px;
+      font-size: 21px;
+      line-height: 1.08;
+      white-space: nowrap;
+      overflow: visible;
     }
 
     .executive-board.executive-exporting .executive-kpis {
-      height: 46px;
-      min-height: 46px;
+      height: 50px;
+      min-height: 50px;
       gap: 8px;
       align-self: end;
     }
 
     .executive-board.executive-exporting .executive-kpi {
-      height: 46px;
-      min-height: 46px;
+      height: 50px;
+      min-height: 50px;
       gap: 8px;
-      padding: 5px 11px 5px 12px;
+      padding: 6px 11px 6px 12px;
     }
 
     .executive-board.executive-exporting .executive-kpi .executive-kpi-label {
@@ -5294,7 +5308,7 @@
       line-height: 1;
     }
 
-    /* Ações complementares do Fechamento Executivo: JPEG + Farol para WhatsApp. */
+    /* Ações complementares do Fechamento Executivo: PNG + Farol para WhatsApp. */
     .executive-actions {
       display: flex;
       align-items: center;
@@ -15604,7 +15618,7 @@ body.editor-open .global-theme-toggle {
       if (!board || typeof window.html2canvas !== "function") {
         if (button) button.innerHTML = `<i class="bi bi-exclamation-circle" aria-hidden="true"></i><span>Não foi possível</span>`;
         window.setTimeout(() => {
-          if (button) button.innerHTML = `<i class="bi bi-file-earmark-image" aria-hidden="true"></i><span>JPEG + Farol</span>`;
+          if (button) button.innerHTML = `<i class="bi bi-file-earmark-image" aria-hidden="true"></i><span>PNG + Farol</span>`;
         }, 1800);
         return;
       }
@@ -15612,7 +15626,7 @@ body.editor-open .global-theme-toggle {
       const originalButtonContent = button?.innerHTML || "";
       if (button) {
         button.disabled = true;
-        button.innerHTML = `<i class="bi bi-hourglass-split" aria-hidden="true"></i><span>Gerando JPEG</span>`;
+        button.innerHTML = `<i class="bi bi-hourglass-split" aria-hidden="true"></i><span>Gerando PNG</span>`;
       }
 
       const farolCopied = await copyExecutiveFarolWhatsApp(false);
@@ -15662,11 +15676,11 @@ body.editor-open .global-theme-toggle {
 
         if (button) {
           button.innerHTML = farolCopied
-            ? `<i class="bi bi-check2-circle" aria-hidden="true"></i><span>JPEG + Farol OK</span>`
-            : `<i class="bi bi-check2-circle" aria-hidden="true"></i><span>JPEG baixado</span>`;
+            ? `<i class="bi bi-check2-circle" aria-hidden="true"></i><span>PNG + Farol OK</span>`
+            : `<i class="bi bi-check2-circle" aria-hidden="true"></i><span>PNG baixado</span>`;
         }
       } catch (error) {
-        console.error("Não foi possível baixar o JPEG do fechamento:", error);
+        console.error("Não foi possível baixar o PNG do fechamento:", error);
         if (button) button.innerHTML = `<i class="bi bi-exclamation-circle" aria-hidden="true"></i><span>Não foi possível</span>`;
       } finally {
         board.classList.remove("executive-exporting");
@@ -15685,7 +15699,7 @@ body.editor-open .global-theme-toggle {
       window.setTimeout(() => {
         if (button) {
           button.disabled = false;
-          button.innerHTML = originalButtonContent || `<i class="bi bi-file-earmark-image" aria-hidden="true"></i><span>JPEG + Farol</span>`;
+          button.innerHTML = originalButtonContent || `<i class="bi bi-file-earmark-image" aria-hidden="true"></i><span>PNG + Farol</span>`;
         }
       }, 1800);
     }
@@ -15747,7 +15761,7 @@ body.editor-open .global-theme-toggle {
               <i class="bi bi-clipboard-check" aria-hidden="true"></i><span>Copiar Farol</span>
             </button>
             <button class="executive-share" id="executiveShareBtn" type="button" title="Baixar o fechamento em JPEG e copiar o Farol para o WhatsApp">
-              <i class="bi bi-file-earmark-image" aria-hidden="true"></i><span>JPEG + Farol</span>
+              <i class="bi bi-file-earmark-image" aria-hidden="true"></i><span>PNG + Farol</span>
             </button>
           </div>
         </header>
@@ -15783,7 +15797,7 @@ body.editor-open .global-theme-toggle {
             </div>
           </div>
           <div class="executive-hero-copy">
-            <p class="executive-callout"><em>${totals.delay} ${totals.delay === 1 ? "perda" : "perdas"}</em> em ${totals.planned} rotas planejadas.<br>${highestWaves.length ? `${highestWaves.map(row => row.label).join(" + ")}: <em>${compactPercent(topWaveShare)}</em> das perdas.` : "Sem perdas registradas nas ondas."}</p>
+            <p class="executive-callout"><span class="executive-callout-primary"><em>${totals.delay} ${totals.delay === 1 ? "perda" : "perdas"}</em> em ${totals.planned} rotas planejadas.</span><span class="executive-callout-secondary">${highestWaves.length ? `${highestWaves.map(row => row.label).join(" + ")}: <em>${compactPercent(topWaveShare)}</em> das perdas.` : "Sem perdas registradas nas ondas."}</span></p>
             <div class="executive-kpis">
               <article class="executive-kpi">
                 <span class="executive-kpi-label">Planejadas</span>
