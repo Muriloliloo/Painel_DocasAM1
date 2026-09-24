@@ -3691,7 +3691,7 @@
       min-height: 640px;
       margin: 0 auto;
       display: grid;
-      grid-template-rows: 8.5% 20% 38.5% 33%;
+      grid-template-rows: 8.5% 22% 37% 32.5%;
       overflow: hidden;
       border: 1px solid #a9bdce;
       border-radius: 8px;
@@ -3708,7 +3708,7 @@
       min-width: 2200px !important;
       height: 1650px !important;
       aspect-ratio: 4 / 3 !important;
-      grid-template-rows: 110px 205px 655px 680px !important;
+      grid-template-rows: 110px 220px 645px 675px !important;
       zoom: 1 !important;
       transform: none !important;
     }
@@ -5113,11 +5113,13 @@
       background: #123244;
     }
 
-    /* Fechamento Executivo: faixa superior reduzida para ampliar os cards operacionais. */
+    /* Fechamento Executivo: topo compacto, mas com linhas independentes e sem sobreposição. */
     .executive-hero {
-      grid-template-columns: 29% minmax(0, 1fr);
+      grid-template-columns: 30% minmax(0, 1fr);
       gap: 12px;
-      padding: 7px 10px;
+      padding: 8px 10px;
+      align-items: stretch;
+      overflow: hidden;
     }
 
     .executive-score-card.executive-score-modern {
@@ -5125,11 +5127,14 @@
       gap: 8px;
       padding: 7px 10px;
       border-radius: 10px;
+      align-self: stretch;
+      min-height: 0;
     }
 
     .executive-score-main {
       gap: 4px;
       padding-left: 4px;
+      min-height: 0;
     }
 
     .executive-score-label > span {
@@ -5143,8 +5148,8 @@
     }
 
     .executive-score-value {
-      font-size: clamp(34px, 2.7vw, 46px);
-      line-height: .88;
+      font-size: clamp(34px, 2.65vw, 45px);
+      line-height: .9;
     }
 
     .executive-score-progress {
@@ -5162,11 +5167,13 @@
 
     .executive-score-side {
       gap: 5px;
+      min-height: 0;
     }
 
     .executive-score-mini {
       padding: 5px 7px;
       border-radius: 7px;
+      min-height: 0;
     }
 
     .executive-score-mini span {
@@ -5184,41 +5191,57 @@
     }
 
     .executive-hero-copy {
-      grid-template-rows: auto auto;
-      gap: 5px;
-      align-content: center;
-      padding: 4px 8px 3px 2px;
+      min-width: 0;
+      min-height: 0;
+      display: grid;
+      grid-template-rows: minmax(0, 1fr) 48px;
+      gap: 8px;
+      align-content: stretch;
+      padding: 5px 8px 4px 2px;
+      overflow: hidden;
     }
 
     .executive-callout {
+      align-self: center;
+      margin: 0;
       font-size: clamp(14px, 1.02vw, 20px);
-      line-height: 1;
+      line-height: 1.08;
+      max-height: 2.3em;
+      overflow: hidden;
     }
 
     .executive-kpis {
+      height: 48px;
+      min-height: 48px;
       gap: 8px;
+      align-self: end;
     }
 
     .executive-kpi {
-      height: 46px;
-      min-height: 46px;
+      height: 48px;
+      min-height: 48px;
       gap: 10px;
       padding: 5px 12px 5px 14px;
       border-radius: 8px;
+      overflow: hidden;
     }
 
     .executive-kpi .executive-kpi-label {
-      font-size: clamp(14px, 1vw, 18px);
+      font-size: clamp(13px, .95vw, 17px);
+      white-space: nowrap;
     }
 
     .executive-kpi strong {
-      font-size: clamp(23px, 1.7vw, 32px);
+      margin: 0;
+      font-size: clamp(23px, 1.6vw, 31px);
+      line-height: 1;
+      white-space: nowrap;
     }
 
     .executive-board.executive-exporting .executive-hero {
-      grid-template-columns: 27% minmax(0, 1fr);
+      grid-template-columns: 28% minmax(0, 1fr);
       gap: 10px;
-      padding: 6px 10px;
+      padding: 7px 10px;
     }
 
     .executive-board.executive-exporting .executive-score-card.executive-score-modern {
@@ -5232,30 +5255,33 @@
     }
 
     .executive-board.executive-exporting .executive-hero-copy {
-      grid-template-rows: auto 44px;
-      gap: 9px;
-      align-content: center;
-      padding: 5px 8px 5px 2px;
+      grid-template-rows: minmax(0, 1fr) 46px;
+      gap: 8px;
+      align-content: stretch;
+      padding: 4px 8px 4px 2px;
       overflow: hidden;
     }
 
     .executive-board.executive-exporting .executive-callout {
-      font-size: 21px;
-      line-height: 1.08;
+      align-self: center;
+      font-size: 22px;
+      line-height: 1.06;
+      max-height: 2.25em;
       overflow: hidden;
     }
 
     .executive-board.executive-exporting .executive-kpis {
-      height: 44px;
-      min-height: 44px;
+      height: 46px;
+      min-height: 46px;
+      gap: 8px;
       align-self: end;
     }
 
     .executive-board.executive-exporting .executive-kpi {
-      height: 44px;
-      min-height: 44px;
+      height: 46px;
+      min-height: 46px;
       gap: 8px;
-      padding: 4px 10px 4px 12px;
+      padding: 5px 11px 5px 12px;
     }
 
     .executive-board.executive-exporting .executive-kpi .executive-kpi-label {
@@ -5263,6 +5289,7 @@
     }
 
     .executive-board.executive-exporting .executive-kpi strong {
+      margin: 0;
       font-size: 34px;
       line-height: 1;
     }
@@ -15756,7 +15783,7 @@ body.editor-open .global-theme-toggle {
             </div>
           </div>
           <div class="executive-hero-copy">
-            <p class="executive-callout"><em>${totals.delay} ${totals.delay === 1 ? "perda" : "perdas"}</em> em ${totals.planned} rotas planejadas.<br>${highestWaves.length ? `As ${highestWaves.map(row => row.label).join(" e ")} concentram <em>${compactPercent(topWaveShare)}</em> das perdas.` : "Sem perdas registradas nas ondas."}</p>
+            <p class="executive-callout"><em>${totals.delay} ${totals.delay === 1 ? "perda" : "perdas"}</em> em ${totals.planned} rotas planejadas.<br>${highestWaves.length ? `${highestWaves.map(row => row.label).join(" + ")}: <em>${compactPercent(topWaveShare)}</em> das perdas.` : "Sem perdas registradas nas ondas."}</p>
             <div class="executive-kpis">
               <article class="executive-kpi">
                 <span class="executive-kpi-label">Planejadas</span>
