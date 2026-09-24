@@ -3708,7 +3708,7 @@
       min-width: 2200px !important;
       height: 1650px !important;
       aspect-ratio: 4 / 3 !important;
-      grid-template-rows: 110px 320px 590px 630px !important;
+      grid-template-rows: 110px 235px 635px 670px !important;
       zoom: 1 !important;
       transform: none !important;
     }
@@ -3804,6 +3804,105 @@
 
     .executive-board.executive-exporting .executive-status small {
       font-size: 13px;
+    }
+
+    /* Exportacao: topo mais compacto para priorizar os cards operacionais. */
+    .executive-board.executive-exporting .executive-hero {
+      grid-template-columns: 30% minmax(0, 1fr);
+      gap: 14px;
+      padding: 10px 12px;
+    }
+
+    .executive-board.executive-exporting .executive-score-card.executive-score-modern {
+      grid-template-columns: minmax(0, 1fr) 124px;
+      gap: 10px;
+      padding: 9px 12px;
+      border-radius: 11px;
+    }
+
+    .executive-board.executive-exporting .executive-score-main {
+      gap: 5px;
+      padding-left: 5px;
+    }
+
+    .executive-board.executive-exporting .executive-score-label > span {
+      font-size: 11px;
+    }
+
+    .executive-board.executive-exporting .executive-score-label > b {
+      min-height: 20px;
+      padding: 0 8px;
+      font-size: 9px;
+    }
+
+    .executive-board.executive-exporting .executive-score-value {
+      font-size: 48px;
+      line-height: .9;
+    }
+
+    .executive-board.executive-exporting .executive-score-progress {
+      height: 11px;
+    }
+
+    .executive-board.executive-exporting .executive-score-target-marker {
+      top: -5px;
+      height: 21px;
+    }
+
+    .executive-board.executive-exporting .executive-score-scale {
+      font-size: 8px;
+    }
+
+    .executive-board.executive-exporting .executive-score-side {
+      gap: 6px;
+    }
+
+    .executive-board.executive-exporting .executive-score-mini {
+      padding: 6px 8px;
+      border-radius: 8px;
+    }
+
+    .executive-board.executive-exporting .executive-score-mini span {
+      font-size: 8px;
+    }
+
+    .executive-board.executive-exporting .executive-score-mini strong {
+      margin-top: 3px;
+      font-size: 21px;
+    }
+
+    .executive-board.executive-exporting .executive-score-mini small {
+      margin-top: 2px;
+      font-size: 7px;
+    }
+
+    .executive-board.executive-exporting .executive-hero-copy {
+      gap: 10px;
+      padding: 7px 10px 4px 2px;
+    }
+
+    .executive-board.executive-exporting .executive-callout {
+      font-size: 27px;
+      line-height: 1.02;
+    }
+
+    .executive-board.executive-exporting .executive-kpis {
+      gap: 10px;
+    }
+
+    .executive-board.executive-exporting .executive-kpi {
+      gap: 8px;
+      padding: 7px 11px;
+    }
+
+    .executive-board.executive-exporting .executive-kpi span {
+      font-size: 14px;
+    }
+
+    .executive-board.executive-exporting .executive-kpi strong {
+      margin-top: 2px;
+      font-size: 43px;
+      line-height: .9;
     }
 
     .executive-topbar {
