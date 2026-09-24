@@ -5255,6 +5255,41 @@
       grid-column: 1 / -1;
     }
 
+    .print-wave-impact-table {
+      table-layout: fixed;
+    }
+
+    .print-wave-impact-table th,
+    .print-wave-impact-table td {
+      vertical-align: middle;
+      white-space: normal;
+      overflow-wrap: break-word;
+      word-break: normal;
+      line-height: 1.2;
+    }
+
+    .print-wave-impact-table th:nth-child(1),
+    .print-wave-impact-table td:nth-child(1) {
+      width: 13%;
+    }
+
+    .print-wave-impact-table th:nth-child(2),
+    .print-wave-impact-table td:nth-child(2) {
+      width: 10%;
+      text-align: center;
+    }
+
+    .print-wave-impact-table th:nth-child(3),
+    .print-wave-impact-table td:nth-child(3) {
+      width: 38%;
+    }
+
+    .print-wave-impact-table th:nth-child(4),
+    .print-wave-impact-table td:nth-child(4) {
+      width: 39%;
+      text-align: left;
+    }
+
     .print-mini-table h4 {
       margin: 0 0 2mm;
       color: #063354;
@@ -5447,6 +5482,48 @@
         padding: 2px 3px;
         overflow-wrap: anywhere;
         word-break: break-word;
+      }
+
+      .print-wave-impact-table {
+        table-layout: fixed !important;
+        font-size: 9px !important;
+      }
+
+      .print-wave-impact-table th,
+      .print-wave-impact-table td {
+        padding: 3px 5px !important;
+        overflow-wrap: break-word !important;
+        word-break: normal !important;
+        white-space: normal !important;
+        line-height: 1.18 !important;
+        vertical-align: middle !important;
+      }
+
+      .print-wave-impact-table th:nth-child(1),
+      .print-wave-impact-table td:nth-child(1) {
+        width: 13% !important;
+      }
+
+      .print-wave-impact-table th:nth-child(2),
+      .print-wave-impact-table td:nth-child(2) {
+        width: 10% !important;
+        text-align: center !important;
+      }
+
+      .print-wave-impact-table th:nth-child(3),
+      .print-wave-impact-table td:nth-child(3) {
+        width: 38% !important;
+      }
+
+      .print-wave-impact-table th:nth-child(4),
+      .print-wave-impact-table td:nth-child(4) {
+        width: 39% !important;
+        text-align: left !important;
+      }
+
+      .print-wave-impact-table tr {
+        break-inside: avoid !important;
+        page-break-inside: avoid !important;
       }
       #printRows.print-docas-medium .print-wave h3 {
         margin: 0 0 3mm;
@@ -14151,7 +14228,7 @@ body.editor-open .global-theme-toggle {
       return `
         <div class="print-mini-table wide">
           <h4>Estratificação por ondas</h4>
-          <table>
+          <table class="print-wave-impact-table">
             <thead><tr><th>Onda</th><th>Impactos</th><th>Maior ofensor transportadora</th><th>Maior ofensor motivo</th></tr></thead>
             <tbody>
               ${rows.length
