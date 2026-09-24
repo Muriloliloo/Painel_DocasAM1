@@ -3691,7 +3691,7 @@
       min-height: 640px;
       margin: 0 auto;
       display: grid;
-      grid-template-rows: 8.5% 24.5% 36% 31%;
+      grid-template-rows: 8.5% 17.5% 40% 34%;
       overflow: hidden;
       border: 1px solid #a9bdce;
       border-radius: 8px;
@@ -3708,7 +3708,7 @@
       min-width: 2200px !important;
       height: 1650px !important;
       aspect-ratio: 4 / 3 !important;
-      grid-template-rows: 110px 235px 635px 670px !important;
+      grid-template-rows: 110px 180px 660px 700px !important;
       zoom: 1 !important;
       transform: none !important;
     }
@@ -5111,6 +5111,149 @@
     body.dark-mode .executive-score-mini {
       border-color: #41657b;
       background: #123244;
+    }
+
+    /* Fechamento Executivo: faixa superior reduzida para ampliar os cards operacionais. */
+    .executive-hero {
+      grid-template-columns: 29% minmax(0, 1fr);
+      gap: 12px;
+      padding: 7px 10px;
+    }
+
+    .executive-score-card.executive-score-modern {
+      grid-template-columns: minmax(0, 1fr) 112px;
+      gap: 8px;
+      padding: 7px 10px;
+      border-radius: 10px;
+    }
+
+    .executive-score-main {
+      gap: 4px;
+      padding-left: 4px;
+    }
+
+    .executive-score-label > span {
+      font-size: 10px;
+    }
+
+    .executive-score-label > b {
+      min-height: 18px;
+      padding: 0 7px;
+      font-size: 8px;
+    }
+
+    .executive-score-value {
+      font-size: clamp(34px, 2.7vw, 46px);
+      line-height: .88;
+    }
+
+    .executive-score-progress {
+      height: 9px;
+    }
+
+    .executive-score-target-marker {
+      top: -5px;
+      height: 19px;
+    }
+
+    .executive-score-scale {
+      font-size: 7px;
+    }
+
+    .executive-score-side {
+      gap: 5px;
+    }
+
+    .executive-score-mini {
+      padding: 5px 7px;
+      border-radius: 7px;
+    }
+
+    .executive-score-mini span {
+      font-size: 7px;
+    }
+
+    .executive-score-mini strong {
+      margin-top: 2px;
+      font-size: clamp(16px, 1.15vw, 21px);
+    }
+
+    .executive-score-mini small {
+      margin-top: 2px;
+      font-size: 6.5px;
+    }
+
+    .executive-hero-copy {
+      grid-template-rows: auto auto;
+      gap: 5px;
+      align-content: center;
+      padding: 4px 8px 3px 2px;
+    }
+
+    .executive-callout {
+      font-size: clamp(14px, 1.02vw, 20px);
+      line-height: 1;
+    }
+
+    .executive-kpis {
+      gap: 8px;
+    }
+
+    .executive-kpi {
+      height: 46px;
+      min-height: 46px;
+      gap: 10px;
+      padding: 5px 12px 5px 14px;
+      border-radius: 8px;
+    }
+
+    .executive-kpi .executive-kpi-label {
+      font-size: clamp(14px, 1vw, 18px);
+    }
+
+    .executive-kpi strong {
+      font-size: clamp(23px, 1.7vw, 32px);
+    }
+
+    .executive-board.executive-exporting .executive-hero {
+      grid-template-columns: 27% minmax(0, 1fr);
+      gap: 10px;
+      padding: 6px 10px;
+    }
+
+    .executive-board.executive-exporting .executive-score-card.executive-score-modern {
+      grid-template-columns: minmax(0, 1fr) 108px;
+      gap: 7px;
+      padding: 6px 9px;
+    }
+
+    .executive-board.executive-exporting .executive-score-value {
+      font-size: 42px;
+    }
+
+    .executive-board.executive-exporting .executive-hero-copy {
+      gap: 4px;
+      padding: 3px 8px 2px 2px;
+    }
+
+    .executive-board.executive-exporting .executive-callout {
+      font-size: 23px;
+      line-height: 1;
+    }
+
+    .executive-board.executive-exporting .executive-kpi {
+      height: 42px;
+      min-height: 42px;
+      gap: 8px;
+      padding: 4px 10px 4px 12px;
+    }
+
+    .executive-board.executive-exporting .executive-kpi .executive-kpi-label {
+      font-size: 16px;
+    }
+
+    .executive-board.executive-exporting .executive-kpi strong {
+      font-size: 36px;
     }
 
     /* Ações complementares do Fechamento Executivo: JPEG + Farol para WhatsApp. */
