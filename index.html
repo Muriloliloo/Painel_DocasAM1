@@ -3691,7 +3691,7 @@
       min-height: 640px;
       margin: 0 auto;
       display: grid;
-      grid-template-rows: 8.5% 17.5% 40% 34%;
+      grid-template-rows: 8.5% 20% 38.5% 33%;
       overflow: hidden;
       border: 1px solid #a9bdce;
       border-radius: 8px;
@@ -3708,7 +3708,7 @@
       min-width: 2200px !important;
       height: 1650px !important;
       aspect-ratio: 4 / 3 !important;
-      grid-template-rows: 110px 180px 660px 700px !important;
+      grid-template-rows: 110px 205px 655px 680px !important;
       zoom: 1 !important;
       transform: none !important;
     }
@@ -5232,28 +5232,39 @@
     }
 
     .executive-board.executive-exporting .executive-hero-copy {
-      gap: 4px;
-      padding: 3px 8px 2px 2px;
+      grid-template-rows: auto 44px;
+      gap: 9px;
+      align-content: center;
+      padding: 5px 8px 5px 2px;
+      overflow: hidden;
     }
 
     .executive-board.executive-exporting .executive-callout {
-      font-size: 23px;
-      line-height: 1;
+      font-size: 21px;
+      line-height: 1.08;
+      overflow: hidden;
+    }
+
+    .executive-board.executive-exporting .executive-kpis {
+      height: 44px;
+      min-height: 44px;
+      align-self: end;
     }
 
     .executive-board.executive-exporting .executive-kpi {
-      height: 42px;
-      min-height: 42px;
+      height: 44px;
+      min-height: 44px;
       gap: 8px;
       padding: 4px 10px 4px 12px;
     }
 
     .executive-board.executive-exporting .executive-kpi .executive-kpi-label {
-      font-size: 16px;
+      font-size: 15px;
     }
 
     .executive-board.executive-exporting .executive-kpi strong {
-      font-size: 36px;
+      font-size: 34px;
+      line-height: 1;
     }
 
     /* Ações complementares do Fechamento Executivo: JPEG + Farol para WhatsApp. */
@@ -15120,11 +15131,12 @@ body.editor-open .global-theme-toggle {
         "#ef4444", "#6366f1"
       ];
       const darkMode = document.body.classList.contains("dark-mode");
+      const exporting = !!canvas.closest(".executive-board")?.classList.contains("executive-exporting");
       const ink = darkMode ? "#ffffff" : "#00162b";
       const muted = darkMode ? "#c8d8e3" : "#294b63";
       const cx = rect.width / 2;
-      const cy = rect.height * .50;
-      const radius = Math.min(rect.height * .42, rect.width * .19);
+      const cy = rect.height * (exporting ? .53 : .50);
+      const radius = Math.min(rect.height * (exporting ? .36 : .42), rect.width * .19);
       const inner = radius * .48;
       let start = -Math.PI / 2;
       const denominator = Math.max(total, 1);
@@ -15187,14 +15199,13 @@ body.editor-open .global-theme-toggle {
       ctx.font = `850 ${Math.max(9, radius * .08)}px Segoe UI`;
       ctx.fillText("100%", cx, cy + radius * .32);
 
-      const exporting = !!canvas.closest(".executive-board")?.classList.contains("executive-exporting");
       const titleSize = exporting
-        ? Math.max(20, Math.min(26, rect.height * .048))
+        ? Math.max(18, Math.min(23, rect.height * .042))
         : Math.max(11.5, Math.min(15.5, rect.height * .050));
       const valueSize = exporting
-        ? Math.max(18, Math.min(24, rect.height * .052))
+        ? Math.max(17, Math.min(21, rect.height * .046))
         : Math.max(12.5, Math.min(16, rect.height * .056));
-      const maxLabelWidth = rect.width * (exporting ? .38 : .34);
+      const maxLabelWidth = rect.width * (exporting ? .36 : .34);
 
       const wrapLabel = (label, maxWidth) => {
         ctx.font = `950 ${titleSize}px Segoe UI`;
@@ -15221,8 +15232,8 @@ body.editor-open .global-theme-toggle {
           .sort((a, b) => a.y - b.y);
 
         if (!indexes.length) return;
-        const top = rect.height * (exporting ? .08 : .12);
-        const bottom = rect.height * (exporting ? .92 : .86);
+        const top = rect.height * (exporting ? .18 : .12);
+        const bottom = rect.height * (exporting ? .90 : .86);
         const step = indexes.length === 1 ? 0 : (bottom - top) / (indexes.length - 1);
 
         indexes.forEach((anchorInfo, orderIndex) => {
@@ -15776,7 +15787,7 @@ body.editor-open .global-theme-toggle {
             </table>
           </article>
           <article class="executive-panel">
-            <h3 class="executive-panel-title"><i class="bi bi-pie-chart-fill" aria-hidden="true"></i>Total geral - todas as ondas · ${justifiedLosses} perdas justificadas${pendingJustifications ? ` + ${pendingJustifications} pendentes` : ""} · participação por motivo</h3>
+            <h3 class="executive-panel-title"><i class="bi bi-pie-chart-fill" aria-hidden="true"></i>Total geral · todas as ondas · participação por motivo</h3>
             <div class="executive-chart-layout">
               <div class="executive-donut-wrap"><canvas id="executiveDonutChart" role="img" aria-label="${escapeHtml(chartReasons.length ? `Distribuição dos impactos: ${chartReasons.map(item => `${item.reason}, ${item.count}`).join("; ")}` : "Sem impactos registrados")}"></canvas></div>
             </div>
