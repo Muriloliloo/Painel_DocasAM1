@@ -3672,7 +3672,7 @@
       text-transform: uppercase;
     }
 
-    /* Fechamento executivo: ocupa a área disponível; JPEG mantém o formato 16:9. */
+    /* Fechamento executivo: ocupa a área disponível; JPEG mantém o formato de exportação. */
     #fechamentoExecutivoView {
       box-sizing: border-box;
       padding: 10px 12px;
@@ -3691,7 +3691,7 @@
       min-height: 640px;
       margin: 0 auto;
       display: grid;
-      grid-template-rows: 8.5% 23% 36.5% 32%;
+      grid-template-rows: 9% 25% 35% 31%;
       overflow: hidden;
       border: 1px solid #a9bdce;
       border-radius: 8px;
@@ -3708,7 +3708,7 @@
       min-width: 2200px !important;
       height: 1650px !important;
       aspect-ratio: 4 / 3 !important;
-      grid-template-rows: 110px 230px 640px 670px !important;
+      grid-template-rows: 120px 285px 605px 640px !important;
       zoom: 1 !important;
       transform: none !important;
     }
@@ -4408,7 +4408,7 @@
       #fechamentoExecutivoView { padding: 8px; }
       .executive-board { margin: 0; }
     }
-    /* Fechamento Executivo: topo mais compacto e contraste reforçado para JPEG/WhatsApp. */
+    /* Fechamento Executivo: topo mais compacto e contraste reforçado para PNG/WhatsApp. */
     .executive-board {
       --executive-ink: #00162b;
       --executive-red: #e51f32;
@@ -5113,91 +5113,100 @@
       background: #123244;
     }
 
-    /* Fechamento Executivo: topo compacto, mas com linhas independentes e sem sobreposição. */
+    /* Fechamento Executivo: topo legível e estável na tela e no PNG. */
     .executive-hero {
-      grid-template-columns: 30% minmax(0, 1fr);
-      gap: 12px;
-      padding: 8px 10px;
+      grid-template-columns: 31% minmax(0, 1fr);
+      gap: 14px;
+      padding: 10px 12px;
       align-items: stretch;
-      overflow: hidden;
+      overflow: visible;
     }
 
     .executive-score-card.executive-score-modern {
-      grid-template-columns: minmax(0, 1fr) 112px;
-      gap: 8px;
-      padding: 7px 10px;
-      border-radius: 10px;
+      grid-template-columns: minmax(0, 1fr) 122px;
+      gap: 10px;
+      padding: 10px 12px;
+      border-radius: 11px;
       align-self: stretch;
       min-height: 0;
+      overflow: visible;
     }
 
     .executive-score-main {
-      gap: 4px;
-      padding-left: 4px;
+      gap: 6px;
+      padding-left: 5px;
       min-height: 0;
+      align-content: center;
     }
 
     .executive-score-label > span {
-      font-size: 10px;
+      font-size: 11px;
+      line-height: 1.15;
     }
 
     .executive-score-label > b {
-      min-height: 18px;
-      padding: 0 7px;
-      font-size: 8px;
+      min-height: 20px;
+      padding: 0 8px;
+      font-size: 9px;
+      line-height: 1;
     }
 
     .executive-score-value {
-      font-size: clamp(34px, 2.65vw, 45px);
-      line-height: .9;
+      font-size: clamp(38px, 2.9vw, 50px);
+      line-height: 1.05;
+      padding-bottom: 2px;
     }
 
     .executive-score-progress {
-      height: 9px;
+      height: 11px;
     }
 
     .executive-score-target-marker {
       top: -5px;
-      height: 19px;
+      height: 21px;
     }
 
     .executive-score-scale {
-      font-size: 7px;
+      font-size: 8px;
+      line-height: 1.1;
     }
 
     .executive-score-side {
-      gap: 5px;
+      gap: 7px;
       min-height: 0;
     }
 
     .executive-score-mini {
-      padding: 5px 7px;
-      border-radius: 7px;
+      padding: 7px 9px;
+      border-radius: 8px;
       min-height: 0;
     }
 
     .executive-score-mini span {
-      font-size: 7px;
+      font-size: 8px;
+      line-height: 1.1;
     }
 
     .executive-score-mini strong {
-      margin-top: 2px;
-      font-size: clamp(16px, 1.15vw, 21px);
+      margin-top: 3px;
+      font-size: clamp(18px, 1.25vw, 23px);
+      line-height: 1.05;
     }
 
     .executive-score-mini small {
-      margin-top: 2px;
-      font-size: 6.5px;
+      margin-top: 3px;
+      font-size: 7px;
+      line-height: 1.1;
     }
 
     .executive-hero-copy {
       min-width: 0;
       min-height: 0;
       display: grid;
-      grid-template-rows: minmax(44px, auto) 48px;
-      gap: 10px;
+      grid-template-rows: minmax(58px, auto) 62px;
+      gap: 12px;
       align-content: center;
-      padding: 5px 8px 5px 2px;
+      padding: 8px 10px 7px 2px;
       overflow: visible;
     }
 
@@ -5207,10 +5216,10 @@
       display: flex;
       flex-wrap: wrap;
       align-items: baseline;
-      gap: 2px 12px;
+      gap: 4px 14px;
       color: #00162b;
-      font-size: clamp(14px, 1.02vw, 20px);
-      line-height: 1.12;
+      font-size: clamp(16px, 1.15vw, 22px);
+      line-height: 1.18;
       overflow: visible;
     }
 
@@ -5221,91 +5230,129 @@
     }
 
     .executive-kpis {
-      height: 48px;
-      min-height: 48px;
-      gap: 8px;
+      height: 62px;
+      min-height: 62px;
+      gap: 10px;
       align-self: end;
     }
 
     .executive-kpi {
-      height: 48px;
-      min-height: 48px;
-      gap: 10px;
-      padding: 5px 12px 5px 14px;
-      border-radius: 8px;
-      overflow: hidden;
+      height: 62px;
+      min-height: 62px;
+      gap: 12px;
+      padding: 8px 14px 9px 16px;
+      border-radius: 9px;
+      overflow: visible;
     }
 
     .executive-kpi .executive-kpi-label {
-      font-size: clamp(13px, .95vw, 17px);
+      font-size: clamp(14px, 1.02vw, 18px);
+      line-height: 1.05;
       white-space: nowrap;
     }
 
     .executive-kpi strong {
       margin: 0;
-      font-size: clamp(23px, 1.6vw, 31px);
-      line-height: 1;
+      font-size: clamp(27px, 1.85vw, 35px);
+      line-height: 1.08;
       white-space: nowrap;
     }
 
+    .executive-board.executive-exporting .executive-topbar {
+      min-height: 120px;
+      align-items: center;
+      padding-top: 6px;
+      padding-bottom: 6px;
+    }
+
+    .executive-board.executive-exporting .executive-heading strong {
+      font-size: 42px;
+      line-height: 1.08;
+    }
+
+    .executive-board.executive-exporting .executive-heading small {
+      font-size: 14px;
+      line-height: 1.12;
+    }
+
     .executive-board.executive-exporting .executive-hero {
-      grid-template-columns: 28% minmax(0, 1fr);
-      gap: 10px;
-      padding: 7px 10px;
+      grid-template-columns: 29% minmax(0, 1fr);
+      gap: 12px;
+      padding: 10px 12px;
+      overflow: visible;
     }
 
     .executive-board.executive-exporting .executive-score-card.executive-score-modern {
-      grid-template-columns: minmax(0, 1fr) 108px;
-      gap: 7px;
-      padding: 6px 9px;
+      grid-template-columns: minmax(0, 1fr) 120px;
+      gap: 9px;
+      padding: 9px 11px;
+      overflow: visible;
     }
 
     .executive-board.executive-exporting .executive-score-value {
-      font-size: 42px;
+      font-size: 50px;
+      line-height: 1.06;
+      padding-bottom: 2px;
+    }
+
+    .executive-board.executive-exporting .executive-score-progress {
+      height: 12px;
+    }
+
+    .executive-board.executive-exporting .executive-score-scale {
+      font-size: 9px;
+      line-height: 1.1;
+    }
+
+    .executive-board.executive-exporting .executive-score-mini strong {
+      font-size: 24px;
+      line-height: 1.05;
     }
 
     .executive-board.executive-exporting .executive-hero-copy {
-      grid-template-rows: 50px 50px;
-      gap: 12px;
+      grid-template-rows: 64px 68px;
+      gap: 14px;
       align-content: center;
-      padding: 6px 8px 6px 2px;
+      padding: 8px 10px 8px 2px;
       overflow: visible;
     }
 
     .executive-board.executive-exporting .executive-callout {
       align-self: center;
       display: flex;
-      flex-wrap: nowrap;
+      flex-wrap: wrap;
       align-items: baseline;
-      gap: 14px;
-      font-size: 21px;
-      line-height: 1.08;
-      white-space: nowrap;
+      gap: 4px 16px;
+      font-size: 23px;
+      line-height: 1.16;
+      white-space: normal;
       overflow: visible;
     }
 
     .executive-board.executive-exporting .executive-kpis {
-      height: 50px;
-      min-height: 50px;
-      gap: 8px;
+      height: 68px;
+      min-height: 68px;
+      gap: 10px;
       align-self: end;
     }
 
     .executive-board.executive-exporting .executive-kpi {
-      height: 50px;
-      min-height: 50px;
-      gap: 8px;
-      padding: 6px 11px 6px 12px;
+      height: 68px;
+      min-height: 68px;
+      gap: 10px;
+      padding: 9px 14px 10px 15px;
+      overflow: visible;
     }
 
     .executive-board.executive-exporting .executive-kpi .executive-kpi-label {
-      font-size: 15px;
+      font-size: 17px;
+      line-height: 1.05;
     }
 
     .executive-board.executive-exporting .executive-kpi strong {
       margin: 0;
-      font-size: 34px;
-      line-height: 1;
+      font-size: 38px;
+      line-height: 1.08;
     }
 
     /* Ações complementares do Fechamento Executivo: PNG + Farol para WhatsApp. */
@@ -15660,7 +15707,7 @@ body.editor-open .global-theme-toggle {
         });
 
         const blob = await new Promise(resolve => capture.toBlob(resolve, "image/png"));
-        if (!blob) throw new Error("Falha ao gerar o arquivo JPEG.");
+        if (!blob) throw new Error("Falha ao gerar o arquivo PNG.");
 
         const dateSlug = String(data.data || new Date().toLocaleDateString("pt-BR"))
           .replace(/[^0-9]+/g, "-")
@@ -15760,7 +15807,7 @@ body.editor-open .global-theme-toggle {
             <button class="executive-copy-farol" id="executiveCopyFarolBtn" type="button" title="Copiar o Farol da Expedição para colar no WhatsApp">
               <i class="bi bi-clipboard-check" aria-hidden="true"></i><span>Copiar Farol</span>
             </button>
-            <button class="executive-share" id="executiveShareBtn" type="button" title="Baixar o fechamento em JPEG e copiar o Farol para o WhatsApp">
+            <button class="executive-share" id="executiveShareBtn" type="button" title="Baixar o fechamento em PNG e copiar o Farol para o WhatsApp">
               <i class="bi bi-file-earmark-image" aria-hidden="true"></i><span>PNG + Farol</span>
             </button>
           </div>
