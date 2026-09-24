@@ -13086,8 +13086,14 @@ body.editor-open .global-theme-toggle {
         const customsStatus = normalizeBaseStatus(row.estadoAduana)
           || normalizeBaseStatus(row.processo)
           || normalizeBaseStatus(row.status);
-        // Enquanto a auditoria estiver ativa, a Aduana é o estado mais atual da rota.
-        if (customsStatus === "Em aduana") map.set(key, customsStatus);
+        if (customsStatus !== "Em aduana") return;
+
+        // A Aduana só prevalece enquanto a rota ainda não avançou operacionalmente.
+        // Se a Base Operacional já informou Guardando/Carregando ou Expedida,
+        // esse avanço é mais recente e não pode ser revertido por um registro antigo da Aduana.
+        const operational = normalizeBaseStatus(map.get(key));
+        if (operational === "Guardando" || operational === "Expedida") return;
+        map.set(key, customsStatus);
       });
       return map;
     }
