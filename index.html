@@ -16274,7 +16274,11 @@ body.editor-open .global-theme-toggle {
         const payload = snapshot.data()?.payload;
         if (cloudState.savingRemote && snapshot.metadata?.hasPendingWrites) return;
         if (payload) applyRemotePayload(payload, { cloudSnapshot: true });
-      }, error => console.warn("Falha ao ouvir Firebase:", error));
+      }, error => {
+        console.warn("Falha ao ouvir Firebase:", error);
+        setRefreshSyncState("error", "Conexão com Firebase interrompida. O painel tentará reconectar.");
+        resetRefreshSyncState(4200);
+      });
     }
 
     async function initializeFirebase() {
@@ -16290,7 +16294,12 @@ body.editor-open .global-theme-toggle {
         ]);
         const app = appModule.initializeApp(window.FIREBASE_APP_CONFIG);
         cloudState.auth = authModule.getAuth(app);
-        cloudState.db = firestoreModule.getFirestore(app);
+        // Ambiente operacional: prioriza estabilidade da escuta em redes/proxies
+        // que interrompem o WebChannel persistente (ex.: Edge/antivirus/proxy corporativo).
+        cloudState.db = firestoreModule.initializeFirestore(app, {
+          experimentalForceLongPolling: true,
+          experimentalLongPollingOptions: { timeoutSeconds: 25 }
+        });
         cloudState.tools = {
           signInWithEmailAndPassword: authModule.signInWithEmailAndPassword,
           signOut: authModule.signOut,
