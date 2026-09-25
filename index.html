@@ -11316,6 +11316,35 @@ body.editor-open .global-theme-toggle {
   <script src="ondas-dados.js"></script>
   <script>
     const storageKey = "ondas-dados";
+    const syncMetaKey = `${storageKey}-sync-meta-v1`;
+    const recoveryKey = `${storageKey}-recovery-v1`;
+    let syncMeta = (() => {
+      try {
+        const saved = JSON.parse(localStorage.getItem(syncMetaKey) || "null");
+        return saved && typeof saved === "object"
+          ? saved
+          : { pendingRevision: 0, lastAckRevision: 0, lastAckAt: 0, pendingAt: 0 };
+      } catch {
+        return { pendingRevision: 0, lastAckRevision: 0, lastAckAt: 0, pendingAt: 0 };
+      }
+    })();
+
+    function persistSyncMeta() {
+      try {
+        localStorage.setItem(syncMetaKey, JSON.stringify(syncMeta));
+      } catch (_) {}
+    }
+
+    function saveRecoverySnapshot(reason = "sync-conflict") {
+      try {
+        localStorage.setItem(recoveryKey, JSON.stringify({
+          savedAt: Date.now(),
+          reason,
+          data
+        }));
+      } catch (_) {}
+    }
+
     const LOCAL_HISTORY_MAX_ROWS = 1200;
     const CLOUD_HISTORY_MAX_ROWS = 600;
     const CLOUD_HISTORY_MIN_ROWS = 100;
@@ -11375,9 +11404,11 @@ body.editor-open .global-theme-toggle {
       applyingRemote: false,
       savingRemote: false,
       pendingRemoteSave: false,
-      lastCloudAckRevision: 0,
+      lastCloudAckRevision: Number(syncMeta.lastAckRevision || 0),
       lastRemoteRevision: 0,
       authResolved: false,
+      initialSyncDone: false,
+      syncConflict: false,
       retryTimer: null,
       retryAttempts: 0,
       tools: {}
@@ -11524,7 +11555,7 @@ body.editor-open .global-theme-toggle {
     }
 
     function canEditData() {
-      return isAdmin();
+      return isAdmin() && cloudState.initialSyncDone;
     }
 
     function roleLabel() {
@@ -11540,7 +11571,7 @@ body.editor-open .global-theme-toggle {
       button.innerHTML = `<span>${admin ? top : "Painel"}</span><strong>${roleLabel()}</strong>`;
       document.querySelector(".app")?.classList.toggle("reader-mode", !admin);
       document.querySelectorAll(".admin-only").forEach(element => {
-        element.disabled = !admin;
+        element.disabled = !admin || !cloudState.initialSyncDone;
       });
       const loginButton = document.getElementById("loginBtn");
       const logoutButton = document.getElementById("logoutBtn");
@@ -11557,6 +11588,10 @@ body.editor-open .global-theme-toggle {
 
     function requireAdminAction() {
       if (canEditData()) return true;
+      if (isAdmin() && !cloudState.initialSyncDone) {
+        setRefreshSyncState("loading", "Sincronizando o estado mais recente antes de liberar edições...");
+        return false;
+      }
       document.getElementById("loginMessage").textContent = "Seu acesso está como leitor. Entre com um usuário administrador para editar.";
       document.getElementById("loginModal").classList.add("open");
       return false;
