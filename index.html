@@ -16215,6 +16215,9 @@ body.editor-open .global-theme-toggle {
       const incomingRevision = Number(payload.syncRevision || 0);
       const currentRevision = Number(currentPayload?.syncRevision || 0);
       const cloudSnapshot = Boolean(options.cloudSnapshot);
+      if (options.forceCloud) {
+        return { apply: true, reason: "forced-cloud", incomingRevision, currentRevision };
+      }
       const authoritativeReader = cloudSnapshot && cloudState.authResolved && !isAdmin();
       const lastRemoteRevision = Number(cloudState.lastRemoteRevision || 0);
 
@@ -16271,8 +16274,18 @@ body.editor-open .global-theme-toggle {
         data.ciclosExtras = { ...(originalData.ciclosExtras || {}), ...(data.ciclosExtras || {}) };
         data.ondas = sanitizeWaves(data.ondas);
         currentWave = data.ondas.some(wave => waveLabel(wave) === waveLabel(currentWave)) ? currentWave : data.ondas[0];
-        if (options.cloudSnapshot) {
+        if (options.cloudSnapshot || options.forceCloud) {
           cloudState.lastRemoteRevision = decision.incomingRevision;
+          if (options.forceCloud || !Number(syncMeta.pendingRevision || 0)) {
+            cloudState.lastCloudAckRevision = decision.incomingRevision;
+            syncMeta.lastAckRevision = decision.incomingRevision;
+            syncMeta.lastAckAt = Date.now();
+            if (options.forceCloud) {
+              syncMeta.pendingRevision = 0;
+              syncMeta.pendingAt = 0;
+            }
+            persistSyncMeta();
+          }
           console.info("Snapshot Firebase aplicado no painel.", {
             role: roleLabel(),
             revision: decision.incomingRevision,
@@ -16325,12 +16338,11 @@ body.editor-open .global-theme-toggle {
 
       setRefreshSyncState("loading", "Atualizando dados do painel...");
       try {
-        if (isAdmin()) {
-          // No computador administrador, o botão publica o estado local correto antes da leitura.
-          data.syncRevision = nextSyncRevision();
-          localStorage.setItem(storageKey, JSON.stringify(data));
+        if (isAdmin() && Number(syncMeta.pendingRevision || 0)) {
           const saved = await saveDataToCloud();
-          if (!saved) throw new Error("Não foi possível publicar a atualização no Firebase.");
+          if (!saved && cloudState.syncConflict) {
+            throw new Error("Foi encontrada uma versão mais nova no Firebase e ela foi preservada.");
+          }
         }
 
         const snapshot = await cloudState.tools.getDoc(cloudState.docRef);
@@ -16338,9 +16350,9 @@ body.editor-open .global-theme-toggle {
         if (!payload) throw new Error("O Firebase ainda não possui dados do painel.");
         const applied = applyRemotePayload(payload, {
           cloudSnapshot: true,
-          forceCloud: !isAdmin()
+          forceCloud: true
         });
-        if (!applied && !isAdmin()) throw new Error("A atualização recebida não pôde ser aplicada.");
+        if (!applied) throw new Error("A atualização recebida não pôde ser aplicada.");
 
         const time = new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
         setRefreshSyncState("success", `Painel atualizado às ${time}.`);
