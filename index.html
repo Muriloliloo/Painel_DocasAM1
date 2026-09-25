@@ -16366,6 +16366,84 @@ body.editor-open .global-theme-toggle {
       }
     }
 
+    async function synchronizeInitialCloudState() {
+      if (!cloudState.ready || !cloudState.docRef || !cloudState.authResolved) return false;
+
+      setRefreshSyncState("loading", "Carregando o último estado confirmado do Firebase...");
+      try {
+        const snapshot = await cloudState.tools.getDoc(cloudState.docRef);
+        const remotePayload = snapshot.exists() ? snapshot.data()?.payload : null;
+
+        if (!remotePayload) {
+          cloudState.lastRemoteRevision = 0;
+          cloudState.lastCloudAckRevision = 0;
+          cloudState.initialSyncDone = true;
+          updateAuthBadge();
+
+          if (isAdmin()) {
+            if (!Number(data.syncRevision || 0)) {
+              data.syncRevision = nextSyncRevision();
+              localStorage.setItem(storageKey, JSON.stringify(data));
+            }
+            syncMeta.pendingRevision = Number(data.syncRevision || 0);
+            syncMeta.pendingAt = Date.now();
+            persistSyncMeta();
+            const created = await saveDataToCloud();
+            if (!created) throw new Error("Não foi possível criar o estado inicial no Firebase.");
+          }
+
+          setRefreshSyncState("success", "Painel sincronizado.");
+          resetRefreshSyncState();
+          return true;
+        }
+
+        const remoteRevision = Number(remotePayload.syncRevision || 0);
+        const localRevision = Number(data.syncRevision || 0);
+        const pendingRevision = Number(syncMeta.pendingRevision || 0);
+        const lastAckRevision = Number(syncMeta.lastAckRevision || 0);
+        const hasPendingLocal = isAdmin()
+          && pendingRevision > 0
+          && pendingRevision === localRevision;
+
+        cloudState.lastRemoteRevision = remoteRevision;
+
+        // Se a última alteração local ficou pendente porque a aba foi fechada antes
+        // da confirmação, ela só é reenviada quando o Firebase continua exatamente
+        // na última revisão já confirmada por este navegador.
+        if (hasPendingLocal && remoteRevision <= lastAckRevision) {
+          cloudState.lastCloudAckRevision = lastAckRevision;
+          cloudState.initialSyncDone = true;
+          updateAuthBadge();
+          const recovered = await saveDataToCloud();
+          if (!recovered) throw new Error("A alteração local pendente ainda não foi confirmada pelo Firebase.");
+          setRefreshSyncState("success", "Alterações locais pendentes recuperadas e sincronizadas.");
+          resetRefreshSyncState();
+          return true;
+        }
+
+        // Se o Firebase avançou enquanto havia uma cópia local pendente, preserva uma
+        // cópia de recuperação no navegador e mantém a versão remota mais recente.
+        if (hasPendingLocal && remoteRevision > lastAckRevision) {
+          saveRecoverySnapshot("startup-remote-newer");
+        }
+
+        applyRemotePayload(remotePayload, { cloudSnapshot: true, forceCloud: true });
+        cloudState.initialSyncDone = true;
+        cloudState.syncConflict = false;
+        updateAuthBadge();
+        setRefreshSyncState("success", "Último estado do Firebase carregado.");
+        resetRefreshSyncState();
+        return true;
+      } catch (error) {
+        cloudState.initialSyncDone = false;
+        updateAuthBadge();
+        console.warn("Sincronização inicial do Firebase falhou:", error);
+        setRefreshSyncState("error", "Não foi possível confirmar o estado mais recente. Edição bloqueada para evitar regressão.");
+        resetRefreshSyncState(5200);
+        return false;
+      }
+    }
+
     function subscribePanel() {
       if (cloudState.unsubscribe) cloudState.unsubscribe();
       cloudState.unsubscribe = cloudState.tools.onSnapshot(cloudState.docRef, snapshot => {
@@ -16420,10 +16498,17 @@ body.editor-open .global-theme-toggle {
           cloudState.user = user;
           cloudState.role = user ? await resolveUserRole(user) : "leitor";
           cloudState.authResolved = true;
+          cloudState.initialSyncDone = false;
+          cloudState.syncConflict = false;
           cloudState.lastRemoteRevision = 0;
           updateAuthBadge();
-          subscribePanel();
           render();
+
+          const synced = await synchronizeInitialCloudState();
+          if (synced) {
+            subscribePanel();
+            render();
+          }
         });
       } catch (error) {
         cloudState.enabled = false;
