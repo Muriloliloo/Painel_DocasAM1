@@ -12859,7 +12859,17 @@ body.editor-open .global-theme-toggle {
         data.syncRevision = nextSyncRevision();
       }
       localStorage.setItem(storageKey, JSON.stringify(data));
-      if (!localOnly) saveDataToCloud();
+
+      const revision = Number(data.syncRevision || 0);
+      if (!localOnly && isAdmin() && revision) {
+        syncMeta.pendingRevision = revision;
+        syncMeta.pendingAt = Date.now();
+        persistSyncMeta();
+        cloudState.pendingRemoteSave = true;
+        setRefreshSyncState("loading", "Salvando alterações no Firebase...");
+        saveDataToCloud();
+      }
+      return revision;
     }
 
     function scheduleCloudRetry() {
@@ -12875,7 +12885,13 @@ body.editor-open .global-theme-toggle {
     }
 
     async function saveDataToCloud() {
-      if (!cloudState.ready || !cloudState.docRef || !isAdmin() || cloudState.applyingRemote) return false;
+      if (!cloudState.ready || !cloudState.docRef || !isAdmin() || cloudState.applyingRemote) {
+        if (isAdmin() && !cloudState.applyingRemote) {
+          cloudState.pendingRemoteSave = true;
+          scheduleCloudRetry();
+        }
+        return false;
+      }
       if (cloudState.savingRemote) {
         cloudState.pendingRemoteSave = true;
         return false;
@@ -12898,14 +12914,26 @@ body.editor-open .global-theme-toggle {
         snapshotInfo = cloudPayloadSnapshot(data);
         const localPayload = snapshotInfo.payload;
         const localRevision = Number(localPayload.syncRevision || 0);
+        const knownRemoteRevision = Math.max(
+          Number(cloudState.lastRemoteRevision || 0),
+          Number(cloudState.lastCloudAckRevision || 0),
+          Number(syncMeta.lastAckRevision || 0)
+        );
         const result = await cloudState.tools.runTransaction(cloudState.db, async transaction => {
           const snapshot = await transaction.get(cloudState.docRef);
           const remotePayload = snapshot.exists() ? snapshot.data()?.payload : null;
           const remoteRevision = Number(remotePayload?.syncRevision || 0);
 
-          // Uma aba antiga nunca pode substituir uma revisão já confirmada no servidor.
-          if (remotePayload && remoteRevision > localRevision) {
-            return { wrote: false, payload: remotePayload, revision: remoteRevision };
+          // Só grava se esta aba estiver baseada na revisão remota que já conhecia.
+          // Isso impede uma aba antiga/reaberta de gerar um timestamp novo e sobrescrever
+          // um estado mais recente que já está salvo no Firebase.
+          if (remotePayload && remoteRevision > knownRemoteRevision) {
+            return {
+              wrote: false,
+              conflict: true,
+              payload: remotePayload,
+              revision: remoteRevision
+            };
           }
 
           transaction.set(cloudState.docRef, {
@@ -12913,21 +12941,42 @@ body.editor-open .global-theme-toggle {
             updatedAt: cloudState.tools.serverTimestamp(),
             updatedBy: cloudState.user?.email || "sistema"
           });
-          return { wrote: true, payload: localPayload, revision: localRevision };
+          return { wrote: true, conflict: false, payload: localPayload, revision: localRevision };
         });
         cloudState.retryAttempts = 0;
         if (result.wrote) {
           cloudState.lastCloudAckRevision = result.revision;
+          cloudState.lastRemoteRevision = Math.max(Number(cloudState.lastRemoteRevision || 0), result.revision);
+          cloudState.syncConflict = false;
+          if (Number(syncMeta.pendingRevision || 0) <= result.revision) {
+            syncMeta.pendingRevision = 0;
+            syncMeta.pendingAt = 0;
+          }
+          syncMeta.lastAckRevision = result.revision;
+          syncMeta.lastAckAt = Date.now();
+          persistSyncMeta();
           syncSucceeded = true;
+          setRefreshSyncState("success", "Alterações salvas e confirmadas no Firebase.");
+          resetRefreshSyncState();
           console.info("Firebase sincronizado com sucesso.", {
             revision: result.revision,
             payloadBytes: snapshotInfo.payloadBytes,
             historyRows: snapshotInfo.historyRows,
             trimmedHistoryRows: snapshotInfo.trimmedHistoryRows
           });
-        } else if (result.payload) {
-          applyRemotePayload(result.payload);
-          syncSucceeded = true;
+        } else if (result.conflict && result.payload) {
+          cloudState.syncConflict = true;
+          saveRecoverySnapshot("remote-newer-than-editor");
+          cloudState.lastRemoteRevision = Number(result.revision || 0);
+          syncMeta.pendingRevision = 0;
+          syncMeta.pendingAt = 0;
+          syncMeta.lastAckRevision = Number(result.revision || 0);
+          syncMeta.lastAckAt = Date.now();
+          persistSyncMeta();
+          applyRemotePayload(result.payload, { cloudSnapshot: true, forceCloud: true });
+          setRefreshSyncState("error", "Havia uma versão mais nova no Firebase. O painel foi atualizado sem sobrescrevê-la.");
+          resetRefreshSyncState(5200);
+          syncSucceeded = false;
         }
       } catch (error) {
         syncFailed = true;
