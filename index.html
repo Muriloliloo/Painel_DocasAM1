@@ -12997,6 +12997,30 @@ body.editor-open .global-theme-toggle {
       return syncSucceeded;
     }
 
+    async function waitForCloudRevision(targetRevision, timeoutMs = 15000) {
+      const target = Number(targetRevision || 0);
+      if (!target || !isAdmin()) return true;
+      const deadline = Date.now() + timeoutMs;
+
+      while (Date.now() < deadline) {
+        if (cloudState.syncConflict) return false;
+        if (
+          Number(cloudState.lastCloudAckRevision || 0) >= target
+          && !cloudState.savingRemote
+          && !cloudState.pendingRemoteSave
+          && !Number(syncMeta.pendingRevision || 0)
+        ) {
+          return true;
+        }
+
+        if (!cloudState.savingRemote && cloudState.pendingRemoteSave) {
+          saveDataToCloud();
+        }
+        await new Promise(resolve => window.setTimeout(resolve, 250));
+      }
+      return false;
+    }
+
     function justificationSentence(row) {
       const motivo = getJustification(row.rota);
       return motivo
@@ -16851,8 +16875,16 @@ body.editor-open .global-theme-toggle {
         clearPasteTarget(button.dataset.clearTarget);
       });
     });
-    document.getElementById("applyBtn").addEventListener("click", () => {
+    document.getElementById("applyBtn").addEventListener("click", async () => {
       if (!requireAdminAction()) return;
+      const applyButton = document.getElementById("applyBtn");
+      const pasteStatus = document.getElementById("pasteClearStatus");
+      const originalApplyText = applyButton?.textContent || "Aplicar";
+      if (applyButton) {
+        applyButton.disabled = true;
+        applyButton.textContent = "Salvando...";
+      }
+      if (pasteStatus) pasteStatus.textContent = "Aplicando dados e confirmando no Firebase...";
       const extractionText = document.getElementById("extracaoPaste").value;
       const operationalText = document.getElementById("basePaste").value;
       const aduanaText = document.getElementById("aduanaPaste").value;
@@ -16863,6 +16895,11 @@ body.editor-open .global-theme-toggle {
       // A Base nunca cria rota. Sem planejamento válido na Extração, nenhuma Base é aplicada.
       if (!mergedExtracao.length && (normalize(operationalText) || normalize(aduanaText))) {
         alert("A Base depende da Extração. Cole/aplique primeiro um planejamento válido na Extração.");
+        if (applyButton) {
+          applyButton.disabled = false;
+          applyButton.textContent = originalApplyText;
+        }
+        if (pasteStatus) pasteStatus.textContent = "";
         return;
       }
 
@@ -16899,12 +16936,45 @@ body.editor-open .global-theme-toggle {
         consolidatedExtractionRows: mergedExtracao.length,
         waves: waves.map(displayWave)
       });
-      saveData();
+      const targetRevision = saveData();
+      render();
+
+      const synced = await waitForCloudRevision(targetRevision, 15000);
+      if (applyButton) {
+        applyButton.disabled = false;
+        applyButton.textContent = originalApplyText;
+      }
+
+      if (!synced) {
+        if (pasteStatus) {
+          pasteStatus.textContent = cloudState.syncConflict
+            ? "O Firebase tinha uma versão mais nova. O painel foi atualizado para evitar perda de dados; confira e aplique novamente se necessário."
+            : "Dados salvos localmente, mas a confirmação do Firebase ainda está pendente. Não feche a aba até a sincronização concluir.";
+        }
+        render();
+        return;
+      }
+
+      if (pasteStatus) pasteStatus.textContent = "Dados aplicados e confirmados no Firebase.";
       document.getElementById("drawer").classList.remove("open");
       document.querySelector(".app")?.classList.remove("editor-open");
       document.body.classList.remove("editor-open");
       render();
       announceProcessAlerts();
+    });
+
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "hidden" && isAdmin() && Number(syncMeta.pendingRevision || 0)) {
+        cloudState.pendingRemoteSave = true;
+        saveDataToCloud();
+      }
+    });
+
+    window.addEventListener("pagehide", () => {
+      if (isAdmin() && Number(syncMeta.pendingRevision || 0)) {
+        cloudState.pendingRemoteSave = true;
+        saveDataToCloud();
+      }
     });
 
     rebuildConsolidatedBase(data.extracao || []);
