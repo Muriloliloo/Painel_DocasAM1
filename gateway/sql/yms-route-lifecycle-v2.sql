@@ -172,10 +172,10 @@ plan_prep AS (
 event_source AS (
   SELECT
     e.*,
-    DATE(e.CREATED_AT, timezone_name) AS event_local_date
+    DATE(e.CREATED_AT) AS event_local_date
   FROM `meli-bi-data.WHOWNER.BT_YMS_LOADING_ZONES_EVENTS` e
   WHERE e.MILE = 'last_mile'
-    AND DATE(e.CREATED_AT, timezone_name)
+    AND DATE(e.CREATED_AT)
         BETWEEN DATE_SUB(date_from, INTERVAL 2 DAY)
             AND DATE_ADD(date_to, INTERVAL 1 DAY)
 ),
