@@ -407,6 +407,26 @@ final_result AS (
     pv.planned_route_id,
     cri.cycle_route_id,
 
+    pre.route_name AS executed_route_name,
+    COALESCE(
+      NULLIF(cri.route_name, pv.cycle_name),
+      NULLIF(plan_id.route_name, pv.cycle_name)
+    ) AS planned_route_name,
+
+    CASE
+      WHEN pre.route_name IS NOT NULL
+       AND COALESCE(
+         NULLIF(cri.route_name, pv.cycle_name),
+         NULLIF(plan_id.route_name, pv.cycle_name)
+       ) IS NOT NULL
+       AND pre.route_name != COALESCE(
+         NULLIF(cri.route_name, pv.cycle_name),
+         NULLIF(plan_id.route_name, pv.cycle_name)
+       )
+        THEN TRUE
+      ELSE FALSE
+    END AS route_changed_from_plan,
+
     CASE
       WHEN pre.route_name IS NOT NULL AND pre.route_name != pv.cycle_name THEN pre.route_name
       WHEN cri.route_name IS NOT NULL AND cri.route_name != pv.cycle_name THEN cri.route_name
