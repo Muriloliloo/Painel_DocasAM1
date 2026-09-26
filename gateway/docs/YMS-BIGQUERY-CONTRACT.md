@@ -269,6 +269,65 @@ O diagnóstico de validação está em:
 `gateway/sql/diagnostics/yms-route-id-bridge.sql`
 
 
+
+## Validação da ponte de IDs — caso 02/09/2026
+
+O caso real do processo `9e79df59-fb2e-59d4-9f00-da8e80299f59` demonstrou a diferença entre rota planejada e rota executada.
+
+Processo:
+
+- `route_plan_id = 503226595004`
+- `executed_route_id` no processo: ausente
+- `process_carrier_id = 1590324641`
+
+Journey Planner / last_mile:
+
+- `purpose_plan_id = 503226595004`
+- `purpose_executed_id = 434014897`
+- `journey_carrier_id = 1788092343`
+- placa `SDD-UEO6I01`
+
+Planificação:
+
+- `planned_route_id = 503226595004`
+- rota textual genérica `AM1`
+
+Cycle Route:
+
+- `ROUTE_PLANNED_ID = 503226595004`
+- `ROUTE_ID = 3611270599`
+- rota planejada `A3_AM1`
+- carrier planejado `1590324641`
+- placa armazenada sem pontuação: `SDDUEO6I01`
+
+Precheckin:
+
+- `ROUTE_ID = 434014897`
+- rota executada `VJ3_AM1`
+- carrier executado `1788092343`
+- `UNICA TRANSPORTES`
+
+Conclusão operacional desta validação:
+
+- `planned_route_id` identifica a rota planejada;
+- `purpose_executed_id` do Journey Planner corresponde ao `ROUTE_ID` do Precheckin;
+- para o painel operacional, a rota executada tem precedência sobre a rota planejada quando o vínculo por ID existe;
+- carrier planejado e carrier executado podem divergir e devem ser preservados separadamente;
+- placa não deve ser chave primária de resolução de rota;
+- quando a placa for usada apenas como fallback, deve ser normalizada removendo hífen e outros caracteres não alfanuméricos.
+
+A Query V2 agora resolve `route_name` nesta ordem:
+
+1. Precheckin pelo `executed_route_id`;
+2. Cycle Route pelo `planned_route_id`;
+3. Planificação pelo `planned_route_id`;
+4. Cycle Route por placa normalizada;
+5. Planificação por placa normalizada;
+6. `CLUSTER_ROUTE_NAME` do processo.
+
+Os IDs de rota do BigQuery permanecem internos. Ainda não foi provado que qualquer um deles seja o mesmo domínio de `route_id` usado pelo Dispatch; portanto não devem ser enviados ao frontend como se fossem o identificador canônico do Dispatch.
+
+
 ## Pontos a confirmar no BigQuery real
 
 1. semântica local de `BT_YMS_LOADING_ZONES_EVENTS.CREATED_AT` próximo da meia-noite (o tipo `DATETIME` já foi confirmado);
