@@ -11,7 +11,8 @@ const { createSafeLogger } = require("./logging");
 const {
   buildSnapshot,
   buildDispatchSnapshot,
-  buildCustomsSnapshot
+  buildCustomsSnapshot,
+  buildYmsSnapshot
 } = require("./services/snapshot");
 
 const MOCK_SCENARIOS = new Set([
@@ -111,7 +112,7 @@ function sendError(response, error, config, pathname = "") {
     error: { code: safeError.code, message: safeError.message }
   };
 
-  if (new Set(["/snapshot", "/dispatch", "/customs"]).has(pathname)) {
+  if (new Set(["/snapshot", "/dispatch", "/customs", "/yms"]).has(pathname)) {
     payload.snapshotComplete = false;
     payload.emptyConfirmed = false;
     payload.sources = safeError.details.sources || {};
@@ -159,7 +160,11 @@ function validateScenario(searchParams, config) {
 }
 
 function validateOperationalQuery(searchParams, config, endpoint) {
-  const extraKeys = endpoint === "/snapshot" ? ["waves"] : endpoint === "/dispatch" ? ["wave"] : [];
+  const extraKeys = endpoint === "/snapshot" || endpoint === "/yms"
+    ? ["waves"]
+    : endpoint === "/dispatch"
+      ? ["wave"]
+      : [];
   rejectUnknownParameters(searchParams, new Set([...COMMON_QUERY_KEYS, ...extraKeys]));
 
   const facilityId = configuredValue(searchParams, "facilityId", config.allowedFacilityIds, [...config.allowedFacilityIds][0], 32);
@@ -173,7 +178,7 @@ function validateOperationalQuery(searchParams, config, endpoint) {
   const scenario = validateScenario(searchParams, config);
 
   let waves = [...config.allowedWaves];
-  if (endpoint === "/snapshot") {
+  if (endpoint === "/snapshot" || endpoint === "/yms") {
     const wavesValue = searchParams.has("waves") ? searchParams.get("waves") : waves.join(",");
     if (wavesValue.length > 100) {
       throw new GatewayError(400, "INVALID_QUERY", "waves excede o limite seguro.");
@@ -278,6 +283,15 @@ function createGatewayServer(config = createConfig(), dependencies = {}) {
       if (pathname === "/customs") {
         const query = validateOperationalQuery(url.searchParams, config, pathname);
         sendJson(response, 200, await buildCustomsSnapshot({
+          config,
+          ...query,
+          dependencies: sourceDependencies
+        }), config);
+        return;
+      }
+      if (pathname === "/yms") {
+        const query = validateOperationalQuery(url.searchParams, config, pathname);
+        sendJson(response, 200, await buildYmsSnapshot({
           config,
           ...query,
           dependencies: sourceDependencies
