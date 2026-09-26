@@ -1097,3 +1097,45 @@ test("Y10 provider BigQuery parametriza SQL sem credenciais no contrato", async 
   assert.equal("token" in calls[0], false);
   assert.equal("authorization" in calls[0], false);
 });
+
+
+test("Y11 endpoint YMS isolado retorna os estagios mock sanitizados", async () => {
+  await withGateway(testConfig({ ymsMode: "mock" }), {}, async url => {
+    const response = await fetch(`${url}/yms?${query()}`);
+    const body = await response.json();
+
+    assert.equal(response.status, 200);
+    assert.equal(body.snapshotComplete, true);
+    assert.deepEqual(body.sources, { yms: "ok" });
+    assert.equal(body.yms.length, 4);
+
+    const stages = new Set(body.yms.map(row => row.lifecycle_stage));
+    assert.equal(stages.has("dispatched"), true);
+    assert.equal(stages.has("customs_in_progress"), true);
+    assert.equal(stages.has("loading_packages"), true);
+    assert.equal(stages.has("terminal_exception"), true);
+
+    const serialized = JSON.stringify(body.yms);
+    for (const privateValue of [
+      "PROCESSO-MOCK-DISPATCHED",
+      "PROCESSO-MOCK-ADUANA",
+      "PROCESSO-MOCK-LOADING",
+      "PROCESSO-MOCK-EXCEPTION",
+      "434014897",
+      "503226595004"
+    ]) {
+      assert.equal(serialized.includes(privateValue), false);
+    }
+  });
+});
+
+test("Y12 endpoint YMS falha fechado quando desabilitado", async () => {
+  await withGateway(testConfig({ ymsMode: "disabled" }), {}, async url => {
+    const response = await fetch(`${url}/yms?${query()}`);
+    const body = await response.json();
+
+    assert.equal(response.status, 503);
+    assert.equal(body.error.code, "YMS_DISABLED");
+    assert.equal(body.snapshotComplete, false);
+  });
+});
