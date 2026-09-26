@@ -3,6 +3,7 @@
 const { GatewayError } = require("./errors");
 
 const AUTH_MODES = Object.freeze(["unconfigured", "corporate"]);
+const YMS_MODES = Object.freeze(["disabled", "mock", "provider"]);
 const UPSTREAM_HOST_ALLOWLIST = Object.freeze(["envios.adminml.com"]);
 const DEFAULT_DISPATCH_BASE_URL = "https://envios.adminml.com";
 const DEFAULT_CUSTOMS_BASE_URL = "https://envios.adminml.com";
@@ -122,6 +123,10 @@ function createConfig(env = process.env, overrides = {}) {
   }
 
   const mockScenario = String(overrides.mockScenario ?? env.MOCK_SCENARIO ?? "normal").trim().toLowerCase();
+  const ymsMode = String(overrides.ymsMode ?? env.YMS_MODE ?? "disabled").trim().toLowerCase();
+  if (!YMS_MODES.includes(ymsMode)) {
+    throw new GatewayError(500, "INVALID_CONFIGURATION", "YMS_MODE deve ser disabled, mock ou provider.");
+  }
   const configuredPort = Number(overrides.port ?? env.PORT ?? 8787);
   if (!Number.isSafeInteger(configuredPort) || configuredPort < 0 || configuredPort > 65535) {
     throw new GatewayError(500, "INVALID_CONFIGURATION", "PORT deve ser uma porta valida.");
@@ -133,6 +138,7 @@ function createConfig(env = process.env, overrides = {}) {
     mode,
     authMode,
     mockScenario,
+    ymsMode,
     allowedUpstreamHosts: new Set(UPSTREAM_HOST_ALLOWLIST),
     dispatchBaseUrl: validatedUpstreamBaseUrl(
       "DISPATCH_BASE_URL",
@@ -197,6 +203,7 @@ function createConfig(env = process.env, overrides = {}) {
 
 module.exports = {
   AUTH_MODES,
+  YMS_MODES,
   UPSTREAM_HOST_ALLOWLIST,
   createConfig,
   validatedUpstreamBaseUrl,
