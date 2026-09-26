@@ -3,6 +3,7 @@
 -- BigQuery Standard SQL. Validar contra o ambiente real antes de integrar ao gateway.
 
 DECLARE facility_filter STRING DEFAULT 'SSP15';
+DECLARE cycle_filter STRING DEFAULT 'AM1';
 DECLARE date_from DATE DEFAULT '2026-09-02';
 DECLARE date_to DATE DEFAULT '2026-09-02';
 
@@ -15,6 +16,7 @@ WITH cycle_summary AS (
     SAFE_CAST(POSITION AS INT64) AS wave_number
   FROM `meli-bi-data.WHOWNER.BT_CYCLE_SUMMARY_LM`
   WHERE LOGISTIC_CENTER_ID = facility_filter
+    AND CYCLE_NAME = cycle_filter
     AND DATE(CYCLE_SCHEDULED_TO) BETWEEN date_from AND date_to
 ),
 
@@ -116,6 +118,7 @@ cycle_route_grouped AS (
     ARRAY_AGG(DISTINCT ROUTE_NAME IGNORE NULLS) AS route_names
   FROM `meli-bi-data.WHOWNER.BT_CYCLE_ROUTE`
   WHERE FACILITY_ID = facility_filter
+    AND CYCLE_NAME = cycle_filter
     AND DATE(CYCLE_DATE) BETWEEN date_from AND date_to
     AND DOCK_USE_TYPE = 'last_mile'
   GROUP BY
@@ -273,7 +276,37 @@ final_result AS (
     pv.process_id,
     pv.journey_id,
 
-    COALESCE(cr.route_name, plan.route_name, pv.cluster_route_name) AS route_name,
+    CASE
+      WHEN cr.route_name IS NOT NULL AND cr.route_name != pv.cycle_name THEN cr.route_name
+      WHEN plan.route_name IS NOT NULL AND plan.route_name != pv.cycle_name THEN plan.route_name
+      WHEN pv.cluster_route_name IS NOT NULL AND pv.cluster_route_name != pv.cycle_name THEN pv.cluster_route_name
+      ELSE NULL
+    END AS route_name,
+
+    CASE
+      WHEN cr.route_name IS NOT NULL AND cr.route_name != pv.cycle_name THEN 'cycle_route'
+      WHEN plan.route_name IS NOT NULL AND plan.route_name != pv.cycle_name THEN 'planification'
+      WHEN pv.cluster_route_name IS NOT NULL AND pv.cluster_route_name != pv.cycle_name THEN 'loading_zones_process'
+      WHEN cr.route_candidate_count > 1 THEN 'ambiguous'
+      WHEN plan.plan_candidate_count > 0
+        OR pv.cluster_route_name = pv.cycle_name THEN 'generic_cycle_name'
+      ELSE 'unresolved'
+    END AS route_source,
+
+    CASE
+      WHEN (
+        (cr.route_name IS NOT NULL AND cr.route_name != pv.cycle_name)
+        OR (plan.route_name IS NOT NULL AND plan.route_name != pv.cycle_name)
+        OR (pv.cluster_route_name IS NOT NULL AND pv.cluster_route_name != pv.cycle_name)
+      ) THEN 'resolved'
+      WHEN cr.route_candidate_count > 1 THEN 'ambiguous'
+      WHEN plan.plan_candidate_count > 0
+        OR pv.cluster_route_name = pv.cycle_name THEN 'generic_cycle_name'
+      ELSE 'unresolved'
+    END AS route_resolution_status,
+
+    cr.route_candidate_count,
+    plan.plan_candidate_count,
 
     COALESCE(pv.journey_carrier_id, pv.process_carrier_id) AS carrier_id,
     cl.carrier_name,
