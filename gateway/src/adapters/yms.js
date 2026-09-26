@@ -84,6 +84,8 @@ async function fetchYms({
   facilityId,
   cycle,
   waves,
+  timezone,
+  operationDate,
   signal,
   ymsProvider
 }) {
@@ -102,6 +104,8 @@ async function fetchYms({
     cycle,
     waves,
     scenario,
+    timezone,
+    operationDate,
     signal
   });
 
