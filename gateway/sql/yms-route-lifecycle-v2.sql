@@ -253,6 +253,9 @@ event_prep AS (
   FROM process_base pb
   LEFT JOIN event_source e
     ON e.PROCESS_ID = pb.process_id
+   AND e.event_local_date
+       BETWEEN DATE_SUB(pb.operation_date, INTERVAL 1 DAY)
+           AND DATE_ADD(pb.operation_date, INTERVAL 1 DAY)
   GROUP BY pb.process_id
 ),
 
