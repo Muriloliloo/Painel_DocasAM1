@@ -4,6 +4,7 @@ const http = require("node:http");
 const { URL } = require("node:url");
 const { createConfig } = require("./config");
 const { createAuthProvider, getAuthContext } = require("./auth");
+const { createYmsProvider, isYmsProviderReady } = require("./providers/yms-provider");
 const { GatewayError } = require("./errors");
 const { createUpstreamClient } = require("./http/upstream-client");
 const { createSafeLogger } = require("./logging");
@@ -198,7 +199,8 @@ function createGatewayServer(config = createConfig(), dependencies = {}) {
     upstreamClient: dependencies.upstreamClient || createUpstreamClient({
       config,
       fetchImpl: dependencies.fetchImpl || globalThis.fetch
-    })
+    }),
+    ymsProvider: dependencies.ymsProvider || createYmsProvider(config)
   });
 
   return http.createServer(async (request, response) => {
@@ -246,6 +248,11 @@ function createGatewayServer(config = createConfig(), dependencies = {}) {
             ready = false;
           }
         }
+
+        if (ready && !isYmsProviderReady(config, sourceDependencies.ymsProvider)) {
+          ready = false;
+        }
+
         sendJson(response, ready ? 200 : 503, {
           ready,
           gatewayMode: config.mode,
