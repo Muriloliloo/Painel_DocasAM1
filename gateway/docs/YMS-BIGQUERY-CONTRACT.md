@@ -430,6 +430,25 @@ Conclusão: `ROUTE_DATE` do Precheckin não pode ser usado sozinho como data ope
 A leitura de Precheckin foi ampliada para D-1 até D+1 e o vínculo continua exigindo o `executed_route_id`, com a data efetiva próxima da data operacional. Isso preserva a associação por ID e evita depender apenas da placa.
 
 
+## Confirmação do último caso — data efetiva do Precheckin
+
+A validação isolada do processo `6e8e69dc-c158-5e1f-a0aa-0c34961121d1` confirmou a correção baseada na data efetiva:
+
+- `source_route_date = 2026-09-03`;
+- `route_effective_date = 2026-09-02`;
+- `route_init_at = 2026-09-02 08:15:24`;
+- rota executada `C2_AM1`;
+- rota planejada `N3_AM1`;
+- carrier executado `825655768 / JM Transportes`;
+- carrier planejado `1025381599`;
+- `route_changed_from_plan = TRUE`;
+- `resolution_status = resolved`.
+
+Antes de declarar 124/124 resolvidos, a versão completa deve ser reexecutada uma vez com a nova janela do Precheckin para confirmar que não houve regressão nem duplicidade. O script de validação é:
+
+`gateway/sql/validation/yms-route-lifecycle-v2-validation.sql`
+
+
 ## Estado de integração
 
 Nesta etapa não existem:
