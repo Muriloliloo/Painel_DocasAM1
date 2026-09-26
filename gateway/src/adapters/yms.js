@@ -1,5 +1,7 @@
 "use strict";
 
+const { GatewayError } = require("../errors");
+
 const TERMINAL_EVENTS = new Set(["killed", "canceled", "skipped"]);
 
 function asText(value) {
@@ -68,8 +70,48 @@ function normalizeYmsRow(raw = {}) {
   };
 }
 
+
+function ymsRows(payload) {
+  if (Array.isArray(payload)) return payload;
+  if (Array.isArray(payload?.data)) return payload.data;
+  if (Array.isArray(payload?.rows)) return payload.rows;
+  throw new GatewayError(502, "YMS_INVALID_RESPONSE", "Resposta YMS/BigQuery invalida.");
+}
+
+async function fetchYms({
+  config,
+  scenario,
+  facilityId,
+  cycle,
+  waves,
+  signal,
+  ymsProvider
+}) {
+  if (config.ymsMode === "disabled") return [];
+
+  if (!ymsProvider || typeof ymsProvider.query !== "function") {
+    throw new GatewayError(
+      503,
+      "YMS_PROVIDER_NOT_CONFIGURED",
+      "Provider YMS/BigQuery nao configurado."
+    );
+  }
+
+  const payload = await ymsProvider.query({
+    facilityId,
+    cycle,
+    waves,
+    scenario,
+    signal
+  });
+
+  return ymsRows(payload).map(normalizeYmsRow);
+}
+
 module.exports = {
   TERMINAL_EVENTS,
   classifyLifecycleStage,
-  normalizeYmsRow
+  normalizeYmsRow,
+  ymsRows,
+  fetchYms
 };
