@@ -483,6 +483,27 @@ Diagnóstico seguinte:
 `gateway/sql/diagnostics/yms-ingestion-coverage-dock.sql`
 
 
+## Descoberta de campos de doca e cobertura — 26/09/2026
+
+O schema confirmou fontes explícitas de doca:
+
+- `BT_CYCLE_ROUTE.DOCK_NUMBER`
+- `BT_CYCLE_ROUTE.MOV_DOCK_NUMBER`
+- `BT_CYCLE_ROUTE.ORIGIN_DOCK_NUMBER`
+- `BT_YMS_PLANIFICATION_OPERATIVE_LM.DOCK_NUMBER`
+- `BT_YMS_LOADING_ZONES_EVENTS.LOADING_ZONE_NAME`
+
+Os eventos do dia mostraram `LOADING_ZONE_NAME` numérico em vários processos, enquanto o Cycle Route e a Planificação oferecem campos formais de doca. Antes de escolher um campo canônico para o painel, deve ser medida a aderência entre a loading zone observada e as docas planejada/movida.
+
+Também foram identificados 5 processos AM1 de 26/09/2026 sem eventos no mesmo dia. Eles devem ser classificados por status do Journey Planner/Planificação para distinguir rota apenas planejada, cancelada, não iniciada ou outro caso.
+
+A tabela `BT_YMS_LOADING_ZONES_EVENTS` mostrou `CREATED_AT` e `PURPOSE_STATUS_DATE_TIME`, mas nenhuma coluna de ingestão ficou evidente no primeiro levantamento. Portanto, a diferença entre horário atual e `CREATED_AT` continua não sendo medida confiável de latência de carga.
+
+Diagnóstico seguinte:
+
+`gateway/sql/diagnostics/yms-dock-authority-and-missing-events.sql`
+
+
 ## Estado de integração
 
 Nesta etapa não existem:
