@@ -6,12 +6,14 @@ const { createConfig } = require("../src/config");
 const { createGatewayServer, validateRequestTarget } = require("../src/server");
 const { createAuthProvider, getAuthContext } = require("../src/auth");
 const { normalizeCustomsRow } = require("../src/adapters/customs");
+const { classifyLifecycleStage, normalizeYmsRow } = require("../src/adapters/yms");
 const { createUpstreamClient } = require("../src/http/upstream-client");
 const { createSafeLogger } = require("../src/logging");
 const { runPreflight } = require("../scripts/preflight-corporate");
 const { buildDispatchSnapshot, buildCustomsSnapshot } = require("../src/services/snapshot");
 const { sanitizeDispatch } = require("../src/sanitizers/dispatch");
 const { sanitizeCustoms } = require("../src/sanitizers/customs");
+const { sanitizeYms } = require("../src/sanitizers/yms");
 
 let server;
 let baseUrl;
@@ -816,4 +818,109 @@ test("T12 preflight e estrutural e nao chama auth ou upstream", () => {
   assert.equal(configuredExitCode, 0);
   assert.equal(authCalls, 0);
   assert.equal(upstreamCalls, 0);
+});
+
+
+test("Y1 normalizador YMS prioriza gate-out confirmado", () => {
+  const result = normalizeYmsRow({
+    facility_id: "SSP15",
+    operation_date: "2026-09-02",
+    cycle_name: "AM1",
+    wave_number: 1,
+    process_id: "PROCESSO-INTERNO",
+    executed_route_id: "434014897",
+    planned_route_id: "503226595004",
+    route_name: "VJ3_AM1",
+    planned_route_name: "A3_AM1",
+    route_changed_from_plan: true,
+    carrier_name: "UNICA TRANSPORTES",
+    planned_carrier_name: "",
+    plate: "SDD-UEO6I01",
+    gate_out_at: "2026-09-02 09:36:26",
+    latest_event_name: "gate-out",
+    latest_status: "PROCESS_FINISHED",
+    latest_purpose_status: "LOADING_PACKAGES_STARTED"
+  });
+
+  assert.equal(result.route_name, "VJ3_AM1");
+  assert.equal(result.planned_route_name, "A3_AM1");
+  assert.equal(result.route_changed_from_plan, true);
+  assert.equal(result.lifecycle_stage, "dispatched");
+  assert.equal(result.dispatch_confirmed, true);
+  assert.equal(result.terminal_exception, false);
+});
+
+test("Y2 eventos terminais nao viram dispatched", () => {
+  for (const latestEvent of ["killed", "canceled", "skipped"]) {
+    const result = normalizeYmsRow({
+      route_name: "TESTE_AM1",
+      latest_event_name: latestEvent,
+      latest_status: "UN-LOAD_UNFINISHED",
+      latest_purpose_status: "LOADING_PACKAGES_STARTED"
+    });
+    assert.equal(result.lifecycle_stage, "terminal_exception");
+    assert.equal(result.dispatch_confirmed, false);
+    assert.equal(result.terminal_exception, true);
+  }
+});
+
+test("Y3 classificacao YMS preserva etapas operacionais", () => {
+  assert.equal(classifyLifecycleStage({
+    latest_purpose_status: "DOING_AUDIT"
+  }), "customs_in_progress");
+
+  assert.equal(classifyLifecycleStage({
+    latest_purpose_status: "WAITING_FOR_AUDIT"
+  }), "waiting_customs");
+
+  assert.equal(classifyLifecycleStage({
+    loading_started_at: "2026-09-02 09:00:00"
+  }), "loading_packages");
+
+  assert.equal(classifyLifecycleStage({
+    dock_in_at: "2026-09-02 08:50:00"
+  }), "at_dock");
+
+  assert.equal(classifyLifecycleStage({
+    yms_check_in_at: "2026-09-02 08:40:00"
+  }), "checked_in");
+});
+
+test("Y4 sanitizador YMS remove IDs internos e campos privados", () => {
+  const normalized = normalizeYmsRow({
+    facility_id: "SSP15",
+    operation_date: "2026-09-02",
+    cycle_name: "AM1",
+    wave_number: 1,
+    process_id: "PROCESSO-INTERNO",
+    executed_route_id: "434014897",
+    planned_route_id: "503226595004",
+    route_name: "VJ3_AM1",
+    planned_route_name: "A3_AM1",
+    carrier_name: "UNICA TRANSPORTES",
+    plate: "SDD-UEO6I01",
+    gate_out_at: "2026-09-02 09:36:26",
+    latest_event_name: "gate-out",
+    latest_status: "PROCESS_FINISHED",
+    driver_id: "DRIVER-INTERNO",
+    carrier_id: "CARRIER-INTERNO",
+    token: "REMOVER"
+  });
+
+  const result = sanitizeYms(normalized);
+  const serialized = JSON.stringify(result);
+
+  assert.equal(result.route_name, "VJ3_AM1");
+  assert.equal(result.lifecycle_stage, "dispatched");
+  for (const privateField of [
+    "source_process_id",
+    "yms_executed_route_id",
+    "yms_planned_route_id",
+    "driver_id",
+    "carrier_id",
+    "token"
+  ]) {
+    assert.equal(privateField in result, false);
+    assert.equal(serialized.includes(privateField), false);
+  }
 });
