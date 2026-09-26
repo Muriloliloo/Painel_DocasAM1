@@ -1,14 +1,20 @@
 # Entrega do gateway para a TI
 
-Este gateway ja esta funcional. A logica do painel, Dispatch, Aduana, sanitizacao e polling ja esta implementada e testada.
+Este gateway ja esta funcional. A logica do painel, Dispatch, Aduana, sanitizacao e polling ja esta implementada. A fonte YMS/BigQuery foi validada separadamente para SSP15/AM1 e preparada no gateway em modo opt-in.
 
-A responsabilidade da TI e conectar o metodo oficial de autenticacao corporativa.
+A responsabilidade da TI e conectar o metodo oficial de autenticacao corporativa das APIs e, quando aprovado, fornecer o executor BigQuery do YMS.
 
-## Arquivo que a TI deve alterar
+## Pontos de integracao da TI
+
+Autenticacao das APIs HTTP:
 
 `gateway/src/auth/corporate-provider.js`
 
-Esse e o unico ponto de codigo da autenticacao dentro da aplicacao. A TI deve obter a documentacao oficial, implementar `getAuthContext()` e retornar o contrato:
+Executor YMS/BigQuery:
+
+`gateway/src/providers/yms-provider.js`
+
+O primeiro arquivo e o ponto de autenticacao de Dispatch/Aduana. O segundo define o contrato do executor YMS e permanece fail closed em `YMS_MODE=provider` ate receber uma implementacao aprovada. A TI deve obter a documentacao oficial, implementar `getAuthContext()` e retornar o contrato:
 
 ```js
 {
@@ -27,9 +33,11 @@ Dependendo do metodo oficial, a TI tambem pode precisar provisionar secrets mana
 
 1. Obter a documentacao oficial, implementar `getAuthContext()` no arquivo indicado e atualizar sua inspecao estrutural quando estiver pronto.
 2. Configurar os segredos somente na infraestrutura e definir `GATEWAY_MODE=real` e `AUTH_MODE=corporate`.
-3. Executar `npm run verify` e `npm run preflight:corporate`.
-4. Testar `/health`, `/ready`, Dispatch, Aduana e `/snapshot`, conferindo que a resposta esta sanitizada.
-5. Somente depois habilitar a fonte automatica no frontend e validar polling e fallback manual.
+3. Manter `YMS_MODE=disabled` ate existir um executor BigQuery aprovado. Para homologacao isolada, usar `YMS_MODE=mock`.
+4. Quando o executor YMS estiver aprovado, configurar `YMS_MODE=provider` sem gravar credenciais no Git.
+5. Executar `npm run verify` e `npm run preflight:corporate`.
+6. Testar `/health`, `/ready`, Dispatch, Aduana e `/snapshot`, conferindo que a resposta esta sanitizada.
+7. Somente depois habilitar a fonte automatica no frontend e validar polling e fallback manual.
 
 ## Configuracao publica do frontend
 
@@ -50,8 +58,8 @@ Salvo se houver mudanca comprovada no contrato das APIs, nao alterar:
 
 - `index.html`;
 - sanitizadores;
-- adaptadores;
-- servico de snapshot;
+- adaptadores ja validados sem evidencia de mudanca de contrato;
+- servico de snapshot fora do ponto de integracao YMS;
 - polling;
 - Firebase;
 - merge manual/automatico.
@@ -67,6 +75,8 @@ Salvo se houver mudanca comprovada no contrato das APIs, nao alterar:
 - [ ] `/ready` = `ready: true`
 - [ ] Dispatch responde
 - [ ] Aduana responde
+- [ ] YMS permanece disabled ou provider aprovado
+- [ ] quando YMS ativo, `/ready` so fica true com provider configurado
 - [ ] snapshot combinado responde
 - [ ] nenhum PII indevido no frontend
 - [ ] polling testado
