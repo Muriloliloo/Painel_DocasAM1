@@ -183,9 +183,9 @@ Timezone operacional:
 
 `America/Sao_Paulo`
 
-A Query V2 usa a data local para filtrar `BT_YMS_LOADING_ZONES_EVENTS.CREATED_AT`.
+Validação real em 26/09/2026 confirmou que `BT_YMS_LOADING_ZONES_EVENTS.CREATED_AT` é `DATETIME`, não `TIMESTAMP`.
 
-**Ponto a confirmar no BigQuery real:** o SQL pressupõe que `CREATED_AT` é `TIMESTAMP`. Se o schema real for `DATETIME`, a expressão de conversão de data precisa ser ajustada preservando a mesma semântica local.
+Por isso, a Query V2 usa `DATE(CREATED_AT)` diretamente. `DATETIME` não carrega informação de fuso; a consulta não deve aplicar `DATE(datetime, timezone)`. A semântica operacional local ainda deve ser confirmada com exemplos próximos da meia-noite.
 
 ## Janela de eventos
 
@@ -246,7 +246,7 @@ Placa deve continuar sob revisão do contrato do gateway antes de exposição p�
 
 ## Pontos a confirmar no BigQuery real
 
-1. tipo exato de `BT_YMS_LOADING_ZONES_EVENTS.CREATED_AT`;
+1. semântica local de `BT_YMS_LOADING_ZONES_EVENTS.CREATED_AT` próximo da meia-noite (o tipo `DATETIME` já foi confirmado);
 2. grafia e semântica de `UN-LOAD_STARTED`;
 3. existência de um evento/status explícito de conclusão da Aduana;
 4. presença de um `route_id` oficial em alguma das tabelas já autorizadas;
