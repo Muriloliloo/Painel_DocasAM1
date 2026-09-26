@@ -2,8 +2,10 @@
 
 const { fetchDispatch } = require("../adapters/dispatch");
 const { fetchCustoms } = require("../adapters/customs");
+const { fetchYms } = require("../adapters/yms");
 const { sanitizeDispatch } = require("../sanitizers/dispatch");
 const { sanitizeCustoms } = require("../sanitizers/customs");
+const { sanitizeYms } = require("../sanitizers/yms");
 const { GatewayError } = require("../errors");
 
 async function withinTimeout(config, operation) {
@@ -32,54 +34,105 @@ function sourceFailure(result, sourceName) {
   return new GatewayError(502, "UPSTREAM_UNAVAILABLE", `Falha segura na fonte ${sourceName}.`);
 }
 
-async function acquireBoth({
+async function acquireSources({
   config,
   scenario,
   waves,
   facilityId,
   groupId,
   siteId,
+  cycle,
   timezone,
   dependencies = {}
 }) {
-  return withinTimeout(config, signal => Promise.allSettled([
-    fetchDispatch({ config, scenario, waves, facilityId, groupId, siteId, signal, ...dependencies }),
-    fetchCustoms({ config, scenario, timezone, signal, ...dependencies })
-  ]));
+  return withinTimeout(config, signal => {
+    const names = ["dispatch", "aduana"];
+    const tasks = [
+      fetchDispatch({
+        config,
+        scenario,
+        waves,
+        facilityId,
+        groupId,
+        siteId,
+        signal,
+        ...dependencies
+      }),
+      fetchCustoms({
+        config,
+        scenario,
+        timezone,
+        signal,
+        ...dependencies
+      })
+    ];
+
+    if (config.ymsMode !== "disabled") {
+      names.push("yms");
+      tasks.push(fetchYms({
+        config,
+        scenario,
+        waves,
+        facilityId,
+        cycle,
+        signal,
+        ...dependencies
+      }));
+    }
+
+    return Promise.allSettled(tasks).then(results => ({ names, results }));
+  });
 }
 
 async function buildSnapshot(options) {
   const { config, scenario } = options;
-  const [dispatchResult, customsResult] = await acquireBoth(options);
-  const dispatchFailure = sourceFailure(dispatchResult, "dispatch");
-  const customsFailure = sourceFailure(customsResult, "aduana");
+  const { names, results } = await acquireSources(options);
+  const byName = Object.fromEntries(names.map((name, index) => [name, results[index]]));
 
-  if (dispatchFailure || customsFailure) {
-    const primaryFailure = dispatchFailure || customsFailure;
+  const failures = Object.fromEntries(
+    names.map(name => [name, sourceFailure(byName[name], name)])
+  );
+  const primaryFailure = names.map(name => failures[name]).find(Boolean);
+
+  if (primaryFailure) {
     throw new GatewayError(
       primaryFailure.status,
       primaryFailure.code,
       primaryFailure.message,
       {
-        sources: {
-          dispatch: dispatchFailure ? "error" : "ok",
-          aduana: customsFailure ? "error" : "ok"
-        }
+        sources: Object.fromEntries(
+          names.map(name => [name, failures[name] ? "error" : "ok"])
+        )
       }
     );
   }
 
-  const operacional = dispatchResult.value.map(sanitizeDispatch);
-  const aduana = customsResult.value.map(sanitizeCustoms);
-  const emptyConfirmed = scenario === "empty-confirmed" && operacional.length === 0 && aduana.length === 0;
+  const operacional = byName.dispatch.value.map(sanitizeDispatch);
+  const aduana = byName.aduana.value.map(sanitizeCustoms);
+  const ymsEnabled = names.includes("yms");
+  const yms = ymsEnabled ? byName.yms.value.map(sanitizeYms) : [];
 
-  return {
+  const allActiveSourcesEmpty = operacional.length === 0
+    && aduana.length === 0
+    && (!ymsEnabled || yms.length === 0);
+
+  const payload = {
     snapshotComplete: true,
-    emptyConfirmed,
-    sources: { dispatch: "ok", aduana: "ok" },
+    emptyConfirmed: scenario === "empty-confirmed" && allActiveSourcesEmpty,
+    sources: {
+      dispatch: "ok",
+      aduana: "ok"
+    },
     operacional,
     aduana
   };
+
+  if (ymsEnabled) {
+    payload.sources.yms = "ok";
+    payload.yms = yms;
+  }
+
+  return payload;
 }
 
 async function buildDispatchSnapshot({
@@ -127,4 +180,8 @@ async function buildCustomsSnapshot({ config, scenario, timezone, dependencies =
   };
 }
 
-module.exports = { buildSnapshot, buildDispatchSnapshot, buildCustomsSnapshot };
+module.exports = {
+  buildSnapshot,
+  buildDispatchSnapshot,
+  buildCustomsSnapshot
+};
