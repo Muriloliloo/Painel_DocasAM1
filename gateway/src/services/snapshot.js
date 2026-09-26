@@ -181,8 +181,44 @@ async function buildCustomsSnapshot({ config, scenario, timezone, dependencies =
   };
 }
 
+
+async function buildYmsSnapshot({
+  config,
+  scenario,
+  waves,
+  facilityId,
+  cycle,
+  timezone,
+  dependencies = {}
+}) {
+  if (config.ymsMode === "disabled") {
+    throw new GatewayError(503, "YMS_DISABLED", "Fonte YMS desabilitada.");
+  }
+
+  const rows = await withinTimeout(config, signal => fetchYms({
+    config,
+    scenario,
+    waves,
+    facilityId,
+    cycle,
+    timezone,
+    signal,
+    ...dependencies
+  }));
+
+  const yms = rows.map(sanitizeYms);
+
+  return {
+    snapshotComplete: true,
+    emptyConfirmed: scenario === "empty-confirmed" && yms.length === 0,
+    sources: { yms: "ok" },
+    yms
+  };
+}
+
 module.exports = {
   buildSnapshot,
   buildDispatchSnapshot,
-  buildCustomsSnapshot
+  buildCustomsSnapshot,
+  buildYmsSnapshot
 };
