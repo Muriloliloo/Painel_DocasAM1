@@ -75,6 +75,7 @@ async function acquireSources({
         waves,
         facilityId,
         cycle,
+        timezone,
         signal,
         ...dependencies
       }));
