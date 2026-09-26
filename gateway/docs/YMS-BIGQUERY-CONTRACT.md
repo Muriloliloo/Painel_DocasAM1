@@ -458,6 +458,31 @@ Também foram confirmados 99 casos com rota executada diferente da planejada e 2
 Com isso, a resolução de rota do conjunto AM1 de validação está fechada em 124/124. O próximo contrato do backend deve preservar separadamente rota executada e planejada, não tratar IDs YMS como route_id canônico do Dispatch e nunca converter killed, canceled ou skipped em dispatched.
 
 
+## Diagnóstico operacional de 26/09/2026
+
+A leitura dos eventos AM1 dos últimos dias confirmou a sequência operacional observável no YMS:
+
+- `WAITING_LOADING_ZONE`;
+- `WAITING_FOR_PACKAGES`;
+- `WAITING_FOR_AUDIT`;
+- `DOING_AUDIT`;
+- `LOADING_PACKAGES_STARTED`;
+- `check-out / UN-LOAD_FINISHED`;
+- `gate-out / PROCESS_FINISHED`.
+
+Também foram observados estados terminais `killed`, `skipped` e `canceled`, reforçando que eles não podem ser tratados como expedição concluída.
+
+No recorte de 26/09/2026, o ciclo AM1 possuía 133 processos distribuídos nas ondas 1 a 5. A consulta de eventos do mesmo dia encontrou 128 processos com eventos, deixando uma diferença de 5 processos que deve ser investigada.
+
+Os valores de `LOADING_ZONE_NAME` são majoritariamente numéricos e cobrem posições compatíveis com docas da operação, incluindo valores como 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 21, 23, 29, 52, 56, 58, 60, 64, 89, 90, 91 e 92. Isso é evidência forte de que o campo representa a loading zone/doca, mas ainda não deve ser declarado canônico até ser comparado com o `dock_number` do Dispatch.
+
+A medição `checked_at - MAX(CREATED_AT)` retornou 68 minutos no teste, mas esse valor não prova atraso de ingestão: `CREATED_AT` é horário do evento de negócio, e a operação pode simplesmente ter terminado antes da consulta. Para medir latência real de disponibilização é necessário encontrar um timestamp de carga/ingestão ou coluna de particionamento da tabela.
+
+Diagnóstico seguinte:
+
+`gateway/sql/diagnostics/yms-ingestion-coverage-dock.sql`
+
+
 ## Estado de integração
 
 Nesta etapa não existem:
