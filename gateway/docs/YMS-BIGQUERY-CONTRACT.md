@@ -68,7 +68,13 @@ Identificação operacional:
 - `wave_number`
 - `process_id`
 - `journey_id`
-- `route_name`
+- `executed_route_id` (ID interno da fonte YMS/Precheckin; não equivale automaticamente ao route_id do Dispatch)
+- `planned_route_id`
+- `cycle_route_id`
+- `executed_route_name`
+- `planned_route_name`
+- `route_changed_from_plan`
+- `route_name` (rota operacional resolvida; prioriza a executada)
 - `carrier_id`
 - `carrier_name`
 - `plate`
@@ -312,6 +318,8 @@ Conclusão operacional desta validação:
 - `planned_route_id` identifica a rota planejada;
 - `purpose_executed_id` do Journey Planner corresponde ao `ROUTE_ID` do Precheckin;
 - para o painel operacional, a rota executada tem precedência sobre a rota planejada quando o vínculo por ID existe;
+- rota planejada e rota executada podem divergir e devem ser preservadas separadamente;
+- `route_changed_from_plan` sinaliza essa divergência quando ambas as rotas estão conhecidas;
 - carrier planejado e carrier executado podem divergir e devem ser preservados separadamente;
 - placa não deve ser chave primária de resolução de rota;
 - quando a placa for usada apenas como fallback, deve ser normalizada removendo hífen e outros caracteres não alfanuméricos.
