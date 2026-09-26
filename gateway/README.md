@@ -30,6 +30,7 @@ GET http://localhost:8787/ready
 GET http://localhost:8787/snapshot?facilityId=SSP15&siteId=MLB&groupId=TESTE&cycle=AM1&waves=1,2,3,4,5&timezone=America%2FSao_Paulo
 GET http://localhost:8787/dispatch?facilityId=SSP15&siteId=MLB&groupId=TESTE&cycle=AM1&wave=1&timezone=America%2FSao_Paulo
 GET http://localhost:8787/customs?facilityId=SSP15&siteId=MLB&groupId=TESTE&cycle=AM1&timezone=America%2FSao_Paulo
+GET http://localhost:8787/yms?facilityId=SSP15&siteId=MLB&groupId=TESTE&cycle=AM1&waves=1,2,3,4,5&timezone=America%2FSao_Paulo
 ```
 
 ## Cenarios mock
@@ -54,7 +55,7 @@ A query de cenario e rejeitada fora de `development/mock`. Para testar o fronten
 `YMS_MODE` e opt-in e aceita:
 
 - `disabled`: padrao; preserva exatamente o snapshot anterior com Dispatch + Aduana;
-- `mock`: adiciona uma fonte YMS ficticia ao snapshot para testes locais;
+- `mock`: adiciona uma fonte YMS ficticia ao snapshot para testes locais e libera `GET /yms` para homologacao isolada;
 - `provider`: exige um executor BigQuery aprovado e injetado no backend; sem ele, o gateway falha fechado com `YMS_PROVIDER_NOT_CONFIGURED`.
 
 A integracao real nao contem credenciais, tokens ou chaves no repositorio. O provider real deve ser configurado pela infraestrutura autorizada.
@@ -118,3 +119,25 @@ npm run smoke:mock
 `npm run verify` executa os checks sintaticos de todos os arquivos JavaScript e a suite completa. `npm run smoke:mock` inicia um servidor efemero em loopback, valida health, readiness e snapshot 3/1 e encerra o processo.
 
 Para o preflight da futura configuracao corporativa, defina as variaveis de producao e execute `npm run preflight:corporate`. O comando inspeciona somente configuracao e estrutura do provider, sem obter autorizacao ou chamar servicos externos. Enquanto o provider for stub, encerra de forma controlada com `AUTH_NOT_CONFIGURED`.
+
+
+## Homologacao em casa sem acesso corporativo
+
+Com Node.js 20+ e o repositorio local, use:
+
+```powershell
+$env:GATEWAY_MODE = "mock"
+$env:AUTH_MODE = "unconfigured"
+$env:YMS_MODE = "mock"
+$env:PANEL_ALLOWED_ORIGIN = "http://localhost:8000"
+npm start
+```
+
+Depois consulte `/yms` ou `/snapshot`. O mock YMS inclui exemplos de:
+
+- rota expedida;
+- Aduana em andamento;
+- carregamento;
+- excecao terminal.
+
+Isso permite desenvolver e validar o contrato do frontend fora da rede corporativa sem copiar credenciais, cookies ou tokens.
