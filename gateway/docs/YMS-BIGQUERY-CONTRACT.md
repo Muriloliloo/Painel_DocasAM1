@@ -244,6 +244,31 @@ Não expor no contrato público do navegador:
 
 Placa deve continuar sob revisão do contrato do gateway antes de exposição pública.
 
+
+## Descoberta de identificadores de rota
+
+A inspeção real do schema confirmou identificadores de rota que não estavam na Query V2 inicial:
+
+- `BT_LOADING_ZONES_PROCESS_LM.EXECUTED_ROUTE_ID`
+- `BT_LOADING_ZONES_PROCESS_LM.ROUTE_PLAN_ID`
+- `BT_YMS_JOURNEY_PLANNER.PURPOSES.ROUTE.EXECUTED_ID`
+- `BT_YMS_JOURNEY_PLANNER.PURPOSES.ROUTE.PLAN_ID`
+- `BT_YMS_PLANIFICATION_OPERATIVE_LM.PLANNED_ROUTE_ID`
+- `BT_PRECHECKIN_TRACEABILITY_LM.ROUTE_ID`
+- `BT_PRECHECKIN_TRACEABILITY_LM.PLANNED_ROUTE_ID`
+- `BT_CYCLE_ROUTE.ROUTE_ID`
+- `BT_CYCLE_ROUTE.ROUTE_PLANNED_ID`
+- `BT_CYCLE_ROUTE.MOV_ROUTE_ID`
+
+Também foram confirmados `BT_PRECHECKIN_TRACEABILITY_LM.CLUSTER_ID`, `BT_CYCLE_ROUTE.ROUTE_ORIGINAL_NAME` e os campos de placa.
+
+Esses campos são candidatos para uma ponte de identificação mais robusta do que placa + nome textual. A equivalência entre eles ainda precisa ser comprovada com dados reais antes de promover qualquer um deles a `route_id` canônico do gateway.
+
+O diagnóstico de validação está em:
+
+`gateway/sql/diagnostics/yms-route-id-bridge.sql`
+
+
 ## Pontos a confirmar no BigQuery real
 
 1. semântica local de `BT_YMS_LOADING_ZONES_EVENTS.CREATED_AT` próximo da meia-noite (o tipo `DATETIME` já foi confirmado);
