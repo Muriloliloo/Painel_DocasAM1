@@ -449,6 +449,15 @@ Antes de declarar 124/124 resolvidos, a versão completa deve ser reexecutada um
 `gateway/sql/validation/yms-route-lifecycle-v2-validation.sql`
 
 
+## Fechamento da validação AM1 — 02/09/2026
+
+A execução final confirmou 124 linhas e 124 process_id distintos. Todas as 124 rotas ficaram com route_resolution_status = resolved: 111 por precheckin_executed_route_id e 13 por cycle_route_planned_id. Não restaram generic_cycle_name, ambiguidades ou rotas não resolvidas.
+
+Também foram confirmados 99 casos com rota executada diferente da planejada e 25 sem mudança entre as rotas comparadas. Os estados finais do conjunto foram 98 gate-out, 13 killed, 8 canceled e 5 skipped.
+
+Com isso, a resolução de rota do conjunto AM1 de validação está fechada em 124/124. O próximo contrato do backend deve preservar separadamente rota executada e planejada, não tratar IDs YMS como route_id canônico do Dispatch e nunca converter killed, canceled ou skipped em dispatched.
+
+
 ## Estado de integração
 
 Nesta etapa não existem:
