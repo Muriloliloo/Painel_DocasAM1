@@ -18,6 +18,23 @@ function validateOperationDate(value) {
   return text;
 }
 
+function currentDateInTimeZone(timezone = "America/Sao_Paulo", now = new Date()) {
+  let parts;
+  try {
+    parts = new Intl.DateTimeFormat("en-US", {
+      timeZone: timezone,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit"
+    }).formatToParts(now);
+  } catch {
+    throw new GatewayError(400, "INVALID_QUERY", "timezone invalido para YMS.");
+  }
+
+  const values = Object.fromEntries(parts.map(part => [part.type, part.value]));
+  return validateOperationDate(`${values.year}-${values.month}-${values.day}`);
+}
+
 function createBigQueryYmsProvider({ queryExecutor, sqlLoader = loadRuntimeSql } = {}) {
   const configured = typeof queryExecutor === "function";
 
@@ -30,7 +47,7 @@ function createBigQueryYmsProvider({ queryExecutor, sqlLoader = loadRuntimeSql }
         : { configured: false, mode: "provider", reason: "YMS_PROVIDER_NOT_CONFIGURED" };
     },
 
-    async query({ facilityId, cycle, operationDate, signal }) {
+    async query({ facilityId, cycle, operationDate, timezone, signal }) {
       if (!configured) {
         throw new GatewayError(
           503,
@@ -53,7 +70,9 @@ function createBigQueryYmsProvider({ queryExecutor, sqlLoader = loadRuntimeSql }
         params: {
           facility_id: String(facilityId),
           cycle_name: String(cycle),
-          operation_date: validateOperationDate(operationDate)
+          operation_date: operationDate
+            ? validateOperationDate(operationDate)
+            : currentDateInTimeZone(timezone)
         },
         signal
       });
@@ -65,5 +84,6 @@ module.exports = {
   RUNTIME_SQL_PATH,
   loadRuntimeSql,
   validateOperationDate,
+  currentDateInTimeZone,
   createBigQueryYmsProvider
 };
