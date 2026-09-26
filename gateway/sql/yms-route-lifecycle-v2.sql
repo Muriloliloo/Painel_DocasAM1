@@ -134,7 +134,8 @@ carrier_lookup AS (
 precheckin_route_ranked AS (
   SELECT
     FACILITY_ID AS facility_id,
-    ROUTE_DATE AS operation_date,
+    ROUTE_DATE AS source_route_date,
+    COALESCE(DATE(ROUTE_INIT_DATE), ROUTE_DATE) AS route_effective_date,
     CAST(ROUTE_ID AS STRING) AS executed_route_id,
     NULLIF(CAST(PLANNED_ROUTE_ID AS STRING), '') AS planned_route_id,
     CLUSTER_ID AS route_name,
@@ -142,15 +143,20 @@ precheckin_route_ranked AS (
     REGEXP_REPLACE(UPPER(VEHICLE_PLATE_ID), r'[^A-Z0-9]', '') AS plate_normalized,
     CAST(CARRIER_ID AS STRING) AS carrier_id,
     CARRIER_NAME AS carrier_name,
+    ROUTE_INIT_DATE AS route_init_at,
+    ROUTE_FINISH_DATE AS route_finish_at,
     ROW_NUMBER() OVER (
-      PARTITION BY FACILITY_ID, ROUTE_DATE, CAST(ROUTE_ID AS STRING)
+      PARTITION BY FACILITY_ID, CAST(ROUTE_ID AS STRING)
       ORDER BY
         COALESCE(ROUTE_FINISH_DATE, ROUTE_INIT_DATE) DESC,
-        ROUTE_INIT_DATE DESC
+        ROUTE_INIT_DATE DESC,
+        ROUTE_DATE DESC
     ) AS route_rank
   FROM `meli-bi-data.WHOWNER.BT_PRECHECKIN_TRACEABILITY_LM`
   WHERE FACILITY_ID = facility_filter
-    AND ROUTE_DATE BETWEEN date_from AND date_to
+    AND ROUTE_DATE
+        BETWEEN DATE_SUB(date_from, INTERVAL 1 DAY)
+            AND DATE_ADD(date_to, INTERVAL 1 DAY)
     AND ROUTE_ID IS NOT NULL
 ),
 
@@ -408,6 +414,10 @@ final_result AS (
     cri.cycle_route_id,
 
     pre.route_name AS executed_route_name,
+    pre.source_route_date AS executed_route_source_date,
+    pre.route_effective_date AS executed_route_effective_date,
+    pre.route_init_at AS executed_route_init_at,
+    pre.route_finish_at AS executed_route_finish_at,
     COALESCE(
       NULLIF(cri.route_name, pv.cycle_name),
       NULLIF(plan_id.route_name, pv.cycle_name)
@@ -520,8 +530,10 @@ final_result AS (
 
   LEFT JOIN precheckin_route_prep pre
     ON pre.facility_id = pv.facility_id
-   AND pre.operation_date = pv.operation_date
    AND pre.executed_route_id = pv.executed_route_id
+   AND pre.route_effective_date
+       BETWEEN DATE_SUB(pv.operation_date, INTERVAL 1 DAY)
+           AND DATE_ADD(pv.operation_date, INTERVAL 1 DAY)
 
   LEFT JOIN cycle_route_id_prep cri
     ON cri.facility_id = pv.facility_id
