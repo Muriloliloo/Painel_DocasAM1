@@ -18,6 +18,7 @@ $env:PANEL_ALLOWED_ORIGIN = "http://localhost:8000"
 $env:GATEWAY_MODE = "mock"
 $env:AUTH_MODE = "unconfigured"
 $env:MOCK_SCENARIO = "normal"
+$env:YMS_MODE = "disabled"
 npm start
 ```
 
@@ -48,6 +49,16 @@ Em `development` e `GATEWAY_MODE=mock`, acrescente `scenario` a query:
 
 A query de cenario e rejeitada fora de `development/mock`. Para testar o frontend sem mudar sua configuracao, selecione o mesmo cenario pela variavel `MOCK_SCENARIO` antes de iniciar o gateway.
 
+## Fonte YMS / BigQuery
+
+`YMS_MODE` e opt-in e aceita:
+
+- `disabled`: padrao; preserva exatamente o snapshot anterior com Dispatch + Aduana;
+- `mock`: adiciona uma fonte YMS ficticia ao snapshot para testes locais;
+- `provider`: exige um executor BigQuery aprovado e injetado no backend; sem ele, o gateway falha fechado com `YMS_PROVIDER_NOT_CONFIGURED`.
+
+A integracao real nao contem credenciais, tokens ou chaves no repositorio. O provider real deve ser configurado pela infraestrutura autorizada.
+
 ## Contrato combinado
 
 ```json
@@ -63,7 +74,9 @@ A query de cenario e rejeitada fora de `development/mock`. Para testar o fronten
 }
 ```
 
-`emptyConfirmed` somente fica `true` no cenario explicito `empty-confirmed`, depois de as duas fontes mock responderem com sucesso e vazias. Falha ou timeout de qualquer fonte impede uma resposta combinada de sucesso.
+`emptyConfirmed` somente fica `true` no cenario explicito `empty-confirmed`, depois de todas as fontes ativas responderem com sucesso e vazias. Falha ou timeout de qualquer fonte habilitada impede uma resposta combinada de sucesso.
+
+Quando `YMS_MODE=mock` ou `provider`, o snapshot ganha `sources.yms` e o array `yms`. Com `YMS_MODE=disabled`, o contrato antigo permanece inalterado.
 
 ## Seguranca
 
@@ -88,7 +101,7 @@ A query de cenario e rejeitada fora de `development/mock`. Para testar o fronten
 
 O contrato de autenticacao fica isolado em `src/auth/`. `AUTH_MODE` aceita `unconfigured` e `corporate`, mas selecionar `corporate` nao concede acesso: o stub em `src/auth/corporate-provider.js` continua falhando fechado com HTTP 503 e `AUTH_NOT_CONFIGURED` antes de qualquer chamada upstream.
 
-Os adaptadores reais ja montam no servidor as URLs e queries permitidas para Dispatch e Aduana. O cliente em `src/http/upstream-client.js` aceita somente destinos da allowlist, usa GET, timeout, limite de resposta, JSON obrigatorio e redirects manuais. Nenhuma requisicao real e feita enquanto a autenticacao permanecer desconfigurada.
+Os adaptadores reais ja montam no servidor as URLs e queries permitidas para Dispatch e Aduana. O YMS usa um provider separado em `src/providers/yms-provider.js`, mantendo BigQuery isolado das duas fontes HTTP. O cliente em `src/http/upstream-client.js` aceita somente destinos da allowlist, usa GET, timeout, limite de resposta, JSON obrigatorio e redirects manuais. Nenhuma requisicao real e feita enquanto a autenticacao permanecer desconfigurada.
 
 Quando o metodo oficial for aprovado, a TI devera implementar somente o provider indicado para entregar o contexto minimo ao cliente upstream. O segredo devera vir da infraestrutura segura ou de um secrets manager, nunca do frontend. Nao copie Cookie, Authorization, CSRF, token ou sessao do navegador. O frontend nunca deve receber credenciais corporativas.
 
