@@ -14,6 +14,7 @@ const { buildDispatchSnapshot, buildCustomsSnapshot } = require("../src/services
 const { sanitizeDispatch } = require("../src/sanitizers/dispatch");
 const { sanitizeCustoms } = require("../src/sanitizers/customs");
 const { sanitizeYms } = require("../src/sanitizers/yms");
+const { createBigQueryYmsProvider, currentDateInTimeZone } = require("../src/providers/bigquery-yms-provider");
 
 let server;
 let baseUrl;
@@ -1046,4 +1047,53 @@ test("Y8 provider YMS injetado participa do snapshot sem expor IDs internos", as
     assert.equal(JSON.stringify(body.yms[0]).includes("434014897"), false);
     assert.equal(JSON.stringify(body.yms[0]).includes("503226595004"), false);
   });
+});
+
+
+test("Y9 data operacional YMS respeita America/Sao_Paulo", () => {
+  assert.equal(
+    currentDateInTimeZone("America/Sao_Paulo", new Date("2026-09-26T13:00:00Z")),
+    "2026-09-26"
+  );
+  assert.equal(
+    currentDateInTimeZone("America/Sao_Paulo", new Date("2026-09-26T02:00:00Z")),
+    "2026-09-25"
+  );
+});
+
+test("Y10 provider BigQuery parametriza SQL sem credenciais no contrato", async () => {
+  const calls = [];
+  const provider = createBigQueryYmsProvider({
+    sqlLoader() {
+      return "SELECT @facility_id AS facility_id, @cycle_name AS cycle_name, @operation_date AS operation_date";
+    },
+    async queryExecutor(request) {
+      calls.push(request);
+      return [{ route_name: "VJ3_AM1" }];
+    }
+  });
+
+  assert.deepEqual(provider.inspectConfiguration(), {
+    configured: true,
+    mode: "provider"
+  });
+
+  const rows = await provider.query({
+    facilityId: "SSP15",
+    cycle: "AM1",
+    operationDate: "2026-09-02",
+    timezone: "America/Sao_Paulo",
+    signal: undefined
+  });
+
+  assert.deepEqual(rows, [{ route_name: "VJ3_AM1" }]);
+  assert.equal(calls.length, 1);
+  assert.deepEqual(calls[0].params, {
+    facility_id: "SSP15",
+    cycle_name: "AM1",
+    operation_date: "2026-09-02"
+  });
+  assert.equal("credentials" in calls[0], false);
+  assert.equal("token" in calls[0], false);
+  assert.equal("authorization" in calls[0], false);
 });
