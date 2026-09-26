@@ -3,9 +3,8 @@
 -- BigQuery Standard SQL. Validar contra o ambiente real antes de integrar ao gateway.
 
 DECLARE facility_filter STRING DEFAULT 'SSP15';
-DECLARE date_from DATE DEFAULT '2026-08-02';
+DECLARE date_from DATE DEFAULT '2026-09-02';
 DECLARE date_to DATE DEFAULT '2026-09-02';
-DECLARE timezone_name STRING DEFAULT 'America/Sao_Paulo';
 
 WITH cycle_summary AS (
   SELECT
