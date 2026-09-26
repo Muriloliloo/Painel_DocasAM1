@@ -413,6 +413,23 @@ Diagnóstico específico:
 `gateway/sql/diagnostics/yms-unresolved-route-433965323.sql`
 
 
+## Validação do último caso não resolvido
+
+O processo `6e8e69dc-c158-5e1f-a0aa-0c34961121d1` confirmou um comportamento importante do Precheckin:
+
+- `purpose_executed_id = 433965323`;
+- `planned_route_id = 503226587006`;
+- Cycle Route em 02/09/2026: rota planejada `N3_AM1`, carrier planejado `1025381599`;
+- Precheckin do mesmo `executed_route_id = 433965323`: rota executada `C2_AM1`, carrier executado `825655768 / JM Transportes`;
+- o registro de Precheckin possui `ROUTE_DATE = 2026-09-03`, mas `ROUTE_INIT_DATE = 2026-09-02 08:15:24`.
+
+Conclusão: `ROUTE_DATE` do Precheckin não pode ser usado sozinho como data operacional de associação. Para resolver a rota executada, a Query V2 passa a usar:
+
+`route_effective_date = COALESCE(DATE(ROUTE_INIT_DATE), ROUTE_DATE)`
+
+A leitura de Precheckin foi ampliada para D-1 até D+1 e o vínculo continua exigindo o `executed_route_id`, com a data efetiva próxima da data operacional. Isso preserva a associação por ID e evita depender apenas da placa.
+
+
 ## Estado de integração
 
 Nesta etapa não existem:
