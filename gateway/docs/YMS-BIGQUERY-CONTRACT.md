@@ -256,6 +256,34 @@ Placa deve continuar sob revisão do contrato do gateway antes de exposição p�
 8. se D-1 é suficiente para planificação de todos os casos AM1;
 9. se o `gate-out` observado corresponde de forma estável à saída usada no OOT.
 
+## Validação real de 02/09/2026
+
+A Query V2 foi executada com sucesso no BigQuery corporativo para SSP15 em 02/09/2026.
+
+Resultados observados no retorno completo:
+
+- 232 processos no total considerando todos os ciclos retornados pela versão anterior do teste;
+- 232 `process_id` distintos, sem duplicidade;
+- 124 processos do ciclo AM1;
+- AM1 distribuído nas ondas 1 a 5;
+- 98 processos AM1 com `gate_out_at`;
+- estados finais AM1 observados: `gate-out`, `killed`, `canceled` e `skipped`;
+- 24 linhas AM1 retornaram `route_name = 'AM1'`, valor genérico e inadequado como identificador de rota;
+- 7 linhas AM1 ficaram sem rota e sem placa, todas associadas a processos cancelados no conjunto analisado.
+
+A partir dessa validação, a Query V2 passou a:
+
+- filtrar explicitamente `cycle_filter = 'AM1'`;
+- não tratar o nome genérico do ciclo (`AM1`) como rota válida;
+- retornar `route_source`, `route_resolution_status`, `route_candidate_count` e `plan_candidate_count` para diagnóstico;
+- manter rota nula quando não houver evidência suficiente para uma rota concreta.
+
+O caso de resolução de rota genérica deve ser investigado com:
+
+`gateway/sql/diagnostics/yms-route-resolution-am1.sql`
+
+antes de integrar a fonte ao runtime.
+
 ## Estado de integração
 
 Nesta etapa não existem:
