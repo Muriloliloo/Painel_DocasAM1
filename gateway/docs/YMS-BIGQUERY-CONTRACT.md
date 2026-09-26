@@ -376,6 +376,43 @@ O caso de resolução de rota genérica deve ser investigado com:
 
 antes de integrar a fonte ao runtime.
 
+## Validação V2 por IDs — 02/09/2026
+
+A versão com resolução por IDs foi executada para SSP15 / AM1 em 02/09/2026 e retornou 124 linhas com 124 `process_id` distintos.
+
+Resumo da resolução de rota:
+
+- 123 de 124 processos com `route_resolution_status = resolved`;
+- 110 rotas resolvidas por `precheckin_executed_route_id`;
+- 13 processos sem rota executada concluída resolvidos pela rota planejada em `cycle_route_planned_id`;
+- 1 processo permaneceu `generic_cycle_name`;
+- nenhum processo ficou duplicado.
+
+Resumo de estado YMS:
+
+- 98 `gate-out`;
+- 13 `killed`;
+- 8 `canceled`;
+- 5 `skipped`.
+
+A relação entre rota planejada e executada mostrou 99 processos com `route_changed_from_plan = TRUE` e 25 com `FALSE`. Essa diferença é preservada explicitamente e não deve ser colapsada no backend.
+
+Foram observadas também rotas executadas com sufixos de outros ciclos, como `AMDE`, `CHP` e `SD`, embora o processo esteja no ciclo AM1. Esses casos devem permanecer visíveis como dado executado e ser analisados como movimentação/replanejamento, não corrigidos automaticamente para AM1.
+
+O único processo ainda não resolvido na validação foi:
+
+- `process_id = 6e8e69dc-c158-5e1f-a0aa-0c34961121d1`
+- `journey_id = 77479ce0-5d6b-4cd3-b5a1-d87e3b173a34`
+- `executed_route_id = 433965323`
+- `planned_route_id = 503226587006`
+- placa `FXY4E11`
+- estado final `gate-out / PROCESS_FINISHED`.
+
+Diagnóstico específico:
+
+`gateway/sql/diagnostics/yms-unresolved-route-433965323.sql`
+
+
 ## Estado de integração
 
 Nesta etapa não existem:
