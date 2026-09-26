@@ -924,3 +924,126 @@ test("Y4 sanitizador YMS remove IDs internos e campos privados", () => {
     assert.equal(serialized.includes(privateField), false);
   }
 });
+
+
+test("Y5 snapshot preserva contrato antigo com YMS desabilitado", async () => {
+  await withGateway(testConfig({ ymsMode: "disabled" }), {}, async url => {
+    const response = await fetch(`${url}/snapshot?${query()}`);
+    const body = await response.json();
+
+    assert.equal(response.status, 200);
+    assert.deepEqual(Object.keys(body), [
+      "snapshotComplete",
+      "emptyConfirmed",
+      "sources",
+      "operacional",
+      "aduana"
+    ]);
+    assert.deepEqual(body.sources, { dispatch: "ok", aduana: "ok" });
+    assert.equal("yms" in body, false);
+  });
+});
+
+test("Y6 snapshot adiciona YMS mock somente quando habilitado", async () => {
+  await withGateway(testConfig({ ymsMode: "mock" }), {}, async url => {
+    const ready = await fetch(`${url}/ready`);
+    assert.equal(ready.status, 200);
+    assert.equal((await ready.json()).ready, true);
+
+    const response = await fetch(`${url}/snapshot?${query()}`);
+    const body = await response.json();
+
+    assert.equal(response.status, 200);
+    assert.equal(body.snapshotComplete, true);
+    assert.deepEqual(body.sources, {
+      dispatch: "ok",
+      aduana: "ok",
+      yms: "ok"
+    });
+    assert.ok(Array.isArray(body.yms));
+    assert.equal(body.yms.length, 1);
+    assert.equal(body.yms[0].route_name, "VJ3_AM1");
+    assert.equal(body.yms[0].planned_route_name, "A3_AM1");
+    assert.equal(body.yms[0].lifecycle_stage, "dispatched");
+    assert.equal(body.yms[0].dispatch_confirmed, true);
+
+    const serialized = JSON.stringify(body.yms[0]);
+    for (const privateField of [
+      "source_process_id",
+      "yms_executed_route_id",
+      "yms_planned_route_id",
+      "journey_id",
+      "driver_id",
+      "carrier_id"
+    ]) {
+      assert.equal(serialized.includes(privateField), false);
+    }
+  });
+});
+
+test("Y7 provider YMS real permanece fail closed sem executor configurado", async () => {
+  await withGateway(testConfig({ ymsMode: "provider" }), {}, async url => {
+    const ready = await fetch(`${url}/ready`);
+    assert.equal(ready.status, 503);
+    assert.equal((await ready.json()).ready, false);
+
+    const response = await fetch(`${url}/snapshot?${query()}`);
+    const body = await response.json();
+
+    assert.equal(response.status, 503);
+    assert.equal(body.error.code, "YMS_PROVIDER_NOT_CONFIGURED");
+    assert.equal(body.snapshotComplete, false);
+    assert.equal(body.sources.dispatch, "ok");
+    assert.equal(body.sources.aduana, "ok");
+    assert.equal(body.sources.yms, "error");
+  });
+});
+
+test("Y8 provider YMS injetado participa do snapshot sem expor IDs internos", async () => {
+  const ymsProvider = {
+    inspectConfiguration() {
+      return { configured: true, mode: "provider" };
+    },
+    async query({ facilityId, cycle, waves }) {
+      assert.equal(facilityId, "SSP15");
+      assert.equal(cycle, "AM1");
+      assert.deepEqual(waves, ["1", "2", "3", "4", "5"]);
+
+      return [{
+        facility_id: "SSP15",
+        operation_date: "2026-09-02",
+        cycle_name: "AM1",
+        wave_number: 1,
+        process_id: "PROCESSO-INTERNO",
+        executed_route_id: "434014897",
+        planned_route_id: "503226595004",
+        route_name: "VJ3_AM1",
+        planned_route_name: "A3_AM1",
+        route_changed_from_plan: true,
+        route_resolution_status: "resolved",
+        carrier_name: "UNICA TRANSPORTES",
+        plate: "SDD-UEO6I01",
+        gate_out_at: "2026-09-02 09:36:26",
+        latest_event_name: "gate-out",
+        latest_status: "PROCESS_FINISHED",
+        latest_purpose_status: "LOADING_PACKAGES_STARTED"
+      }];
+    }
+  };
+
+  await withGateway(testConfig({ ymsMode: "provider" }), { ymsProvider }, async url => {
+    const ready = await fetch(`${url}/ready`);
+    assert.equal(ready.status, 200);
+
+    const response = await fetch(`${url}/snapshot?${query()}`);
+    const body = await response.json();
+
+    assert.equal(response.status, 200);
+    assert.equal(body.sources.yms, "ok");
+    assert.equal(body.yms[0].route_name, "VJ3_AM1");
+    assert.equal(body.yms[0].lifecycle_stage, "dispatched");
+    assert.equal(JSON.stringify(body.yms[0]).includes("PROCESSO-INTERNO"), false);
+    assert.equal(JSON.stringify(body.yms[0]).includes("434014897"), false);
+    assert.equal(JSON.stringify(body.yms[0]).includes("503226595004"), false);
+  });
+});
