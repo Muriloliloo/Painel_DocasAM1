@@ -7,6 +7,7 @@ DECLARE cycle_filter STRING DEFAULT 'AM1';
 DECLARE date_from DATE DEFAULT '2026-09-02';
 DECLARE date_to DATE DEFAULT '2026-09-02';
 
+CREATE TEMP TABLE final_result AS
 WITH cycle_summary AS (
   SELECT
     CYCLE_SUMMARY_ID,
@@ -399,7 +400,7 @@ parking_lookup AS (
     AND facility_filter IN UNNEST(SPLIT(FACILITIES, ','))
 ),
 
-final_result AS (
+final_result_cte AS (
   SELECT
     pv.facility_id,
     pv.operation_date,
@@ -570,6 +571,8 @@ final_result AS (
   LEFT JOIN parking_lookup pk
     ON pk.parking_area_id = ep.parking_area_id
 )
+
+SELECT * FROM final_result_cte;
 
 -- RESUMO FINAL DE VALIDACAO
 SELECT
