@@ -185,7 +185,11 @@ A partir dessa linha do tempo, a previa calcula uma leitura adicional de defasag
 
 Essa leitura fica disponivel em `window.ymsObservedSourceLag()` e aparece recolhida em `DEFASAGEM OBSERVADA` dentro da `YMS • PREVIA`. Ela nao afirma que as mudancas representam o mesmo evento operacional, nao mede latencia oficial, nao e SLA e nao define qual fonte esta correta.
 
-A comparacao, a linha do tempo e a defasagem observada nao sao enviadas ao Firebase e nao alteram `baseOperacional`, `baseAduana` ou o fallback manual nesta etapa.
+A previa tambem agrega um resumo estatistico da sessao em `window.ymsObservedSessionStats()` e em `PADRAO DA SESSAO`. Para cada rota comparavel, ele usa a primeira mudanca observada de cada fonte depois da linha de base inicial para contar qual fonte apareceu primeiro. Mudancas percebidas no mesmo polling entram como simultaneas. O resumo calcula media e mediana do intervalo inicial entre fontes e tambem dos pares Dispatch-Aduana, Dispatch-YMS e Aduana-YMS.
+
+Esse resumo e somente descritivo do que o navegador observou durante a sessao. Ele nao mede desempenho de sistema, nao representa latencia oficial, nao estabelece causalidade e nao define autoridade entre fontes.
+
+A comparacao, a linha do tempo, a defasagem observada e o resumo estatistico nao sao enviados ao Firebase e nao alteram `baseOperacional`, `baseAduana` ou o fallback manual nesta etapa.
 
 ## Homologacao em casa sem acesso corporativo
 
