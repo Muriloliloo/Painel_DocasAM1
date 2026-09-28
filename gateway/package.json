@@ -12,6 +12,7 @@
     "test": "node --test",
     "verify": "node scripts/verify.js",
     "smoke:mock": "node scripts/smoke-mock.js",
-    "preflight:corporate": "node scripts/preflight-corporate.js"
+    "preflight:corporate": "node scripts/preflight-corporate.js",
+    "preview:home": "node scripts/home-preview.js"
   }
 }
