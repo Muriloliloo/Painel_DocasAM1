@@ -231,7 +231,7 @@ cd gateway
 npm run preview:flow
 ```
 
-O painel abre em localhost com polling de 15 segundos, `YMS_MODE=disabled` e cenario `operational-sequence`. A rota ficticia `VJ3_AM1` percorre os quatro estados e depois reinicia a sequencia. Nenhuma VPN, autenticacao corporativa ou dado real e usado nesse modo.
+O painel abre em localhost com polling de 15 segundos, `YMS_MODE=disabled` e cenario `operational-sequence`. A rota mock `G5_AM1`, que ja existe no planejamento local da Onda 1, percorre os quatro estados e permanece em `dispatched` no final. Nenhuma VPN, autenticacao corporativa ou dado real e usado nesse modo.
 
 Para a homologacao YMS mock que ja existia, continue usando:
 
