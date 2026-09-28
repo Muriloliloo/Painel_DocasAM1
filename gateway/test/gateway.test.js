@@ -13,6 +13,7 @@ const { createUpstreamClient } = require("../src/http/upstream-client");
 const { createSafeLogger } = require("../src/logging");
 const { runPreflight } = require("../scripts/preflight-corporate");
 const { buildDispatchSnapshot, buildCustomsSnapshot } = require("../src/services/snapshot");
+const { buildSourceComparison, dockComparison } = require("../src/services/source-comparison");
 const { sanitizeDispatch } = require("../src/sanitizers/dispatch");
 const { sanitizeCustoms } = require("../src/sanitizers/customs");
 const { sanitizeYms } = require("../src/sanitizers/yms");
@@ -1209,4 +1210,94 @@ test("Y16 comando preview home permanece mock e sem credenciais corporativas", (
   assert.equal(source.includes("authorization"), false);
   assert.equal(source.includes("cookie"), false);
   assert.equal(source.includes("token"), false);
+});
+
+
+test("Y17 comparacao de fontes identifica mesma doca e etapas diferentes sem escolher autoridade", () => {
+  const result = buildSourceComparison({
+    operacional: [{
+      route_name: "VJ3_AM1",
+      process: "waiting_customs",
+      dock_number: 2
+    }],
+    aduana: [{
+      route_name: "VJ3_AM1",
+      process: "customs_in_progress",
+      status: "in_progress"
+    }],
+    yms: [{
+      route_name: "VJ3_AM1",
+      lifecycle_stage: "dispatched",
+      loading_zone_name: "02",
+      dispatch_confirmed: true,
+      terminal_exception: false
+    }]
+  });
+
+  assert.equal(result.summary.total_routes, 1);
+  assert.equal(result.summary.all_three, 1);
+  assert.equal(result.summary.dock_comparable, 1);
+  assert.equal(result.summary.dock_same, 1);
+  assert.equal(result.summary.dock_different, 0);
+  assert.equal(result.summary.stage_mixed, 1);
+
+  const route = result.routes[0];
+  assert.equal(route.route_name, "VJ3_AM1");
+  assert.equal(route.source_count, 3);
+  assert.equal(route.dock_comparison, "same");
+  assert.equal(route.stage_comparison, "mixed");
+  assert.deepEqual(route.observed_stages, [
+    "waiting_customs",
+    "customs_in_progress",
+    "dispatched"
+  ]);
+  assert.equal("authority" in route, false);
+  assert.equal("winner" in route, false);
+});
+
+test("Y18 comparacao de doca distingue diferenca e falta de evidencia", () => {
+  assert.equal(dockComparison("2", "02"), "same");
+  assert.equal(dockComparison(2, "12"), "different");
+  assert.equal(dockComparison("", "12"), "insufficient");
+  assert.equal(dockComparison("2", ""), "insufficient");
+});
+
+test("Y19 snapshot combinado YMS inclui diagnostico de comparacao", async () => {
+  await withGateway(testConfig({ ymsMode: "mock" }), {}, async url => {
+    const response = await fetch(`${url}/snapshot?${query()}`);
+    const body = await response.json();
+
+    assert.equal(response.status, 200);
+    assert.ok(body.comparison);
+    assert.ok(body.comparison.summary);
+    assert.ok(Array.isArray(body.comparison.routes));
+
+    const vj3 = body.comparison.routes.find(row => row.route_name === "VJ3_AM1");
+    assert.ok(vj3);
+    assert.equal(vj3.source_count, 3);
+    assert.equal(vj3.dock_comparison, "same");
+    assert.equal(vj3.stage_comparison, "mixed");
+
+    const serialized = JSON.stringify(body.comparison);
+    assert.equal(serialized.includes("PROCESSO-MOCK"), false);
+    assert.equal(serialized.includes("434014897"), false);
+    assert.equal(serialized.includes("503226595004"), false);
+  });
+});
+
+test("Y20 frontend mantem comparacao somente na sessao de homologacao", () => {
+  const indexPath = path.resolve(__dirname, "../../index.html");
+  const source = fs.readFileSync(indexPath, "utf8");
+
+  assert.equal(source.includes("data.baseComparisonAutomatica = null;"), true);
+  assert.equal(source.includes("window.ymsSourceComparison = () =>"), true);
+  assert.equal(source.includes("COMPARACAO DE FONTES"), true);
+  assert.equal(source.includes("delete payload.baseComparisonAutomatica;"), true);
+
+  const rebuildStart = source.indexOf("function rebuildConsolidatedBase");
+  const rebuildEnd = source.indexOf("function automaticSecondsToClock", rebuildStart);
+  const rebuildSource = source.slice(rebuildStart, rebuildEnd);
+
+  assert.equal(rebuildSource.includes("baseComparisonAutomatica"), false);
+  assert.equal(rebuildSource.includes("baseYmsAutomatica"), false);
 });
