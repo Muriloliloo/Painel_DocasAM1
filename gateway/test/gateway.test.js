@@ -1363,3 +1363,23 @@ test("Y22 previa visual explica que etapa posterior e heuristica", () => {
   assert.equal(source.includes("comparacao heuristica"), true);
   assert.equal(source.includes("nao define qual fonte esta correta"), true);
 });
+
+
+test("Y23 linha do tempo diagnostica permanece somente na sessao", () => {
+  const indexPath = path.resolve(__dirname, "../../index.html");
+  const source = fs.readFileSync(indexPath, "utf8");
+
+  assert.equal(source.includes("data.baseDiagnosticHistory = [];"), true);
+  assert.equal(source.includes("AUTOMATIC_DIAGNOSTIC_HISTORY_MAX = 240"), true);
+  assert.equal(source.includes("recordAutomaticDiagnosticSnapshot"), true);
+  assert.equal(source.includes("LINHA DO TEMPO DA SESSAO"), true);
+  assert.equal(source.includes("nao e timestamp oficial das fontes"), true);
+  assert.equal(source.includes("window.ymsDiagnosticHistory = () =>"), true);
+  assert.equal(source.includes("delete payload.baseDiagnosticHistory;"), true);
+
+  const rebuildStart = source.indexOf("function rebuildConsolidatedBase");
+  const rebuildEnd = source.indexOf("function automaticSecondsToClock", rebuildStart);
+  const rebuildSource = source.slice(rebuildStart, rebuildEnd);
+
+  assert.equal(rebuildSource.includes("baseDiagnosticHistory"), false);
+});
