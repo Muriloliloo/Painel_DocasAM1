@@ -17,7 +17,7 @@ const { buildSourceComparison, dockComparison } = require("../src/services/sourc
 const { sanitizeDispatch } = require("../src/sanitizers/dispatch");
 const { sanitizeCustoms } = require("../src/sanitizers/customs");
 const { sanitizeYms } = require("../src/sanitizers/yms");
-const { createBigQueryYmsProvider, currentDateInTimeZone } = require("../src/providers/bigquery-yms-provider");
+const { createBigQueryYmsProvider, validateWaveNumbers, currentDateInTimeZone } = require("../src/providers/bigquery-yms-provider");
 
 let server;
 let baseUrl;
@@ -1070,7 +1070,7 @@ test("Y10 provider BigQuery parametriza SQL sem credenciais no contrato", async 
   const calls = [];
   const provider = createBigQueryYmsProvider({
     sqlLoader() {
-      return "SELECT @facility_id AS facility_id, @cycle_name AS cycle_name, @operation_date AS operation_date";
+      return "SELECT @facility_id AS facility_id, @cycle_name AS cycle_name, @operation_date AS operation_date, @wave_numbers AS wave_numbers";
     },
     async queryExecutor(request) {
       calls.push(request);
@@ -1086,6 +1086,7 @@ test("Y10 provider BigQuery parametriza SQL sem credenciais no contrato", async 
   const rows = await provider.query({
     facilityId: "SSP15",
     cycle: "AM1",
+    waves: ["1", "2", "3", "4", "5"],
     operationDate: "2026-09-02",
     timezone: "America/Sao_Paulo",
     signal: undefined
@@ -1096,13 +1097,26 @@ test("Y10 provider BigQuery parametriza SQL sem credenciais no contrato", async 
   assert.deepEqual(calls[0].params, {
     facility_id: "SSP15",
     cycle_name: "AM1",
-    operation_date: "2026-09-02"
+    operation_date: "2026-09-02",
+    wave_numbers: [1, 2, 3, 4, 5]
   });
   assert.equal("credentials" in calls[0], false);
   assert.equal("token" in calls[0], false);
   assert.equal("authorization" in calls[0], false);
 });
 
+
+test("Y10b provider BigQuery valida e normaliza ondas", () => {
+  assert.deepEqual(validateWaveNumbers(["1", "2", "2", 3]), [1, 2, 3]);
+  assert.throws(
+    () => validateWaveNumbers([]),
+    error => error.code === "INVALID_QUERY"
+  );
+  assert.throws(
+    () => validateWaveNumbers(["0", "abc"]),
+    error => error.code === "INVALID_QUERY"
+  );
+});
 
 test("Y11 endpoint YMS isolado retorna os estagios mock sanitizados", async () => {
   await withGateway(testConfig({ ymsMode: "mock" }), {}, async url => {
