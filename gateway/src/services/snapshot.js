@@ -6,6 +6,7 @@ const { fetchYms } = require("../adapters/yms");
 const { sanitizeDispatch } = require("../sanitizers/dispatch");
 const { sanitizeCustoms } = require("../sanitizers/customs");
 const { sanitizeYms } = require("../sanitizers/yms");
+const { buildSourceComparison } = require("./source-comparison");
 const { GatewayError } = require("../errors");
 
 async function withinTimeout(config, operation) {
@@ -131,6 +132,7 @@ async function buildSnapshot(options) {
   if (ymsEnabled) {
     payload.sources.yms = "ok";
     payload.yms = yms;
+    payload.comparison = buildSourceComparison({ operacional, aduana, yms });
   }
 
   return payload;
