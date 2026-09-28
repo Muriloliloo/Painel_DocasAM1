@@ -10714,6 +10714,7 @@ function calculateObservedSourceLag(history = data.baseDiagnosticHistory) {
       new Date(left.observed_at).getTime() - new Date(right.observed_at).getTime()
     );
 
+    const firstChangeAt = {};
     const lastChangeAt = {};
     const sourceChangeCount = {
       dispatch: 0,
@@ -10728,6 +10729,9 @@ function calculateObservedSourceLag(history = data.baseDiagnosticHistory) {
 
       changedSources.forEach(source => {
         if (!DIAGNOSTIC_HISTORY_SOURCES.includes(source)) return;
+        if (!firstChangeAt[source]) {
+          firstChangeAt[source] = item.observed_at;
+        }
         lastChangeAt[source] = item.observed_at;
         sourceChangeCount[source] += 1;
       });
@@ -10748,6 +10752,30 @@ function calculateObservedSourceLag(history = data.baseDiagnosticHistory) {
     const minTime = Math.min(...moments.map(item => item.time));
     const maxTime = Math.max(...moments.map(item => item.time));
 
+    const firstMoments = sourcesWithChange.map(source => ({
+      source,
+      observed_at: firstChangeAt[source],
+      time: new Date(firstChangeAt[source]).getTime()
+    }));
+
+    const firstMinTime = Math.min(...firstMoments.map(item => item.time));
+    const firstMaxTime = Math.max(...firstMoments.map(item => item.time));
+
+    const initialPairwise = [
+      ["dispatch", "aduana"],
+      ["dispatch", "yms"],
+      ["aduana", "yms"]
+    ].map(([left, right]) => {
+      if (!firstChangeAt[left] || !firstChangeAt[right]) return null;
+      const leftTime = new Date(firstChangeAt[left]).getTime();
+      const rightTime = new Date(firstChangeAt[right]).getTime();
+      return {
+        left,
+        right,
+        seconds: Math.round(Math.abs(rightTime - leftTime) / 1000)
+      };
+    }).filter(Boolean);
+
     const pairwise = [
       ["dispatch", "aduana"],
       ["dispatch", "yms"],
@@ -10767,8 +10795,14 @@ function calculateObservedSourceLag(history = data.baseDiagnosticHistory) {
       route_name: group.route_name,
       observation_count: items.length,
       source_change_count: sourceChangeCount,
+      first_change_at: firstChangeAt,
       last_change_at: lastChangeAt,
+      initial_observed_spread_seconds: Math.round((firstMaxTime - firstMinTime) / 1000),
       observed_spread_seconds: Math.round((maxTime - minTime) / 1000),
+      first_observed_sources: firstMoments
+        .filter(item => item.time === firstMinTime)
+        .map(item => item.source),
+      initial_pairwise: initialPairwise,
       earliest_sources: moments
         .filter(item => item.time === minTime)
         .map(item => item.source),
@@ -10783,6 +10817,91 @@ function calculateObservedSourceLag(history = data.baseDiagnosticHistory) {
     right.observed_spread_seconds - left.observed_spread_seconds ||
     String(left.route_name).localeCompare(String(right.route_name))
   );
+}
+
+function diagnosticNumericStats(values = []) {
+  const numbers = values
+    .map(value => Number(value))
+    .filter(value => Number.isFinite(value) && value >= 0)
+    .sort((left, right) => left - right);
+
+  if (!numbers.length) {
+    return {
+      count: 0,
+      mean_seconds: null,
+      median_seconds: null,
+      min_seconds: null,
+      max_seconds: null
+    };
+  }
+
+  const middle = Math.floor(numbers.length / 2);
+  const median = numbers.length % 2
+    ? numbers[middle]
+    : (numbers[middle - 1] + numbers[middle]) / 2;
+
+  return {
+    count: numbers.length,
+    mean_seconds: Math.round(
+      numbers.reduce((total, value) => total + value, 0) / numbers.length
+    ),
+    median_seconds: Math.round(median),
+    min_seconds: numbers[0],
+    max_seconds: numbers[numbers.length - 1]
+  };
+}
+
+function calculateObservedSourceSessionStats(history = data.baseDiagnosticHistory) {
+  const routes = calculateObservedSourceLag(history);
+  const firstObserved = {
+    dispatch: 0,
+    aduana: 0,
+    yms: 0,
+    tied: 0
+  };
+
+  const initialIntervals = [];
+  const pairValues = {
+    dispatch_aduana: [],
+    dispatch_yms: [],
+    aduana_yms: []
+  };
+
+  routes.forEach(route => {
+    const firstSources = Array.isArray(route.first_observed_sources)
+      ? route.first_observed_sources
+      : [];
+
+    if (firstSources.length === 1 && Object.hasOwn(firstObserved, firstSources[0])) {
+      firstObserved[firstSources[0]] += 1;
+    } else if (firstSources.length > 1) {
+      firstObserved.tied += 1;
+    }
+
+    initialIntervals.push(route.initial_observed_spread_seconds);
+
+    (route.initial_pairwise || []).forEach(pair => {
+      const key = [pair.left, pair.right].sort().join("_");
+      if (key === "aduana_dispatch") {
+        pairValues.dispatch_aduana.push(pair.seconds);
+      } else if (key === "dispatch_yms") {
+        pairValues.dispatch_yms.push(pair.seconds);
+      } else if (key === "aduana_yms") {
+        pairValues.aduana_yms.push(pair.seconds);
+      }
+    });
+  });
+
+  return {
+    comparable_routes: routes.length,
+    first_observed: firstObserved,
+    initial_interval: diagnosticNumericStats(initialIntervals),
+    pairs: {
+      dispatch_aduana: diagnosticNumericStats(pairValues.dispatch_aduana),
+      dispatch_yms: diagnosticNumericStats(pairValues.dispatch_yms),
+      aduana_yms: diagnosticNumericStats(pairValues.aduana_yms)
+    }
+  };
 }
 
 function recordAutomaticDiagnosticSnapshot(comparison) {
@@ -11437,6 +11556,7 @@ function ensureYmsPreviewPanel() {
     </div>
     <div data-yms-preview-summary style="display:flex;flex-wrap:wrap;gap:6px;padding:10px 12px 0"></div>
     <div data-yms-preview-comparison style="padding:10px 12px 0"></div>
+    <div data-yms-preview-stats style="padding:10px 12px 0"></div>
     <div data-yms-preview-lag style="padding:10px 12px 0"></div>
     <div data-yms-preview-history style="padding:10px 12px 0"></div>
     <div data-yms-preview-rows style="padding:10px 12px 12px;overflow:auto;max-height:360px"></div>
@@ -11513,6 +11633,65 @@ function observedLagDurationLabel(value) {
   }
 
   return seconds + "s";
+}
+
+function renderObservedSessionStats(panel) {
+  const container = panel.querySelector("[data-yms-preview-stats]");
+  if (!container) return;
+
+  const stats = calculateObservedSourceSessionStats();
+  if (!stats.comparable_routes) {
+    container.innerHTML = "";
+    return;
+  }
+
+  const first = stats.first_observed;
+  const interval = stats.initial_interval;
+  const statText = value => value === null
+    ? "-"
+    : observedLagDurationLabel(value);
+
+  const pairRows = [
+    ["Dispatch ↔ Aduana", stats.pairs.dispatch_aduana],
+    ["Dispatch ↔ YMS", stats.pairs.dispatch_yms],
+    ["Aduana ↔ YMS", stats.pairs.aduana_yms]
+  ].filter(([, pair]) => pair.count > 0);
+
+  container.innerHTML = `
+    <details>
+      <summary style="cursor:pointer;font-size:10px;font-weight:800;letter-spacing:.05em;color:#c4b5fd">
+        PADRAO DA SESSAO (${stats.comparable_routes} rotas comparaveis)
+      </summary>
+      <div style="margin-top:5px;padding:7px 8px;border-radius:10px;background:rgba(30,41,59,.42);border:1px solid rgba(148,163,184,.1)">
+        <div style="font-size:9px;color:#e2e8f0;line-height:1.45">
+          Primeira mudanca observada:
+          <strong>Dispatch ${first.dispatch}</strong> •
+          <strong>Aduana ${first.aduana}</strong> •
+          <strong>YMS ${first.yms}</strong> •
+          simultanea ${first.tied}
+        </div>
+        <div style="font-size:9px;color:#cbd5e1;margin-top:4px;line-height:1.45">
+          Intervalo inicial entre fontes:
+          mediana <strong>${ymsPreviewEscape(statText(interval.median_seconds))}</strong> •
+          media <strong>${ymsPreviewEscape(statText(interval.mean_seconds))}</strong>
+        </div>
+        ${pairRows.length ? `
+          <div style="font-size:8.7px;color:#94a3b8;margin-top:4px;line-height:1.45">
+            ${pairRows.map(([label, pair]) =>
+              ymsPreviewEscape(label) + ": mediana " +
+              ymsPreviewEscape(statText(pair.median_seconds)) +
+              " • media " +
+              ymsPreviewEscape(statText(pair.mean_seconds)) +
+              " • n=" + pair.count
+            ).join("<br>")}
+          </div>
+        ` : ""}
+        <div style="font-size:8.5px;color:#94a3b8;margin-top:5px;line-height:1.35">
+          Estatistica observacional desta sessao. Nao mede desempenho, latencia oficial ou autoridade das fontes.
+        </div>
+      </div>
+    </details>
+  `;
 }
 
 function renderObservedSourceLag(panel) {
@@ -11735,6 +11914,7 @@ function renderYmsPreview(rows = data.baseYmsAutomatica || []) {
   const summary = panel.querySelector("[data-yms-preview-summary]");
   const list = panel.querySelector("[data-yms-preview-rows]");
   renderYmsSourceComparison(panel, data.baseComparisonAutomatica);
+  renderObservedSessionStats(panel);
   renderObservedSourceLag(panel);
   renderAutomaticDiagnosticHistory(panel);
 
@@ -11801,6 +11981,7 @@ function renderYmsPreview(rows = data.baseYmsAutomatica || []) {
 window.addEventListener("painel:diagnostic-history", () => {
   const panel = document.getElementById("ymsPreviewPanel");
   if (panel) {
+    renderObservedSessionStats(panel);
     renderObservedSourceLag(panel);
     renderAutomaticDiagnosticHistory(panel);
   }
@@ -12060,6 +12241,9 @@ window.ymsDiagnosticHistory = () => JSON.parse(JSON.stringify(
 ));
 window.ymsObservedSourceLag = () => JSON.parse(JSON.stringify(
   calculateObservedSourceLag()
+));
+window.ymsObservedSessionStats = () => JSON.parse(JSON.stringify(
+  calculateObservedSourceSessionStats()
 ));
 window.renderYmsPreview = renderYmsPreview;
 window.fetchAutomaticSnapshot = fetchAutomaticSnapshot;
