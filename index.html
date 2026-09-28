@@ -10904,6 +10904,150 @@ function calculateObservedSourceSessionStats(history = data.baseDiagnosticHistor
   };
 }
 
+const RECURRING_DIAGNOSTIC_FLAGS = Object.freeze([
+  "dock_divergence",
+  "stage_divergence",
+  "yms_ahead",
+  "dispatch_ahead",
+  "missing_source",
+  "yms_terminal_exception"
+]);
+
+function recurringDiagnosticPatternKey(item = {}, flag) {
+  const routeName = normalize(item.route_name);
+  const normalizedFlag = normalize(flag);
+  if (!routeName || !RECURRING_DIAGNOSTIC_FLAGS.includes(normalizedFlag)) return "";
+
+  const stagePart = [
+    normalize(item.dispatch_process),
+    normalize(item.aduana_process),
+    normalize(item.yms_stage)
+  ].join(" > ");
+
+  const dockPart = [
+    normalize(item.dispatch_dock),
+    normalize(item.yms_zone)
+  ].join(" > ");
+
+  if (normalizedFlag === "dock_divergence") {
+    return [
+      routeKey(routeName),
+      normalizedFlag,
+      dockPart
+    ].join("|");
+  }
+
+  if (normalizedFlag === "stage_divergence"
+    || normalizedFlag === "yms_ahead"
+    || normalizedFlag === "dispatch_ahead") {
+    return [
+      routeKey(routeName),
+      normalizedFlag,
+      stagePart
+    ].join("|");
+  }
+
+  return [
+    routeKey(routeName),
+    normalizedFlag,
+    stagePart,
+    dockPart
+  ].join("|");
+}
+
+function recurringDiagnosticPatternLabel(item = {}, flag) {
+  const normalizedFlag = normalize(flag);
+  const stages = [
+    normalize(item.dispatch_process) ? "Dispatch " + normalize(item.dispatch_process) : "",
+    normalize(item.aduana_process) ? "Aduana " + normalize(item.aduana_process) : "",
+    normalize(item.yms_stage) ? "YMS " + normalize(item.yms_stage) : ""
+  ].filter(Boolean).join(" | ");
+
+  const dock = [
+    normalize(item.dispatch_dock) ? "Doca " + normalize(item.dispatch_dock) : "",
+    normalize(item.yms_zone) ? "Zona " + normalize(item.yms_zone) : ""
+  ].filter(Boolean).join(" | ");
+
+  const detail = normalizedFlag === "dock_divergence"
+    ? dock
+    : stages || dock;
+
+  return detail || normalizedFlag;
+}
+
+function calculateRecurringDiagnosticPatterns(history = data.baseDiagnosticHistory) {
+  const rows = Array.isArray(history) ? history : [];
+  const byRoute = new Map();
+
+  rows.forEach(item => {
+    const routeName = normalize(item?.route_name);
+    const observedAt = normalize(item?.observed_at);
+    if (!routeName || !observedAt || Number.isNaN(new Date(observedAt).getTime())) return;
+
+    const key = routeKey(routeName);
+    if (!byRoute.has(key)) {
+      byRoute.set(key, []);
+    }
+    byRoute.get(key).push(item);
+  });
+
+  const patterns = new Map();
+
+  byRoute.forEach(routeItems => {
+    const ordered = [...routeItems].sort((left, right) =>
+      new Date(left.observed_at).getTime() - new Date(right.observed_at).getTime()
+    );
+
+    let previousActiveKeys = new Set();
+
+    ordered.forEach(item => {
+      const flags = Array.isArray(item.diagnostic_flags)
+        ? item.diagnostic_flags.filter(flag => RECURRING_DIAGNOSTIC_FLAGS.includes(flag))
+        : [];
+
+      const activePatterns = flags.map(flag => ({
+        flag,
+        key: recurringDiagnosticPatternKey(item, flag)
+      })).filter(pattern => pattern.key);
+
+      const activeKeys = new Set(activePatterns.map(pattern => pattern.key));
+
+      activePatterns.forEach(pattern => {
+        if (previousActiveKeys.has(pattern.key)) return;
+
+        const existing = patterns.get(pattern.key) || {
+          pattern_key: pattern.key,
+          route_name: normalize(item.route_name),
+          diagnostic_flag: pattern.flag,
+          label: recurringDiagnosticPatternLabel(item, pattern.flag),
+          episode_count: 0,
+          first_observed_at: item.observed_at,
+          last_observed_at: item.observed_at,
+          dispatch_process: normalize(item.dispatch_process),
+          aduana_process: normalize(item.aduana_process),
+          yms_stage: normalize(item.yms_stage),
+          dispatch_dock: normalize(item.dispatch_dock),
+          yms_zone: normalize(item.yms_zone)
+        };
+
+        existing.episode_count += 1;
+        existing.last_observed_at = item.observed_at;
+        patterns.set(pattern.key, existing);
+      });
+
+      previousActiveKeys = activeKeys;
+    });
+  });
+
+  return Array.from(patterns.values())
+    .filter(pattern => pattern.episode_count >= 2)
+    .sort((left, right) =>
+      right.episode_count - left.episode_count ||
+      new Date(right.last_observed_at).getTime() - new Date(left.last_observed_at).getTime() ||
+      String(left.route_name).localeCompare(String(right.route_name))
+    );
+}
+
 function recordAutomaticDiagnosticSnapshot(comparison) {
   const routes = Array.isArray(comparison?.routes) ? comparison.routes : [];
   if (!routes.length) return [];
@@ -11557,6 +11701,7 @@ function ensureYmsPreviewPanel() {
     <div data-yms-preview-summary style="display:flex;flex-wrap:wrap;gap:6px;padding:10px 12px 0"></div>
     <div data-yms-preview-comparison style="padding:10px 12px 0"></div>
     <div data-yms-preview-stats style="padding:10px 12px 0"></div>
+    <div data-yms-preview-recurring style="padding:10px 12px 0"></div>
     <div data-yms-preview-lag style="padding:10px 12px 0"></div>
     <div data-yms-preview-history style="padding:10px 12px 0"></div>
     <div data-yms-preview-rows style="padding:10px 12px 12px;overflow:auto;max-height:360px"></div>
@@ -11688,6 +11833,52 @@ function renderObservedSessionStats(panel) {
         ` : ""}
         <div style="font-size:8.5px;color:#94a3b8;margin-top:5px;line-height:1.35">
           Estatistica observacional desta sessao. Nao mede desempenho, latencia oficial ou autoridade das fontes.
+        </div>
+      </div>
+    </details>
+  `;
+}
+
+function renderRecurringDiagnosticPatterns(panel) {
+  const container = panel.querySelector("[data-yms-preview-recurring]");
+  if (!container) return;
+
+  const patterns = calculateRecurringDiagnosticPatterns().slice(0, 8);
+  if (!patterns.length) {
+    container.innerHTML = "";
+    return;
+  }
+
+  const rows = patterns.map(pattern => `
+    <div style="padding:6px 0;border-top:1px solid rgba(148,163,184,.1)">
+      <div style="display:flex;justify-content:space-between;gap:8px;font-size:9.5px">
+        <strong>${ymsPreviewEscape(pattern.route_name)}</strong>
+        <span style="color:#fb7185">${pattern.episode_count} episodios</span>
+      </div>
+      <div style="font-size:8.9px;color:#e2e8f0;margin-top:2px">
+        ${ymsPreviewEscape(ymsDiagnosticLabel(pattern.diagnostic_flag))}
+      </div>
+      <div style="font-size:8.6px;color:#94a3b8;margin-top:2px;line-height:1.35">
+        ${ymsPreviewEscape(pattern.label)}
+      </div>
+      <div style="font-size:8.4px;color:#64748b;margin-top:2px">
+        Ultima reentrada observada: ${ymsPreviewEscape(diagnosticHistoryTimeLabel(pattern.last_observed_at))}
+      </div>
+    </div>
+  `).join("");
+
+  container.innerHTML = `
+    <details>
+      <summary style="cursor:pointer;font-size:10px;font-weight:800;letter-spacing:.05em;color:#fb7185">
+        PADROES RECORRENTES (${patterns.length})
+      </summary>
+      <div style="margin-top:5px;padding:7px 8px;border-radius:10px;background:rgba(30,41,59,.42);border:1px solid rgba(148,163,184,.1)">
+        <div style="font-size:8.7px;color:#94a3b8;margin-bottom:4px;line-height:1.35">
+          Conta reentradas da mesma divergencia na mesma rota e combinacao observada. Persistencia continua conta como um unico episodio.
+        </div>
+        ${rows}
+        <div style="font-size:8.4px;color:#64748b;margin-top:5px;line-height:1.35">
+          Diagnostico da sessao: recorrencia nao implica causa, falha ou fonte incorreta.
         </div>
       </div>
     </details>
@@ -11915,6 +12106,7 @@ function renderYmsPreview(rows = data.baseYmsAutomatica || []) {
   const list = panel.querySelector("[data-yms-preview-rows]");
   renderYmsSourceComparison(panel, data.baseComparisonAutomatica);
   renderObservedSessionStats(panel);
+  renderRecurringDiagnosticPatterns(panel);
   renderObservedSourceLag(panel);
   renderAutomaticDiagnosticHistory(panel);
 
@@ -11982,6 +12174,7 @@ window.addEventListener("painel:diagnostic-history", () => {
   const panel = document.getElementById("ymsPreviewPanel");
   if (panel) {
     renderObservedSessionStats(panel);
+    renderRecurringDiagnosticPatterns(panel);
     renderObservedSourceLag(panel);
     renderAutomaticDiagnosticHistory(panel);
   }
@@ -12244,6 +12437,9 @@ window.ymsObservedSourceLag = () => JSON.parse(JSON.stringify(
 ));
 window.ymsObservedSessionStats = () => JSON.parse(JSON.stringify(
   calculateObservedSourceSessionStats()
+));
+window.ymsRecurringDiagnosticPatterns = () => JSON.parse(JSON.stringify(
+  calculateRecurringDiagnosticPatterns()
 ));
 window.renderYmsPreview = renderYmsPreview;
 window.fetchAutomaticSnapshot = fetchAutomaticSnapshot;
