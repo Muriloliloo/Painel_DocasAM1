@@ -213,7 +213,27 @@ A comparacao, a linha do tempo, a defasagem observada, o resumo estatistico e os
 
 ## Homologacao em casa sem acesso corporativo
 
-O caminho mais simples agora e:
+Para validar primeiro o nucleo Dispatch + Aduana sem VPN, use:
+
+```powershell
+cd gateway
+npm run smoke:flow
+```
+
+Esse smoke executa quatro snapshots consecutivos da mesma rota ficticia e valida a progressao:
+
+`waiting_customs -> customs_in_progress -> loading_packages -> dispatched`
+
+Para observar essa evolucao diretamente no painel, use:
+
+```powershell
+cd gateway
+npm run preview:flow
+```
+
+O painel abre em localhost com polling de 15 segundos, `YMS_MODE=disabled` e cenario `operational-sequence`. A rota ficticia `VJ3_AM1` percorre os quatro estados e depois reinicia a sequencia. Nenhuma VPN, autenticacao corporativa ou dado real e usado nesse modo.
+
+Para a homologacao YMS mock que ja existia, continue usando:
 
 ```powershell
 cd gateway
