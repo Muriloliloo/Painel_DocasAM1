@@ -9383,6 +9383,7 @@ data.baseAduanaManual = Array.isArray(data.baseAduanaManual)
 // Após recarregar a página, o painel volta ao manual até receber nova atualização automática.
 data.baseOperacionalAutomatica = [];
 data.baseAduanaAutomatica = [];
+data.baseYmsAutomatica = [];
 
     data.baseHistorico = Array.isArray(data.baseHistorico) ? data.baseHistorico : [];
     data.carregamentoInicio = data.carregamentoInicio || {};
@@ -10596,6 +10597,49 @@ function normalizeCustomsRow(row = {}) {
   };
 }
 
+function normalizeYmsAutomaticRow(row = {}) {
+  return {
+    facility_id: normalize(row.facility_id),
+    operation_date: normalize(row.operation_date),
+    cycle_name: normalize(row.cycle_name),
+    wave_number: normalize(row.wave_number),
+    route_name: normalize(row.route_name || row.rota),
+    planned_route_name: normalize(row.planned_route_name),
+    route_changed_from_plan: row.route_changed_from_plan === true,
+    carrier_name: normalize(row.carrier_name),
+    planned_carrier_name: normalize(row.planned_carrier_name),
+    plate: normalize(row.plate),
+    loading_zone_name: normalize(row.loading_zone_name),
+    parking_area_name: normalize(row.parking_area_name),
+    yms_check_in_at: normalize(row.yms_check_in_at),
+    dock_in_at: normalize(row.dock_in_at),
+    customs_queue_at: normalize(row.customs_queue_at),
+    customs_started_at: normalize(row.customs_started_at),
+    customs_last_activity_at: normalize(row.customs_last_activity_at),
+    loading_started_at: normalize(row.loading_started_at),
+    dock_out_at: normalize(row.dock_out_at),
+    gate_out_at: normalize(row.gate_out_at),
+    latest_event_name: normalize(row.latest_event_name),
+    latest_status: normalize(row.latest_status),
+    latest_purpose_status: normalize(row.latest_purpose_status),
+    latest_event_at: normalize(row.latest_event_at),
+    lifecycle_stage: normalize(row.lifecycle_stage),
+    dispatch_confirmed: row.dispatch_confirmed === true,
+    terminal_exception: row.terminal_exception === true
+  };
+}
+
+function uniqueYmsAutomaticRows(rows = []) {
+  const byRoute = new Map();
+  rows.forEach(row => {
+    const normalizedRow = normalizeYmsAutomaticRow(row);
+    const key = routeKey(normalizedRow.route_name);
+    if (!key) return;
+    byRoute.set(key, normalizedRow);
+  });
+  return Array.from(byRoute.values());
+}
+
 function applyAutomaticPayload(payload = {}) {
   const operationalRows = Array.isArray(payload.operacional)
     ? payload.operacional
@@ -10604,6 +10648,10 @@ function applyAutomaticPayload(payload = {}) {
   const customsRows = Array.isArray(payload.aduana)
     ? payload.aduana
     :  [ ];
+
+  const ymsRows = Array.isArray(payload.yms)
+    ? payload.yms
+    : [ ];
 
 const replaceAutomaticSnapshot = payload.substituir === true;
 
@@ -10651,6 +10699,21 @@ data.baseAduanaAutomatica = replaceAutomaticSnapshot
       incomingCustomsAutomatic
     );
 
+const incomingYmsAutomatic = uniqueYmsAutomaticRows(ymsRows);
+data.baseYmsAutomatica = replaceAutomaticSnapshot
+  ? incomingYmsAutomatic
+  : uniqueYmsAutomaticRows([
+      ...(Array.isArray(data.baseYmsAutomatica) ? data.baseYmsAutomatica : []),
+      ...incomingYmsAutomatic
+    ]);
+
+window.dispatchEvent(new CustomEvent("painel:yms-data", {
+  detail: {
+    rows: data.baseYmsAutomatica.map(row => ({ ...row })),
+    count: data.baseYmsAutomatica.length
+  }
+}));
+
 const changedOperationalRows = data.baseOperacionalAutomatica.filter(row => {
   const previous = previousOperationalAutomatic.find(oldRow =>
     routeKey(oldRow.rota) === routeKey(row.rota)
@@ -10696,7 +10759,8 @@ if (changedCustomsRows.length) {
 
   return {
     operacional: data.baseOperacionalAutomatica.length,
-    aduana: data.baseAduanaAutomatica.length
+    aduana: data.baseAduanaAutomatica.length,
+    yms: data.baseYmsAutomatica.length
   };
 }
 
@@ -10716,7 +10780,7 @@ const automaticSourceState = {
   lastError: "",
   lastCancellationReason: "",
   lastCancellationAt: "",
-  lastCounts: { operacional: 0, aduana: 0 }
+  lastCounts: { operacional: 0, aduana: 0, yms: 0 }
 };
 
 function rejectSensitiveAutomaticConfig(value, path = "config") {
@@ -10784,6 +10848,8 @@ function normalizeAutomaticSourceConfig(input = {}) {
     snapshotPath: normalizeAutomaticPath(input.snapshotPath, "snapshot"),
     dispatchPath: normalizeAutomaticPath(input.dispatchPath, "dispatch"),
     customsPath: normalizeAutomaticPath(input.customsPath, "customs"),
+    ymsPath: normalizeAutomaticPath(input.ymsPath, "yms"),
+    ymsEnabled: input.ymsEnabled === true,
     facilityId: normalize(input.facilityId),
     siteId: normalize(input.siteId),
     groupId: normalize(input.groupId),
@@ -10883,7 +10949,8 @@ function automaticSnapshotMetadata(payload = {}) {
     sources: sourceContainer
       ? {
           dispatch: normalize(sourceContainer.sources.dispatch),
-          aduana: normalize(sourceContainer.sources.aduana)
+          aduana: normalize(sourceContainer.sources.aduana),
+          yms: normalize(sourceContainer.sources.yms)
         }
       : {}
   };
@@ -10935,6 +11002,42 @@ function sanitizeCustomsAutomaticRow(row = {}) {
     carrier_name: row.carrier_name || row.carrier?.name || row.carrier?.display_name || row.transportadora || "",
     plate: row.plate || row.vehicle?.license_plate || row.placa || ""
   };
+}
+
+function sanitizeYmsAutomaticRow(row = {}) {
+  return normalizeYmsAutomaticRow(row);
+}
+
+async function fetchYmsSnapshotResult(config, requestContext) {
+  const resolved = resolveAutomaticConfig(config);
+  if (!resolved.ymsEnabled) {
+    return {
+      rows: [],
+      snapshotComplete: true,
+      emptyConfirmed: true,
+      sources: {}
+    };
+  }
+
+  const url = automaticGatewayUrl(resolved, resolved.ymsPath, {
+    ...automaticCommonQuery(resolved),
+    waves: resolved.waves.join(",")
+  });
+  const payload = await fetchAutomaticJson(url, resolved, requestContext);
+  const metadata = automaticSnapshotMetadata(payload);
+  assertAutomaticSourceSucceeded(metadata, "yms");
+
+  return {
+    rows: automaticRowsFromResponse(payload, ["yms"], "do YMS")
+      .map(sanitizeYmsAutomaticRow),
+    snapshotComplete: metadata.snapshotComplete,
+    emptyConfirmed: metadata.emptyConfirmed,
+    sources: { yms: "ok" }
+  };
+}
+
+async function fetchYmsSnapshot(config) {
+  return (await fetchYmsSnapshotResult(config)).rows;
 }
 
 function resolveAutomaticConfig(config) {
@@ -10996,16 +11099,32 @@ async function fetchAutomaticSnapshot(config, requestContext) {
   const resolved = resolveAutomaticConfig(config);
 
   if (resolved.mode === "split") {
-    const [dispatchResult, customsResult] = await settleAutomaticRequests([
+    const requests = [
       fetchDispatchSnapshotResult(resolved, requestContext),
       fetchCustomsSnapshotResult(resolved, requestContext)
-    ]);
+    ];
+    if (resolved.ymsEnabled) requests.push(fetchYmsSnapshotResult(resolved, requestContext));
+
+    const results = await settleAutomaticRequests(requests);
+    const dispatchResult = results[0];
+    const customsResult = results[1];
+    const ymsResult = resolved.ymsEnabled ? results[2] : null;
+
     return {
       operacional: dispatchResult.rows,
       aduana: customsResult.rows,
-      snapshotComplete: dispatchResult.snapshotComplete && customsResult.snapshotComplete,
-      emptyConfirmed: dispatchResult.emptyConfirmed && customsResult.emptyConfirmed,
-      sources: { dispatch: "ok", aduana: "ok" }
+      yms: ymsResult ? ymsResult.rows : [],
+      snapshotComplete: dispatchResult.snapshotComplete
+        && customsResult.snapshotComplete
+        && (!ymsResult || ymsResult.snapshotComplete),
+      emptyConfirmed: dispatchResult.emptyConfirmed
+        && customsResult.emptyConfirmed
+        && (!ymsResult || ymsResult.emptyConfirmed),
+      sources: {
+        dispatch: "ok",
+        aduana: "ok",
+        ...(ymsResult ? { yms: "ok" } : {})
+      }
     };
   }
 
@@ -11017,11 +11136,16 @@ async function fetchAutomaticSnapshot(config, requestContext) {
   const metadata = automaticSnapshotMetadata(payload);
   assertAutomaticSourceSucceeded(metadata, "dispatch");
   assertAutomaticSourceSucceeded(metadata, "aduana");
+  if (resolved.ymsEnabled) assertAutomaticSourceSucceeded(metadata, "yms");
+
   return {
     operacional: automaticRowsFromResponse(payload, ["operacional", "dispatch"], "operacional")
       .map(sanitizeDispatchAutomaticRow),
     aduana: automaticRowsFromResponse(payload, ["aduana", "customs"], "da Aduana")
       .map(sanitizeCustomsAutomaticRow),
+    yms: resolved.ymsEnabled
+      ? automaticRowsFromResponse(payload, ["yms"], "do YMS").map(sanitizeYmsAutomaticRow)
+      : [],
     ...metadata
   };
 }
@@ -11103,9 +11227,12 @@ async function refreshAutomaticSnapshot(options = {}) {
     }
 
     const replacingSnapshot = options.substituir !== false;
-    const snapshotIsEmpty = snapshot.operacional.length === 0 && snapshot.aduana.length === 0;
+    const snapshotIsEmpty = snapshot.operacional.length === 0
+      && snapshot.aduana.length === 0
+      && (!automaticSourceState.config?.ymsEnabled || (snapshot.yms || []).length === 0);
     const hasAutomaticData = (data.baseOperacionalAutomatica || []).length > 0
-      || (data.baseAduanaAutomatica || []).length > 0;
+      || (data.baseAduanaAutomatica || []).length > 0
+      || (automaticSourceState.config?.ymsEnabled && (data.baseYmsAutomatica || []).length > 0);
     const emptyIsExplicitlyConfirmed = snapshot.snapshotComplete === true
       && snapshot.emptyConfirmed === true;
 
@@ -11117,7 +11244,8 @@ async function refreshAutomaticSnapshot(options = {}) {
     const counts = applyAutomaticPayload({
       substituir: replacingSnapshot,
       operacional: snapshot.operacional,
-      aduana: snapshot.aduana
+      aduana: snapshot.aduana,
+      yms: snapshot.yms || []
     });
 
     automaticSourceState.lastSuccessAt = new Date().toISOString();
@@ -11188,7 +11316,7 @@ function clearAutomaticSessionData() {
   window.clearTimeout(automaticSourceState.timerId);
   automaticSourceState.timerId = null;
   const generation = invalidateAutomaticRequests("cleared");
-  const counts = applyAutomaticPayload({ substituir: true, operacional: [], aduana: [] });
+  const counts = applyAutomaticPayload({ substituir: true, operacional: [], aduana: [], yms: [] });
   automaticSourceState.lastError = "";
   automaticSourceState.lastCounts = counts;
   if (pollingWasRunning) scheduleNextAutomaticRefresh(generation);
@@ -11211,6 +11339,8 @@ function initializeAutomaticSource() {
 window.configureAutomaticSource = configureAutomaticSource;
 window.fetchDispatchSnapshot = fetchDispatchSnapshot;
 window.fetchCustomsSnapshot = fetchCustomsSnapshot;
+window.fetchYmsSnapshot = fetchYmsSnapshot;
+window.ymsAutomaticRows = () => (data.baseYmsAutomatica || []).map(row => ({ ...row }));
 window.fetchAutomaticSnapshot = fetchAutomaticSnapshot;
 window.refreshAutomaticSnapshot = refreshAutomaticSnapshot;
 window.startAutomaticPolling = startAutomaticPolling;
@@ -11630,6 +11760,7 @@ window.automaticConnectionStatus = automaticConnectionStatus;
       const payload = JSON.parse(JSON.stringify(source || {}));
       delete payload.baseOperacionalAutomatica;
       delete payload.baseAduanaAutomatica;
+      delete payload.baseYmsAutomatica;
             payload.baseOperacional = onlyPlannedBaseRows(
   payload.baseOperacionalManual || [ ],
   payload.extracao || [ ]
@@ -14138,6 +14269,10 @@ payload.baseHistorico = fullHistory.slice(-CLOUD_HISTORY_MAX_ROWS);
 const localCustomsAutomatic = Array.isArray(data.baseAduanaAutomatica)
   ? [...data.baseAduanaAutomatica]
   : [ ];
+
+const localYmsAutomatic = Array.isArray(data.baseYmsAutomatica)
+  ? [...data.baseYmsAutomatica]
+  : [ ];
         data = { ...JSON.parse(JSON.stringify(originalData)), ...payload };
         data.docas = Math.max(Number(data.docas || 0), Number(originalData.docas || 92));
         data.horarios = { ...(data.horarios || {}), ...(originalData.horarios || {}), ...horariosOficiais };
@@ -14161,6 +14296,7 @@ data.baseAduanaManual = Array.isArray(data.baseAduanaManual)
 
 data.baseOperacionalAutomatica = localOperationalAutomatic;
 data.baseAduanaAutomatica = localCustomsAutomatic;
+data.baseYmsAutomatica = localYmsAutomatic;
 
         data.baseHistorico = Array.isArray(data.baseHistorico) ? data.baseHistorico : [];
         rebuildConsolidatedBase(data.extracao || []);
