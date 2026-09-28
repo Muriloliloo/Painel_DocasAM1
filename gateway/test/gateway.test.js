@@ -1383,3 +1383,25 @@ test("Y23 linha do tempo diagnostica permanece somente na sessao", () => {
 
   assert.equal(rebuildSource.includes("baseDiagnosticHistory"), false);
 });
+
+test("Y24 defasagem observada usa somente mudancas da sessao", () => {
+  const indexPath = path.resolve(__dirname, "../../index.html");
+  const source = fs.readFileSync(indexPath, "utf8");
+
+  assert.equal(source.includes("DIAGNOSTIC_HISTORY_SOURCES"), true);
+  assert.equal(source.includes("diagnosticChangedSources"), true);
+  assert.equal(source.includes("item.changed_sources = diagnosticChangedSources(previous, item);"), true);
+  assert.equal(source.includes("calculateObservedSourceLag"), true);
+  assert.equal(source.includes("observed_spread_seconds"), true);
+  assert.equal(source.includes("DEFASAGEM OBSERVADA"), true);
+  assert.equal(source.includes("nao prova que as fontes registraram o mesmo evento"), true);
+  assert.equal(source.includes("window.ymsObservedSourceLag = () =>"), true);
+
+  const rebuildStart = source.indexOf("function rebuildConsolidatedBase");
+  const rebuildEnd = source.indexOf("function automaticSecondsToClock", rebuildStart);
+  const rebuildSource = source.slice(rebuildStart, rebuildEnd);
+
+  assert.equal(rebuildSource.includes("calculateObservedSourceLag"), false);
+  assert.equal(rebuildSource.includes("changed_sources"), false);
+});
+
