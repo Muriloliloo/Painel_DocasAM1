@@ -10525,6 +10525,27 @@ function customsCountOrFallback(value, fallback) {
     : value;
 }
 
+function normalizeCustomsState(value) {
+  const raw = normalize(value);
+  const text = plainText(raw).replace(/[_\s]+/g, " ");
+  if (!text) return "";
+
+  if (/^(in progress|customs in progress|doing audit|aduana em andamento|em andamento)$/.test(text)) {
+    return "Aduana em andamento";
+  }
+  if (/^(completed|complete|customs completed|finished|concluida)$/.test(text)) {
+    return "Concluída";
+  }
+  if (/^(waiting|waiting for audit|waiting customs|pendente)$/.test(text)) {
+    return "Pendente";
+  }
+  if (/^(canceled|cancelled|cancelada)$/.test(text)) {
+    return "Cancelada";
+  }
+
+  return raw;
+}
+
 function normalizeCustomsRow(row = {}) {
   const units = Array.isArray(row.units) ? row.units : [];
 
@@ -10550,11 +10571,12 @@ function normalizeCustomsRow(row = {}) {
 
     routeId,
 
-    estadoAduana:
+    estadoAduana: normalizeCustomsState(
       row.estadoAduana ||
       row.status ||
       row.process ||
-      "",
+      ""
+    ),
 
     repLog:
       row.repLog ||
@@ -11483,7 +11505,7 @@ function sanitizeCustomsAutomaticRow(row = {}) {
   return {
     route_name: row.route_name || row.rota || "",
     route_id: routeId,
-    status: row.status || row.estadoAduana || "",
+    status: normalizeCustomsState(row.status || row.estadoAduana || row.process || ""),
     process: row.process || "",
     operator_name: row.operator_name || row.operator?.name || row.operator?.display_name || row.repLog || "",
     audit_time: row.audit_time || row.elapsed_time || row.auditTime || "",
