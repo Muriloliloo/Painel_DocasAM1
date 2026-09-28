@@ -11,11 +11,15 @@ process.env.NODE_ENV = process.env.NODE_ENV || "development";
 process.env.GATEWAY_MODE = process.env.GATEWAY_MODE || "mock";
 process.env.AUTH_MODE = process.env.AUTH_MODE || "unconfigured";
 
-const previewMode = process.argv.includes("--flow") ? "flow" : "yms";
+const previewMode = process.argv.includes("--recovery")
+  ? "recovery"
+  : process.argv.includes("--flow") ? "flow" : "yms";
 process.env.MOCK_SCENARIO = process.env.MOCK_SCENARIO
-  || (previewMode === "flow" ? "operational-sequence" : "normal");
+  || (previewMode === "recovery"
+    ? "operational-recovery"
+    : previewMode === "flow" ? "operational-sequence" : "normal");
 process.env.YMS_MODE = process.env.YMS_MODE
-  || (previewMode === "flow" ? "disabled" : "mock");
+  || (previewMode === "yms" ? "mock" : "disabled");
 process.env.PANEL_ALLOWED_ORIGIN = process.env.PANEL_ALLOWED_ORIGIN || "http://localhost:8000";
 
 const { createConfig } = require("../src/config");
@@ -25,9 +29,9 @@ const PANEL_PORT = 8000;
 const PANEL_HOST = "127.0.0.1";
 const GATEWAY_HOST = "127.0.0.1";
 const repoRoot = path.resolve(__dirname, "../..");
-const previewUrl = previewMode === "flow"
-  ? "http://localhost:8000/?automationPreview=1"
-  : "http://localhost:8000/?ymsPreview=1";
+const previewUrl = previewMode === "yms"
+  ? "http://localhost:8000/?ymsPreview=1"
+  : "http://localhost:8000/?automationPreview=1";
 
 const allowedRootFiles = new Set([
   "index.html",
@@ -174,13 +178,17 @@ async function main() {
   }
 
   console.log("");
-  console.log(previewMode === "flow"
-    ? "Painel Docas AM1 - homologacao local da automacao"
-    : "Painel Docas AM1 - homologacao local YMS");
+  console.log(previewMode === "recovery"
+    ? "Painel Docas AM1 - homologacao de falha e recuperacao"
+    : previewMode === "flow"
+      ? "Painel Docas AM1 - homologacao local da automacao"
+      : "Painel Docas AM1 - homologacao local YMS");
   console.log("----------------------------------------------");
   console.log("Gateway mock: http://127.0.0.1:8787");
   console.log("Painel local : http://localhost:8000");
-  console.log((previewMode === "flow" ? "Fluxo mock   : " : "Previa YMS   : ") + previewUrl);
+  console.log((previewMode === "recovery"
+    ? "Recuperacao  : "
+    : previewMode === "flow" ? "Fluxo mock   : " : "Previa YMS   : ") + previewUrl);
   console.log("");
   console.log("Nenhuma credencial corporativa esta sendo usada.");
   console.log("Pressione Ctrl+C para encerrar.");
