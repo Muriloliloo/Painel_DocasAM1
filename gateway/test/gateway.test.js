@@ -1,6 +1,8 @@
 "use strict";
 
 const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const path = require("node:path");
 const { after, before, test } = require("node:test");
 const { createConfig } = require("../src/config");
 const { createGatewayServer, validateRequestTarget } = require("../src/server");
@@ -962,7 +964,7 @@ test("Y6 snapshot adiciona YMS mock somente quando habilitado", async () => {
       yms: "ok"
     });
     assert.ok(Array.isArray(body.yms));
-    assert.equal(body.yms.length, 1);
+    assert.equal(body.yms.length, 4);
     assert.equal(body.yms[0].route_name, "VJ3_AM1");
     assert.equal(body.yms[0].planned_route_name, "A3_AM1");
     assert.equal(body.yms[0].lifecycle_stage, "dispatched");
@@ -1138,4 +1140,25 @@ test("Y12 endpoint YMS falha fechado quando desabilitado", async () => {
     assert.equal(body.error.code, "YMS_DISABLED");
     assert.equal(body.snapshotComplete, false);
   });
+});
+
+
+test("Y13 frontend consome YMS somente por opt-in e preserva consolidacao atual", () => {
+  const indexPath = path.resolve(__dirname, "../../index.html");
+  const source = fs.readFileSync(indexPath, "utf8");
+
+  assert.equal(source.includes('ymsPath: normalizeAutomaticPath(input.ymsPath, "yms")'), true);
+  assert.equal(source.includes("ymsEnabled: input.ymsEnabled === true"), true);
+  assert.equal(source.includes("data.baseYmsAutomatica = [];"), true);
+  assert.equal(source.includes("window.fetchYmsSnapshot = fetchYmsSnapshot;"), true);
+  assert.equal(source.includes("window.ymsAutomaticRows = () =>"), true);
+  assert.equal(source.includes('new CustomEvent("painel:yms-data"'), true);
+
+  const rebuildStart = source.indexOf("function rebuildConsolidatedBase");
+  const rebuildEnd = source.indexOf("function automaticSecondsToClock", rebuildStart);
+  const rebuildSource = source.slice(rebuildStart, rebuildEnd);
+
+  assert.equal(rebuildSource.includes("baseYmsAutomatica"), false);
+  assert.equal(rebuildSource.includes("baseOperacionalAutomatica"), true);
+  assert.equal(rebuildSource.includes("baseAduanaAutomatica"), true);
 });
