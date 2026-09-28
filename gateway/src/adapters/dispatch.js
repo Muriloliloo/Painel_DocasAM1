@@ -17,7 +17,7 @@ const DISPATCH_BY_WAVE = Object.freeze({
   },
   "2": {
     route_name: "VJ3_AM1",
-    route_id: 502731583001,
+    route_id: 502731583004,
     process: "waiting_customs",
     dock_number: 2,
     start_time: 35,
@@ -35,7 +35,7 @@ const DISPATCH_BY_WAVE = Object.freeze({
 
 const FLOW_ROUTE = Object.freeze({
   route_name: "G5_AM1",
-  route_id: 502731583004,
+  route_id: 599000000001,
   dock_number: 6
 });
 
