@@ -121,6 +121,22 @@ npm run smoke:mock
 Para o preflight da futura configuracao corporativa, defina as variaveis de producao e execute `npm run preflight:corporate`. O comando inspeciona somente configuracao e estrutura do provider, sem obter autorizacao ou chamar servicos externos. Enquanto o provider for stub, encerra de forma controlada com `AUTH_NOT_CONFIGURED`.
 
 
+## Ativacao do painel publicado - fase 1
+
+O arquivo `/automation-config.js` e o unico ponto publico de ativacao do frontend. Ele nao contem segredos e fica inativo enquanto `gatewayBaseUrl` estiver vazio.
+
+Para a primeira versao real:
+
+1. a TI implanta o gateway com HTTPS, autenticacao corporativa oficial e `ALLOWED_GROUP_IDS` configurado;
+2. validar `/ready` e `/snapshot` no ambiente autorizado;
+3. preencher somente o HTTPS oficial em `automation-config.js`;
+4. manter `ymsEnabled: false` e `ymsPreview: false`;
+5. publicar e validar polling de Dispatch + Aduana e o fallback manual.
+
+`groupId` pode permanecer vazio no arquivo publico quando o gateway tiver uma unica opcao autorizada; nesse caso o backend aplica o primeiro valor da propria allowlist. Se houver mais de um groupId aprovado, configure explicitamente o correspondente ao painel.
+
+Nenhum token, cookie, senha, Authorization, CSRF, certificado ou segredo pode ser colocado em `automation-config.js`.
+
 ## Frontend com YMS em modo opt-in
 
 O frontend da branch `dev-automacao` ja consegue receber o array `yms` do gateway, mas ainda nao usa esses dados para sobrescrever status ou doca da visao consolidada.
