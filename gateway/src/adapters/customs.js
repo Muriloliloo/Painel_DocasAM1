@@ -8,7 +8,7 @@ const CUSTOMS_QUERY_KEYS = Object.freeze(["auditType", "timezone"]);
 
 const CUSTOMS_IN_PROGRESS = Object.freeze({
   route_name: "VJ3_AM1",
-  route_id: 502731583001,
+  route_id: 502731583004,
   status: "in_progress",
   process: "customs_in_progress",
   operator_name: "REP TESTE",
@@ -16,14 +16,15 @@ const CUSTOMS_IN_PROGRESS = Object.freeze({
   aduanaUnidades: 190,
   aduanaBipadas: 3,
   driver_name: "MOTORISTA TESTE",
-  carrier_name: "BASEPEX ENCOM",
+  carrier_name: "TRANSPORTADORA TESTE",
   plate: "ABC1D23"
 });
 
 const FLOW_CUSTOMS_ROUTE = Object.freeze({
   ...CUSTOMS_IN_PROGRESS,
   route_name: "G5_AM1",
-  route_id: 502731583004
+  route_id: 599000000001,
+  carrier_name: "BASEPEX ENCOM"
 });
 
 function delay(milliseconds, signal) {
