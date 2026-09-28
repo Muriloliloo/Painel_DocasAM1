@@ -1521,11 +1521,12 @@ test("G18 sequencia operacional mock evolui a mesma rota pelo polling", async ()
       "customs_in_progress",
       "loading_packages",
       "dispatched",
-      "waiting_customs"
+      "dispatched"
     ]);
 
     assert.equal(snapshots.every(snapshot => snapshot.snapshotComplete === true), true);
-    assert.equal(snapshots.every(snapshot => snapshot.operacional[0]?.route_name === "VJ3_AM1"), true);
+    assert.equal(snapshots.every(snapshot => snapshot.operacional[0]?.route_name === "G5_AM1"), true);
+    assert.equal(snapshots.every(snapshot => snapshot.operacional[0]?.dock_number === 6), true);
     assert.equal(snapshots[0].aduana.length, 0);
     assert.equal(snapshots[1].aduana[0]?.process, "customs_in_progress");
     assert.equal(snapshots[2].aduana[0]?.process, "customs_completed");
@@ -1547,5 +1548,8 @@ test("G19 preview flow local usa polling sem YMS", () => {
   assert.equal(indexSource.includes('const automationPreview = params.get("automationPreview") === "1";'), true);
   assert.equal(indexSource.includes("ymsEnabled: ymsPreview"), true);
   assert.equal(indexSource.includes("intervalMs: automationPreview ? 15000 : 30000"), true);
+  assert.equal(indexSource.includes("function normalizeCustomsState(value)"), true);
+  assert.equal(indexSource.includes('return "Aduana em andamento";'), true);
+  assert.equal(indexSource.includes('return "Concluída";'), true);
 });
 
