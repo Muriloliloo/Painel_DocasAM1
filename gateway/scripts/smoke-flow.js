@@ -51,12 +51,18 @@ async function main() {
       const snapshot = await requestJson(baseUrl, `/snapshot?${query}`);
       assert.equal(snapshot.response.status, 200);
       assert.equal(snapshot.body.snapshotComplete, true);
-      assert.equal(snapshot.body.operacional[0]?.route_name, "VJ3_AM1");
+      assert.equal(snapshot.body.operacional[0]?.route_name, "G5_AM1");
+      assert.equal(snapshot.body.operacional[0]?.dock_number, 6);
       assert.equal(snapshot.body.operacional[0]?.process, process);
       assert.equal("yms" in snapshot.body, false);
     }
 
-    console.log("Smoke flow aprovado: waiting_customs -> customs_in_progress -> loading_packages -> dispatched.");
+    const terminalSnapshot = await requestJson(baseUrl, `/snapshot?${query}`);
+    assert.equal(terminalSnapshot.response.status, 200);
+    assert.equal(terminalSnapshot.body.operacional[0]?.route_name, "G5_AM1");
+    assert.equal(terminalSnapshot.body.operacional[0]?.process, "dispatched");
+
+    console.log("Smoke flow aprovado: waiting_customs -> customs_in_progress -> loading_packages -> dispatched (estado final preservado).");
   } finally {
     await new Promise((resolve, reject) => {
       server.close(error => error ? reject(error) : resolve());
