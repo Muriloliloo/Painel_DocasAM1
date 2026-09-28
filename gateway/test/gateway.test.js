@@ -1502,3 +1502,50 @@ test("A17 configuracao publica da automacao inicia desativada e sem segredo", ()
   assert.equal(/password\s*:/i.test(configSource), false);
 });
 
+test("G18 sequencia operacional mock evolui a mesma rota pelo polling", async () => {
+  await withGateway(testConfig({
+    mockScenario: "operational-sequence",
+    ymsMode: "disabled"
+  }), {}, async url => {
+    const snapshots = [];
+
+    for (let index = 0; index < 5; index += 1) {
+      const response = await fetch(`${url}/snapshot?${query()}`);
+      assert.equal(response.status, 200);
+      snapshots.push(await response.json());
+    }
+
+    const processes = snapshots.map(snapshot => snapshot.operacional[0]?.process || "");
+    assert.deepEqual(processes, [
+      "waiting_customs",
+      "customs_in_progress",
+      "loading_packages",
+      "dispatched",
+      "waiting_customs"
+    ]);
+
+    assert.equal(snapshots.every(snapshot => snapshot.snapshotComplete === true), true);
+    assert.equal(snapshots.every(snapshot => snapshot.operacional[0]?.route_name === "VJ3_AM1"), true);
+    assert.equal(snapshots[0].aduana.length, 0);
+    assert.equal(snapshots[1].aduana[0]?.process, "customs_in_progress");
+    assert.equal(snapshots[2].aduana[0]?.process, "customs_completed");
+    assert.equal(snapshots[3].aduana[0]?.process, "customs_completed");
+    assert.equal("yms" in snapshots[0], false);
+  });
+});
+
+test("G19 preview flow local usa polling sem YMS", () => {
+  const root = path.resolve(__dirname, "../..");
+  const homeSource = fs.readFileSync(path.join(root, "gateway/scripts/home-preview.js"), "utf8");
+  const indexSource = fs.readFileSync(path.join(root, "index.html"), "utf8");
+  const packageJson = JSON.parse(fs.readFileSync(path.join(root, "gateway/package.json"), "utf8"));
+
+  assert.equal(packageJson.scripts["preview:flow"], "node scripts/home-preview.js --flow");
+  assert.equal(homeSource.includes('"operational-sequence"'), true);
+  assert.equal(homeSource.includes('"automation-config.js"'), true);
+  assert.equal(homeSource.includes("?automationPreview=1"), true);
+  assert.equal(indexSource.includes('const automationPreview = params.get("automationPreview") === "1";'), true);
+  assert.equal(indexSource.includes("ymsEnabled: ymsPreview"), true);
+  assert.equal(indexSource.includes("intervalMs: automationPreview ? 15000 : 30000"), true);
+});
+
