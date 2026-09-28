@@ -181,7 +181,11 @@ A previa agora tambem mantem uma linha do tempo da sessao, acessivel por `window
 
 Essa linha do tempo usa o horario em que o navegador observou a mudanca. Ela nao e o timestamp oficial de processamento ou ingestao de nenhuma fonte e nao deve ser usada como SLA. O limite atual e de 240 mudancas por sessao para evitar crescimento indefinido.
 
-A comparacao e a linha do tempo nao sao enviadas ao Firebase e nao alteram `baseOperacional`, `baseAduana` ou o fallback manual nesta etapa.
+A partir dessa linha do tempo, a previa calcula uma leitura adicional de defasagem observada por rota. Cada registro identifica quais fontes realmente mudaram em relacao a observacao anterior da mesma rota (`changed_sources`). Quando pelo menos duas fontes ja tiveram alguma mudanca observada depois da linha de base inicial, o painel calcula o intervalo entre as ultimas mudancas percebidas e as diferencas par a par entre Dispatch, Aduana e YMS.
+
+Essa leitura fica disponivel em `window.ymsObservedSourceLag()` e aparece recolhida em `DEFASAGEM OBSERVADA` dentro da `YMS • PREVIA`. Ela nao afirma que as mudancas representam o mesmo evento operacional, nao mede latencia oficial, nao e SLA e nao define qual fonte esta correta.
+
+A comparacao, a linha do tempo e a defasagem observada nao sao enviadas ao Firebase e nao alteram `baseOperacional`, `baseAduana` ou o fallback manual nesta etapa.
 
 ## Homologacao em casa sem acesso corporativo
 
