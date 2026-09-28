@@ -16,6 +16,7 @@
     "preview:home": "node scripts/home-preview.js",
     "preview:flow": "node scripts/home-preview.js --flow",
     "smoke:flow": "node scripts/smoke-flow.js",
-    "preview:recovery": "node scripts/home-preview.js --recovery"
+    "preview:recovery": "node scripts/home-preview.js --recovery",
+    "smoke:recovery": "node scripts/smoke-recovery.js"
   }
 }
