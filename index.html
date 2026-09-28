@@ -10850,6 +10850,7 @@ function normalizeAutomaticSourceConfig(input = {}) {
     customsPath: normalizeAutomaticPath(input.customsPath, "customs"),
     ymsPath: normalizeAutomaticPath(input.ymsPath, "yms"),
     ymsEnabled: input.ymsEnabled === true,
+    ymsPreview: input.ymsPreview === true,
     facilityId: normalize(input.facilityId),
     siteId: normalize(input.siteId),
     groupId: normalize(input.groupId),
@@ -11150,6 +11151,146 @@ async function fetchAutomaticSnapshot(config, requestContext) {
   };
 }
 
+
+const YMS_PREVIEW_LABELS = Object.freeze({
+  dispatched: "Expedida",
+  customs_in_progress: "Aduana em andamento",
+  waiting_customs: "Esperando aduana",
+  loading_packages: "Carregando pacotes",
+  at_dock: "Em zona de carregamento",
+  checked_in: "Check-in",
+  terminal_exception: "Excecao",
+  unknown: "Pendente"
+});
+
+function ymsPreviewStatusLabel(value) {
+  const key = plainText(value);
+  return YMS_PREVIEW_LABELS[key] || normalize(value) || "Pendente";
+}
+
+function ensureYmsPreviewPanel() {
+  let panel = document.getElementById("ymsPreviewPanel");
+  if (panel) return panel;
+
+  panel = document.createElement("section");
+  panel.id = "ymsPreviewPanel";
+  panel.setAttribute("aria-label", "Pre-visualizacao YMS");
+  panel.style.cssText = [
+    "position:fixed",
+    "right:16px",
+    "bottom:16px",
+    "z-index:9998",
+    "width:min(440px,calc(100vw - 32px))",
+    "max-height:min(72vh,620px)",
+    "overflow:hidden",
+    "border:1px solid rgba(148,163,184,.35)",
+    "border-radius:16px",
+    "background:rgba(15,23,42,.96)",
+    "box-shadow:0 18px 50px rgba(2,6,23,.35)",
+    "color:#f8fafc",
+    "font-family:inherit",
+    "display:none"
+  ].join(";");
+
+  panel.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;border-bottom:1px solid rgba(148,163,184,.2)">
+      <div>
+        <div style="font-size:12px;font-weight:800;letter-spacing:.08em;color:#93c5fd">YMS • PREVIA</div>
+        <div style="font-size:11px;color:#cbd5e1;margin-top:2px">Somente homologacao — nao altera o painel operacional</div>
+      </div>
+      <button type="button" data-yms-preview-close aria-label="Fechar previa YMS" style="border:0;background:transparent;color:#cbd5e1;font-size:22px;cursor:pointer;line-height:1">×</button>
+    </div>
+    <div data-yms-preview-summary style="display:flex;flex-wrap:wrap;gap:6px;padding:10px 12px 0"></div>
+    <div data-yms-preview-rows style="padding:10px 12px 12px;overflow:auto;max-height:520px"></div>
+  `;
+
+  panel.querySelector("[data-yms-preview-close]")?.addEventListener("click", () => {
+    panel.style.display = "none";
+  });
+
+  document.body.appendChild(panel);
+  return panel;
+}
+
+function renderYmsPreview(rows = data.baseYmsAutomatica || []) {
+  const config = automaticSourceState.config;
+  const panel = ensureYmsPreviewPanel();
+
+  if (!config?.ymsEnabled || !config?.ymsPreview) {
+    panel.style.display = "none";
+    return;
+  }
+
+  const normalizedRows = uniqueYmsAutomaticRows(rows);
+  panel.style.display = "block";
+
+  const summary = panel.querySelector("[data-yms-preview-summary]");
+  const list = panel.querySelector("[data-yms-preview-rows]");
+
+  const counts = normalizedRows.reduce((acc, row) => {
+    const stage = plainText(row.lifecycle_stage) || "unknown";
+    acc[stage] = (acc[stage] || 0) + 1;
+    return acc;
+  }, {});
+
+  const badge = (label, value) => `
+    <span style="display:inline-flex;gap:5px;align-items:center;padding:4px 7px;border-radius:999px;background:rgba(148,163,184,.12);font-size:11px;color:#e2e8f0">
+      <strong>${value}</strong> ${label}
+    </span>
+  `;
+
+  summary.innerHTML = [
+    badge("rotas", normalizedRows.length),
+    ...Object.entries(counts).map(([stage, value]) => badge(ymsPreviewStatusLabel(stage), value))
+  ].join("");
+
+  if (!normalizedRows.length) {
+    list.innerHTML = '<div style="padding:18px 8px;text-align:center;color:#94a3b8;font-size:12px">Nenhum dado YMS recebido nesta sessao.</div>';
+    return;
+  }
+
+  list.innerHTML = normalizedRows
+    .sort((left, right) => {
+      const waveDiff = Number(left.wave_number || 0) - Number(right.wave_number || 0);
+      return waveDiff || String(left.route_name).localeCompare(String(right.route_name));
+    })
+    .map(row => {
+      const loadingZone = normalize(row.loading_zone_name);
+      const carrier = normalize(row.carrier_name);
+      const plate = normalize(row.plate);
+      const latestAt = normalize(row.latest_event_at);
+      const exception = row.terminal_exception === true;
+      const confirmed = row.dispatch_confirmed === true;
+
+      return `
+        <article style="padding:9px 0;border-bottom:1px solid rgba(148,163,184,.13)">
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px">
+            <div>
+              <div style="font-size:13px;font-weight:800">${normalize(row.route_name) || "Rota sem nome"}</div>
+              <div style="font-size:11px;color:#94a3b8;margin-top:2px">
+                Onda ${normalize(row.wave_number) || "-"}
+                ${loadingZone ? ` • Zona YMS ${loadingZone}` : ""}
+              </div>
+            </div>
+            <span style="font-size:11px;font-weight:700;padding:4px 7px;border-radius:8px;background:${exception ? "rgba(239,68,68,.18)" : confirmed ? "rgba(34,197,94,.18)" : "rgba(59,130,246,.18)"}">
+              ${ymsPreviewStatusLabel(row.lifecycle_stage)}
+            </span>
+          </div>
+          <div style="font-size:11px;color:#cbd5e1;margin-top:6px;display:flex;flex-wrap:wrap;gap:4px 10px">
+            ${carrier ? `<span>${carrier}</span>` : ""}
+            ${plate ? `<span>${plate}</span>` : ""}
+            ${latestAt ? `<span>Evento: ${latestAt}</span>` : ""}
+          </div>
+        </article>
+      `;
+    })
+    .join("");
+}
+
+window.addEventListener("painel:yms-data", event => {
+  renderYmsPreview(event?.detail?.rows || []);
+});
+
 function automaticConnectionStatus() {
   return {
     configured: Boolean(automaticSourceState.config),
@@ -11173,6 +11314,7 @@ function emitAutomaticConnectionStatus() {
 function configureAutomaticSource(config = {}) {
   automaticSourceState.config = normalizeAutomaticSourceConfig(config);
   automaticSourceState.lastError = "";
+  renderYmsPreview(data.baseYmsAutomatica || []);
   emitAutomaticConnectionStatus();
   return automaticConnectionStatus();
 }
@@ -11341,6 +11483,7 @@ window.fetchDispatchSnapshot = fetchDispatchSnapshot;
 window.fetchCustomsSnapshot = fetchCustomsSnapshot;
 window.fetchYmsSnapshot = fetchYmsSnapshot;
 window.ymsAutomaticRows = () => (data.baseYmsAutomatica || []).map(row => ({ ...row }));
+window.renderYmsPreview = renderYmsPreview;
 window.fetchAutomaticSnapshot = fetchAutomaticSnapshot;
 window.refreshAutomaticSnapshot = refreshAutomaticSnapshot;
 window.startAutomaticPolling = startAutomaticPolling;
