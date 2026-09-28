@@ -1428,3 +1428,26 @@ test("Y25 padrao da sessao resume primeira mudanca e intervalos", () => {
   assert.equal(rebuildSource.includes("first_observed_sources"), false);
 });
 
+test("Y26 padroes recorrentes contam episodios e evitam duplicidade", () => {
+  const indexPath = path.resolve(__dirname, "../../index.html");
+  const source = fs.readFileSync(indexPath, "utf8");
+
+  assert.equal(source.includes("RECURRING_DIAGNOSTIC_FLAGS"), true);
+  assert.equal(source.includes("calculateRecurringDiagnosticPatterns"), true);
+  assert.equal(source.includes("previousActiveKeys"), true);
+  assert.equal(source.includes("episode_count >= 2"), true);
+  assert.equal(source.includes('flags.includes("yms_ahead") || flags.includes("dispatch_ahead")'), true);
+  assert.equal(source.includes('flags = flags.filter(flag => flag !== "stage_divergence")'), true);
+  assert.equal(source.includes("PADROES RECORRENTES"), true);
+  assert.equal(source.includes("Persistencia continua conta como um unico episodio"), true);
+  assert.equal(source.includes("recorrencia nao implica causa, falha ou fonte incorreta"), true);
+  assert.equal(source.includes("window.ymsRecurringDiagnosticPatterns = () =>"), true);
+
+  const rebuildStart = source.indexOf("function rebuildConsolidatedBase");
+  const rebuildEnd = source.indexOf("function automaticSecondsToClock", rebuildStart);
+  const rebuildSource = source.slice(rebuildStart, rebuildEnd);
+
+  assert.equal(rebuildSource.includes("calculateRecurringDiagnosticPatterns"), false);
+  assert.equal(rebuildSource.includes("episode_count"), false);
+});
+
