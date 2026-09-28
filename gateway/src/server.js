@@ -170,10 +170,13 @@ function validateOperationalQuery(searchParams, config, endpoint) {
   const facilityId = configuredValue(searchParams, "facilityId", config.allowedFacilityIds, [...config.allowedFacilityIds][0], 32);
   const siteId = configuredValue(searchParams, "siteId", config.allowedSiteIds, [...config.allowedSiteIds][0], 16);
   const cycle = configuredValue(searchParams, "cycle", config.allowedCycles, [...config.allowedCycles][0], 16);
-  const groupId = searchParams.has("groupId") ? searchParams.get("groupId") : "TESTE";
-  if (!/^[A-Za-z0-9_-]{1,40}$/.test(groupId)) {
-    throw new GatewayError(400, "INVALID_QUERY", "groupId invalido.");
-  }
+  const groupId = configuredValue(
+    searchParams,
+    "groupId",
+    config.allowedGroupIds,
+    [...config.allowedGroupIds][0],
+    40
+  );
   const timezone = validateTimezone(searchParams.get("timezone") || "America/Sao_Paulo");
   const scenario = validateScenario(searchParams, config);
 
