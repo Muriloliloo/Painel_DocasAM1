@@ -121,6 +121,37 @@ npm run smoke:mock
 Para o preflight da futura configuracao corporativa, defina as variaveis de producao e execute `npm run preflight:corporate`. O comando inspeciona somente configuracao e estrutura do provider, sem obter autorizacao ou chamar servicos externos. Enquanto o provider for stub, encerra de forma controlada com `AUTH_NOT_CONFIGURED`.
 
 
+## Frontend com YMS em modo opt-in
+
+O frontend da branch `dev-automacao` ja consegue receber o array `yms` do gateway, mas ainda nao usa esses dados para sobrescrever status ou doca da visao consolidada.
+
+Isso e intencional enquanto a autoridade da doca real ainda nao estiver fechada no BigQuery.
+
+Exemplo de configuracao local:
+
+```html
+<script>
+window.PAINEL_AUTOMATION_CONFIG = {
+  gatewayBaseUrl: "http://127.0.0.1:8787",
+  mode: "combined",
+  snapshotPath: "snapshot",
+  ymsPath: "yms",
+  ymsEnabled: true,
+  facilityId: "SSP15",
+  siteId: "MLB",
+  groupId: "TESTE",
+  cycle: "AM1",
+  timezone: "America/Sao_Paulo",
+  waves: ["1", "2", "3", "4", "5"],
+  enabled: true
+};
+</script>
+```
+
+Com `ymsEnabled: true`, os dados YMS ficam disponiveis apenas na sessao atual em `window.ymsAutomaticRows()` e no evento `painel:yms-data`.
+
+Eles nao sao enviados ao Firebase e nao alteram `baseOperacional`, `baseAduana` ou o fallback manual nesta etapa.
+
 ## Homologacao em casa sem acesso corporativo
 
 Com Node.js 20+ e o repositorio local, use:
