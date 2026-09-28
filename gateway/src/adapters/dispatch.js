@@ -17,7 +17,7 @@ const DISPATCH_BY_WAVE = Object.freeze({
   },
   "2": {
     route_name: "VJ3_AM1",
-    route_id: 502731583004,
+    route_id: 502731583001,
     process: "waiting_customs",
     dock_number: 2,
     start_time: 35,
@@ -34,9 +34,9 @@ const DISPATCH_BY_WAVE = Object.freeze({
 });
 
 const FLOW_ROUTE = Object.freeze({
-  route_name: "VA14_AM1",
+  route_name: "G5_AM1",
   route_id: 502731583004,
-  dock_number: 16
+  dock_number: 6
 });
 
 function delay(milliseconds, signal) {
@@ -61,16 +61,16 @@ function selectRows(scenario, waves) {
   if (new Set(["empty-unconfirmed", "empty-confirmed"]).has(scenario)) return [];
 
   if (scenario === "flow-waiting") {
-    return waves.includes("2") ? [{ ...FLOW_ROUTE, process: "waiting_customs", start_time: 5, total_elapsed_time: 35 }] : [];
+    return waves.includes("1") ? [{ ...FLOW_ROUTE, process: "waiting_customs", start_time: 5, total_elapsed_time: 35 }] : [];
   }
   if (scenario === "flow-customs") {
-    return waves.includes("2") ? [{ ...FLOW_ROUTE, process: "customs_in_progress", start_time: 12, total_elapsed_time: 47 }] : [];
+    return waves.includes("1") ? [{ ...FLOW_ROUTE, process: "customs_in_progress", start_time: 12, total_elapsed_time: 47 }] : [];
   }
   if (scenario === "flow-loading") {
-    return waves.includes("2") ? [{ ...FLOW_ROUTE, process: "loading_packages", start_time: 18, total_elapsed_time: 65 }] : [];
+    return waves.includes("1") ? [{ ...FLOW_ROUTE, process: "loading_packages", start_time: 18, total_elapsed_time: 65 }] : [];
   }
   if (scenario === "flow-dispatched") {
-    return waves.includes("2") ? [{ ...FLOW_ROUTE, process: "dispatched", start_time: 7, total_elapsed_time: 72 }] : [];
+    return waves.includes("1") ? [{ ...FLOW_ROUTE, process: "dispatched", start_time: 7, total_elapsed_time: 72 }] : [];
   }
 
   if (scenario === "loading") return [{ ...DISPATCH_BY_WAVE["1"] }];
