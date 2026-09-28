@@ -26,6 +26,7 @@ const MOCK_SCENARIOS = new Set([
   "flow-loading",
   "flow-dispatched",
   "operational-sequence",
+  "operational-recovery",
   "empty-unconfirmed",
   "empty-confirmed",
   "failure-dispatch",
@@ -37,6 +38,14 @@ const MOCK_OPERATIONAL_SEQUENCE = Object.freeze([
   "flow-waiting",
   "flow-customs",
   "flow-loading",
+  "flow-dispatched"
+]);
+
+const MOCK_RECOVERY_SEQUENCE = Object.freeze([
+  "flow-waiting",
+  "flow-customs",
+  "flow-loading",
+  "failure-dispatch",
   "flow-dispatched"
 ]);
 
@@ -217,17 +226,21 @@ function createGatewayServer(config = createConfig(), dependencies = {}) {
   let mockSequenceIndex = 0;
 
   const resolveMockSequence = (query, pathname) => {
-    if (config.mode !== "mock" || query.scenario !== "operational-sequence") return query;
+    if (config.mode !== "mock"
+        || !new Set(["operational-sequence", "operational-recovery"]).has(query.scenario)) {
+      return query;
+    }
 
+    const sequence = query.scenario === "operational-recovery"
+      ? MOCK_RECOVERY_SEQUENCE
+      : MOCK_OPERATIONAL_SEQUENCE;
     const sequenceIndex = pathname === "/snapshot"
       ? mockSequenceIndex++
       : Math.max(0, mockSequenceIndex - 1);
 
     return {
       ...query,
-      scenario: MOCK_OPERATIONAL_SEQUENCE[
-        Math.min(sequenceIndex, MOCK_OPERATIONAL_SEQUENCE.length - 1)
-      ]
+      scenario: sequence[Math.min(sequenceIndex, sequence.length - 1)]
     };
   };
 
@@ -368,6 +381,7 @@ if (require.main === module) {
 module.exports = {
   MOCK_SCENARIOS,
   MOCK_OPERATIONAL_SEQUENCE,
+  MOCK_RECOVERY_SEQUENCE,
   createGatewayServer,
   validateRequestTarget,
   validateOperationalQuery
