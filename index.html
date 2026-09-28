@@ -11238,6 +11238,34 @@ function ensureYmsPreviewPanel() {
   return panel;
 }
 
+const YMS_DIAGNOSTIC_LABELS = Object.freeze({
+  missing_source: "Fonte sem registro",
+  dock_divergence: "Doca divergente",
+  stage_divergence: "Etapas diferentes",
+  yms_ahead: "YMS em etapa posterior",
+  dispatch_ahead: "Dispatch em etapa posterior",
+  yms_terminal_exception: "Excecao terminal YMS",
+  no_divergence_observed: "Sem divergencia observada"
+});
+
+function ymsDiagnosticLabel(value) {
+  const key = plainText(value);
+  return YMS_DIAGNOSTIC_LABELS[key] || normalize(value) || "Diagnostico";
+}
+
+function ymsDiagnosticBackground(flag) {
+  if (flag === "dock_divergence" || flag === "yms_terminal_exception") {
+    return "rgba(239,68,68,.18)";
+  }
+  if (flag === "yms_ahead" || flag === "dispatch_ahead" || flag === "stage_divergence") {
+    return "rgba(245,158,11,.18)";
+  }
+  if (flag === "missing_source") {
+    return "rgba(100,116,139,.22)";
+  }
+  return "rgba(34,197,94,.16)";
+}
+
 function renderYmsSourceComparison(panel, comparison = data.baseComparisonAutomatica) {
   const container = panel.querySelector("[data-yms-preview-comparison]");
   if (!container) return;
@@ -11282,6 +11310,19 @@ function renderYmsSourceComparison(panel, comparison = data.baseComparisonAutoma
         ? "Etapas diferentes"
         : "Etapa sem comparacao";
 
+    const diagnosticFlags = Array.isArray(row.diagnostic_flags)
+      ? row.diagnostic_flags
+      : [];
+
+    const diagnostics = diagnosticFlags
+      .filter(flag => flag !== "stage_divergence" || row.lead_observation === "insufficient")
+      .map(flag => `
+        <span style="font-size:9px;padding:3px 5px;border-radius:7px;background:${ymsDiagnosticBackground(flag)};color:#e2e8f0">
+          ${ymsPreviewEscape(ymsDiagnosticLabel(flag))}
+        </span>
+      `)
+      .join("");
+
     return `
       <div style="padding:7px 0;border-top:1px solid rgba(148,163,184,.11)">
         <div style="display:flex;justify-content:space-between;gap:8px">
@@ -11293,6 +11334,7 @@ function renderYmsSourceComparison(panel, comparison = data.baseComparisonAutoma
           <div>${customsText}</div>
           <div>${ymsText}</div>
         </div>
+        ${diagnostics ? `<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:5px">${diagnostics}</div>` : ""}
       </div>
     `;
   }).join("");
@@ -11304,8 +11346,13 @@ function renderYmsSourceComparison(panel, comparison = data.baseComparisonAutoma
         ${smallBadge("3 fontes", summary.all_three)}
         ${smallBadge("doca igual", summary.dock_same)}
         ${smallBadge("doca diferente", summary.dock_different)}
-        ${smallBadge("etapa igual", summary.stage_all_equal)}
-        ${smallBadge("etapas diferentes", summary.stage_mixed)}
+        ${smallBadge("YMS etapa posterior", summary.yms_ahead)}
+        ${smallBadge("Dispatch etapa posterior", summary.dispatch_ahead)}
+        ${smallBadge("fonte sem registro", summary.missing_source)}
+        ${smallBadge("excecao YMS", summary.yms_terminal_exception)}
+      </div>
+      <div style="font-size:9px;color:#94a3b8;margin:0 0 5px;line-height:1.35">
+        “Etapa posterior” e apenas uma comparacao heuristica da sequencia operacional; nao define qual fonte esta correta.
       </div>
       ${routeRows || '<div style="font-size:10px;color:#94a3b8">Ainda nao ha rotas presentes em mais de uma fonte.</div>'}
     </div>
