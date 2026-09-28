@@ -11475,7 +11475,45 @@ function clearAutomaticSessionData() {
   return counts;
 }
 
+function bootstrapLocalYmsPreviewConfig() {
+  if (window.PAINEL_AUTOMATION_CONFIG) return;
+
+  const params = new URLSearchParams(window.location.search);
+  if (params.get("ymsPreview") !== "1") return;
+
+  const hostname = window.location.hostname.toLowerCase();
+  const isLocalhost = hostname === "localhost"
+    || hostname === "127.0.0.1"
+    || hostname === "[::1]";
+
+  if (!isLocalhost) {
+    console.warn("A previa YMS automatica por URL e permitida somente em localhost.");
+    return;
+  }
+
+  window.PAINEL_AUTOMATION_CONFIG = {
+    gatewayBaseUrl: "http://127.0.0.1:8787",
+    mode: "combined",
+    snapshotPath: "snapshot",
+    dispatchPath: "dispatch",
+    customsPath: "customs",
+    ymsPath: "yms",
+    ymsEnabled: true,
+    ymsPreview: true,
+    facilityId: "SSP15",
+    siteId: "MLB",
+    groupId: "TESTE",
+    cycle: "AM1",
+    timezone: "America/Sao_Paulo",
+    waves: ["1", "2", "3", "4", "5"],
+    timeoutMs: 12000,
+    intervalMs: 30000,
+    enabled: true
+  };
+}
+
 function initializeAutomaticSource() {
+  bootstrapLocalYmsPreviewConfig();
   if (!window.PAINEL_AUTOMATION_CONFIG) return;
   try {
     configureAutomaticSource(window.PAINEL_AUTOMATION_CONFIG);
