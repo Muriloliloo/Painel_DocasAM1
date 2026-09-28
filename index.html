@@ -12377,11 +12377,13 @@ function clearAutomaticSessionData() {
   return counts;
 }
 
-function bootstrapLocalYmsPreviewConfig() {
+function bootstrapLocalPreviewConfig() {
   if (window.PAINEL_AUTOMATION_CONFIG) return;
 
   const params = new URLSearchParams(window.location.search);
-  if (params.get("ymsPreview") !== "1") return;
+  const ymsPreview = params.get("ymsPreview") === "1";
+  const automationPreview = params.get("automationPreview") === "1";
+  if (!ymsPreview && !automationPreview) return;
 
   const hostname = window.location.hostname.toLowerCase();
   const isLocalhost = hostname === "localhost"
@@ -12389,7 +12391,7 @@ function bootstrapLocalYmsPreviewConfig() {
     || hostname === "[::1]";
 
   if (!isLocalhost) {
-    console.warn("A previa YMS automatica por URL e permitida somente em localhost.");
+    console.warn("A homologacao automatica por URL e permitida somente em localhost.");
     return;
   }
 
@@ -12400,8 +12402,8 @@ function bootstrapLocalYmsPreviewConfig() {
     dispatchPath: "dispatch",
     customsPath: "customs",
     ymsPath: "yms",
-    ymsEnabled: true,
-    ymsPreview: true,
+    ymsEnabled: ymsPreview,
+    ymsPreview,
     facilityId: "SSP15",
     siteId: "MLB",
     groupId: "TESTE",
@@ -12409,13 +12411,13 @@ function bootstrapLocalYmsPreviewConfig() {
     timezone: "America/Sao_Paulo",
     waves: ["1", "2", "3", "4", "5"],
     timeoutMs: 12000,
-    intervalMs: 30000,
+    intervalMs: automationPreview ? 15000 : 30000,
     enabled: true
   };
 }
 
 function initializeAutomaticSource() {
-  bootstrapLocalYmsPreviewConfig();
+  bootstrapLocalPreviewConfig();
   if (!window.PAINEL_AUTOMATION_CONFIG) return;
   try {
     configureAutomaticSource(window.PAINEL_AUTOMATION_CONFIG);
