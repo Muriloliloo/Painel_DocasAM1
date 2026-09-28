@@ -137,6 +137,7 @@ window.PAINEL_AUTOMATION_CONFIG = {
   snapshotPath: "snapshot",
   ymsPath: "yms",
   ymsEnabled: true,
+  ymsPreview: true,
   facilityId: "SSP15",
   siteId: "MLB",
   groupId: "TESTE",
@@ -149,6 +150,8 @@ window.PAINEL_AUTOMATION_CONFIG = {
 ```
 
 Com `ymsEnabled: true`, os dados YMS ficam disponiveis apenas na sessao atual em `window.ymsAutomaticRows()` e no evento `painel:yms-data`.
+
+Com `ymsPreview: true`, o painel mostra uma janela flutuante de homologacao com rota, onda, Zona YMS, transportadora, placa e o estagio calculado. A nomenclatura `Zona YMS` e intencional: enquanto a validacao BigQuery de autoridade da doca estiver pendente, o frontend nao chama esse campo de doca canonica.
 
 Eles nao sao enviados ao Firebase e nao alteram `baseOperacional`, `baseAduana` ou o fallback manual nesta etapa.
 
