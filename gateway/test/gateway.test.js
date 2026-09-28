@@ -1200,19 +1200,21 @@ test("Y14 previa visual YMS e opt-in e nao altera a base consolidada", () => {
 });
 
 
-test("Y15 bootstrap da previa YMS por URL existe somente para localhost", () => {
+test("Y15 bootstrap da previa local existe somente para localhost", () => {
   const indexPath = path.resolve(__dirname, "../../index.html");
   const source = fs.readFileSync(indexPath, "utf8");
 
-  assert.equal(source.includes("function bootstrapLocalYmsPreviewConfig()"), true);
-  assert.equal(source.includes('params.get("ymsPreview") !== "1"'), true);
+  assert.equal(source.includes("function bootstrapLocalPreviewConfig()"), true);
+  assert.equal(source.includes('const ymsPreview = params.get("ymsPreview") === "1";'), true);
+  assert.equal(source.includes('const automationPreview = params.get("automationPreview") === "1";'), true);
   assert.equal(source.includes('hostname === "localhost"'), true);
   assert.equal(source.includes('hostname === "127.0.0.1"'), true);
   assert.equal(source.includes('"http://127.0.0.1:8787"'), true);
-  assert.equal(source.includes("bootstrapLocalYmsPreviewConfig();"), true);
+  assert.equal(source.includes("ymsEnabled: ymsPreview"), true);
+  assert.equal(source.includes("bootstrapLocalPreviewConfig();"), true);
 });
 
-test("Y16 comando preview home permanece mock e sem credenciais corporativas", () => {
+test("Y16 preview home continua mock YMS e sem credenciais corporativas", () => {
   const scriptPath = path.resolve(__dirname, "../scripts/home-preview.js");
   const source = fs.readFileSync(scriptPath, "utf8");
   const packagePath = path.resolve(__dirname, "../package.json");
@@ -1221,7 +1223,8 @@ test("Y16 comando preview home permanece mock e sem credenciais corporativas", (
   assert.equal(packageJson.scripts["preview:home"], "node scripts/home-preview.js");
   assert.equal(source.includes('process.env.GATEWAY_MODE = process.env.GATEWAY_MODE || "mock"'), true);
   assert.equal(source.includes('process.env.AUTH_MODE = process.env.AUTH_MODE || "unconfigured"'), true);
-  assert.equal(source.includes('process.env.YMS_MODE = process.env.YMS_MODE || "mock"'), true);
+  assert.equal(source.includes('const previewMode = process.argv.includes("--flow") ? "flow" : "yms";'), true);
+  assert.equal(source.includes('previewMode === "flow" ? "disabled" : "mock"'), true);
   assert.equal(source.includes("ymsPreview=1"), true);
   assert.equal(source.includes("authorization"), false);
   assert.equal(source.includes("cookie"), false);
