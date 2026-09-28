@@ -9385,6 +9385,7 @@ data.baseOperacionalAutomatica = [];
 data.baseAduanaAutomatica = [];
 data.baseYmsAutomatica = [];
 data.baseComparisonAutomatica = null;
+data.baseDiagnosticHistory = [];
 
     data.baseHistorico = Array.isArray(data.baseHistorico) ? data.baseHistorico : [];
     data.carregamentoInicio = data.carregamentoInicio || {};
@@ -10641,6 +10642,82 @@ function uniqueYmsAutomaticRows(rows = []) {
   return Array.from(byRoute.values());
 }
 
+const AUTOMATIC_DIAGNOSTIC_HISTORY_MAX = 240;
+
+function diagnosticRouteSignature(row = {}) {
+  return JSON.stringify({
+    dispatch: row.dispatch || null,
+    aduana: row.aduana || null,
+    yms: row.yms || null,
+    stage_comparison: normalize(row.stage_comparison),
+    dock_comparison: normalize(row.dock_comparison),
+    lead_observation: normalize(row.lead_observation),
+    diagnostic_flags: Array.isArray(row.diagnostic_flags)
+      ? [...row.diagnostic_flags].sort()
+      : []
+  });
+}
+
+function recordAutomaticDiagnosticSnapshot(comparison) {
+  const routes = Array.isArray(comparison?.routes) ? comparison.routes : [];
+  if (!routes.length) return [];
+
+  data.baseDiagnosticHistory = Array.isArray(data.baseDiagnosticHistory)
+    ? data.baseDiagnosticHistory
+    : [];
+
+  const observedAt = new Date().toISOString();
+  const added = [];
+
+  routes.forEach(row => {
+    const routeName = normalize(row?.route_name);
+    if (!routeName) return;
+
+    const previous = [...data.baseDiagnosticHistory]
+      .reverse()
+      .find(item => routeKey(item.route_name) === routeKey(routeName));
+
+    const signature = diagnosticRouteSignature(row);
+    if (previous?.signature === signature) return;
+
+    const item = {
+      route_name: routeName,
+      observed_at: observedAt,
+      signature,
+      source_count: Number(row.source_count || 0),
+      dispatch_process: normalize(row.dispatch?.process),
+      dispatch_dock: normalize(row.dispatch?.dock_number),
+      aduana_process: normalize(row.aduana?.process || row.aduana?.status),
+      yms_stage: normalize(row.yms?.lifecycle_stage),
+      yms_zone: normalize(row.yms?.loading_zone_name),
+      stage_comparison: normalize(row.stage_comparison),
+      dock_comparison: normalize(row.dock_comparison),
+      lead_observation: normalize(row.lead_observation),
+      diagnostic_flags: Array.isArray(row.diagnostic_flags)
+        ? [...row.diagnostic_flags]
+        : []
+    };
+
+    data.baseDiagnosticHistory.push(item);
+    added.push(item);
+  });
+
+  if (data.baseDiagnosticHistory.length > AUTOMATIC_DIAGNOSTIC_HISTORY_MAX) {
+    data.baseDiagnosticHistory = data.baseDiagnosticHistory.slice(-AUTOMATIC_DIAGNOSTIC_HISTORY_MAX);
+  }
+
+  if (added.length) {
+    window.dispatchEvent(new CustomEvent("painel:diagnostic-history", {
+      detail: {
+        rows: added.map(row => ({ ...row })),
+        total: data.baseDiagnosticHistory.length
+      }
+    }));
+  }
+
+  return added;
+}
+
 function applyAutomaticPayload(payload = {}) {
   const operationalRows = Array.isArray(payload.operacional)
     ? payload.operacional
@@ -10714,6 +10791,10 @@ data.baseYmsAutomatica = replaceAutomaticSnapshot
 
 if (replaceAutomaticSnapshot || comparison) {
   data.baseComparisonAutomatica = comparison;
+}
+
+if (data.baseComparisonAutomatica) {
+  recordAutomaticDiagnosticSnapshot(data.baseComparisonAutomatica);
 }
 
 window.dispatchEvent(new CustomEvent("painel:yms-data", {
@@ -11227,7 +11308,8 @@ function ensureYmsPreviewPanel() {
     </div>
     <div data-yms-preview-summary style="display:flex;flex-wrap:wrap;gap:6px;padding:10px 12px 0"></div>
     <div data-yms-preview-comparison style="padding:10px 12px 0"></div>
-    <div data-yms-preview-rows style="padding:10px 12px 12px;overflow:auto;max-height:420px"></div>
+    <div data-yms-preview-history style="padding:10px 12px 0"></div>
+    <div data-yms-preview-rows style="padding:10px 12px 12px;overflow:auto;max-height:360px"></div>
   `;
 
   panel.querySelector("[data-yms-preview-close]")?.addEventListener("click", () => {
@@ -11264,6 +11346,74 @@ function ymsDiagnosticBackground(flag) {
     return "rgba(100,116,139,.22)";
   }
   return "rgba(34,197,94,.16)";
+}
+
+function diagnosticHistoryTimeLabel(value) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "-";
+  return date.toLocaleTimeString("pt-BR", {
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit"
+  });
+}
+
+function renderAutomaticDiagnosticHistory(panel) {
+  const container = panel.querySelector("[data-yms-preview-history]");
+  if (!container) return;
+
+  const history = Array.isArray(data.baseDiagnosticHistory)
+    ? data.baseDiagnosticHistory
+    : [];
+
+  const recent = history.slice(-8).reverse();
+  if (!recent.length) {
+    container.innerHTML = "";
+    return;
+  }
+
+  const rows = recent.map(item => {
+    const flags = Array.isArray(item.diagnostic_flags)
+      ? item.diagnostic_flags
+      : [];
+
+    const visibleFlags = flags
+      .filter(flag => flag !== "no_divergence_observed")
+      .slice(0, 3)
+      .map(flag => ymsPreviewEscape(ymsDiagnosticLabel(flag)))
+      .join(" • ");
+
+    const sourceText = [
+      item.dispatch_process ? `Dispatch ${ymsPreviewEscape(item.dispatch_process)}` : "",
+      item.aduana_process ? `Aduana ${ymsPreviewEscape(item.aduana_process)}` : "",
+      item.yms_stage ? `YMS ${ymsPreviewEscape(ymsPreviewStatusLabel(item.yms_stage))}` : ""
+    ].filter(Boolean).join(" | ");
+
+    return `
+      <div style="padding:5px 0;border-top:1px solid rgba(148,163,184,.1)">
+        <div style="display:flex;justify-content:space-between;gap:8px;font-size:9.5px">
+          <strong>${ymsPreviewEscape(item.route_name)}</strong>
+          <span style="color:#94a3b8">${ymsPreviewEscape(diagnosticHistoryTimeLabel(item.observed_at))}</span>
+        </div>
+        <div style="font-size:9px;color:#cbd5e1;margin-top:2px">${sourceText || "Mudanca observada"}</div>
+        ${visibleFlags ? `<div style="font-size:8.8px;color:#fbbf24;margin-top:2px">${visibleFlags}</div>` : ""}
+      </div>
+    `;
+  }).join("");
+
+  container.innerHTML = `
+    <details>
+      <summary style="cursor:pointer;font-size:10px;font-weight:800;letter-spacing:.05em;color:#93c5fd">
+        LINHA DO TEMPO DA SESSAO (${history.length})
+      </summary>
+      <div style="margin-top:5px;padding:6px 8px;border-radius:10px;background:rgba(30,41,59,.42);border:1px solid rgba(148,163,184,.1)">
+        <div style="font-size:8.8px;color:#94a3b8;margin-bottom:4px">
+          Registra somente mudancas observadas pelo polling desta sessao; nao e timestamp oficial das fontes.
+        </div>
+        ${rows}
+      </div>
+    </details>
+  `;
 }
 
 function renderYmsSourceComparison(panel, comparison = data.baseComparisonAutomatica) {
@@ -11374,6 +11524,7 @@ function renderYmsPreview(rows = data.baseYmsAutomatica || []) {
   const summary = panel.querySelector("[data-yms-preview-summary]");
   const list = panel.querySelector("[data-yms-preview-rows]");
   renderYmsSourceComparison(panel, data.baseComparisonAutomatica);
+  renderAutomaticDiagnosticHistory(panel);
 
   const counts = normalizedRows.reduce((acc, row) => {
     const stage = plainText(row.lifecycle_stage) || "unknown";
@@ -11434,6 +11585,11 @@ function renderYmsPreview(rows = data.baseYmsAutomatica || []) {
     })
     .join("");
 }
+
+window.addEventListener("painel:diagnostic-history", () => {
+  const panel = document.getElementById("ymsPreviewPanel");
+  if (panel) renderAutomaticDiagnosticHistory(panel);
+});
 
 window.addEventListener("painel:yms-data", event => {
   if (event?.detail?.comparison) {
@@ -11618,6 +11774,7 @@ function clearAutomaticSessionData() {
     comparison: null
   });
   data.baseComparisonAutomatica = null;
+  data.baseDiagnosticHistory = [];
   automaticSourceState.lastError = "";
   automaticSourceState.lastCounts = counts;
   if (pollingWasRunning) scheduleNextAutomaticRefresh(generation);
@@ -11683,6 +11840,9 @@ window.ymsAutomaticRows = () => (data.baseYmsAutomatica || []).map(row => ({ ...
 window.ymsSourceComparison = () => data.baseComparisonAutomatica
   ? JSON.parse(JSON.stringify(data.baseComparisonAutomatica))
   : null;
+window.ymsDiagnosticHistory = () => JSON.parse(JSON.stringify(
+  Array.isArray(data.baseDiagnosticHistory) ? data.baseDiagnosticHistory : []
+));
 window.renderYmsPreview = renderYmsPreview;
 window.fetchAutomaticSnapshot = fetchAutomaticSnapshot;
 window.refreshAutomaticSnapshot = refreshAutomaticSnapshot;
@@ -12105,6 +12265,7 @@ window.automaticConnectionStatus = automaticConnectionStatus;
       delete payload.baseAduanaAutomatica;
       delete payload.baseYmsAutomatica;
       delete payload.baseComparisonAutomatica;
+      delete payload.baseDiagnosticHistory;
             payload.baseOperacional = onlyPlannedBaseRows(
   payload.baseOperacionalManual || [ ],
   payload.extracao || [ ]
@@ -14621,6 +14782,10 @@ const localYmsAutomatic = Array.isArray(data.baseYmsAutomatica)
 const localComparisonAutomatic = data.baseComparisonAutomatica
   ? JSON.parse(JSON.stringify(data.baseComparisonAutomatica))
   : null;
+
+const localDiagnosticHistory = Array.isArray(data.baseDiagnosticHistory)
+  ? JSON.parse(JSON.stringify(data.baseDiagnosticHistory))
+  : [];
         data = { ...JSON.parse(JSON.stringify(originalData)), ...payload };
         data.docas = Math.max(Number(data.docas || 0), Number(originalData.docas || 92));
         data.horarios = { ...(data.horarios || {}), ...(originalData.horarios || {}), ...horariosOficiais };
@@ -14646,6 +14811,7 @@ data.baseOperacionalAutomatica = localOperationalAutomatic;
 data.baseAduanaAutomatica = localCustomsAutomatic;
 data.baseYmsAutomatica = localYmsAutomatic;
 data.baseComparisonAutomatica = localComparisonAutomatic;
+data.baseDiagnosticHistory = localDiagnosticHistory;
 
         data.baseHistorico = Array.isArray(data.baseHistorico) ? data.baseHistorico : [];
         rebuildConsolidatedBase(data.extracao || []);
