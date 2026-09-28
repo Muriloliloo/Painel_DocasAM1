@@ -20,6 +20,12 @@ const CUSTOMS_IN_PROGRESS = Object.freeze({
   plate: "ABC1D23"
 });
 
+const FLOW_CUSTOMS_ROUTE = Object.freeze({
+  ...CUSTOMS_IN_PROGRESS,
+  route_name: "VA14_AM1",
+  route_id: 502731583004
+});
+
 function delay(milliseconds, signal) {
   return new Promise((resolve, reject) => {
     const timer = setTimeout(resolve, milliseconds);
@@ -63,9 +69,18 @@ function normalizeCustomsRow(raw = {}) {
 function selectRows(scenario) {
   if (new Set(["empty-unconfirmed", "empty-confirmed", "loading", "dispatched", "flow-waiting"]).has(scenario)) return [];
   if (scenario === "flow-customs") {
-    return [{ ...CUSTOMS_IN_PROGRESS }];
+    return [{ ...FLOW_CUSTOMS_ROUTE }];
   }
-  if (new Set(["flow-loading", "flow-dispatched", "customs-complete"]).has(scenario)) {
+  if (new Set(["flow-loading", "flow-dispatched"]).has(scenario)) {
+    return [{
+      ...FLOW_CUSTOMS_ROUTE,
+      status: "completed",
+      process: "customs_completed",
+      audit_time: 42,
+      aduanaBipadas: 190
+    }];
+  }
+  if (scenario === "customs-complete") {
     return [{
       ...CUSTOMS_IN_PROGRESS,
       status: "completed",
@@ -105,6 +120,8 @@ async function fetchCustoms(options) {
 
 module.exports = {
   CUSTOMS_QUERY_KEYS,
+  CUSTOMS_IN_PROGRESS,
+  FLOW_CUSTOMS_ROUTE,
   customsRows,
   normalizeCustomsRow,
   fetchCustoms,
