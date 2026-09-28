@@ -171,6 +171,15 @@ function createConfig(env = process.env, overrides = {}) {
       overrides.allowedSiteIds ?? csvValues(env.ALLOWED_SITE_IDS, "MLB"),
       /^[A-Za-z0-9_-]{1,16}$/
     ),
+    allowedGroupIds: validatedSet(
+      "ALLOWED_GROUP_IDS",
+      overrides.allowedGroupIds ?? (
+        env.ALLOWED_GROUP_IDS
+          ? csvValues(env.ALLOWED_GROUP_IDS, "")
+          : nodeEnv === "production" ? [] : ["TESTE"]
+      ),
+      /^[A-Za-z0-9_-]{1,40}$/
+    ),
     allowedCycles: validatedSet(
       "ALLOWED_CYCLES",
       overrides.allowedCycles ?? csvValues(env.ALLOWED_CYCLES, "AM1"),
