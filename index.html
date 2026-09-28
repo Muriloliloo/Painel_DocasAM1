@@ -10658,6 +10658,133 @@ function diagnosticRouteSignature(row = {}) {
   });
 }
 
+const DIAGNOSTIC_HISTORY_SOURCES = Object.freeze(["dispatch", "aduana", "yms"]);
+
+function diagnosticHistorySourceSignature(item = {}, source) {
+  if (source === "dispatch") {
+    const process = normalize(item.dispatch_process);
+    const dock = normalize(item.dispatch_dock);
+    return process || dock ? JSON.stringify({ process, dock }) : "";
+  }
+
+  if (source === "aduana") {
+    const process = normalize(item.aduana_process);
+    return process ? JSON.stringify({ process }) : "";
+  }
+
+  if (source === "yms") {
+    const stage = normalize(item.yms_stage);
+    const zone = normalize(item.yms_zone);
+    return stage || zone ? JSON.stringify({ stage, zone }) : "";
+  }
+
+  return "";
+}
+
+function diagnosticChangedSources(previous, current) {
+  if (!previous) return [];
+
+  return DIAGNOSTIC_HISTORY_SOURCES.filter(source => {
+    const before = diagnosticHistorySourceSignature(previous, source);
+    const after = diagnosticHistorySourceSignature(current, source);
+    return Boolean(after) && before !== after;
+  });
+}
+
+function calculateObservedSourceLag(history = data.baseDiagnosticHistory) {
+  const rows = Array.isArray(history) ? history : [];
+  const byRoute = new Map();
+
+  rows.forEach(item => {
+    const routeName = normalize(item?.route_name);
+    const observedAt = normalize(item?.observed_at);
+    if (!routeName || !observedAt || Number.isNaN(new Date(observedAt).getTime())) return;
+
+    const key = routeKey(routeName);
+    if (!byRoute.has(key)) {
+      byRoute.set(key, { route_name: routeName, items: [] });
+    }
+    byRoute.get(key).items.push(item);
+  });
+
+  const results = [];
+
+  byRoute.forEach(group => {
+    const items = [...group.items].sort((left, right) =>
+      new Date(left.observed_at).getTime() - new Date(right.observed_at).getTime()
+    );
+
+    const lastChangeAt = {};
+    const sourceChangeCount = {
+      dispatch: 0,
+      aduana: 0,
+      yms: 0
+    };
+
+    items.forEach(item => {
+      const changedSources = Array.isArray(item.changed_sources)
+        ? item.changed_sources
+        : [];
+
+      changedSources.forEach(source => {
+        if (!DIAGNOSTIC_HISTORY_SOURCES.includes(source)) return;
+        lastChangeAt[source] = item.observed_at;
+        sourceChangeCount[source] += 1;
+      });
+    });
+
+    const sourcesWithChange = DIAGNOSTIC_HISTORY_SOURCES.filter(source =>
+      normalize(lastChangeAt[source])
+    );
+
+    if (sourcesWithChange.length < 2) return;
+
+    const moments = sourcesWithChange.map(source => ({
+      source,
+      observed_at: lastChangeAt[source],
+      time: new Date(lastChangeAt[source]).getTime()
+    }));
+
+    const minTime = Math.min(...moments.map(item => item.time));
+    const maxTime = Math.max(...moments.map(item => item.time));
+
+    const pairwise = [
+      ["dispatch", "aduana"],
+      ["dispatch", "yms"],
+      ["aduana", "yms"]
+    ].map(([left, right]) => {
+      if (!lastChangeAt[left] || !lastChangeAt[right]) return null;
+      const leftTime = new Date(lastChangeAt[left]).getTime();
+      const rightTime = new Date(lastChangeAt[right]).getTime();
+      return {
+        left,
+        right,
+        seconds: Math.round(Math.abs(rightTime - leftTime) / 1000)
+      };
+    }).filter(Boolean);
+
+    results.push({
+      route_name: group.route_name,
+      observation_count: items.length,
+      source_change_count: sourceChangeCount,
+      last_change_at: lastChangeAt,
+      observed_spread_seconds: Math.round((maxTime - minTime) / 1000),
+      earliest_sources: moments
+        .filter(item => item.time === minTime)
+        .map(item => item.source),
+      latest_sources: moments
+        .filter(item => item.time === maxTime)
+        .map(item => item.source),
+      pairwise
+    });
+  });
+
+  return results.sort((left, right) =>
+    right.observed_spread_seconds - left.observed_spread_seconds ||
+    String(left.route_name).localeCompare(String(right.route_name))
+  );
+}
+
 function recordAutomaticDiagnosticSnapshot(comparison) {
   const routes = Array.isArray(comparison?.routes) ? comparison.routes : [];
   if (!routes.length) return [];
@@ -10697,6 +10824,8 @@ function recordAutomaticDiagnosticSnapshot(comparison) {
         ? [...row.diagnostic_flags]
         : []
     };
+
+    item.changed_sources = diagnosticChangedSources(previous, item);
 
     data.baseDiagnosticHistory.push(item);
     added.push(item);
@@ -11308,6 +11437,7 @@ function ensureYmsPreviewPanel() {
     </div>
     <div data-yms-preview-summary style="display:flex;flex-wrap:wrap;gap:6px;padding:10px 12px 0"></div>
     <div data-yms-preview-comparison style="padding:10px 12px 0"></div>
+    <div data-yms-preview-lag style="padding:10px 12px 0"></div>
     <div data-yms-preview-history style="padding:10px 12px 0"></div>
     <div data-yms-preview-rows style="padding:10px 12px 12px;overflow:auto;max-height:360px"></div>
   `;
@@ -11356,6 +11486,87 @@ function diagnosticHistoryTimeLabel(value) {
     minute: "2-digit",
     second: "2-digit"
   });
+}
+
+const OBSERVED_LAG_SOURCE_LABELS = Object.freeze({
+  dispatch: "Dispatch",
+  aduana: "Aduana",
+  yms: "YMS"
+});
+
+function observedLagDurationLabel(value) {
+  const totalSeconds = Math.max(0, Math.round(Number(value) || 0));
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+
+  if (hours) {
+    return [hours + "h", minutes ? minutes + "m" : "", seconds ? seconds + "s" : ""]
+      .filter(Boolean)
+      .join(" ");
+  }
+
+  if (minutes) {
+    return [minutes + "m", seconds ? seconds + "s" : ""]
+      .filter(Boolean)
+      .join(" ");
+  }
+
+  return seconds + "s";
+}
+
+function renderObservedSourceLag(panel) {
+  const container = panel.querySelector("[data-yms-preview-lag]");
+  if (!container) return;
+
+  const lagRows = calculateObservedSourceLag().slice(0, 6);
+  if (!lagRows.length) {
+    container.innerHTML = "";
+    return;
+  }
+
+  const rows = lagRows.map(item => {
+    const sourceTimes = DIAGNOSTIC_HISTORY_SOURCES
+      .filter(source => item.last_change_at?.[source])
+      .map(source =>
+        OBSERVED_LAG_SOURCE_LABELS[source] + " " +
+        diagnosticHistoryTimeLabel(item.last_change_at[source])
+      )
+      .join(" • ");
+
+    const pairwise = item.pairwise
+      .map(pair =>
+        OBSERVED_LAG_SOURCE_LABELS[pair.left] + " ↔ " +
+        OBSERVED_LAG_SOURCE_LABELS[pair.right] + " " +
+        observedLagDurationLabel(pair.seconds)
+      )
+      .join(" • ");
+
+    return `
+      <div style="padding:6px 0;border-top:1px solid rgba(148,163,184,.1)">
+        <div style="display:flex;justify-content:space-between;gap:8px;font-size:9.5px">
+          <strong>${ymsPreviewEscape(item.route_name)}</strong>
+          <span style="color:#fbbf24">intervalo ${ymsPreviewEscape(observedLagDurationLabel(item.observed_spread_seconds))}</span>
+        </div>
+        <div style="font-size:8.8px;color:#cbd5e1;margin-top:2px">${ymsPreviewEscape(sourceTimes)}</div>
+        <div style="font-size:8.6px;color:#94a3b8;margin-top:2px">${ymsPreviewEscape(pairwise)}</div>
+      </div>
+    `;
+  }).join("");
+
+  container.innerHTML = `
+    <details>
+      <summary style="cursor:pointer;font-size:10px;font-weight:800;letter-spacing:.05em;color:#fbbf24">
+        DEFASAGEM OBSERVADA (${lagRows.length})
+      </summary>
+      <div style="margin-top:5px;padding:6px 8px;border-radius:10px;background:rgba(30,41,59,.42);border:1px solid rgba(148,163,184,.1)">
+        <div style="font-size:8.8px;color:#94a3b8;margin-bottom:4px;line-height:1.35">
+          Intervalo entre as ultimas mudancas percebidas nesta sessao. Nao e SLA, nao define autoridade e nao prova que as fontes registraram o mesmo evento.
+        </div>
+        ${rows}
+      </div>
+    </details>
+  `;
 }
 
 function renderAutomaticDiagnosticHistory(panel) {
@@ -11524,6 +11735,7 @@ function renderYmsPreview(rows = data.baseYmsAutomatica || []) {
   const summary = panel.querySelector("[data-yms-preview-summary]");
   const list = panel.querySelector("[data-yms-preview-rows]");
   renderYmsSourceComparison(panel, data.baseComparisonAutomatica);
+  renderObservedSourceLag(panel);
   renderAutomaticDiagnosticHistory(panel);
 
   const counts = normalizedRows.reduce((acc, row) => {
@@ -11588,7 +11800,10 @@ function renderYmsPreview(rows = data.baseYmsAutomatica || []) {
 
 window.addEventListener("painel:diagnostic-history", () => {
   const panel = document.getElementById("ymsPreviewPanel");
-  if (panel) renderAutomaticDiagnosticHistory(panel);
+  if (panel) {
+    renderObservedSourceLag(panel);
+    renderAutomaticDiagnosticHistory(panel);
+  }
 });
 
 window.addEventListener("painel:yms-data", event => {
@@ -11842,6 +12057,9 @@ window.ymsSourceComparison = () => data.baseComparisonAutomatica
   : null;
 window.ymsDiagnosticHistory = () => JSON.parse(JSON.stringify(
   Array.isArray(data.baseDiagnosticHistory) ? data.baseDiagnosticHistory : []
+));
+window.ymsObservedSourceLag = () => JSON.parse(JSON.stringify(
+  calculateObservedSourceLag()
 ));
 window.renderYmsPreview = renderYmsPreview;
 window.fetchAutomaticSnapshot = fetchAutomaticSnapshot;
