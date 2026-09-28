@@ -965,7 +965,7 @@ test("Y6 snapshot adiciona YMS mock somente quando habilitado", async () => {
       yms: "ok"
     });
     assert.ok(Array.isArray(body.yms));
-    assert.equal(body.yms.length, 4);
+    assert.equal(body.yms.length, 6);
     assert.equal(body.yms[0].route_name, "VJ3_AM1");
     assert.equal(body.yms[0].planned_route_name, "A3_AM1");
     assert.equal(body.yms[0].lifecycle_stage, "dispatched");
@@ -1110,7 +1110,7 @@ test("Y11 endpoint YMS isolado retorna os estagios mock sanitizados", async () =
     assert.equal(response.status, 200);
     assert.equal(body.snapshotComplete, true);
     assert.deepEqual(body.sources, { yms: "ok" });
-    assert.equal(body.yms.length, 4);
+    assert.equal(body.yms.length, 6);
 
     const stages = new Set(body.yms.map(row => row.lifecycle_stage));
     assert.equal(stages.has("dispatched"), true);
@@ -1300,4 +1300,66 @@ test("Y20 frontend mantem comparacao somente na sessao de homologacao", () => {
 
   assert.equal(rebuildSource.includes("baseComparisonAutomatica"), false);
   assert.equal(rebuildSource.includes("baseYmsAutomatica"), false);
+});
+
+
+test("Y21 mock comparativo cobre os principais diagnosticos de homologacao", async () => {
+  await withGateway(testConfig({ ymsMode: "mock" }), {}, async url => {
+    const response = await fetch(`${url}/snapshot?${query()}`);
+    const body = await response.json();
+
+    assert.equal(response.status, 200);
+    assert.equal(body.yms.length, 6);
+
+    assert.deepEqual(body.comparison.summary, {
+      total_routes: 6,
+      with_dispatch: 3,
+      with_aduana: 1,
+      with_yms: 6,
+      all_three: 1,
+      stage_comparable: 3,
+      stage_all_equal: 1,
+      stage_mixed: 2,
+      dock_comparable: 3,
+      dock_same: 2,
+      dock_different: 1,
+      yms_ahead: 1,
+      dispatch_ahead: 1,
+      aligned_dispatch_yms: 1,
+      missing_source: 5,
+      yms_terminal_exception: 1
+    });
+
+    const vj3 = body.comparison.routes.find(row => row.route_name === "VJ3_AM1");
+    const vt9 = body.comparison.routes.find(row => row.route_name === "VT9_AM1");
+    const vt12 = body.comparison.routes.find(row => row.route_name === "VT12_AM1");
+    const vv8 = body.comparison.routes.find(row => row.route_name === "VV8_AM1");
+
+    assert.equal(vj3.lead_observation, "yms_ahead");
+    assert.equal(vj3.dock_comparison, "same");
+    assert.equal(vj3.diagnostic_flags.includes("yms_ahead"), true);
+
+    assert.equal(vt9.lead_observation, "aligned");
+    assert.equal(vt9.dock_comparison, "different");
+    assert.equal(vt9.diagnostic_flags.includes("dock_divergence"), true);
+
+    assert.equal(vt12.lead_observation, "dispatch_ahead");
+    assert.equal(vt12.dock_comparison, "same");
+    assert.equal(vt12.diagnostic_flags.includes("dispatch_ahead"), true);
+
+    assert.equal(vv8.diagnostic_flags.includes("yms_terminal_exception"), true);
+    assert.equal(vv8.diagnostic_flags.includes("missing_source"), true);
+  });
+});
+
+test("Y22 previa visual explica que etapa posterior e heuristica", () => {
+  const indexPath = path.resolve(__dirname, "../../index.html");
+  const source = fs.readFileSync(indexPath, "utf8");
+
+  assert.equal(source.includes("YMS em etapa posterior"), true);
+  assert.equal(source.includes("Dispatch em etapa posterior"), true);
+  assert.equal(source.includes("Doca divergente"), true);
+  assert.equal(source.includes("Fonte sem registro"), true);
+  assert.equal(source.includes("comparacao heuristica"), true);
+  assert.equal(source.includes("nao define qual fonte esta correta"), true);
 });
