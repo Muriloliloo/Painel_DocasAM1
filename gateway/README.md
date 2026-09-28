@@ -163,6 +163,18 @@ Quando YMS esta ativo no snapshot combinado, o gateway tambem devolve `compariso
 
 Essa comparacao nao escolhe uma fonte vencedora e nao altera a operacao. Diferencas podem representar tempos de atualizacao distintos entre sistemas e devem ser analisadas antes de qualquer regra de autoridade.
 
+A previa tambem produz diagnosticos observacionais:
+
+- `YMS em etapa posterior`;
+- `Dispatch em etapa posterior`;
+- `Doca divergente`;
+- `Fonte sem registro`;
+- `Excecao terminal YMS`.
+
+`YMS em etapa posterior` e `Dispatch em etapa posterior` usam apenas uma ordem heuristica da sequencia operacional conhecida. Eles nao afirmam qual sistema esta correto, nao substituem timestamps reais e nao podem ser usados como regra de autoridade sem validacao adicional.
+
+O mock local foi ampliado para cobrir explicitamente esses cenarios, incluindo uma rota com doca divergente e outra em que Dispatch aparece em etapa posterior ao YMS.
+
 No frontend, a comparacao fica somente na sessao em `window.ymsSourceComparison()` e aparece dentro da janela `YMS • PREVIA`.
 
 Eles nao sao enviados ao Firebase e nao alteram `baseOperacional`, `baseAduana` ou o fallback manual nesta etapa.
