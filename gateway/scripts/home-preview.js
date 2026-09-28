@@ -10,8 +10,12 @@ process.env.PORT = process.env.PORT || "8787";
 process.env.NODE_ENV = process.env.NODE_ENV || "development";
 process.env.GATEWAY_MODE = process.env.GATEWAY_MODE || "mock";
 process.env.AUTH_MODE = process.env.AUTH_MODE || "unconfigured";
-process.env.MOCK_SCENARIO = process.env.MOCK_SCENARIO || "normal";
-process.env.YMS_MODE = process.env.YMS_MODE || "mock";
+
+const previewMode = process.argv.includes("--flow") ? "flow" : "yms";
+process.env.MOCK_SCENARIO = process.env.MOCK_SCENARIO
+  || (previewMode === "flow" ? "operational-sequence" : "normal");
+process.env.YMS_MODE = process.env.YMS_MODE
+  || (previewMode === "flow" ? "disabled" : "mock");
 process.env.PANEL_ALLOWED_ORIGIN = process.env.PANEL_ALLOWED_ORIGIN || "http://localhost:8000";
 
 const { createConfig } = require("../src/config");
@@ -21,12 +25,15 @@ const PANEL_PORT = 8000;
 const PANEL_HOST = "127.0.0.1";
 const GATEWAY_HOST = "127.0.0.1";
 const repoRoot = path.resolve(__dirname, "../..");
-const previewUrl = "http://localhost:8000/?ymsPreview=1";
+const previewUrl = previewMode === "flow"
+  ? "http://localhost:8000/?automationPreview=1"
+  : "http://localhost:8000/?ymsPreview=1";
 
 const allowedRootFiles = new Set([
   "index.html",
   "closure-status.js",
   "firebase-config.js",
+  "automation-config.js",
   "ondas-dados.js",
   "logo-dhl.png",
   "logo-mercado-livre.png"
@@ -167,11 +174,13 @@ async function main() {
   }
 
   console.log("");
-  console.log("Painel Docas AM1 - homologacao local YMS");
-  console.log("-----------------------------------------");
+  console.log(previewMode === "flow"
+    ? "Painel Docas AM1 - homologacao local da automacao"
+    : "Painel Docas AM1 - homologacao local YMS");
+  console.log("----------------------------------------------");
   console.log("Gateway mock: http://127.0.0.1:8787");
   console.log("Painel local : http://localhost:8000");
-  console.log("Previa YMS   : " + previewUrl);
+  console.log((previewMode === "flow" ? "Fluxo mock   : " : "Previa YMS   : ") + previewUrl);
   console.log("");
   console.log("Nenhuma credencial corporativa esta sendo usada.");
   console.log("Pressione Ctrl+C para encerrar.");
