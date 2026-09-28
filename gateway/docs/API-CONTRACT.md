@@ -11,7 +11,7 @@ GET https://envios.adminml.com/logistics/last-mile/monitoring/frm-provider/api/d
 Parametros:
 
 - `facilityId`
-- `groupId`
+- `groupId` — aceito somente quando estiver na allowlist `ALLOWED_GROUP_IDS` do gateway
 - `siteId`
 - `wave`
 
