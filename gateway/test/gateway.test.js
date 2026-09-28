@@ -1223,8 +1223,9 @@ test("Y16 preview home continua mock YMS e sem credenciais corporativas", () => 
   assert.equal(packageJson.scripts["preview:home"], "node scripts/home-preview.js");
   assert.equal(source.includes('process.env.GATEWAY_MODE = process.env.GATEWAY_MODE || "mock"'), true);
   assert.equal(source.includes('process.env.AUTH_MODE = process.env.AUTH_MODE || "unconfigured"'), true);
-  assert.equal(source.includes('const previewMode = process.argv.includes("--flow") ? "flow" : "yms";'), true);
-  assert.equal(source.includes('previewMode === "flow" ? "disabled" : "mock"'), true);
+  assert.equal(source.includes('const previewMode = process.argv.includes("--recovery")'), true);
+  assert.equal(source.includes('process.argv.includes("--flow") ? "flow" : "yms"'), true);
+  assert.equal(source.includes('previewMode === "yms" ? "mock" : "disabled"'), true);
   assert.equal(source.includes("ymsPreview=1"), true);
   assert.equal(source.includes("authorization"), false);
   assert.equal(source.includes("cookie"), false);
