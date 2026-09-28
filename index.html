@@ -11168,6 +11168,15 @@ function ymsPreviewStatusLabel(value) {
   return YMS_PREVIEW_LABELS[key] || normalize(value) || "Pendente";
 }
 
+function ymsPreviewEscape(value) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
 function ensureYmsPreviewPanel() {
   let panel = document.getElementById("ymsPreviewPanel");
   if (panel) return panel;
@@ -11235,7 +11244,7 @@ function renderYmsPreview(rows = data.baseYmsAutomatica || []) {
 
   const badge = (label, value) => `
     <span style="display:inline-flex;gap:5px;align-items:center;padding:4px 7px;border-radius:999px;background:rgba(148,163,184,.12);font-size:11px;color:#e2e8f0">
-      <strong>${value}</strong> ${label}
+      <strong>${Number(value) || 0}</strong> ${ymsPreviewEscape(label)}
     </span>
   `;
 
@@ -11266,20 +11275,20 @@ function renderYmsPreview(rows = data.baseYmsAutomatica || []) {
         <article style="padding:9px 0;border-bottom:1px solid rgba(148,163,184,.13)">
           <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px">
             <div>
-              <div style="font-size:13px;font-weight:800">${normalize(row.route_name) || "Rota sem nome"}</div>
+              <div style="font-size:13px;font-weight:800">${ymsPreviewEscape(normalize(row.route_name) || "Rota sem nome")}</div>
               <div style="font-size:11px;color:#94a3b8;margin-top:2px">
-                Onda ${normalize(row.wave_number) || "-"}
-                ${loadingZone ? ` • Zona YMS ${loadingZone}` : ""}
+                Onda ${ymsPreviewEscape(normalize(row.wave_number) || "-")}
+                ${loadingZone ? ` • Zona YMS ${ymsPreviewEscape(loadingZone)}` : ""}
               </div>
             </div>
             <span style="font-size:11px;font-weight:700;padding:4px 7px;border-radius:8px;background:${exception ? "rgba(239,68,68,.18)" : confirmed ? "rgba(34,197,94,.18)" : "rgba(59,130,246,.18)"}">
-              ${ymsPreviewStatusLabel(row.lifecycle_stage)}
+              ${ymsPreviewEscape(ymsPreviewStatusLabel(row.lifecycle_stage))}
             </span>
           </div>
           <div style="font-size:11px;color:#cbd5e1;margin-top:6px;display:flex;flex-wrap:wrap;gap:4px 10px">
-            ${carrier ? `<span>${carrier}</span>` : ""}
-            ${plate ? `<span>${plate}</span>` : ""}
-            ${latestAt ? `<span>Evento: ${latestAt}</span>` : ""}
+            ${carrier ? `<span>${ymsPreviewEscape(carrier)}</span>` : ""}
+            ${plate ? `<span>${ymsPreviewEscape(plate)}</span>` : ""}
+            ${latestAt ? `<span>Evento: ${ymsPreviewEscape(latestAt)}</span>` : ""}
           </div>
         </article>
       `;
