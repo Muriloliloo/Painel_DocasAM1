@@ -1162,3 +1162,22 @@ test("Y13 frontend consome YMS somente por opt-in e preserva consolidacao atual"
   assert.equal(rebuildSource.includes("baseOperacionalAutomatica"), true);
   assert.equal(rebuildSource.includes("baseAduanaAutomatica"), true);
 });
+
+
+test("Y14 previa visual YMS e opt-in e nao altera a base consolidada", () => {
+  const indexPath = path.resolve(__dirname, "../../index.html");
+  const source = fs.readFileSync(indexPath, "utf8");
+
+  assert.equal(source.includes("ymsPreview: input.ymsPreview === true"), true);
+  assert.equal(source.includes('id = "ymsPreviewPanel"'), true);
+  assert.equal(source.includes("Somente homologacao"), true);
+  assert.equal(source.includes("Zona YMS"), true);
+  assert.equal(source.includes("window.renderYmsPreview = renderYmsPreview;"), true);
+  assert.equal(source.includes("function ymsPreviewEscape"), true);
+
+  const rebuildStart = source.indexOf("function rebuildConsolidatedBase");
+  const rebuildEnd = source.indexOf("function automaticSecondsToClock", rebuildStart);
+  const rebuildSource = source.slice(rebuildStart, rebuildEnd);
+
+  assert.equal(rebuildSource.includes("baseYmsAutomatica"), false);
+});
