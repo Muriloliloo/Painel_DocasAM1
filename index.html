@@ -11001,9 +11001,13 @@ function calculateRecurringDiagnosticPatterns(history = data.baseDiagnosticHisto
     let previousActiveKeys = new Set();
 
     ordered.forEach(item => {
-      const flags = Array.isArray(item.diagnostic_flags)
+      let flags = Array.isArray(item.diagnostic_flags)
         ? item.diagnostic_flags.filter(flag => RECURRING_DIAGNOSTIC_FLAGS.includes(flag))
         : [];
+
+      if (flags.includes("yms_ahead") || flags.includes("dispatch_ahead")) {
+        flags = flags.filter(flag => flag !== "stage_divergence");
+      }
 
       const activePatterns = flags.map(flag => ({
         flag,
@@ -11843,8 +11847,9 @@ function renderRecurringDiagnosticPatterns(panel) {
   const container = panel.querySelector("[data-yms-preview-recurring]");
   if (!container) return;
 
-  const patterns = calculateRecurringDiagnosticPatterns().slice(0, 8);
-  if (!patterns.length) {
+  const allPatterns = calculateRecurringDiagnosticPatterns();
+  const patterns = allPatterns.slice(0, 8);
+  if (!allPatterns.length) {
     container.innerHTML = "";
     return;
   }
@@ -11870,7 +11875,7 @@ function renderRecurringDiagnosticPatterns(panel) {
   container.innerHTML = `
     <details>
       <summary style="cursor:pointer;font-size:10px;font-weight:800;letter-spacing:.05em;color:#fb7185">
-        PADROES RECORRENTES (${patterns.length})
+        PADROES RECORRENTES (${allPatterns.length})
       </summary>
       <div style="margin-top:5px;padding:7px 8px;border-radius:10px;background:rgba(30,41,59,.42);border:1px solid rgba(148,163,184,.1)">
         <div style="font-size:8.7px;color:#94a3b8;margin-bottom:4px;line-height:1.35">
