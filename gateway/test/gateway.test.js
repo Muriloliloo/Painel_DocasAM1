@@ -1556,3 +1556,56 @@ test("G19 preview flow local usa polling sem YMS", () => {
   assert.equal(indexSource.includes('return "Concluída";'), true);
 });
 
+test("G20 sequencia recovery falha uma vez e depois recupera", async () => {
+  await withGateway(testConfig({
+    mockScenario: "operational-recovery",
+    ymsMode: "disabled"
+  }), {}, async url => {
+    const first = await fetch(`${url}/snapshot?${query()}`);
+    const firstBody = await first.json();
+    assert.equal(first.status, 200);
+    assert.equal(firstBody.operacional[0]?.route_name, "G5_AM1");
+    assert.equal(firstBody.operacional[0]?.process, "waiting_customs");
+
+    const second = await fetch(`${url}/snapshot?${query()}`);
+    const secondBody = await second.json();
+    assert.equal(second.status, 200);
+    assert.equal(secondBody.operacional[0]?.process, "customs_in_progress");
+
+    const third = await fetch(`${url}/snapshot?${query()}`);
+    const thirdBody = await third.json();
+    assert.equal(third.status, 200);
+    assert.equal(thirdBody.operacional[0]?.process, "loading_packages");
+
+    const failure = await fetch(`${url}/snapshot?${query()}`);
+    const failureBody = await failure.json();
+    assert.equal(failure.status, 502);
+    assert.equal(failureBody.snapshotComplete, false);
+    assert.equal(failureBody.emptyConfirmed, false);
+    assert.equal(failureBody.sources.dispatch, "error");
+    assert.equal(failureBody.sources.aduana, "ok");
+
+    const recovered = await fetch(`${url}/snapshot?${query()}`);
+    const recoveredBody = await recovered.json();
+    assert.equal(recovered.status, 200);
+    assert.equal(recoveredBody.operacional[0]?.route_name, "G5_AM1");
+    assert.equal(recoveredBody.operacional[0]?.process, "dispatched");
+
+    const stable = await fetch(`${url}/snapshot?${query()}`);
+    const stableBody = await stable.json();
+    assert.equal(stable.status, 200);
+    assert.equal(stableBody.operacional[0]?.process, "dispatched");
+  });
+});
+
+test("G21 preview recovery fica offline e sem YMS", () => {
+  const root = path.resolve(__dirname, "../..");
+  const homeSource = fs.readFileSync(path.join(root, "gateway/scripts/home-preview.js"), "utf8");
+  const packageJson = JSON.parse(fs.readFileSync(path.join(root, "gateway/package.json"), "utf8"));
+
+  assert.equal(packageJson.scripts["preview:recovery"], "node scripts/home-preview.js --recovery");
+  assert.equal(homeSource.includes('process.argv.includes("--recovery")'), true);
+  assert.equal(homeSource.includes('"operational-recovery"'), true);
+  assert.equal(homeSource.includes('previewMode === "yms" ? "mock" : "disabled"'), true);
+});
+
