@@ -157,7 +157,30 @@ Eles nao sao enviados ao Firebase e nao alteram `baseOperacional`, `baseAduana` 
 
 ## Homologacao em casa sem acesso corporativo
 
-Com Node.js 20+ e o repositorio local, use:
+O caminho mais simples agora e:
+
+```powershell
+cd gateway
+npm run preview:home
+```
+
+Esse comando sobe ao mesmo tempo:
+
+- gateway mock em `127.0.0.1:8787`;
+- painel local em `localhost:8000`;
+- YMS em modo mock;
+- previa visual YMS ativada por `?ymsPreview=1`.
+
+O navegador tenta abrir automaticamente:
+
+`http://localhost:8000/?ymsPreview=1`
+
+Se a abertura automatica falhar, basta copiar esse endereco manualmente.
+
+Nenhuma credencial corporativa e usada nesse modo. Para encerrar os dois servidores, pressione `Ctrl+C`.
+
+Para iniciar somente o gateway, ainda e possivel usar:
+
 
 ```powershell
 $env:GATEWAY_MODE = "mock"
