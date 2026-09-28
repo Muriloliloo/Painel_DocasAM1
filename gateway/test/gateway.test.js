@@ -32,6 +32,7 @@ function testConfig(overrides = {}) {
     allowedOrigins: ["http://localhost:8000"],
     allowedFacilityIds: ["SSP15"],
     allowedSiteIds: ["MLB"],
+    allowedGroupIds: ["TESTE"],
     allowedCycles: ["AM1"],
     allowedWaves: ["1", "2", "3", "4", "5"],
     upstreamTimeoutMs: 80,
@@ -782,7 +783,8 @@ test("T12 preflight e estrutural e nao chama auth ou upstream", () => {
     NODE_ENV: "production",
     GATEWAY_MODE: "real",
     AUTH_MODE: "corporate",
-    PANEL_ALLOWED_ORIGIN: "https://painel-preflight.invalid"
+    PANEL_ALLOWED_ORIGIN: "https://painel-preflight.invalid",
+    ALLOWED_GROUP_IDS: "TESTE"
   };
   const messages = [];
   const logger = {
@@ -1449,5 +1451,40 @@ test("Y26 padroes recorrentes contam episodios e evitam duplicidade", () => {
 
   assert.equal(rebuildSource.includes("calculateRecurringDiagnosticPatterns"), false);
   assert.equal(rebuildSource.includes("episode_count"), false);
+});
+
+test("A16 groupId fica restrito a allowlist do gateway", async () => {
+  const denied = await jsonRequest(
+    "/snapshot?facilityId=SSP15&siteId=MLB&groupId=NAO_AUTORIZADO&cycle=AM1&timezone=America%2FSao_Paulo&waves=1,2,3,4,5"
+  );
+  assert.equal(denied.response.status, 400);
+  assert.equal(denied.body.error.code, "INVALID_QUERY");
+  assert.match(denied.body.error.message, /groupId nao autorizado/);
+
+  assert.throws(
+    () => createConfig({
+      NODE_ENV: "production",
+      GATEWAY_MODE: "mock",
+      PANEL_ALLOWED_ORIGIN: "https://painel.example"
+    }),
+    /ALLOWED_GROUP_IDS/
+  );
+});
+
+test("A17 configuracao publica da automacao inicia desativada e sem segredo", () => {
+  const root = path.resolve(__dirname, "../..");
+  const configSource = fs.readFileSync(path.join(root, "automation-config.js"), "utf8");
+  const indexSource = fs.readFileSync(path.join(root, "index.html"), "utf8");
+
+  assert.equal(indexSource.includes('<script src="./automation-config.js"></script>'), true);
+  assert.equal(configSource.includes('const gatewayBaseUrl = "";'), true);
+  assert.equal(configSource.includes("ymsEnabled: false"), true);
+  assert.equal(configSource.includes("ymsPreview: false"), true);
+  assert.equal(configSource.includes("enabled: true"), true);
+  assert.equal(configSource.includes("envios.adminml.com"), false);
+  assert.equal(/authorization\s*:/i.test(configSource), false);
+  assert.equal(/cookie\s*:/i.test(configSource), false);
+  assert.equal(/token\s*:/i.test(configSource), false);
+  assert.equal(/password\s*:/i.test(configSource), false);
 });
 
