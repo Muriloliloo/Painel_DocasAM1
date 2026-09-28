@@ -14,6 +14,7 @@
     "smoke:mock": "node scripts/smoke-mock.js",
     "preflight:corporate": "node scripts/preflight-corporate.js",
     "preview:home": "node scripts/home-preview.js",
-    "preview:flow": "node scripts/home-preview.js --flow"
+    "preview:flow": "node scripts/home-preview.js --flow",
+    "smoke:flow": "node scripts/smoke-flow.js"
   }
 }
