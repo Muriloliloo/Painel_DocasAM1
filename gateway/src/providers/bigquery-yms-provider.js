@@ -35,6 +35,18 @@ function currentDateInTimeZone(timezone = "America/Sao_Paulo", now = new Date())
   return validateOperationDate(`${values.year}-${values.month}-${values.day}`);
 }
 
+function validateWaveNumbers(values) {
+  const waves = Array.from(new Set((Array.isArray(values) ? values : [])
+    .map(value => Number(value))
+    .filter(value => Number.isSafeInteger(value) && value > 0)));
+
+  if (!waves.length || waves.length > 10) {
+    throw new GatewayError(400, "INVALID_QUERY", "waves invalidas para YMS.");
+  }
+
+  return waves;
+}
+
 function createBigQueryYmsProvider({ queryExecutor, sqlLoader = loadRuntimeSql } = {}) {
   const configured = typeof queryExecutor === "function";
 
@@ -47,7 +59,7 @@ function createBigQueryYmsProvider({ queryExecutor, sqlLoader = loadRuntimeSql }
         : { configured: false, mode: "provider", reason: "YMS_PROVIDER_NOT_CONFIGURED" };
     },
 
-    async query({ facilityId, cycle, operationDate, timezone, signal }) {
+    async query({ facilityId, cycle, waves, operationDate, timezone, signal }) {
       if (!configured) {
         throw new GatewayError(
           503,
@@ -57,7 +69,8 @@ function createBigQueryYmsProvider({ queryExecutor, sqlLoader = loadRuntimeSql }
       }
 
       const sql = sqlLoader();
-      if (!sql || !sql.includes("@facility_id") || !sql.includes("@operation_date")) {
+      if (!sql || !sql.includes("@facility_id") || !sql.includes("@operation_date")
+          || !sql.includes("@wave_numbers")) {
         throw new GatewayError(
           500,
           "YMS_SQL_INVALID",
@@ -72,7 +85,8 @@ function createBigQueryYmsProvider({ queryExecutor, sqlLoader = loadRuntimeSql }
           cycle_name: String(cycle),
           operation_date: operationDate
             ? validateOperationDate(operationDate)
-            : currentDateInTimeZone(timezone)
+            : currentDateInTimeZone(timezone),
+          wave_numbers: validateWaveNumbers(waves)
         },
         signal
       });
@@ -84,6 +98,7 @@ module.exports = {
   RUNTIME_SQL_PATH,
   loadRuntimeSql,
   validateOperationDate,
+  validateWaveNumbers,
   currentDateInTimeZone,
   createBigQueryYmsProvider
 };
