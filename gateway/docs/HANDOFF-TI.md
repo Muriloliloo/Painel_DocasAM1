@@ -32,7 +32,7 @@ Dependendo do metodo oficial, a TI tambem pode precisar provisionar secrets mana
 ## Sequencia de ativacao
 
 1. Obter a documentacao oficial, implementar `getAuthContext()` no arquivo indicado e atualizar sua inspecao estrutural quando estiver pronto.
-2. Configurar os segredos somente na infraestrutura e definir `GATEWAY_MODE=real` e `AUTH_MODE=corporate`.
+2. Configurar os segredos somente na infraestrutura, definir `GATEWAY_MODE=real`, `AUTH_MODE=corporate` e declarar explicitamente `ALLOWED_GROUP_IDS`.
 3. Manter `YMS_MODE=disabled` ate existir um executor BigQuery aprovado. Para homologacao isolada, usar `YMS_MODE=mock`.
 4. Quando o executor YMS estiver aprovado, configurar `YMS_MODE=provider` sem gravar credenciais no Git.
 5. Executar `npm run verify` e `npm run preflight:corporate`.
@@ -46,7 +46,7 @@ O painel aceita `window.PAINEL_AUTOMATION_CONFIG` no carregamento ou uma chamada
 - `gatewayBaseUrl`: endereco HTTPS publico do gateway, sem credenciais;
 - `mode`: `combined` para `/snapshot` ou `split` para chamadas separadas;
 - `snapshotPath`, `dispatchPath`, `customsPath`: caminhos relativos opcionais;
-- `facilityId`, `siteId`, `groupId`, `cycle`, `timezone` e `waves`: contexto operacional permitido;
+- `facilityId`, `siteId`, `groupId`, `cycle`, `timezone` e `waves`: contexto operacional permitido; `groupId` e validado pela allowlist do backend;
 - `timeoutMs` e `intervalMs`: limites do cliente;
 - `enabled`: somente `true` inicia o polling automatico.
 
@@ -68,6 +68,7 @@ Salvo se houver mudanca comprovada no contrato das APIs, nao alterar:
 
 - [ ] metodo oficial identificado
 - [ ] autorizacao apenas leitura
+- [ ] `ALLOWED_GROUP_IDS` definido com o escopo aprovado
 - [ ] segredo fora do Git
 - [ ] `corporate-provider` implementado
 - [ ] `npm run verify` aprovado
