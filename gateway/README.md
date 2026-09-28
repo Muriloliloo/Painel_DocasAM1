@@ -233,6 +233,16 @@ npm run preview:flow
 
 O painel abre em localhost com polling de 15 segundos, `YMS_MODE=disabled` e cenario `operational-sequence`. A rota mock `G5_AM1`, que ja existe no planejamento local da Onda 1, percorre os quatro estados e permanece em `dispatched` no final. Nenhuma VPN, autenticacao corporativa ou dado real e usado nesse modo.
 
+Para validar preservacao do ultimo estado valido quando uma fonte falha temporariamente:
+
+```powershell
+cd gateway
+npm run smoke:recovery
+npm run preview:recovery
+```
+
+O cenario `operational-recovery` executa `waiting_customs -> customs_in_progress -> loading_packages -> falha Dispatch -> dispatched`. Durante a falha, o gateway retorna snapshot incompleto e o frontend deve conservar o ultimo snapshot valido. No polling seguinte, a fonte volta e a rota segue para `dispatched`.
+
 Para a homologacao YMS mock que ja existia, continue usando:
 
 ```powershell
