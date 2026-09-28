@@ -54,6 +54,20 @@ function dispatchRows(payload) {
 function selectRows(scenario, waves) {
   if (new Set(["empty-unconfirmed", "empty-confirmed"]).has(scenario)) return [];
 
+  const flowBase = DISPATCH_BY_WAVE["2"];
+  if (scenario === "flow-waiting") {
+    return waves.includes("2") ? [{ ...flowBase, process: "waiting_customs", start_time: 5, total_elapsed_time: 35 }] : [];
+  }
+  if (scenario === "flow-customs") {
+    return waves.includes("2") ? [{ ...flowBase, process: "customs_in_progress", start_time: 12, total_elapsed_time: 47 }] : [];
+  }
+  if (scenario === "flow-loading") {
+    return waves.includes("2") ? [{ ...flowBase, process: "loading_packages", start_time: 18, total_elapsed_time: 65 }] : [];
+  }
+  if (scenario === "flow-dispatched") {
+    return waves.includes("2") ? [{ ...flowBase, process: "dispatched", start_time: 7, total_elapsed_time: 72 }] : [];
+  }
+
   if (scenario === "loading") return [{ ...DISPATCH_BY_WAVE["1"] }];
   if (scenario === "dispatched") return [{ ...DISPATCH_BY_WAVE["3"] }];
   if (new Set(["customs-in-progress", "customs-complete"]).has(scenario)) {
