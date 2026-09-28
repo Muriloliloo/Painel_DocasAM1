@@ -61,8 +61,11 @@ function normalizeCustomsRow(raw = {}) {
 }
 
 function selectRows(scenario) {
-  if (new Set(["empty-unconfirmed", "empty-confirmed", "loading", "dispatched"]).has(scenario)) return [];
-  if (scenario === "customs-complete") {
+  if (new Set(["empty-unconfirmed", "empty-confirmed", "loading", "dispatched", "flow-waiting"]).has(scenario)) return [];
+  if (scenario === "flow-customs") {
+    return [{ ...CUSTOMS_IN_PROGRESS }];
+  }
+  if (new Set(["flow-loading", "flow-dispatched", "customs-complete"]).has(scenario)) {
     return [{
       ...CUSTOMS_IN_PROGRESS,
       status: "completed",
