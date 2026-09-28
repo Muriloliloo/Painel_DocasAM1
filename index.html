@@ -9384,6 +9384,7 @@ data.baseAduanaManual = Array.isArray(data.baseAduanaManual)
 data.baseOperacionalAutomatica = [];
 data.baseAduanaAutomatica = [];
 data.baseYmsAutomatica = [];
+data.baseComparisonAutomatica = null;
 
     data.baseHistorico = Array.isArray(data.baseHistorico) ? data.baseHistorico : [];
     data.carregamentoInicio = data.carregamentoInicio || {};
@@ -10653,6 +10654,10 @@ function applyAutomaticPayload(payload = {}) {
     ? payload.yms
     : [ ];
 
+  const comparison = payload.comparison && typeof payload.comparison === "object"
+    ? JSON.parse(JSON.stringify(payload.comparison))
+    : null;
+
 const replaceAutomaticSnapshot = payload.substituir === true;
 
  const previousOperationalAutomatic = Array.isArray(data.baseOperacionalAutomatica)
@@ -10707,10 +10712,17 @@ data.baseYmsAutomatica = replaceAutomaticSnapshot
       ...incomingYmsAutomatic
     ]);
 
+if (replaceAutomaticSnapshot || comparison) {
+  data.baseComparisonAutomatica = comparison;
+}
+
 window.dispatchEvent(new CustomEvent("painel:yms-data", {
   detail: {
     rows: data.baseYmsAutomatica.map(row => ({ ...row })),
-    count: data.baseYmsAutomatica.length
+    count: data.baseYmsAutomatica.length,
+    comparison: data.baseComparisonAutomatica
+      ? JSON.parse(JSON.stringify(data.baseComparisonAutomatica))
+      : null
   }
 }));
 
@@ -11115,6 +11127,7 @@ async function fetchAutomaticSnapshot(config, requestContext) {
       operacional: dispatchResult.rows,
       aduana: customsResult.rows,
       yms: ymsResult ? ymsResult.rows : [],
+      comparison: null,
       snapshotComplete: dispatchResult.snapshotComplete
         && customsResult.snapshotComplete
         && (!ymsResult || ymsResult.snapshotComplete),
@@ -11147,6 +11160,9 @@ async function fetchAutomaticSnapshot(config, requestContext) {
     yms: resolved.ymsEnabled
       ? automaticRowsFromResponse(payload, ["yms"], "do YMS").map(sanitizeYmsAutomaticRow)
       : [],
+    comparison: resolved.ymsEnabled && payload?.comparison && typeof payload.comparison === "object"
+      ? payload.comparison
+      : null,
     ...metadata
   };
 }
@@ -11210,7 +11226,8 @@ function ensureYmsPreviewPanel() {
       <button type="button" data-yms-preview-close aria-label="Fechar previa YMS" style="border:0;background:transparent;color:#cbd5e1;font-size:22px;cursor:pointer;line-height:1">×</button>
     </div>
     <div data-yms-preview-summary style="display:flex;flex-wrap:wrap;gap:6px;padding:10px 12px 0"></div>
-    <div data-yms-preview-rows style="padding:10px 12px 12px;overflow:auto;max-height:520px"></div>
+    <div data-yms-preview-comparison style="padding:10px 12px 0"></div>
+    <div data-yms-preview-rows style="padding:10px 12px 12px;overflow:auto;max-height:420px"></div>
   `;
 
   panel.querySelector("[data-yms-preview-close]")?.addEventListener("click", () => {
@@ -11219,6 +11236,80 @@ function ensureYmsPreviewPanel() {
 
   document.body.appendChild(panel);
   return panel;
+}
+
+function renderYmsSourceComparison(panel, comparison = data.baseComparisonAutomatica) {
+  const container = panel.querySelector("[data-yms-preview-comparison]");
+  if (!container) return;
+
+  const summary = comparison?.summary;
+  const routes = Array.isArray(comparison?.routes) ? comparison.routes : [];
+
+  if (!summary || !routes.length) {
+    container.innerHTML = "";
+    return;
+  }
+
+  const comparableRoutes = routes.filter(row => Number(row?.source_count || 0) >= 2);
+  const smallBadge = (label, value) => `
+    <span style="display:inline-flex;gap:4px;align-items:center;padding:3px 6px;border-radius:999px;background:rgba(148,163,184,.1);font-size:10px;color:#cbd5e1">
+      <strong>${Number(value) || 0}</strong> ${ymsPreviewEscape(label)}
+    </span>
+  `;
+
+  const routeRows = comparableRoutes.slice(0, 8).map(row => {
+    const dispatchText = row.dispatch?.present
+      ? `Dispatch: ${ymsPreviewEscape(row.dispatch.process || "-")}${row.dispatch.dock_number ? ` • Doca ${ymsPreviewEscape(row.dispatch.dock_number)}` : ""}`
+      : "Dispatch: sem registro";
+
+    const customsText = row.aduana?.present
+      ? `Aduana: ${ymsPreviewEscape(row.aduana.process || row.aduana.status || "-")}`
+      : "Aduana: sem registro";
+
+    const ymsText = row.yms?.present
+      ? `YMS: ${ymsPreviewEscape(ymsPreviewStatusLabel(row.yms.lifecycle_stage))}${row.yms.loading_zone_name ? ` • Zona ${ymsPreviewEscape(row.yms.loading_zone_name)}` : ""}`
+      : "YMS: sem registro";
+
+    const dockLabel = row.dock_comparison === "same"
+      ? "Doca/zon. igual"
+      : row.dock_comparison === "different"
+        ? "Doca/zon. diferente"
+        : "Doca sem comparacao";
+
+    const stageLabel = row.stage_comparison === "all_equal"
+      ? "Etapa igual"
+      : row.stage_comparison === "mixed"
+        ? "Etapas diferentes"
+        : "Etapa sem comparacao";
+
+    return `
+      <div style="padding:7px 0;border-top:1px solid rgba(148,163,184,.11)">
+        <div style="display:flex;justify-content:space-between;gap:8px">
+          <strong style="font-size:11px">${ymsPreviewEscape(row.route_name || "Rota")}</strong>
+          <span style="font-size:9px;color:#94a3b8">${ymsPreviewEscape(dockLabel)} • ${ymsPreviewEscape(stageLabel)}</span>
+        </div>
+        <div style="font-size:9.5px;color:#cbd5e1;margin-top:3px;line-height:1.45">
+          <div>${dispatchText}</div>
+          <div>${customsText}</div>
+          <div>${ymsText}</div>
+        </div>
+      </div>
+    `;
+  }).join("");
+
+  container.innerHTML = `
+    <div style="padding:8px;border-radius:10px;background:rgba(30,41,59,.58);border:1px solid rgba(148,163,184,.12)">
+      <div style="font-size:10px;font-weight:800;letter-spacing:.06em;color:#93c5fd;margin-bottom:6px">COMPARACAO DE FONTES</div>
+      <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:${comparableRoutes.length ? "6px" : "0"}">
+        ${smallBadge("3 fontes", summary.all_three)}
+        ${smallBadge("doca igual", summary.dock_same)}
+        ${smallBadge("doca diferente", summary.dock_different)}
+        ${smallBadge("etapa igual", summary.stage_all_equal)}
+        ${smallBadge("etapas diferentes", summary.stage_mixed)}
+      </div>
+      ${routeRows || '<div style="font-size:10px;color:#94a3b8">Ainda nao ha rotas presentes em mais de uma fonte.</div>'}
+    </div>
+  `;
 }
 
 function renderYmsPreview(rows = data.baseYmsAutomatica || []) {
@@ -11235,6 +11326,7 @@ function renderYmsPreview(rows = data.baseYmsAutomatica || []) {
 
   const summary = panel.querySelector("[data-yms-preview-summary]");
   const list = panel.querySelector("[data-yms-preview-rows]");
+  renderYmsSourceComparison(panel, data.baseComparisonAutomatica);
 
   const counts = normalizedRows.reduce((acc, row) => {
     const stage = plainText(row.lifecycle_stage) || "unknown";
@@ -11297,6 +11389,9 @@ function renderYmsPreview(rows = data.baseYmsAutomatica || []) {
 }
 
 window.addEventListener("painel:yms-data", event => {
+  if (event?.detail?.comparison) {
+    data.baseComparisonAutomatica = event.detail.comparison;
+  }
   renderYmsPreview(event?.detail?.rows || []);
 });
 
@@ -11396,7 +11491,8 @@ async function refreshAutomaticSnapshot(options = {}) {
       substituir: replacingSnapshot,
       operacional: snapshot.operacional,
       aduana: snapshot.aduana,
-      yms: snapshot.yms || []
+      yms: snapshot.yms || [],
+      comparison: snapshot.comparison || null
     });
 
     automaticSourceState.lastSuccessAt = new Date().toISOString();
@@ -11467,7 +11563,14 @@ function clearAutomaticSessionData() {
   window.clearTimeout(automaticSourceState.timerId);
   automaticSourceState.timerId = null;
   const generation = invalidateAutomaticRequests("cleared");
-  const counts = applyAutomaticPayload({ substituir: true, operacional: [], aduana: [], yms: [] });
+  const counts = applyAutomaticPayload({
+    substituir: true,
+    operacional: [],
+    aduana: [],
+    yms: [],
+    comparison: null
+  });
+  data.baseComparisonAutomatica = null;
   automaticSourceState.lastError = "";
   automaticSourceState.lastCounts = counts;
   if (pollingWasRunning) scheduleNextAutomaticRefresh(generation);
@@ -11530,6 +11633,9 @@ window.fetchDispatchSnapshot = fetchDispatchSnapshot;
 window.fetchCustomsSnapshot = fetchCustomsSnapshot;
 window.fetchYmsSnapshot = fetchYmsSnapshot;
 window.ymsAutomaticRows = () => (data.baseYmsAutomatica || []).map(row => ({ ...row }));
+window.ymsSourceComparison = () => data.baseComparisonAutomatica
+  ? JSON.parse(JSON.stringify(data.baseComparisonAutomatica))
+  : null;
 window.renderYmsPreview = renderYmsPreview;
 window.fetchAutomaticSnapshot = fetchAutomaticSnapshot;
 window.refreshAutomaticSnapshot = refreshAutomaticSnapshot;
@@ -11951,6 +12057,7 @@ window.automaticConnectionStatus = automaticConnectionStatus;
       delete payload.baseOperacionalAutomatica;
       delete payload.baseAduanaAutomatica;
       delete payload.baseYmsAutomatica;
+      delete payload.baseComparisonAutomatica;
             payload.baseOperacional = onlyPlannedBaseRows(
   payload.baseOperacionalManual || [ ],
   payload.extracao || [ ]
@@ -14463,6 +14570,10 @@ const localCustomsAutomatic = Array.isArray(data.baseAduanaAutomatica)
 const localYmsAutomatic = Array.isArray(data.baseYmsAutomatica)
   ? [...data.baseYmsAutomatica]
   : [ ];
+
+const localComparisonAutomatic = data.baseComparisonAutomatica
+  ? JSON.parse(JSON.stringify(data.baseComparisonAutomatica))
+  : null;
         data = { ...JSON.parse(JSON.stringify(originalData)), ...payload };
         data.docas = Math.max(Number(data.docas || 0), Number(originalData.docas || 92));
         data.horarios = { ...(data.horarios || {}), ...(originalData.horarios || {}), ...horariosOficiais };
@@ -14487,6 +14598,7 @@ data.baseAduanaManual = Array.isArray(data.baseAduanaManual)
 data.baseOperacionalAutomatica = localOperationalAutomatic;
 data.baseAduanaAutomatica = localCustomsAutomatic;
 data.baseYmsAutomatica = localYmsAutomatic;
+data.baseComparisonAutomatica = localComparisonAutomatic;
 
         data.baseHistorico = Array.isArray(data.baseHistorico) ? data.baseHistorico : [];
         rebuildConsolidatedBase(data.extracao || []);
