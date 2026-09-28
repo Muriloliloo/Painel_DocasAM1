@@ -177,7 +177,11 @@ O mock local foi ampliado para cobrir explicitamente esses cenarios, incluindo u
 
 No frontend, a comparacao fica somente na sessao em `window.ymsSourceComparison()` e aparece dentro da janela `YMS • PREVIA`.
 
-Eles nao sao enviados ao Firebase e nao alteram `baseOperacional`, `baseAduana` ou o fallback manual nesta etapa.
+A previa agora tambem mantem uma linha do tempo da sessao, acessivel por `window.ymsDiagnosticHistory()`. Ela registra apenas quando alguma rota muda entre dois pollings consecutivos, incluindo os estados observados no Dispatch, Aduana e YMS e os diagnosticos associados.
+
+Essa linha do tempo usa o horario em que o navegador observou a mudanca. Ela nao e o timestamp oficial de processamento ou ingestao de nenhuma fonte e nao deve ser usada como SLA. O limite atual e de 240 mudancas por sessao para evitar crescimento indefinido.
+
+A comparacao e a linha do tempo nao sao enviadas ao Firebase e nao alteram `baseOperacional`, `baseAduana` ou o fallback manual nesta etapa.
 
 ## Homologacao em casa sem acesso corporativo
 
