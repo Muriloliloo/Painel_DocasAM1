@@ -225,7 +225,9 @@ function createGatewayServer(config = createConfig(), dependencies = {}) {
 
     return {
       ...query,
-      scenario: MOCK_OPERATIONAL_SEQUENCE[sequenceIndex % MOCK_OPERATIONAL_SEQUENCE.length]
+      scenario: MOCK_OPERATIONAL_SEQUENCE[
+        Math.min(sequenceIndex, MOCK_OPERATIONAL_SEQUENCE.length - 1)
+      ]
     };
   };
 
