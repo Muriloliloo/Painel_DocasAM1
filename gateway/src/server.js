@@ -21,11 +21,23 @@ const MOCK_SCENARIOS = new Set([
   "dispatched",
   "customs-in-progress",
   "customs-complete",
+  "flow-waiting",
+  "flow-customs",
+  "flow-loading",
+  "flow-dispatched",
+  "operational-sequence",
   "empty-unconfirmed",
   "empty-confirmed",
   "failure-dispatch",
   "failure-customs",
   "timeout"
+]);
+
+const MOCK_OPERATIONAL_SEQUENCE = Object.freeze([
+  "flow-waiting",
+  "flow-customs",
+  "flow-loading",
+  "flow-dispatched"
 ]);
 
 const COMMON_QUERY_KEYS = new Set(["facilityId", "siteId", "groupId", "cycle", "timezone", "scenario"]);
@@ -202,6 +214,21 @@ function validateOperationalQuery(searchParams, config, endpoint) {
 }
 
 function createGatewayServer(config = createConfig(), dependencies = {}) {
+  let mockSequenceIndex = 0;
+
+  const resolveMockSequence = (query, pathname) => {
+    if (config.mode !== "mock" || query.scenario !== "operational-sequence") return query;
+
+    const sequenceIndex = pathname === "/snapshot"
+      ? mockSequenceIndex++
+      : Math.max(0, mockSequenceIndex - 1);
+
+    return {
+      ...query,
+      scenario: MOCK_OPERATIONAL_SEQUENCE[sequenceIndex % MOCK_OPERATIONAL_SEQUENCE.length]
+    };
+  };
+
   const sourceDependencies = Object.freeze({
     authProvider: dependencies.authProvider || createAuthProvider(config),
     upstreamClient: dependencies.upstreamClient || createUpstreamClient({
@@ -269,12 +296,18 @@ function createGatewayServer(config = createConfig(), dependencies = {}) {
         return;
       }
       if (pathname === "/snapshot") {
-        const query = validateOperationalQuery(url.searchParams, config, pathname);
+        const query = resolveMockSequence(
+          validateOperationalQuery(url.searchParams, config, pathname),
+          pathname
+        );
         sendJson(response, 200, await buildSnapshot({ config, ...query, dependencies: sourceDependencies }), config);
         return;
       }
       if (pathname === "/dispatch") {
-        const query = validateOperationalQuery(url.searchParams, config, pathname);
+        const query = resolveMockSequence(
+          validateOperationalQuery(url.searchParams, config, pathname),
+          pathname
+        );
         sendJson(response, 200, await buildDispatchSnapshot({
           config,
           ...query,
@@ -284,7 +317,10 @@ function createGatewayServer(config = createConfig(), dependencies = {}) {
         return;
       }
       if (pathname === "/customs") {
-        const query = validateOperationalQuery(url.searchParams, config, pathname);
+        const query = resolveMockSequence(
+          validateOperationalQuery(url.searchParams, config, pathname),
+          pathname
+        );
         sendJson(response, 200, await buildCustomsSnapshot({
           config,
           ...query,
@@ -293,7 +329,10 @@ function createGatewayServer(config = createConfig(), dependencies = {}) {
         return;
       }
       if (pathname === "/yms") {
-        const query = validateOperationalQuery(url.searchParams, config, pathname);
+        const query = resolveMockSequence(
+          validateOperationalQuery(url.searchParams, config, pathname),
+          pathname
+        );
         sendJson(response, 200, await buildYmsSnapshot({
           config,
           ...query,
@@ -326,6 +365,7 @@ if (require.main === module) {
 
 module.exports = {
   MOCK_SCENARIOS,
+  MOCK_OPERATIONAL_SEQUENCE,
   createGatewayServer,
   validateRequestTarget,
   validateOperationalQuery
