@@ -189,7 +189,11 @@ A previa tambem agrega um resumo estatistico da sessao em `window.ymsObservedSes
 
 Esse resumo e somente descritivo do que o navegador observou durante a sessao. Ele nao mede desempenho de sistema, nao representa latencia oficial, nao estabelece causalidade e nao define autoridade entre fontes.
 
-A comparacao, a linha do tempo, a defasagem observada e o resumo estatistico nao sao enviados ao Firebase e nao alteram `baseOperacional`, `baseAduana` ou o fallback manual nesta etapa.
+A previa tambem identifica padroes recorrentes em `window.ymsRecurringDiagnosticPatterns()` e no bloco `PADROES RECORRENTES`. Um padrao e definido pela mesma rota, pelo mesmo diagnostico e pela mesma combinacao observada de etapas ou doca/zona. A persistencia continua de uma divergencia conta como um unico episodio; um novo episodio so e contado quando o padrao deixa de estar ativo e depois reaparece. Apenas padroes com dois ou mais episodios entram nessa leitura.
+
+Quando `stage_divergence` aparece junto com `yms_ahead` ou `dispatch_ahead`, o diagnostico generico de etapas diferentes e suprimido nessa contagem para evitar duplicidade do mesmo episodio. Essa recorrencia continua sendo somente observacional e nao implica causa, falha, prioridade operacional ou fonte incorreta.
+
+A comparacao, a linha do tempo, a defasagem observada, o resumo estatistico e os padroes recorrentes nao sao enviados ao Firebase e nao alteram `baseOperacional`, `baseAduana` ou o fallback manual nesta etapa.
 
 ## Homologacao em casa sem acesso corporativo
 
