@@ -153,6 +153,18 @@ Com `ymsEnabled: true`, os dados YMS ficam disponiveis apenas na sessao atual em
 
 Com `ymsPreview: true`, o painel mostra uma janela flutuante de homologacao com rota, onda, Zona YMS, transportadora, placa e o estagio calculado. A nomenclatura `Zona YMS` e intencional: enquanto a validacao BigQuery de autoridade da doca estiver pendente, o frontend nao chama esse campo de doca canonica.
 
+Quando YMS esta ativo no snapshot combinado, o gateway tambem devolve `comparison`, uma leitura observacional por `route_name` entre Dispatch, Aduana e YMS. Ela informa:
+
+- quais fontes possuem a rota;
+- etapa informada por cada fonte;
+- Doca Dispatch x Zona YMS;
+- `dock_comparison = same | different | insufficient`;
+- `stage_comparison = all_equal | mixed | insufficient`.
+
+Essa comparacao nao escolhe uma fonte vencedora e nao altera a operacao. Diferencas podem representar tempos de atualizacao distintos entre sistemas e devem ser analisadas antes de qualquer regra de autoridade.
+
+No frontend, a comparacao fica somente na sessao em `window.ymsSourceComparison()` e aparece dentro da janela `YMS • PREVIA`.
+
 Eles nao sao enviados ao Firebase e nao alteram `baseOperacional`, `baseAduana` ou o fallback manual nesta etapa.
 
 ## Homologacao em casa sem acesso corporativo
