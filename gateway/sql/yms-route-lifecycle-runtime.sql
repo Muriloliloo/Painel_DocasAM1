@@ -1,5 +1,5 @@
 -- YMS / BigQuery runtime para automacao do Painel Docas AM1.
--- Parametros obrigatorios: @facility_id STRING, @cycle_name STRING, @operation_date DATE.
+-- Parametros obrigatorios: @facility_id STRING, @cycle_name STRING, @operation_date DATE, @wave_numbers ARRAY<INT64>.
 -- Objetivo: uma linha por PROCESS_ID, preservando data operacional e marcos fisicos.
 -- Derivado da Query V2 validada em 124/124 rotas para SSP15 / AM1.
 
@@ -18,6 +18,7 @@ WITH cycle_summary AS (
   FROM `meli-bi-data.WHOWNER.BT_CYCLE_SUMMARY_LM`
   WHERE LOGISTIC_CENTER_ID = facility_filter
     AND CYCLE_NAME = cycle_filter
+    AND SAFE_CAST(POSITION AS INT64) IN UNNEST(@wave_numbers)
     AND DATE(CYCLE_SCHEDULED_TO) BETWEEN date_from AND date_to
 ),
 
