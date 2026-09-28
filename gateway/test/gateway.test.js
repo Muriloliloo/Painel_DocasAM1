@@ -1405,3 +1405,26 @@ test("Y24 defasagem observada usa somente mudancas da sessao", () => {
   assert.equal(rebuildSource.includes("changed_sources"), false);
 });
 
+test("Y25 padrao da sessao resume primeira mudanca e intervalos", () => {
+  const indexPath = path.resolve(__dirname, "../../index.html");
+  const source = fs.readFileSync(indexPath, "utf8");
+
+  assert.equal(source.includes("first_change_at"), true);
+  assert.equal(source.includes("first_observed_sources"), true);
+  assert.equal(source.includes("initial_observed_spread_seconds"), true);
+  assert.equal(source.includes("diagnosticNumericStats"), true);
+  assert.equal(source.includes("calculateObservedSourceSessionStats"), true);
+  assert.equal(source.includes("PADRAO DA SESSAO"), true);
+  assert.equal(source.includes("Primeira mudanca observada"), true);
+  assert.equal(source.includes("Estatistica observacional desta sessao"), true);
+  assert.equal(source.includes("Nao mede desempenho, latencia oficial ou autoridade das fontes"), true);
+  assert.equal(source.includes("window.ymsObservedSessionStats = () =>"), true);
+
+  const rebuildStart = source.indexOf("function rebuildConsolidatedBase");
+  const rebuildEnd = source.indexOf("function automaticSecondsToClock", rebuildStart);
+  const rebuildSource = source.slice(rebuildStart, rebuildEnd);
+
+  assert.equal(rebuildSource.includes("calculateObservedSourceSessionStats"), false);
+  assert.equal(rebuildSource.includes("first_observed_sources"), false);
+});
+
