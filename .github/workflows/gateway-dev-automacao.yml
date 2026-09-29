@@ -37,3 +37,6 @@ jobs:
 
       - name: Verify
         run: npm run verify
+
+      - name: Docker build
+        run: docker build -t painel-docas-gateway:test .
