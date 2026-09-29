@@ -8085,6 +8085,22 @@
       text-overflow: ellipsis;
     }
 
+    .package-discrepancy {
+      display: block;
+      width: fit-content;
+      max-width: 100%;
+      margin-top: 2px;
+      padding: 2px 4px;
+      border-radius: 3px;
+      background: #fff3cd;
+      color: #713f12;
+      font-size: 10px;
+      line-height: 1.15;
+      font-weight: 800;
+      white-space: normal;
+    }
+    .docas-mode .package-discrepancy { font-size: var(--docas-small-font); margin-inline: auto; }
+
     .simple-docks-legend {
       display: flex;
       align-items: center;
@@ -8300,7 +8316,23 @@
         font-size: 13px;
       }
 
-      .simple-docks-legend {
+      .package-discrepancy {
+      display: block;
+      width: fit-content;
+      max-width: 100%;
+      margin-top: 2px;
+      padding: 2px 4px;
+      border-radius: 3px;
+      background: #fff3cd;
+      color: #713f12;
+      font-size: 10px;
+      line-height: 1.15;
+      font-weight: 800;
+      white-space: normal;
+    }
+    .docas-mode .package-discrepancy { font-size: var(--docas-small-font); margin-inline: auto; }
+
+    .simple-docks-legend {
         gap: 18px;
         padding-inline: 10px;
         overflow-x: auto;
@@ -11463,6 +11495,10 @@ body.editor-open .global-theme-toggle {
       "unidades bipadas": "aduanaBipadas",
       "unidades corretas": "aduanaBipadas",
       corretas: "aduanaBipadas",
+      "pacotes a mais": "aduanaAMais",
+      "a mais": "aduanaAMais",
+      "pacotes faltantes": "aduanaFaltantes",
+      faltantes: "aduanaFaltantes",
       spr: "spr",
       pacote: "pacotes",
       pacotes: "pacotes",
@@ -11890,6 +11926,28 @@ body.editor-open .global-theme-toggle {
       return number || "";
     }
 
+    // Campos vazios não apagam a última contagem; zero explícito resolve a divergência.
+    function packageCount(value, units, kind) {
+      const explicit = String(value ?? "").trim();
+      if (/^\d+$/.test(explicit)) return String(Number(explicit));
+      const pattern = kind === "extra" ? /(\d+)\s+a\s+mais\b/i : /(\d+)\s+faltantes?\b/i;
+      const match = String(units || "").match(pattern);
+      return match ? String(Number(match[1])) : "";
+    }
+
+    function packageDiscrepancyLabel(row = {}, state) {
+      const extra = Number(packageCount(row.aduanaAMais, row.aduanaUnidades, "extra"));
+      const missing = Number(packageCount(row.aduanaFaltantes, row.aduanaUnidades, "missing"));
+      if (state === "customs" && extra > 0) return `${extra} pacote${extra === 1 ? "" : "s"} a mais`;
+      if (state === "guard" && missing > 0) return `${missing} pacote${missing === 1 ? "" : "s"} faltante${missing === 1 ? "" : "s"}`;
+      return "";
+    }
+
+    function packageDiscrepancyHtml(row, state) {
+      const label = packageDiscrepancyLabel(row, state);
+      return label ? `<span class="package-discrepancy">${escapeHtml(label)}</span>` : "";
+    }
+
     function normalizeAuditTime(value) {
       return normalize(value).replace(/\s+/g, " ");
     }
@@ -11905,6 +11963,8 @@ body.editor-open .global-theme-toggle {
       item.auditTime = normalizeAuditTime(item.auditTime || item.tempoAuditoria || "");
       item.aduanaUnidades = normalize(item.aduanaUnidades || "");
       item.aduanaBipadas = correctUnits(item.aduanaBipadas || item.aduanaUnidades || "");
+      item.aduanaAMais = packageCount(item.aduanaAMais, item.aduanaUnidades, "extra");
+      item.aduanaFaltantes = packageCount(item.aduanaFaltantes, item.aduanaUnidades, "missing");
       item.processo = normalize(item.processo || "");
       item.tempoProcesso = normalize(item.tempoProcesso || "");
       item.tempoTotal = normalize(item.tempoTotal || "");
@@ -11930,6 +11990,8 @@ body.editor-open .global-theme-toggle {
           auditTime: normalize(item.auditTime),
           aduanaUnidades: normalize(item.aduanaUnidades),
           aduanaBipadas: correctUnits(item.aduanaBipadas || item.aduanaUnidades || ""),
+          aduanaAMais: packageCount(item.aduanaAMais, item.aduanaUnidades, "extra"),
+          aduanaFaltantes: packageCount(item.aduanaFaltantes, item.aduanaUnidades, "missing"),
           estadoAduana: normalize(item.estadoAduana)
         };
       }
@@ -12279,7 +12341,7 @@ body.editor-open .global-theme-toggle {
     function toBasePaste(rows, source = "operacional") {
       const uniqueRows = uniqueBaseRows(rows);
       if (source === "aduana") {
-        const header = ["Rota", "Processo", "Tempo do processo", "Tempo total", "Doca", "Motorista", "Rep de aduana", "Tempo de auditoria", "Unidades corretas", "Estado da aduana", "Transportadora", "Placa"];
+        const header = ["Rota", "Processo", "Tempo do processo", "Tempo total", "Doca", "Motorista", "Rep de aduana", "Tempo de auditoria", "Unidades corretas", "Pacotes a mais", "Pacotes faltantes", "Estado da aduana", "Transportadora", "Placa"];
         return [header.join("\t"), ...uniqueRows.map(row => [
           row.rota || "",
           row.processo || "",
@@ -12290,6 +12352,8 @@ body.editor-open .global-theme-toggle {
           row.repLog || "",
           row.auditTime || "",
           row.aduanaBipadas || "",
+          packageCount(row.aduanaAMais, row.aduanaUnidades, "extra"),
+          packageCount(row.aduanaFaltantes, row.aduanaUnidades, "missing"),
           row.estadoAduana || "",
           row.transportadora || "",
           row.placa || ""
@@ -12357,7 +12421,7 @@ body.editor-open .global-theme-toggle {
     function isAduanaDetailRow(row = {}) {
       return Boolean(normalize(row.repLog) || normalize(row.motorista) || normalize(row.transportadora)
         || normalize(row.placa) || normalize(row.auditTime) || normalize(row.aduanaUnidades)
-        || normalize(row.aduanaBipadas) || normalize(row.estadoAduana) || normalize(row.processo)
+        || normalize(row.aduanaBipadas) || normalize(row.aduanaAMais) || normalize(row.aduanaFaltantes) || normalize(row.estadoAduana) || normalize(row.processo)
         || normalize(row.tempoProcesso) || normalize(row.tempoTotal));
     }
 
@@ -13342,7 +13406,7 @@ body.editor-open .global-theme-toggle {
         <div class="dock-card-head"><span class="dock-number-inline">${dock}</span>${personHtml}</div>
         <div class="route">${escapeHtml(routeText)}</div>
         <div class="dock-minutes">${escapeHtml(dockMinuteLabel(primary, key))}</div>
-        <div class="dock-status">${escapeHtml(statusLabel)}</div>
+        <div class="dock-status">${escapeHtml(statusLabel)}${packageDiscrepancyHtml(primary, state)}</div>
         <div class="dock-carrier-bottom">${escapeHtml(carrierShort)}</div>
         <div class="dock-footer-line"><span>${escapeHtml(footerTimer)}</span><strong>${escapeHtml(packages)}</strong></div>
       `;
@@ -13429,6 +13493,7 @@ body.editor-open .global-theme-toggle {
           <button class="simple-dock-card ${meta.className}" type="button" data-simple-route="${escapeHtml(primary.rota)}" title="Doca ${dock} · ${escapeHtml(routeText)} · ${meta.label}" aria-label="Abrir histórico da rota ${escapeHtml(primary.rota)}, doca ${dock}, ${meta.label}">
             <span class="simple-dock-card-number">${dock}</span>
             <strong class="simple-dock-card-route">${escapeHtml(routeText)}</strong>
+            ${packageDiscrepancyHtml(primary, state)}
           </button>
         `);
       }
@@ -13591,7 +13656,7 @@ body.editor-open .global-theme-toggle {
           <button class="routes-table-row" type="button" data-routes-route="${escapeHtml(route)}" aria-label="Abrir histórico da rota ${escapeHtml(route)}, doca ${escapeHtml(dock)}, ${escapeHtml(meta.label)}">
             <span class="routes-cell dock" data-label="Doca"><strong class="routes-dock-value ${meta.className}">${escapeHtml(dock)}</strong></span>
             <span class="routes-cell route" data-label="Rota"><strong class="routes-cell-main">${escapeHtml(route)}</strong><small class="routes-cell-sub">${escapeHtml(displayWave(merged.onda || currentWave))}</small></span>
-            <span class="routes-cell status" data-label="Status"><strong class="routes-status-value ${meta.className}">${escapeHtml(meta.label)}</strong></span>
+            <span class="routes-cell status" data-label="Status"><strong class="routes-status-value ${meta.className}">${escapeHtml(meta.label)}</strong>${packageDiscrepancyHtml(merged, state)}</span>
             <span class="routes-cell time" data-label="Tempo em doca"><strong class="routes-cell-main">${simpleClockLabel(processSeconds)}</strong><small class="routes-cell-sub">hh:mm:ss</small></span>
             <span class="routes-cell entry" data-label="Entrada"><strong class="routes-cell-main">${escapeHtml(entry.time)}</strong><small class="routes-cell-sub">${escapeHtml(entry.date)}</small></span>
             <span class="routes-cell qr" data-label="QR"><span class="routes-qr-icon" aria-hidden="true"><i class="bi bi-qr-code"></i></span><small class="routes-cell-sub">${escapeHtml(qr.time)}</small></span>
@@ -13901,6 +13966,8 @@ body.editor-open .global-theme-toggle {
         motorista: extraction.motorista || customs.motorista || consolidated.motorista || "",
         auditTime: customs.auditTime || consolidated.auditTime || "",
         aduanaBipadas: customs.aduanaBipadas || consolidated.aduanaBipadas || "",
+        aduanaAMais: packageCount(customs.aduanaAMais ?? consolidated.aduanaAMais, customs.aduanaUnidades || consolidated.aduanaUnidades, "extra"),
+        aduanaFaltantes: packageCount(customs.aduanaFaltantes ?? consolidated.aduanaFaltantes, customs.aduanaUnidades || consolidated.aduanaUnidades, "missing"),
         estadoAduana: customs.estadoAduana || "",
         transportadora: extraction.transportadora || "",
         placa: extraction.placa || "",
@@ -14397,6 +14464,8 @@ body.editor-open .global-theme-toggle {
         historyMetricCard("bi-box-arrow-right", "Saída da base", completed.time, completed.date),
         historyMetricCard("bi-clock", "Tempo em doca", historyDuration(milestones.positioned, processEnd), "hh:mm:ss"),
         historyMetricCard("bi-stopwatch", "Tempo desde entrada na base", historyDuration(milestones.entryBase, processEnd), "hh:mm:ss"),
+        historyMetricCard("bi-box-seam", "Pacotes a mais", details.aduanaAMais || "--", "Última contagem informada na Aduana"),
+        historyMetricCard("bi-box-seam", "Pacotes faltantes", details.aduanaFaltantes || "--", "Última contagem informada na Aduana"),
         historyMetricCard("bi-person-badge", "Motorista", details.motorista || "Não informado", "", true),
         historyMetricCard("bi-credit-card-2-front", "Placa", details.placa || "Não informada"),
         historyMetricCard("bi-truck", "Transportadora", details.transportadora || "Não informada", "", true),
