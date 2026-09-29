@@ -10692,6 +10692,31 @@ body.editor-open .global-theme-toggle {
     flex-basis: 96px;
   }
 }
+      .dock-block { position: relative; padding-bottom: 56px; }
+    .docas-mode .dock-block { padding-bottom: 56px; }
+    .dock-zone-staff {
+      position: absolute; inset: auto 0 0; height: 50px;
+      display: grid; grid-template-columns: repeat(var(--dock-zone-columns), minmax(0, 1fr));
+      gap: var(--docas-card-gap, 8px);
+    }
+    .zone-staff-card {
+      min-width: 0; padding: 6px; border: 1px solid #b8cedf;
+      border-left: 3px solid #ffd200; border-radius: 5px;
+      background: #062642; color: #fff; text-align: left;
+      font: 600 clamp(9px, .65vw, 14px)/1.4 "Segoe UI", Arial, sans-serif;
+      display: flex; flex-direction: column; justify-content: center;
+    }
+    .zone-staff-card div { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .zone-staff-card b { color: #ffd200; }
+    .zone-staff-editor { padding: 14px; border: 1px solid #b8cedf; border-radius: 6px; background: #fff; color: #062642; }
+    .zone-staff-editor summary { cursor: pointer; font-weight: 900; }
+    .zone-staff-editor p { margin: 8px 0; font-size: 12px; }
+    .zone-staff-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+    .zone-staff-fields fieldset { min-width: 0; border: 1px solid #b8cedf; padding: 10px; border-radius: 5px; }
+    .zone-staff-fields legend { font-weight: 800; }
+    .zone-staff-fields label { display: block; margin-bottom: 8px; font-size: 12px; }
+    .zone-staff-fields input { display: block; width: 100%; min-width: 0; box-sizing: border-box; margin-top: 4px; padding: 8px; border: 1px solid #b8cedf; border-radius: 4px; background: white; color: #062642; }
+    @media (max-width: 600px) { .zone-staff-fields { grid-template-columns: 1fr; } }
   </style>
 </head>
 <body>
@@ -11246,6 +11271,11 @@ body.editor-open .global-theme-toggle {
       <label>Data<input id="dataInput" type="text"></label>
     </div>
     <section class="paste-area">
+      <details class="zone-staff-editor" open>
+        <summary>Responsáveis por lado</summary>
+        <p>Informe o Coordenador e o PS de cada setor. Clique em Aplicar para salvar.</p>
+        <div id="zoneStaffFields" class="zone-staff-fields"></div>
+      </details>
       <div class="paste-box">
         <div class="paste-box-header">
           <label for="extracaoPaste">Extração (colar do Excel)</label>
@@ -13218,6 +13248,33 @@ body.editor-open .global-theme-toggle {
       ]
     ];
 
+    function zoneStaffCardHtml(zone) {
+      const staff = data.responsaveisPorLado?.[zone.label] || {};
+      const coordinator = normalize(staff.coordenador) || "Não informado";
+      const ps = normalize(staff.ps) || "Não informado";
+      return `<div class="zone-staff-card" style="grid-column: ${zone.column} / span ${zone.span}" aria-label="Responsáveis: ${escapeHtml(zone.label)}">
+        <div title="Coordenador: ${escapeHtml(coordinator)}"><b>Coordenador:</b> ${escapeHtml(coordinator)}</div>
+        <div title="PS: ${escapeHtml(ps)}"><b>PS:</b> ${escapeHtml(ps)}</div>
+      </div>`;
+    }
+
+    function populateZoneStaffEditor() {
+      document.getElementById("zoneStaffFields").innerHTML = dockZoneLabels.flat().map((zone, index) => {
+        const staff = data.responsaveisPorLado?.[zone.label] || {};
+        return `<fieldset><legend>${escapeHtml(zone.label)}</legend>
+          <label for="zoneCoordinator${index}">Coordenador<input id="zoneCoordinator${index}" type="text" maxlength="100" value="${escapeHtml(staff.coordenador || "")}" placeholder="Nome do coordenador"></label>
+          <label for="zonePs${index}">PS<input id="zonePs${index}" type="text" maxlength="100" value="${escapeHtml(staff.ps || "")}" placeholder="Nome do PS"></label>
+        </fieldset>`;
+      }).join("");
+    }
+
+    function readZoneStaffEditor() {
+      return Object.fromEntries(dockZoneLabels.flat().map((zone, index) => [zone.label, {
+        coordenador: normalize(document.getElementById(`zoneCoordinator${index}`).value),
+        ps: normalize(document.getElementById(`zonePs${index}`).value)
+      }]));
+    }
+
     function formatMetricHour(value) {
       return normalize(value) || "--";
     }
@@ -14573,6 +14630,11 @@ body.editor-open .global-theme-toggle {
           zoneRow.appendChild(label);
         });
         blockEl.appendChild(zoneRow);
+        const staffRow = document.createElement("div");
+        staffRow.className = "dock-zone-staff";
+        staffRow.style.setProperty("--dock-zone-columns", String(block.length));
+        staffRow.innerHTML = (dockZoneLabels[blockIndex] || []).map(zoneStaffCardHtml).join("");
+        blockEl.appendChild(staffRow);
 
         block.forEach(column => {
           const columnEl = document.createElement("div");
@@ -16268,6 +16330,7 @@ body.editor-open .global-theme-toggle {
 
     function openDrawer() {
       if (!requireAdminAction()) return;
+      populateZoneStaffEditor();
       document.getElementById("totalRotasInput").value = data.totalRotas || data.extracao.length || "";
       document.getElementById("dataInput").value = data.data || "";
       document.getElementById("extracaoPaste").value = toPaste(data.extracao);
@@ -16931,6 +16994,7 @@ body.editor-open .global-theme-toggle {
     document.getElementById("exampleBtn").addEventListener("click", () => {
       if (!requireAdminAction()) return;
       data = JSON.parse(JSON.stringify(originalData));
+      populateZoneStaffEditor();
       currentWave = data.ondas[0];
       document.getElementById("extracaoPaste").value = toPaste(data.extracao);
       document.getElementById("basePaste").value = toBasePaste(data.baseOperacional || data.base || [], "operacional");
@@ -16985,6 +17049,7 @@ body.editor-open .global-theme-toggle {
 
       data = {
         ...data,
+        responsaveisPorLado: readZoneStaffEditor(),
         totalRotas: normalize(document.getElementById("totalRotasInput").value),
         data: normalize(document.getElementById("dataInput").value),
         extracao: mergedExtracao,
