@@ -40,3 +40,23 @@ jobs:
 
       - name: Docker build
         run: docker build -t painel-docas-gateway:test .
+
+      - name: Docker smoke
+        run: |
+          docker run -d --rm --name painel-docas-gateway-test \
+            -p 8787:8787 \
+            -e GATEWAY_MODE=mock \
+            -e AUTH_MODE=unconfigured \
+            -e YMS_MODE=disabled \
+            -e PANEL_ALLOWED_ORIGIN=http://localhost:8000 \
+            -e ALLOWED_GROUP_IDS=TESTE \
+            painel-docas-gateway:test
+          for i in $(seq 1 20); do
+            if curl --fail --silent http://127.0.0.1:8787/health > /tmp/health.json; then
+              cat /tmp/health.json
+              exit 0
+            fi
+            sleep 1
+          done
+          docker logs painel-docas-gateway-test
+          exit 1
