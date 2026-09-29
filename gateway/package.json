@@ -17,7 +17,8 @@
     "preview:flow": "node scripts/home-preview.js --flow",
     "smoke:flow": "node scripts/smoke-flow.js",
     "preview:recovery": "node scripts/home-preview.js --recovery",
-    "smoke:recovery": "node scripts/smoke-recovery.js"
+    "smoke:recovery": "node scripts/smoke-recovery.js",
+    "preflight:yms": "node scripts/preflight-yms.js"
   },
   "dependencies": {
     "@google-cloud/bigquery": "9.1.0"
