@@ -8,7 +8,7 @@
     "node": ">=20"
   },
   "scripts": {
-    "start": "node src/server.js",
+    "start": "node src/start.js",
     "test": "node --test",
     "verify": "node scripts/verify.js",
     "smoke:mock": "node scripts/smoke-mock.js",
@@ -18,5 +18,8 @@
     "smoke:flow": "node scripts/smoke-flow.js",
     "preview:recovery": "node scripts/home-preview.js --recovery",
     "smoke:recovery": "node scripts/smoke-recovery.js"
+  },
+  "dependencies": {
+    "@google-cloud/bigquery": "9.1.0"
   }
 }
