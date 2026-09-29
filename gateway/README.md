@@ -4,7 +4,7 @@ Gateway HTTP somente leitura que separa o painel publico dos sistemas internos. 
 
 ## Requisitos
 
-- Node.js 20 ou superior.
+- Node.js 22 ou superior.
 - `npm install` para instalar o cliente oficial `@google-cloud/bigquery`.
 - Em `YMS_MODE=provider`, o runtime deve possuir Application Default Credentials (ADC) ou identidade de workload com acesso somente leitura ao BigQuery.
 
