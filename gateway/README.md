@@ -5,7 +5,8 @@ Gateway HTTP somente leitura que separa o painel publico dos sistemas internos. 
 ## Requisitos
 
 - Node.js 20 ou superior.
-- Nenhuma dependencia externa e nenhum `node_modules` necessario.
+- `npm install` para instalar o cliente oficial `@google-cloud/bigquery`.
+- Em `YMS_MODE=provider`, o runtime deve possuir Application Default Credentials (ADC) ou identidade de workload com acesso somente leitura ao BigQuery.
 
 ## Iniciar
 
@@ -56,9 +57,9 @@ A query de cenario e rejeitada fora de `development/mock`. Para testar o fronten
 
 - `disabled`: padrao; preserva exatamente o snapshot anterior com Dispatch + Aduana;
 - `mock`: adiciona uma fonte YMS ficticia ao snapshot para testes locais e libera `GET /yms` para homologacao isolada;
-- `provider`: exige um executor BigQuery aprovado e injetado no backend; sem ele, o gateway falha fechado com `YMS_PROVIDER_NOT_CONFIGURED`.
+- `provider`: usa o executor BigQuery do backend. O bootstrap oficial do gateway cria o cliente `@google-cloud/bigquery` e usa ADC/identidade do runtime; sem identidade autorizada, a consulta falha fechado.
 
-A integracao real nao contem credenciais, tokens ou chaves no repositorio. O provider real deve ser configurado pela infraestrutura autorizada.
+A integracao real nao contem credenciais, tokens ou chaves no repositorio. `GOOGLE_CLOUD_PROJECT` e `BIGQUERY_LOCATION` podem ser definidos pela infraestrutura quando necessarios; eles nao sao segredos. A autenticacao deve vir de ADC, service account vinculada ao runtime ou workload identity aprovada.
 
 ## Contrato combinado
 
