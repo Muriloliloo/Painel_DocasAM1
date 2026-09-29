@@ -10717,6 +10717,15 @@ body.editor-open .global-theme-toggle {
     .zone-staff-fields label { display: block; margin-bottom: 8px; font-size: 12px; }
     .zone-staff-fields input { display: block; width: 100%; min-width: 0; box-sizing: border-box; margin-top: 4px; padding: 8px; border: 1px solid #b8cedf; border-radius: 4px; background: white; color: #062642; }
     @media (max-width: 600px) { .zone-staff-fields { grid-template-columns: 1fr; } }
+      .dock-card-content {
+      display: flex; flex-direction: column; align-items: center;
+      width: 100%; min-width: 0; flex: 0 0 auto;
+      transform-origin: top left; box-sizing: border-box;
+    }
+    .docas-mode .slot .dock-card-content { max-width: none; align-self: flex-start; }
+    .docas-mode .dock-card-content .package-discrepancy {
+      margin-top: 1px; padding: 1px 3px; line-height: 1;
+    }
   </style>
 </head>
 <body>
@@ -13460,14 +13469,50 @@ body.editor-open .global-theme-toggle {
         return slot;
       }
       slot.innerHTML = `
+        <div class="dock-card-content">
         <div class="dock-card-head"><span class="dock-number-inline">${dock}</span>${personHtml}</div>
         <div class="route">${escapeHtml(routeText)}</div>
         <div class="dock-minutes">${escapeHtml(dockMinuteLabel(primary, key))}</div>
         <div class="dock-status">${escapeHtml(statusLabel)}${packageDiscrepancyHtml(primary, state)}</div>
         <div class="dock-carrier-bottom">${escapeHtml(carrierShort)}</div>
         <div class="dock-footer-line"><span>${escapeHtml(footerTimer)}</span><strong>${escapeHtml(packages)}</strong></div>
+        </div>
       `;
       return slot;
+    }
+
+    // Ajusta o conteúdo à área real do card, inclusive após zoom e redimensionamento.
+    function fitDockCardContent(slot) {
+      const content = slot.querySelector(".dock-card-content");
+      if (!content || !slot.closest(".docas-mode")) return;
+      const style = getComputedStyle(slot);
+      const width = slot.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight);
+      const height = slot.clientHeight - parseFloat(style.paddingTop) - parseFloat(style.paddingBottom);
+      if (width <= 0 || height <= 0) return;
+      content.style.transform = "none";
+      content.style.width = `${width}px`;
+      content.style.minHeight = "0px";
+      // scrollHeight inclui o rodapé e o aviso de divergência, sem ocultar nenhuma linha.
+      const naturalHeight = Math.max(content.scrollHeight, content.getBoundingClientRect().height);
+      const scale = Math.min(1, height / Math.max(1, naturalHeight));
+      content.style.width = `${width / scale}px`;
+      content.style.minHeight = `${height / scale}px`;
+      content.style.transform = `scale(${scale})`;
+    }
+
+    let dockCardFitObserver;
+    function observeDockCardSizes(grid) {
+      if (typeof ResizeObserver === "undefined") return;
+      if (!dockCardFitObserver) {
+        dockCardFitObserver = new ResizeObserver(entries => {
+          entries.forEach(entry => fitDockCardContent(entry.target));
+        });
+      }
+      dockCardFitObserver.disconnect();
+      grid.querySelectorAll(".slot[data-route-key]").forEach(slot => {
+        fitDockCardContent(slot);
+        dockCardFitObserver.observe(slot);
+      });
     }
 
     function simpleDockStateMeta(state = "free") {
@@ -14656,6 +14701,7 @@ body.editor-open .global-theme-toggle {
 
         grid.appendChild(blockEl);
       });
+      observeDockCardSizes(grid);
     }
     function renderStats() {
       const rows = rowsForWave(currentWave);
