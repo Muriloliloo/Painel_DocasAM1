@@ -110,6 +110,14 @@ function validatedUpstreamPath(name, value, expectedPath) {
   return path;
 }
 
+function validatedBindHost(value) {
+  const host = String(value || "127.0.0.1").trim();
+  if (!new Set(["127.0.0.1", "0.0.0.0"]).has(host)) {
+    throw new GatewayError(500, "INVALID_CONFIGURATION", "BIND_HOST deve ser 127.0.0.1 ou 0.0.0.0.");
+  }
+  return host;
+}
+
 function createConfig(env = process.env, overrides = {}) {
   const mode = String(overrides.mode ?? env.GATEWAY_MODE ?? "mock").trim().toLowerCase();
   if (!new Set(["mock", "real"]).has(mode)) {
@@ -134,6 +142,7 @@ function createConfig(env = process.env, overrides = {}) {
 
   return Object.freeze({
     port: configuredPort,
+    bindHost: validatedBindHost(overrides.bindHost ?? env.BIND_HOST ?? "127.0.0.1"),
     nodeEnv,
     mode,
     authMode,
@@ -216,5 +225,6 @@ module.exports = {
   UPSTREAM_HOST_ALLOWLIST,
   createConfig,
   validatedUpstreamBaseUrl,
-  validatedUpstreamPath
+  validatedUpstreamPath,
+  validatedBindHost
 };
