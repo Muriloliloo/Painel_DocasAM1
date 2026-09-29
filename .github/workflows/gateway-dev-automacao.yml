@@ -1,0 +1,39 @@
+name: Gateway dev-automacao
+
+on:
+  push:
+    branches:
+      - dev-automacao
+    paths:
+      - "gateway/**"
+      - ".github/workflows/gateway-dev-automacao.yml"
+  pull_request:
+    paths:
+      - "gateway/**"
+
+permissions:
+  contents: read
+
+jobs:
+  verify-gateway:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: gateway
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: gateway/package.json
+
+      - name: Install dependencies
+        run: npm install --ignore-scripts
+
+      - name: Verify
+        run: npm run verify
