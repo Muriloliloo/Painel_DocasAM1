@@ -285,3 +285,24 @@ Depois consulte `/yms` ou `/snapshot`. O mock YMS inclui exemplos de:
 - excecao terminal.
 
 Isso permite desenvolver e validar o contrato do frontend fora da rede corporativa sem copiar credenciais, cookies ou tokens.
+
+
+## Validacao YMS no runtime autorizado
+
+Quando o container estiver em um ambiente com ADC/identidade de workload autorizada para leitura no BigQuery, valide primeiro o acesso estrutural:
+
+```powershell
+npm run preflight:yms
+```
+
+Esse comando testa o BigQuery e as tabelas obrigatorias sem imprimir rotas, processos ou payload operacional.
+
+Depois execute o smoke ponta a ponta do YMS:
+
+```powershell
+npm run smoke:yms:provider
+```
+
+O smoke sobe um gateway efemero em loopback, usa `YMS_MODE=provider`, consulta `/yms` e imprime somente um resumo seguro com quantidade de linhas, data operacional e contagem por lifecycle. Ele nao depende de Dispatch/Aduana e nao imprime process_id ou route_name.
+
+Se ambos passarem, o caminho `BigQuery -> provider -> gateway -> /yms` esta funcional no runtime autorizado. A ativacao no painel continua separada e so deve ocorrer depois dessa validacao.
