@@ -13,6 +13,12 @@ O gateway nao deve ser exposto publicamente sem as protecoes da infraestrutura. 
 
 O navegador que executa o painel precisa conseguir alcancar o endereco HTTPS do gateway. O gateway, por sua vez, deve ter acesso somente leitura aos destinos operacionais aprovados.
 
+## Bind e container
+
+Por padrao o gateway escuta em `127.0.0.1`. Em container ou runtime gerenciado, defina `BIND_HOST=0.0.0.0` e mantenha a exposicao externa sob reverse proxy, ingress ou load balancer autorizado.
+
+O diretorio `gateway/` possui `Dockerfile` baseado em Node 22. A imagem nao contem `.env`, testes, logs ou credenciais. Variaveis e identidade ADC/workload devem ser fornecidas pelo ambiente de execucao.
+
 ## CORS
 
 `PANEL_ALLOWED_ORIGIN` deve conter a origem exata do painel, sem caminho e sem curinga. Se o painel continuar no GitHub Pages, configure a origem HTTPS exata correspondente ao site publicado. Nao use `Access-Control-Allow-Origin: *`.
