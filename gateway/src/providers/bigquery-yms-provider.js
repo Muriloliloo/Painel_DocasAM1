@@ -84,8 +84,8 @@ function createBigQueryYmsProvider({ queryExecutor, sqlLoader = loadRuntimeSql }
       },
       signal
     });
-    const resolved = dateValue(Array.isArray(rows) ? rows[0]?.operation_date : null);
 
+    const resolved = dateValue(Array.isArray(rows) ? rows[0]?.operation_date : null);
     if (!resolved) {
       throw new GatewayError(
         503,
@@ -94,9 +94,12 @@ function createBigQueryYmsProvider({ queryExecutor, sqlLoader = loadRuntimeSql }
       );
     }
 
-    const operationDate = validateOperationDate(resolved);
-    operationDateCache.set(cacheKey, { operationDate, cachedAt: Date.now() });
-    return operationDate;
+    const resolvedDate = validateOperationDate(resolved);
+    operationDateCache.set(cacheKey, {
+      operationDate: resolvedDate,
+      cachedAt: Date.now()
+    });
+    return resolvedDate;
   }
 
   return Object.freeze({
@@ -128,16 +131,15 @@ function createBigQueryYmsProvider({ queryExecutor, sqlLoader = loadRuntimeSql }
       }
 
       const waveNumbers = validateWaveNumbers(waves);
-      const referenceDate = operationDate
+      const resolvedOperationDate = operationDate
         ? validateOperationDate(operationDate)
-        : currentDateInTimeZone(timezone);
-      const resolvedOperationDate = await resolveOperationDate({
-        facilityId,
-        cycle,
-        waves: waveNumbers,
-        referenceDate,
-        signal
-      });
+        : await resolveOperationDate({
+            facilityId,
+            cycle,
+            waves: waveNumbers,
+            referenceDate: currentDateInTimeZone(timezone),
+            signal
+          });
 
       return queryExecutor({
         sql,
