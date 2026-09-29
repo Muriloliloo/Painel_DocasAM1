@@ -21,9 +21,9 @@ function start() {
     ymsQueryExecutor
   });
 
-  server.listen(config.port, "127.0.0.1", () => {
+  server.listen(config.port, config.bindHost, () => {
     logger.info("Gateway seguro iniciado.", {
-      host: "127.0.0.1",
+      host: config.bindHost,
       port: config.port,
       gatewayMode: config.mode,
       authMode: config.authMode,
