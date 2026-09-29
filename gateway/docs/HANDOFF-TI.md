@@ -33,6 +33,8 @@ O retorno passa obrigatoriamente por `validatedAuthContext()`. Enquanto esse arq
 
 Dependendo do metodo oficial, a TI tambem pode precisar provisionar secrets manager, variavel segura, certificado, identidade de workload, biblioteca oficialmente aprovada, reverse proxy e regras de rede/firewall. Essas necessidades de infraestrutura nao mudam o ponto de integracao da aplicacao. Nunca grave segredo no Git, no objeto publico de configuracao ou no frontend.
 
+Para o escopo minimo de acesso BigQuery, seguir `docs/IAM-YMS.md`.
+
 ## Sequencia de ativacao
 
 1. Obter a documentacao oficial, implementar `getAuthContext()` no arquivo indicado e atualizar sua inspecao estrutural quando estiver pronto.
