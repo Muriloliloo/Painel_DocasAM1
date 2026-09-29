@@ -107,7 +107,7 @@ Os adaptadores reais ja montam no servidor as URLs e queries permitidas para Dis
 
 Quando o metodo oficial for aprovado, a TI devera implementar somente o provider indicado para entregar o contexto minimo ao cliente upstream. O segredo devera vir da infraestrutura segura ou de um secrets manager, nunca do frontend. Nao copie Cookie, Authorization, CSRF, token ou sessao do navegador. O frontend nunca deve receber credenciais corporativas.
 
-Veja [docs/HANDOFF-TI.md](docs/HANDOFF-TI.md), [docs/API-CONTRACT.md](docs/API-CONTRACT.md), [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) e [docs/AUTHORIZATION.md](docs/AUTHORIZATION.md).
+Veja [docs/HANDOFF-TI.md](docs/HANDOFF-TI.md), [docs/IAM-YMS.md](docs/IAM-YMS.md), [docs/API-CONTRACT.md](docs/API-CONTRACT.md), [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) e [docs/AUTHORIZATION.md](docs/AUTHORIZATION.md).
 
 ## Testes
 
