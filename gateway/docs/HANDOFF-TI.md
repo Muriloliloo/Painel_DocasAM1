@@ -12,9 +12,13 @@ Autenticacao das APIs HTTP:
 
 Executor YMS/BigQuery:
 
-`gateway/src/providers/yms-provider.js`
+`gateway/src/providers/google-bigquery-executor.js`
 
-O primeiro arquivo e o ponto de autenticacao de Dispatch/Aduana. O segundo define o contrato do executor YMS e permanece fail closed em `YMS_MODE=provider` ate receber uma implementacao aprovada. A TI deve obter a documentacao oficial, implementar `getAuthContext()` e retornar o contrato:
+Bootstrap do runtime:
+
+`gateway/src/start.js`
+
+O primeiro arquivo continua sendo o ponto de autenticacao de Dispatch/Aduana. O executor YMS agora usa o cliente oficial `@google-cloud/bigquery` e Application Default Credentials (ADC) / identidade de workload do runtime. Nenhuma chave ou token e lido do frontend ou gravado no repositorio. A TI deve obter a documentacao oficial, implementar `getAuthContext()` e retornar o contrato:
 
 ```js
 {
@@ -33,8 +37,8 @@ Dependendo do metodo oficial, a TI tambem pode precisar provisionar secrets mana
 
 1. Obter a documentacao oficial, implementar `getAuthContext()` no arquivo indicado e atualizar sua inspecao estrutural quando estiver pronto.
 2. Configurar os segredos somente na infraestrutura, definir `GATEWAY_MODE=real`, `AUTH_MODE=corporate` e declarar explicitamente `ALLOWED_GROUP_IDS`.
-3. Manter `YMS_MODE=disabled` ate existir um executor BigQuery aprovado. Para homologacao isolada, usar `YMS_MODE=mock`.
-4. Quando o executor YMS estiver aprovado, configurar `YMS_MODE=provider` sem gravar credenciais no Git.
+3. Para homologacao isolada, usar `YMS_MODE=mock`.
+4. Para o YMS real, provisionar uma identidade de runtime com permissao BigQuery somente leitura, instalar dependencias com `npm install` e configurar `YMS_MODE=provider`. Se necessario, definir `GOOGLE_CLOUD_PROJECT` e `BIGQUERY_LOCATION`.
 5. Executar `npm run verify` e `npm run preflight:corporate`.
 6. Testar `/health`, `/ready`, Dispatch, Aduana e `/snapshot`, conferindo que a resposta esta sanitizada.
 7. Somente depois habilitar a fonte automatica no frontend e validar polling e fallback manual.
@@ -76,7 +80,8 @@ Salvo se houver mudanca comprovada no contrato das APIs, nao alterar:
 - [ ] `/ready` = `ready: true`
 - [ ] Dispatch responde
 - [ ] Aduana responde
-- [ ] YMS permanece disabled ou provider aprovado
+- [ ] identidade ADC/workload do BigQuery provisionada com acesso somente leitura
+- [ ] `YMS_MODE=provider` validado no runtime autorizado
 - [ ] quando YMS ativo, `/ready` so fica true com provider configurado
 - [ ] snapshot combinado responde
 - [ ] nenhum PII indevido no frontend
