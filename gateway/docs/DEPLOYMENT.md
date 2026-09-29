@@ -4,7 +4,7 @@ O gateway nao deve ser exposto publicamente sem as protecoes da infraestrutura. 
 
 ## Infraestrutura minima
 
-- servico Node.js 20 ou superior;
+- servico Node.js 22 ou superior;
 - servidor interno ou ambiente de execucao corporativo aprovado;
 - reverse proxy com HTTPS;
 - firewall e regras de rede restritas;
