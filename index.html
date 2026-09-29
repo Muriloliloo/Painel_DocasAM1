@@ -13253,7 +13253,7 @@ body.editor-open .global-theme-toggle {
       const coordinator = normalize(staff.coordenador) || "Não informado";
       const ps = normalize(staff.ps) || "Não informado";
       return `<div class="zone-staff-card" style="grid-column: ${zone.column} / span ${zone.span}" aria-label="Responsáveis: ${escapeHtml(zone.label)}">
-        <div title="Coordenador: ${escapeHtml(coordinator)}"><b>Coordenador:</b> ${escapeHtml(coordinator)}</div>
+        <div title="Coordenador: ${escapeHtml(coordinator)}"><b>${zone.label === "Line Hall" ? "Coord." : "Coordenador"}:</b> ${escapeHtml(coordinator)}</div>
         <div title="PS: ${escapeHtml(ps)}"><b>PS:</b> ${escapeHtml(ps)}</div>
       </div>`;
     }
