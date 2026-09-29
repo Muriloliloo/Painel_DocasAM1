@@ -29,6 +29,8 @@ PANEL_ALLOWED_ORIGIN=<origem HTTPS exata do painel>
 ALLOWED_GROUP_IDS=<groupId ou lista de groupIds aprovados>
 ```
 
+Para YMS real, configure tambem `YMS_MODE=provider` e provisione ADC/identidade de workload com acesso somente leitura ao BigQuery. `GOOGLE_CLOUD_PROJECT` e `BIGQUERY_LOCATION` sao opcionais e podem ser definidos pela infraestrutura quando necessarios.
+
 Tambem devem ser revisadas as allowlists de facility, site, groupId, ciclo e ondas. Em production, `ALLOWED_GROUP_IDS` nao possui fallback implicito e deve ser definido explicitamente. Os hosts e caminhos upstream permanecem fixos e validados no servidor. Segredos nao devem ser adicionados ao `.env.example` nem ao objeto de configuracao do gateway.
 
 Execute `npm run verify` e `npm run preflight:corporate` antes de subir o servico. O preflight e estritamente estrutural: nao obtem autorizacao, nao le segredos e nao chama servicos externos. Enquanto o provider corporativo for stub, ele encerra com `AUTH_NOT_CONFIGURED`.
