@@ -5,7 +5,7 @@
   "description": "Gateway intermediario seguro para o Painel_DocasAM1",
   "type": "commonjs",
   "engines": {
-    "node": ">=20"
+    "node": ">=22"
   },
   "scripts": {
     "start": "node src/start.js",
