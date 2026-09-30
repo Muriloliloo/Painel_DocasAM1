@@ -10950,7 +10950,7 @@ body.editor-open .global-theme-toggle {
     body.dark-mode .package-closure { color: #f1f5f9; }
     body.dark-mode .package-closure-side, body.dark-mode .package-closure-totals div { background: #102b43; color: #f1f5f9; }
     body.dark-mode .package-closure-staff, body.dark-mode .package-closure-side th, body.dark-mode .package-closure-side footer { background: #183950; color: #f1f5f9; }
-    @media (max-width: 600px) { .package-closure-totals { gap: 4px; } .package-closure-totals div { padding: 7px; font-size: 10px; } .package-closure-side td, .package-closure-side th { padding: 8px 4px; font-size: 12px; } }
+    @media (max-width: 600px) { .package-closure-totals { gap: 4px; } .package-closure-totals div { padding: 7px; font-size: 11px; } .package-closure-side td, .package-closure-side th { padding: 9px 5px; font-size: 14px; } .package-closure-side footer { font-size: 16px; padding: 11px 12px; } }
 
     /* Fechamento por lado: card principal da aba Fechamento. */
     #fechamentoView .package-closure {
@@ -11074,12 +11074,13 @@ body.editor-open .global-theme-toggle {
     }
 
     #fechamentoView .package-closure-staff span {
-      min-height: 48px;
+      min-height: 52px;
       display: flex;
       align-items: center;
       gap: 8px;
-      padding: 9px 18px;
-      font-size: clamp(13px, 1vw, 17px);
+      padding: 10px 18px;
+      font-size: clamp(15px, 1.08vw, 19px);
+      font-weight: 750;
     }
 
     #fechamentoView .package-closure-staff span + span {
@@ -11087,20 +11088,22 @@ body.editor-open .global-theme-toggle {
     }
 
     #fechamentoView .package-closure-side table {
-      font-size: clamp(13px, 1vw, 17px);
+      font-size: clamp(15px, 1.05vw, 18px);
     }
 
     #fechamentoView .package-closure-side th {
-      padding: 10px 12px;
+      padding: 11px 12px;
       background: #e7f2f9;
       color: #163d60;
       font-weight: 950;
+      font-size: clamp(14px, .98vw, 17px);
     }
 
     #fechamentoView .package-closure-side td {
-      padding: 10px 14px;
+      padding: 11px 14px;
       color: #05294d;
-      font-weight: 800;
+      font-weight: 850;
+      font-size: clamp(15px, 1.05vw, 18px);
     }
 
     #fechamentoView .package-closure-side table.live-mode th:first-child,
@@ -11145,10 +11148,12 @@ body.editor-open .global-theme-toggle {
     }
 
     #fechamentoView .package-closure-side footer {
-      padding: 10px 18px;
+      padding: 13px 18px;
       background: #eef7fc;
       color: #05294d;
-      font-size: 14px;
+      font-size: clamp(17px, 1.15vw, 20px);
+      font-weight: 950;
+      line-height: 1.2;
     }
 
     #fechamentoView .package-closure-empty-row td {
