@@ -16214,16 +16214,36 @@ body.editor-open .global-theme-toggle {
       });
       if (!packages.size) throw new Error("O CSV não contém pacotes válidos.");
       if (dates.size !== 1) throw new Error("Importe um CSV de um único dia de expedição.");
+      // O Fechamento por Lado considera exclusivamente os ofensores finais:
+      // pacotes "A MAIS" e "FALTANTE". "CORRETO" e "AVARIADO" não entram no card/PDF.
+      // Como 'packages' já guarda apenas o estado mais recente de cada pacote,
+      // um pacote que terminou como CORRETO também deixa de ser considerado ofensor.
+      const offenders = [...packages.values()].filter(item => item.state === "aMais" || item.state === "faltantes");
       const routes = new Map();
-      packages.forEach(item => {
+      offenders.forEach(item => {
         const key = item.idRota || item.rota;
-        if (!routes.has(key)) routes.set(key, { rota: item.rota, idRota: item.idRota, corretos: 0, faltantes: 0, aMais: 0, avariados: 0, ocorrencias: [] });
-        routes.get(key)[item.state]++;
-        if (item.state === "aMais" || item.state === "faltantes") routes.get(key).ocorrencias.push({
-          shipmentId: item.shipmentId, estado: item.state, auditAt: item.auditAt
+        if (!routes.has(key)) routes.set(key, {
+          rota: item.rota,
+          idRota: item.idRota,
+          faltantes: 0,
+          aMais: 0,
+          ocorrencias: []
+        });
+        const route = routes.get(key);
+        route[item.state]++;
+        route.ocorrencias.push({
+          shipmentId: item.shipmentId,
+          estado: item.state,
+          auditAt: item.auditAt
         });
       });
-      return { date: [...dates][0], rows: [...routes.values()], packages: packages.size, duplicates };
+      return {
+        date: [...dates][0],
+        rows: [...routes.values()],
+        packages: offenders.length,
+        totalPackages: packages.size,
+        duplicates
+      };
     }
 
     function auditSideForDock(dock) {
@@ -16411,7 +16431,7 @@ body.editor-open .global-theme-toggle {
       const status = document.getElementById("finalAuditStatus");
       if (!pendingFinalAudit) { status.textContent = "Usando as contagens da Base Aduana. Importe o CSV ao finalizar a última onda."; return; }
       const total = pendingFinalAudit.rows.reduce((sum, row) => ({ aMais: sum.aMais + row.aMais, faltantes: sum.faltantes + row.faltantes }), { aMais: 0, faltantes: 0 });
-      status.textContent = `${pendingFinalAudit.fileName} • ${pendingFinalAudit.date} • ${pendingFinalAudit.packages} pacotes únicos • ${total.aMais} a mais • ${total.faltantes} faltantes • ${pendingFinalAudit.duplicates} linhas repetidas descartadas. Clique em Aplicar para salvar. Um novo CSV substitui o anterior por completo.`;
+      status.textContent = `${pendingFinalAudit.fileName} • ${pendingFinalAudit.date} • ${pendingFinalAudit.packages} ofensores únicos • ${total.aMais} a mais • ${total.faltantes} faltantes • pacotes corretos/avariados ignorados • ${pendingFinalAudit.duplicates} linhas repetidas descartadas. Clique em Aplicar para salvar. Um novo CSV substitui o anterior por completo.`;
     }
 
     function openFinalAuditEditor() {
