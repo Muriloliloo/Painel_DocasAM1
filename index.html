@@ -5859,6 +5859,18 @@
       break-inside: auto;
       page-break-inside: auto;
     }
+    .package-pdf-side.package-pdf-keep-together {
+      break-inside: avoid;
+      page-break-inside: avoid;
+    }
+    .package-pdf-report.package-pdf-expanded .package-pdf-side.package-pdf-new-page {
+      break-before: page;
+      page-break-before: always;
+    }
+    .package-pdf-pagination-note {
+      margin-left: auto;
+      font-weight: 900;
+    }
     .package-pdf-side-title {
       margin: 0;
       padding: 2.5mm 3mm;
@@ -15541,11 +15553,33 @@ body.editor-open .global-theme-toggle {
         ? `<span class="package-pdf-count">${value}</span>`
         : '<span class="package-pdf-zero">0</span>';
       const finalMode = model.useFinal;
+      const printableRows = group => group.rows.reduce((sum, row) => {
+        if (!finalMode) return sum + 1;
+        const occurrences = Array.isArray(row.ocorrencias) ? row.ocorrencias.length : 0;
+        return sum + Math.max(1, occurrences);
+      }, 0);
+      const activeGroups = groups.filter(group => group.rows.length);
+      const totalDetailRows = groups.reduce((sum, group) => sum + printableRows(group), 0);
+      // Paginação adaptativa:
+      // - relatório carregado: cada lado com ocorrência começa em uma nova folha;
+      // - relatório leve: aproveita o espaço e mantém lados pequenos juntos.
+      const expandedPagination = totalDetailRows >= 26 || activeGroups.some(group => printableRows(group) >= 14);
       const status = finalMode ? "FECHAMENTO FINAL • CSV APLICADO" : "AO VIVO • EXPEDIÇÃO EM ANDAMENTO";
       const waveText = selectedWaves.size ? [...selectedWaves].map(displayWave).join(" • ") : "Todas as ondas";
       const dockText = start || end ? `Docas ${start || 1} a ${end || data.docas || 92}` : "Todas as docas";
 
+      let activeSideIndex = 0;
       const sideHtml = groups.map(group => {
+        const detailRows = printableRows(group);
+        const hasRows = group.rows.length > 0;
+        const currentActiveIndex = hasRows ? activeSideIndex++ : -1;
+        const startNewPage = expandedPagination && currentActiveIndex > 0;
+        const keepTogether = detailRows <= 11;
+        const sideClasses = [
+          "package-pdf-side",
+          startNewPage ? "package-pdf-new-page" : "",
+          keepTogether ? "package-pdf-keep-together" : ""
+        ].filter(Boolean).join(" ");
         const staff = group.label === "Sem lado identificado" ? {} : data.responsaveisPorLado?.[group.label] || {};
         const headers = finalMode
           ? "<th>Rota / Onda</th><th>Doca</th><th>ID do pacote</th><th>A mais</th><th>Faltantes</th>"
@@ -15575,7 +15609,7 @@ body.editor-open .global-theme-toggle {
           </tr>`;
         }).join("") : `<tr><td class="package-pdf-empty" colspan="${colCount}">Sem divergências neste lado para os filtros selecionados.</td></tr>`;
 
-        return `<section class="package-pdf-side">
+        return `<section class="${sideClasses}">
           <h3 class="package-pdf-side-title">${escapeHtml(group.label)}</h3>
           <div class="package-pdf-staff">
             <span><b>Coordenador:</b> ${escapeHtml(staff.coordenador || "Não informado")}</span>
@@ -15589,7 +15623,7 @@ body.editor-open .global-theme-toggle {
         </section>`;
       }).join("");
 
-      return `<section class="package-pdf-report">
+      return `<section class="package-pdf-report ${expandedPagination ? "package-pdf-expanded" : "package-pdf-compact"}">
         <header class="package-pdf-header">
           <div>
             <h2>Fechamento por lado</h2>
@@ -15602,6 +15636,7 @@ body.editor-open .global-theme-toggle {
           <span><b>Ondas:</b> ${escapeHtml(waveText)}</span>
           <span><b>Filtro:</b> ${escapeHtml(dockText)}</span>
           ${finalMode ? `<span><b>CSV:</b> ${escapeHtml(model.final?.fileName || "aplicado")}</span>` : ""}
+          <span class="package-pdf-pagination-note"><b>Paginação:</b> ${expandedPagination ? "1 lado com ocorrência por folha" : "compacta"}</span>
         </div>
         <div class="package-pdf-summary">
           <article><strong>${routes}</strong><span>Rotas com<br>ocorrência</span></article>
