@@ -16255,17 +16255,72 @@ body.editor-open .global-theme-toggle {
         aMais: Number(packageCount(row.aduanaAMais, row.aduanaUnidades, "extra")),
         faltantes: Number(packageCount(row.aduanaFaltantes, row.aduanaUnidades, "missing"))
       }));
+      const liveReferenceRows = uniqueBaseRows([
+        ...(source.baseAduana || []),
+        ...(source.base || [])
+      ]);
+      const canonicalRouteId = value => plainText(value).replace(/[^a-z0-9]/g, "");
+
       input.forEach(row => {
         if (!(row.aMais > 0 || row.faltantes > 0)) return;
-        const byId = row.idRota ? extraction.filter(item => normalize(item.idRota) === normalize(row.idRota)) : [];
-        const candidates = byId.length ? byId : extraction.filter(item => routeKey(item.rota) === routeKey(row.rota)
-          && (!row.idRota || !normalize(item.idRota) || normalize(item.idRota) === normalize(row.idRota)));
-        const planned = candidates.length === 1 ? candidates[0] : null;
-        // O fechamento usa a doca da Extração; não atribui responsáveis por placa ou nome aproximado.
-        const dock = planned ? validDockValue(planned.doca) : "";
+
+        const route = routeKey(row.rota);
+        const routeId = canonicalRouteId(row.idRota);
+        const liveReference = liveReferenceRows.find(item => routeKey(item.rota) === route) || null;
+
+        // 1) ID exato da rota, quando o CSV e a Extração compartilham o mesmo identificador.
+        const byId = routeId
+          ? extraction.filter(item => canonicalRouteId(item.idRota) === routeId)
+          : [];
+
+        // 2) Nome da rota do CSV. Este fallback NÃO exige o mesmo ID,
+        // porque o audited_shipments pode trazer um identificador diferente da Extração.
+        const byRoute = route
+          ? extraction.filter(item => routeKey(item.rota) === route)
+          : [];
+
+        // 3) Alguns planejamentos preservam a rota de origem em rotaOriginal.
+        const byOriginalRoute = route
+          ? extraction.filter(item => routeKey(item.rotaOriginal) === route)
+          : [];
+
+        let planned = null;
+        if (byId.length === 1) {
+          planned = byId[0];
+        } else if (byId.length > 1) {
+          planned = byId.find(item => routeKey(item.rota) === route)
+            || byId.find(item => routeKey(item.rotaOriginal) === route)
+            || null;
+        }
+
+        if (!planned && byRoute.length === 1) planned = byRoute[0];
+        if (!planned && byOriginalRoute.length === 1) planned = byOriginalRoute[0];
+
+        // Se houver mais de uma linha com o mesmo nome de rota, usa a doca que já estava
+        // conhecida durante a operação para desambiguar.
+        if (!planned && liveReference) {
+          const knownDock = validDockValue(liveReference.doca);
+          const routeCandidates = [...byRoute, ...byOriginalRoute];
+          if (knownDock) {
+            planned = routeCandidates.find(item => validDockValue(item.doca) === knownDock) || null;
+          }
+        }
+
+        // Último recurso: preserva a doca já conhecida na Base Aduana/base consolidada.
+        const dock = validDockValue(planned?.doca)
+          || validDockValue(liveReference?.doca)
+          || validDockValue(row.doca);
         const label = auditSideForDock(dock);
         const group = groups.find(item => item.label === label);
-        group.rows.push({ ...row, rota: planned?.rota || row.rota, doca: dock, onda: planned?.onda || "", matched: Boolean(planned) });
+
+        group.rows.push({
+          ...row,
+          rota: planned?.rota || liveReference?.rota || row.rota,
+          doca: dock,
+          onda: planned?.onda || liveReference?.onda || "",
+          matched: Boolean(planned || dock),
+          matchSource: planned ? (byId.includes(planned) ? "id" : "rota") : (liveReference ? "base" : "")
+        });
         group.aMais += Number(row.aMais || 0);
         group.faltantes += Number(row.faltantes || 0);
       });
