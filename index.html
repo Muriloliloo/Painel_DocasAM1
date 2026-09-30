@@ -10726,6 +10726,31 @@ body.editor-open .global-theme-toggle {
     .docas-mode .dock-card-content .package-discrepancy {
       margin-top: 1px; padding: 1px 3px; line-height: 1;
     }
+      .package-closure { min-width: 0; color: #062642; }
+    .package-closure h2 { margin: 12px 0 4px; font-size: clamp(20px, 2vw, 30px); font-weight: 900; }
+    .package-closure > p { margin: 6px 0 14px; font-size: 13px; overflow-wrap: anywhere; }
+    .package-closure-totals { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 10px; margin-bottom: 16px; }
+    .package-closure-totals div { background: white; padding: 12px; border: 1px solid #c7d3df; border-radius: 6px; font-weight: 800; font-size: 12px; }
+    .package-closure-totals strong { display: block; color: #d9001b; font-size: 30px; }
+    .package-closure-side { background: white; border: 1px solid #b8cedf; border-radius: 7px; margin-bottom: 16px; overflow: hidden; }
+    .package-closure-side h3 { margin: 0; padding: 12px 16px; background: #063354; color: white; border-bottom: 3px solid #ffd200; font-size: 18px; font-weight: 900; text-transform: uppercase; }
+    .package-closure-staff { display: flex; flex-wrap: wrap; gap: 8px 24px; padding: 10px 16px; background: #edf4fb; overflow-wrap: anywhere; }
+    .package-closure-side table { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 14px; }
+    .package-closure-side th, .package-closure-side td { padding: 9px 12px; border: 1px solid #dbe7f0; text-align: center; overflow-wrap: anywhere; }
+    .package-closure-side th { background: #edf4fb; }
+    .package-closure-side th:first-child, .package-closure-side td:first-child { width: 28%; text-align: left; }
+    .package-closure-side th:nth-child(3) { width: 30%; }
+    .package-closure-side small { display: block; font-size: 11px; color: #52647a; }
+    .package-closure-badge { display: inline-block; background: #d9001b; color: white; border-radius: 5px; padding: 3px 9px; }
+    .package-closure-zero { color: #68768a; }
+    .package-closure-side footer { position: static; padding: 10px 16px; background: #edf4fb; color: #062642; font-weight: 800; font-size: 13px; }
+    .package-closure-notice { background: #fff3cd; padding: 8px; }
+    #finalAuditFile { max-width: 100%; margin-top: 8px; }
+    #clearFinalAuditBtn { padding: 8px 12px; background: #063354; color: white; border: 0; border-radius: 5px; cursor: pointer; }
+    body.dark-mode .package-closure { color: #f1f5f9; }
+    body.dark-mode .package-closure-side, body.dark-mode .package-closure-totals div { background: #102b43; color: #f1f5f9; }
+    body.dark-mode .package-closure-staff, body.dark-mode .package-closure-side th, body.dark-mode .package-closure-side footer { background: #183950; color: #f1f5f9; }
+    @media (max-width: 600px) { .package-closure-totals { gap: 4px; } .package-closure-totals div { padding: 7px; font-size: 10px; } .package-closure-side td, .package-closure-side th { padding: 8px 4px; font-size: 12px; } }
   </style>
 </head>
 <body>
@@ -11235,6 +11260,7 @@ body.editor-open .global-theme-toggle {
     <section class="panel-view tailwind-mode tw-scope tw-bg-[#e8f0f7] tw-p-3" id="fechamentoView" aria-label="Fechamento de onda">
       <div class="closure-layout tw-grid tw-grid-cols-1 tw-gap-4 tw-items-start">
         <div class="closure tw-grid tw-gap-1.5" id="closureContent"></div>
+        <section id="packageClosure" class="package-closure" aria-label="Fechamento de pacotes por lado"></section>
       </div>
     </section>
     <section class="panel-view tailwind-mode" id="fechamentoExecutivoView" aria-label="Fechamento executivo 16 por 9">
@@ -11279,6 +11305,14 @@ body.editor-open .global-theme-toggle {
       <label>Data<input id="dataInput" type="text"></label>
     </div>
     <section class="paste-area">
+      <details class="zone-staff-editor" open>
+        <summary>Fechamento final da Aduana — importar CSV</summary>
+        <p>Ao finalizar a última onda, selecione o relatório audited_shipments do dia. O CSV substituirá as contagens ao vivo somente no fechamento por lado.</p>
+        <label for="finalAuditFile">Arquivo CSV da Aduana</label>
+        <input id="finalAuditFile" type="file" accept=".csv,text/csv">
+        <p id="finalAuditStatus" role="status" aria-live="polite"></p>
+        <button id="clearFinalAuditBtn" type="button">Voltar à Base Aduana (salvar em Aplicar)</button>
+      </details>
       <details class="zone-staff-editor" open>
         <summary>Responsáveis por lado</summary>
         <p>Informe o Coordenador e o PS de cada setor. Clique em Aplicar para salvar.</p>
@@ -15393,7 +15427,136 @@ body.editor-open .global-theme-toggle {
       });
       bindSummaryInputs();
     }
+    let pendingFinalAudit = null;
+
+    function parseFinalAuditCsv(text) {
+      const source = String(text || "").replace(/^\uFEFF/, "");
+      const firstLine = source.split(/\r?\n/)[0];
+      const delimiter = firstLine.includes(";") ? ";" : ",";
+      const records = parseDelimitedRows(source, delimiter);
+      const header = (records.shift() || []).map(plainText);
+      const required = ["shipment id", "id da rota", "estado", "data auditoria"];
+      if (required.some(name => !header.includes(name))) throw new Error("CSV inválido: faltam Shipment ID, ID da rota, Estado ou Data auditoria.");
+      const col = name => header.indexOf(name);
+      const packages = new Map();
+      const dates = new Set();
+      let duplicates = 0;
+      records.forEach((cells, index) => {
+        const shipment = normalize(cells[col("shipment id")]);
+        const rawRoute = normalize(cells[col("id da rota")]);
+        const rota = routeToken(rawRoute);
+        const idRota = rawRoute.split("|")[1]?.trim() || "";
+        const status = plainText(cells[col("estado")]);
+        const states = { correto: "corretos", faltante: "faltantes", "a mais": "aMais", avariado: "avariados" };
+        const dateText = normalize(cells[col("data auditoria")]);
+        const match = dateText.match(/^(\d{2})\/(\d{2})\/(\d{4})\s+(\d{2}):(\d{2}):(\d{2})$/);
+        if (!shipment || !rota || !states[status] || !match) throw new Error(`Linha ${index + 2}: pacote, rota, estado ou data inválidos. Nenhum dado foi aplicado.`);
+        const [, day, month, year, hour, minute, second] = match;
+        const stamp = Date.UTC(+year, +month - 1, +day, +hour, +minute, +second);
+        const date = new Date(stamp);
+        if (date.getUTCDate() !== +day || date.getUTCMonth() !== +month - 1 || +hour > 23 || +minute > 59 || +second > 59) throw new Error(`Linha ${index + 2}: data inválida.`);
+        dates.add(`${day}/${month}/${year}`);
+        const key = `${idRota || rota}|${shipment}`;
+        const previous = packages.get(key);
+        if (previous) duplicates++;
+        if (previous && previous.stamp === stamp && previous.state !== states[status]) throw new Error(`Linha ${index + 2}: estados conflitantes para o mesmo pacote e horário.`);
+        if (!previous || stamp >= previous.stamp) packages.set(key, { rota, idRota, shipmentId: shipment, auditAt: dateText, stamp, state: states[status] });
+      });
+      if (!packages.size) throw new Error("O CSV não contém pacotes válidos.");
+      if (dates.size !== 1) throw new Error("Importe um CSV de um único dia de expedição.");
+      const routes = new Map();
+      packages.forEach(item => {
+        const key = item.idRota || item.rota;
+        if (!routes.has(key)) routes.set(key, { rota: item.rota, idRota: item.idRota, corretos: 0, faltantes: 0, aMais: 0, avariados: 0, ocorrencias: [] });
+        routes.get(key)[item.state]++;
+        if (item.state === "aMais" || item.state === "faltantes") routes.get(key).ocorrencias.push({
+          shipmentId: item.shipmentId, estado: item.state, auditAt: item.auditAt
+        });
+      });
+      return { date: [...dates][0], rows: [...routes.values()], packages: packages.size, duplicates };
+    }
+
+    function auditSideForDock(dock) {
+      const number = Number(validDockValue(dock));
+      for (let i = 0; i < dockLayoutBlocks.length; i++) {
+        for (const zone of dockZoneLabels[i]) {
+          const docks = dockLayoutBlocks[i].slice(zone.column - 1, zone.column - 1 + zone.span).flat();
+          if (docks.includes(number)) return zone.label;
+        }
+      }
+      return "Sem lado identificado";
+    }
+
+    function packageClosureModel(source = data) {
+      const final = source.aduanaFechamentoFinal;
+      const useFinal = Boolean(final && final.date === normalize(source.data));
+      const extraction = source.extracao || [];
+      const groups = dockZoneLabels.flat().map(zone => ({ label: zone.label, rows: [], aMais: 0, faltantes: 0 }));
+      groups.push({ label: "Sem lado identificado", rows: [], aMais: 0, faltantes: 0 });
+      const input = useFinal ? final.rows : uniqueBaseRows(source.baseAduana || []).map(row => ({
+        ...row, aMais: Number(packageCount(row.aduanaAMais, row.aduanaUnidades, "extra")),
+        faltantes: Number(packageCount(row.aduanaFaltantes, row.aduanaUnidades, "missing"))
+      }));
+      input.forEach(row => {
+        if (!(row.aMais > 0 || row.faltantes > 0)) return;
+        const byId = row.idRota ? extraction.filter(item => normalize(item.idRota) === normalize(row.idRota)) : [];
+        const candidates = byId.length ? byId : extraction.filter(item => routeKey(item.rota) === routeKey(row.rota)
+          && (!row.idRota || !normalize(item.idRota) || normalize(item.idRota) === normalize(row.idRota)));
+        const planned = candidates.length === 1 ? candidates[0] : null;
+        // O fechamento usa a doca da Extração; não atribui responsáveis por placa ou nome aproximado.
+        const dock = planned ? validDockValue(planned.doca) : "";
+        const label = auditSideForDock(dock);
+        const group = groups.find(item => item.label === label);
+        group.rows.push({ ...row, rota: planned?.rota || row.rota, doca: dock, onda: planned?.onda || "", matched: Boolean(planned) });
+        group.aMais += Number(row.aMais || 0);
+        group.faltantes += Number(row.faltantes || 0);
+      });
+      groups.forEach(group => group.rows.sort((a, b) => Number(a.doca || 999) - Number(b.doca || 999) || a.rota.localeCompare(b.rota)));
+      return { useFinal, final, groups: groups.filter(group => group.label !== "Sem lado identificado" || group.rows.length),
+        routes: groups.reduce((n, g) => n + g.rows.length, 0),
+        aMais: groups.reduce((n, g) => n + g.aMais, 0), faltantes: groups.reduce((n, g) => n + g.faltantes, 0) };
+    }
+
+    function renderPackageClosure() {
+      const container = document.getElementById("packageClosure");
+      if (!container) return;
+      const model = packageClosureModel();
+      const badge = (value, extra = false) => value > 0 ? `<strong class="package-closure-badge">${extra ? "+" : ""}${value}</strong>` : '<span class="package-closure-zero">0</span>';
+      container.innerHTML = `<h2>Fechamento por lado</h2>
+        <p>Pacotes a mais e faltantes • ${model.useFinal ? `CSV final: ${escapeHtml(model.final.fileName)} • ${escapeHtml(model.final.date)}` : "Última contagem da Base Aduana"}</p>
+        ${model.final && !model.useFinal ? '<p class="package-closure-notice">O CSV salvo é de outra data. Exibindo a Base Aduana atual.</p>' : ""}
+        <div class="package-closure-totals"><div><strong>${model.routes}</strong>Rotas com ocorrência</div><div><strong>${model.aMais}</strong>Pacotes a mais</div><div><strong>${model.faltantes}</strong>Pacotes faltantes</div></div>
+        ${model.groups.map(group => {
+          const staff = group.label === "Sem lado identificado" ? {} : data.responsaveisPorLado?.[group.label] || {};
+          return `<article class="package-closure-side"><h3>${escapeHtml(group.label)}</h3>
+            <div class="package-closure-staff"><span><b>Coordenador:</b> ${escapeHtml(staff.coordenador || "Não informado")}</span><span><b>PS:</b> ${escapeHtml(staff.ps || "Não informado")}</span></div>
+            <table><thead><tr><th>Rota / onda</th><th>Doca</th><th>ID do pacote</th><th>A mais</th><th>Faltantes</th></tr></thead><tbody>
+            ${group.rows.length ? group.rows.map(row => {
+              const items = model.useFinal && row.ocorrencias?.length ? row.ocorrencias.map(item => ({
+                id: item.shipmentId, auditAt: item.auditAt, aMais: item.estado === "aMais" ? 1 : 0, faltantes: item.estado === "faltantes" ? 1 : 0
+              })) : [{ id: "Disponível no CSV final", aMais: row.aMais, faltantes: row.faltantes }];
+              return items.map(item => `<tr><td>${escapeHtml(row.rota)}<small>${escapeHtml(row.onda || (row.idRota ? `ID rota ${row.idRota}` : "Sem correspondência na Extração"))}</small></td><td>${escapeHtml(row.doca || "—")}</td><td>${escapeHtml(item.id)}${item.auditAt ? `<small>${escapeHtml(item.auditAt)}</small>` : ""}</td><td>${badge(item.aMais, true)}</td><td>${badge(item.faltantes)}</td></tr>`).join("");
+            }).join("") : '<tr><td colspan="5">Sem divergências informadas.</td></tr>'}
+            </tbody></table><footer>Total do lado: ${group.aMais} a mais • ${group.faltantes} faltantes</footer></article>`;
+        }).join("")}
+        <p>Docas da Extração • Responsáveis cadastrados no Editor de Dados • Todas as ondas</p>`;
+    }
+
+    function updateFinalAuditEditorStatus() {
+      const status = document.getElementById("finalAuditStatus");
+      if (!pendingFinalAudit) { status.textContent = "Usando as contagens da Base Aduana. Importe o CSV ao finalizar a última onda."; return; }
+      const total = pendingFinalAudit.rows.reduce((sum, row) => ({ aMais: sum.aMais + row.aMais, faltantes: sum.faltantes + row.faltantes }), { aMais: 0, faltantes: 0 });
+      status.textContent = `${pendingFinalAudit.fileName} • ${pendingFinalAudit.date} • ${pendingFinalAudit.packages} pacotes únicos • ${total.aMais} a mais • ${total.faltantes} faltantes • ${pendingFinalAudit.duplicates} linhas repetidas descartadas. Clique em Aplicar para salvar. Um novo CSV substitui o anterior por completo.`;
+    }
+
+    function openFinalAuditEditor() {
+      pendingFinalAudit = data.aduanaFechamentoFinal ? JSON.parse(JSON.stringify(data.aduanaFechamentoFinal)) : null;
+      document.getElementById("finalAuditFile").value = "";
+      updateFinalAuditEditorStatus();
+    }
+
     function renderClosure() {
+      renderPackageClosure();
       const { planned: totalPlanned, shipped: totalShipped } = summaryTotals();
       const totalPct = formatPercent(totalPlanned ? totalShipped / totalPlanned * 100 : 0);
       document.getElementById("closureContent").innerHTML = `
@@ -16374,6 +16537,7 @@ body.editor-open .global-theme-toggle {
 
     function openDrawer() {
       if (!requireAdminAction()) return;
+      openFinalAuditEditor();
       populateZoneStaffEditor();
       document.getElementById("totalRotasInput").value = data.totalRotas || data.extracao.length || "";
       document.getElementById("dataInput").value = data.data || "";
@@ -17039,6 +17203,7 @@ body.editor-open .global-theme-toggle {
       if (!requireAdminAction()) return;
       data = JSON.parse(JSON.stringify(originalData));
       populateZoneStaffEditor();
+      openFinalAuditEditor();
       currentWave = data.ondas[0];
       document.getElementById("extracaoPaste").value = toPaste(data.extracao);
       document.getElementById("basePaste").value = toBasePaste(data.baseOperacional || data.base || [], "operacional");
@@ -17052,8 +17217,34 @@ body.editor-open .global-theme-toggle {
         clearPasteTarget(button.dataset.clearTarget);
       });
     });
+    document.getElementById("finalAuditFile").addEventListener("change", async event => {
+      if (!requireAdminAction()) return;
+      const file = event.target.files?.[0];
+      if (!file) return;
+      const button = document.getElementById("applyBtn");
+      button.disabled = true;
+      try {
+        const parsed = parseFinalAuditCsv(await file.text());
+        if (parsed.date !== normalize(document.getElementById("dataInput").value)) throw new Error("A data do CSV difere da Data do painel. Selecione o relatório do dia correto.");
+        pendingFinalAudit = { ...parsed, fileName: file.name, importedAt: new Date().toISOString() };
+        updateFinalAuditEditorStatus();
+      } catch (error) {
+        document.getElementById("finalAuditStatus").textContent = `${error.message} A seleção anterior foi mantida.`;
+        event.target.value = "";
+      } finally { button.disabled = false; }
+    });
+    document.getElementById("clearFinalAuditBtn").addEventListener("click", () => {
+      if (!requireAdminAction()) return;
+      pendingFinalAudit = null;
+      document.getElementById("finalAuditFile").value = "";
+      updateFinalAuditEditorStatus();
+    });
     document.getElementById("applyBtn").addEventListener("click", async () => {
       if (!requireAdminAction()) return;
+      if (pendingFinalAudit && pendingFinalAudit.date !== normalize(document.getElementById("dataInput").value)) {
+        alert("A data do CSV deve ser igual à Data do painel. Confira o arquivo ou volte à Base Aduana.");
+        return;
+      }
       const applyButton = document.getElementById("applyBtn");
       const pasteStatus = document.getElementById("pasteClearStatus");
       const originalApplyText = applyButton?.textContent || "Aplicar";
@@ -17093,6 +17284,7 @@ body.editor-open .global-theme-toggle {
 
       data = {
         ...data,
+        aduanaFechamentoFinal: pendingFinalAudit,
         responsaveisPorLado: readZoneStaffEditor(),
         totalRotas: normalize(document.getElementById("totalRotasInput").value),
         data: normalize(document.getElementById("dataInput").value),
