@@ -23,7 +23,6 @@
   </script>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="./html2canvas.min.js" defer></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" defer></script>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
   <style>
     :root {
@@ -2011,14 +2010,14 @@
       padding: 0 14px 14px;
     }
 
-    #downloadPackagePdfBtn {
+    #downloadPackageCsvBtn {
       grid-column: span 2;
       background: linear-gradient(180deg, #0b5f93, #063354);
       color: #fff;
       border-color: #063354;
     }
 
-    #downloadPackagePdfBtn.is-loading {
+    #downloadPackageCsvBtn.is-loading {
       opacity: .72;
       cursor: wait;
     }
@@ -11880,7 +11879,7 @@ body.editor-open .global-theme-toggle {
       <button type="button" data-print-type="justificativas">Justificativas</button>
       <button type="button" data-print-type="fechamento">Fechamento</button>
       <button type="button" data-print-type="pacotes-lado">Fechamento por lado</button>
-      <button type="button" id="downloadPackagePdfBtn">Baixar arquivo PDF</button>
+      <button type="button" id="downloadPackageCsvBtn">Baixar CSV</button>
     </div>
   </aside>
 
@@ -15667,130 +15666,125 @@ body.editor-open .global-theme-toggle {
       </section>`;
     }
 
-    async function downloadPackageClosurePdfFile() {
-      const button = document.getElementById("downloadPackagePdfBtn");
-      if (!window.html2pdf) {
-        alert("O gerador de PDF ainda está carregando. Aguarde alguns segundos e tente novamente.");
-        return;
-      }
+    function downloadPackageClosureCsvFile(waves = data.ondas || [], range = {}) {
+      const model = packageClosureModel();
+      const selectedWaves = new Set((waves || []).map(waveLabel));
+      const start = Number(range.start || 0);
+      const end = Number(range.end || 0);
+      const finalMode = model.useFinal;
 
-      // Garante que o PDF use exatamente o mesmo conteúdo exibido no card da aba Fechamento.
-      renderPackageClosure();
-      const source = document.getElementById("packageClosure");
-      if (!source) {
-        alert("O card Fechamento por Lado não está disponível para exportação.");
-        return;
-      }
+      const inWave = row => !selectedWaves.size || selectedWaves.has(waveLabel(row.onda));
+      const inDockRange = dock => {
+        const value = Number(validDockValue(dock));
+        if (!value) return !start && !end;
+        if (start && value < start) return false;
+        if (end && value > end) return false;
+        return true;
+      };
+      const csvCell = value => {
+        const text = String(value ?? "");
+        return /[;"\r\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+      };
 
-      const originalText = button?.textContent || "Baixar arquivo PDF";
-      if (button) {
-        button.disabled = true;
-        button.classList.add("is-loading");
-        button.textContent = "Gerando PDF...";
-      }
+      const headers = [
+        "Data",
+        "Modo",
+        "Lado",
+        "Coordenador",
+        "PS",
+        "Rota",
+        "Onda",
+        "Doca",
+        "ID do pacote",
+        "Ocorrência",
+        "Quantidade",
+        "Data auditoria"
+      ];
 
-      const captureHost = document.createElement("section");
-      // Mantém o mesmo contexto de CSS do card real durante a captura.
-      captureHost.id = "fechamentoView";
-      captureHost.className = "pdf-package-capture-host";
-      captureHost.style.position = "absolute";
-      captureHost.style.left = "0";
-      captureHost.style.top = `${Math.max(0, window.scrollY)}px`;
-      captureHost.style.width = "200mm";
-      captureHost.style.maxWidth = "200mm";
-      captureHost.style.height = "auto";
-      captureHost.style.maxHeight = "none";
-      captureHost.style.overflow = "visible";
-      captureHost.style.padding = "0";
-      captureHost.style.margin = "0";
-      captureHost.style.background = "#ffffff";
-      captureHost.style.zIndex = "2147483647";
-      captureHost.style.pointerEvents = "none";
+      const rows = [];
+      model.groups.forEach(group => {
+        const staff = group.label === "Sem lado identificado"
+          ? {}
+          : data.responsaveisPorLado?.[group.label] || {};
 
-      const clone = source.cloneNode(true);
-      clone.id = "packageClosurePdfCapture";
-      clone.style.width = "100%";
-      clone.style.maxWidth = "100%";
-      clone.style.height = "auto";
-      clone.style.maxHeight = "none";
-      clone.style.overflow = "visible";
-      clone.style.margin = "0";
-      captureHost.appendChild(clone);
-      document.body.appendChild(captureHost);
+        group.rows
+          .filter(row => inWave(row) && inDockRange(row.doca))
+          .forEach(row => {
+            const base = {
+              data: data.data || "",
+              modo: finalMode ? "FECHAMENTO FINAL" : "AO VIVO",
+              lado: group.label,
+              coordenador: staff.coordenador || "",
+              ps: staff.ps || "",
+              rota: row.rota || "",
+              onda: displayWave(row.onda || "") || row.onda || "",
+              doca: row.doca || ""
+            };
 
-      // Replica a paginação inteligente também no arquivo baixado.
-      const sides = Array.from(clone.querySelectorAll(".package-closure-side"));
-      const sideInfo = sides.map(side => {
-        const hasEmptyRow = Boolean(side.querySelector(".package-closure-empty-row"));
-        const rows = hasEmptyRow ? 0 : side.querySelectorAll("tbody tr").length;
-        return { side, rows };
-      });
-      const activeSides = sideInfo.filter(item => item.rows > 0);
-      const totalRows = activeSides.reduce((sum, item) => sum + item.rows, 0);
-      const expanded = totalRows >= 26 || activeSides.some(item => item.rows >= 14);
-
-      let activeIndex = 0;
-      sideInfo.forEach(item => {
-        if (!item.rows) {
-          item.side.classList.add("pdf-download-keep-together");
-          return;
-        }
-        if (expanded && activeIndex > 0) item.side.classList.add("pdf-download-new-page");
-        if (item.rows <= 11) item.side.classList.add("pdf-download-keep-together");
-        activeIndex += 1;
-      });
-
-      try {
-        // Aguarda o navegador concluir layout/fontes antes de capturar.
-        if (document.fonts?.ready) await document.fonts.ready;
-        await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
-
-        const safeDate = normalize(data.data || new Date().toLocaleDateString("pt-BR"))
-          .replace(/[^0-9A-Za-z_-]+/g, "-")
-          .replace(/^-+|-+$/g, "") || "SSP15";
-        const suffix = packageClosureModel().useFinal ? "final" : "ao-vivo";
-        const fileName = `fechamento-por-lado-${safeDate}-${suffix}.pdf`;
-
-        await window.html2pdf()
-          .set({
-            margin: [5, 5, 5, 5],
-            filename: fileName,
-            image: { type: "jpeg", quality: 0.99 },
-            html2canvas: {
-              scale: 2.5,
-              useCORS: true,
-              allowTaint: true,
-              backgroundColor: "#ffffff",
-              logging: false,
-              scrollX: 0,
-              scrollY: 0,
-              windowWidth: 794
-            },
-            jsPDF: {
-              unit: "mm",
-              format: "a4",
-              orientation: "portrait",
-              compress: true
-            },
-            pagebreak: {
-              mode: ["css", "legacy"],
-              before: ".pdf-download-new-page",
-              avoid: [".pdf-download-keep-together", ".package-closure-side h3", ".package-closure-staff"]
+            if (finalMode) {
+              const offenders = Array.isArray(row.ocorrencias) ? row.ocorrencias : [];
+              offenders.forEach(item => {
+                if (item.estado !== "aMais" && item.estado !== "faltantes") return;
+                rows.push([
+                  base.data,
+                  base.modo,
+                  base.lado,
+                  base.coordenador,
+                  base.ps,
+                  base.rota,
+                  base.onda,
+                  base.doca,
+                  item.shipmentId || "",
+                  item.estado === "aMais" ? "A MAIS" : "FALTANTE",
+                  1,
+                  item.auditAt || ""
+                ]);
+              });
+              return;
             }
-          })
-          .from(clone)
-          .save();
-      } catch (error) {
-        console.error("Falha ao baixar PDF do Fechamento por Lado:", error);
-        alert("Não foi possível gerar o arquivo PDF. Atualize a página e tente novamente.");
-      } finally {
-        captureHost.remove();
-        if (button) {
-          button.disabled = false;
-          button.classList.remove("is-loading");
-          button.textContent = originalText;
-        }
+
+            const extra = Number(row.aMais || 0);
+            const missing = Number(row.faltantes || 0);
+            if (extra > 0) {
+              rows.push([
+                base.data, base.modo, base.lado, base.coordenador, base.ps,
+                base.rota, base.onda, base.doca, "", "A MAIS", extra, ""
+              ]);
+            }
+            if (missing > 0) {
+              rows.push([
+                base.data, base.modo, base.lado, base.coordenador, base.ps,
+                base.rota, base.onda, base.doca, "", "FALTANTE", missing, ""
+              ]);
+            }
+          });
+      });
+
+      if (!rows.length) {
+        alert("Não há pacotes ofensores no Fechamento por Lado para os filtros selecionados.");
+        return;
       }
+
+      const csv = "\uFEFF" + [
+        headers.map(csvCell).join(";"),
+        ...rows.map(row => row.map(csvCell).join(";"))
+      ].join("\r\n");
+
+      const safeDate = normalize(data.data || new Date().toLocaleDateString("pt-BR"))
+        .replace(/[^0-9A-Za-z_-]+/g, "-")
+        .replace(/^-+|-+$/g, "") || "SSP15";
+      const suffix = finalMode ? "final" : "ao-vivo";
+      const fileName = `fechamento-por-lado-${safeDate}-${suffix}.csv`;
+
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.setTimeout(() => URL.revokeObjectURL(url), 30000);
     }
 
     function renderPrintTable(type = "docas", waves = data.ondas || [], range = {}) {
@@ -18069,11 +18063,11 @@ body.editor-open .global-theme-toggle {
       document.getElementById("pdfDrawer").classList.remove("open");
     });
     document.getElementById("pdfIncludeHybrid")?.addEventListener("change", syncHybridPdfFilters);
-    document.getElementById("downloadPackagePdfBtn")?.addEventListener("click", async () => {
+    document.getElementById("downloadPackageCsvBtn")?.addEventListener("click", () => {
       const waves = selectedPrintWaves();
       const range = printDockRange();
       document.getElementById("pdfDrawer").classList.remove("open");
-      await downloadPackageClosurePdfFile(waves, range);
+      downloadPackageClosureCsvFile(waves, range);
     });
     document.querySelectorAll("[data-print-type]").forEach(button => {
       button.addEventListener("click", () => {
