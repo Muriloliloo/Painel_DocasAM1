@@ -23,6 +23,7 @@
   </script>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="./html2canvas.min.js" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" defer></script>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
   <style>
     :root {
@@ -2008,6 +2009,18 @@
       grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 8px;
       padding: 0 14px 14px;
+    }
+
+    #downloadPackagePdfBtn {
+      grid-column: span 2;
+      background: linear-gradient(180deg, #0b5f93, #063354);
+      color: #fff;
+      border-color: #063354;
+    }
+
+    #downloadPackagePdfBtn.is-loading {
+      opacity: .72;
+      cursor: wait;
     }
 
     .pdf-actions button {
@@ -11867,6 +11880,7 @@ body.editor-open .global-theme-toggle {
       <button type="button" data-print-type="justificativas">Justificativas</button>
       <button type="button" data-print-type="fechamento">Fechamento</button>
       <button type="button" data-print-type="pacotes-lado">Fechamento por lado</button>
+      <button type="button" id="downloadPackagePdfBtn">Baixar arquivo PDF</button>
     </div>
   </aside>
 
@@ -15653,6 +15667,80 @@ body.editor-open .global-theme-toggle {
       </section>`;
     }
 
+    async function downloadPackageClosurePdfFile(waves = data.ondas || [], range = {}) {
+      const button = document.getElementById("downloadPackagePdfBtn");
+      if (!window.html2pdf) {
+        alert("O gerador de PDF ainda está carregando. Aguarde alguns segundos e tente novamente.");
+        return;
+      }
+
+      const originalText = button?.textContent || "Baixar arquivo PDF";
+      if (button) {
+        button.disabled = true;
+        button.classList.add("is-loading");
+        button.textContent = "Gerando PDF...";
+      }
+
+      const host = document.createElement("div");
+      host.setAttribute("aria-hidden", "true");
+      host.style.position = "fixed";
+      host.style.left = "-100000px";
+      host.style.top = "0";
+      host.style.width = "210mm";
+      host.style.minHeight = "297mm";
+      host.style.padding = "5mm";
+      host.style.background = "#ffffff";
+      host.style.color = "#05294d";
+      host.style.zIndex = "-1";
+      host.innerHTML = renderPackageClosurePrint(waves, range);
+      document.body.appendChild(host);
+
+      try {
+        const safeDate = normalize(data.data || new Date().toLocaleDateString("pt-BR"))
+          .replace(/[^0-9A-Za-z_-]+/g, "-")
+          .replace(/^-+|-+$/g, "") || "SSP15";
+        const suffix = packageClosureModel().useFinal ? "final" : "ao-vivo";
+        const fileName = `fechamento-por-lado-${safeDate}-${suffix}.pdf`;
+
+        await window.html2pdf()
+          .set({
+            margin: [5, 5, 5, 5],
+            filename: fileName,
+            image: { type: "jpeg", quality: 0.98 },
+            html2canvas: {
+              scale: 2.4,
+              useCORS: true,
+              backgroundColor: "#ffffff",
+              logging: false,
+              windowWidth: 1200
+            },
+            jsPDF: {
+              unit: "mm",
+              format: "a4",
+              orientation: "portrait",
+              compress: true
+            },
+            pagebreak: {
+              mode: ["css", "legacy"],
+              before: ".package-pdf-new-page",
+              avoid: [".package-pdf-keep-together", ".package-pdf-side-title", ".package-pdf-staff"]
+            }
+          })
+          .from(host)
+          .save();
+      } catch (error) {
+        console.error("Falha ao baixar PDF do Fechamento por Lado:", error);
+        alert("Não foi possível gerar o arquivo PDF. Atualize a página e tente novamente.");
+      } finally {
+        host.remove();
+        if (button) {
+          button.disabled = false;
+          button.classList.remove("is-loading");
+          button.textContent = originalText;
+        }
+      }
+    }
+
     function renderPrintTable(type = "docas", waves = data.ondas || [], range = {}) {
       const printRows = document.getElementById("printRows");
       if (type === "pacotes-lado") {
@@ -17854,6 +17942,12 @@ body.editor-open .global-theme-toggle {
       document.getElementById("pdfDrawer").classList.remove("open");
     });
     document.getElementById("pdfIncludeHybrid")?.addEventListener("change", syncHybridPdfFilters);
+    document.getElementById("downloadPackagePdfBtn")?.addEventListener("click", async () => {
+      const waves = selectedPrintWaves();
+      const range = printDockRange();
+      document.getElementById("pdfDrawer").classList.remove("open");
+      await downloadPackageClosurePdfFile(waves, range);
+    });
     document.querySelectorAll("[data-print-type]").forEach(button => {
       button.addEventListener("click", () => {
         renderPrintTable(button.dataset.printType, selectedPrintWaves(), printDockRange());
