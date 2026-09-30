@@ -3466,14 +3466,14 @@
 
     #fechamentoView .closure-layout {
       display: grid;
-      grid-template-columns: minmax(0, 1fr);
+      grid-template-columns: minmax(520px, .82fr) minmax(700px, 1.18fr);
       gap: 18px;
       align-items: start;
       justify-content: stretch;
       width: 100%;
-      max-width: 1380px;
+      max-width: none;
       min-width: 0;
-      margin: 0 auto;
+      margin: 0;
     }
 
     #fechamentoView .closure {
@@ -3481,6 +3481,8 @@
       gap: 6px;
       width: 100%;
       max-width: none;
+      min-width: 0;
+      align-self: start;
     }
 
     #fechamentoView .closure-head {
@@ -10759,7 +10761,8 @@ body.editor-open .global-theme-toggle {
     #fechamentoView .package-closure {
       width: 100%;
       min-width: 0;
-      padding: clamp(16px, 1.4vw, 24px);
+      align-self: start;
+      padding: clamp(14px, 1.15vw, 20px);
       border: 1px solid #c4d8e7;
       border-radius: 12px;
       background: linear-gradient(135deg, #f8fcff 0%, #e9f5fc 52%, #dff0fa 100%);
@@ -10778,7 +10781,7 @@ body.editor-open .global-theme-toggle {
     #fechamentoView .package-closure-hero h2 {
       margin: 0;
       color: #05294d;
-      font: 950 clamp(30px, 2.5vw, 48px)/.95 "Arial Black", "Segoe UI Black", "Segoe UI", Arial, sans-serif;
+      font: 950 clamp(24px, 2vw, 38px)/.95 "Arial Black", "Segoe UI Black", "Segoe UI", Arial, sans-serif;
       letter-spacing: -.8px;
       text-transform: uppercase;
     }
@@ -10976,6 +10979,34 @@ body.editor-open .global-theme-toggle {
 
     #fechamentoView .closure {
       padding-top: 4px;
+    }
+
+    @media (max-width: 1320px) {
+      #fechamentoView .closure-layout {
+        grid-template-columns: minmax(470px, .8fr) minmax(620px, 1.2fr);
+        gap: 12px;
+      }
+      #fechamentoView .package-closure-totals {
+        gap: 10px;
+      }
+      #fechamentoView .package-closure-totals div {
+        min-height: 88px;
+        grid-template-columns: minmax(58px, .3fr) minmax(0, 1fr);
+        gap: 9px;
+        padding: 10px 12px;
+      }
+      #fechamentoView .package-closure-totals strong {
+        font-size: clamp(34px, 3.2vw, 52px);
+      }
+      #fechamentoView .package-closure-totals span {
+        font-size: clamp(11px, .88vw, 15px);
+      }
+    }
+
+    @media (max-width: 1120px) {
+      #fechamentoView .closure-layout {
+        grid-template-columns: 1fr;
+      }
     }
 
     @media (max-width: 820px) {
@@ -11507,9 +11538,9 @@ body.editor-open .global-theme-toggle {
       </div>
     </section>
     <section class="panel-view tailwind-mode tw-scope tw-bg-[#e8f0f7] tw-p-3" id="fechamentoView" aria-label="Fechamento de onda">
-      <div class="closure-layout tw-grid tw-grid-cols-1 tw-gap-4 tw-items-start">
-        <section id="packageClosure" class="package-closure" aria-label="Fechamento de pacotes por lado"></section>
+      <div class="closure-layout tw-grid tw-gap-4 tw-items-start">
         <div class="closure tw-grid tw-gap-1.5" id="closureContent"></div>
+        <section id="packageClosure" class="package-closure" aria-label="Fechamento de pacotes por lado"></section>
       </div>
     </section>
     <section class="panel-view tailwind-mode" id="fechamentoExecutivoView" aria-label="Fechamento executivo 16 por 9">
