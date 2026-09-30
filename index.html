@@ -15523,7 +15523,7 @@ body.editor-open .global-theme-toggle {
       const model = packageClosureModel();
       const badge = (value, extra = false) => value > 0 ? `<strong class="package-closure-badge">${extra ? "+" : ""}${value}</strong>` : '<span class="package-closure-zero">0</span>';
       container.innerHTML = `<h2>Fechamento por lado</h2>
-        <p>Pacotes a mais e faltantes • ${model.useFinal ? `CSV final: ${escapeHtml(model.final.fileName)} • ${escapeHtml(model.final.date)}` : "Última contagem da Base Aduana"}</p>
+        <p>Pacotes a mais e faltantes • ${model.useFinal ? `FECHAMENTO FINAL • CSV: ${escapeHtml(model.final.fileName)} • ${escapeHtml(model.final.date)}` : "AO VIVO • Base Aduana durante a expedição • aguardando CSV final"}</p>
         ${model.final && !model.useFinal ? '<p class="package-closure-notice">O CSV salvo é de outra data. Exibindo a Base Aduana atual.</p>' : ""}
         <div class="package-closure-totals"><div><strong>${model.routes}</strong>Rotas com ocorrência</div><div><strong>${model.aMais}</strong>Pacotes a mais</div><div><strong>${model.faltantes}</strong>Pacotes faltantes</div></div>
         ${model.groups.map(group => {
@@ -17365,6 +17365,7 @@ body.editor-open .global-theme-toggle {
       else if (currentView === "docas") renderGrid();
       else if (currentView === "routes") renderRoutesMode();
       else if (currentView === "dashboard") renderDashboard();
+      else if (currentView === "fechamento") renderClosure();
     }, 1000);
   </script>
 
