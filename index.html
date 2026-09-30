@@ -15773,8 +15773,16 @@ body.editor-open .global-theme-toggle {
       const extraction = source.extracao || [];
       const groups = dockZoneLabels.flat().map(zone => ({ label: zone.label, rows: [], aMais: 0, faltantes: 0 }));
       groups.push({ label: "Sem lado identificado", rows: [], aMais: 0, faltantes: 0 });
-      const input = useFinal ? final.rows : uniqueBaseRows(source.baseAduana || []).map(row => ({
-        ...row, aMais: Number(packageCount(row.aduanaAMais, row.aduanaUnidades, "extra")),
+      // Durante a expedição usa a mesma base consolidada que alimenta os cards das docas.
+      // Isso faz a ocorrência entrar no Fechamento por Lado assim que "a mais" ou "faltante"
+      // aparecer na rota, sem aguardar o CSV final.
+      const liveRows = uniqueBaseRows([
+        ...(source.baseAduana || []),
+        ...(source.base || [])
+      ]);
+      const input = useFinal ? final.rows : liveRows.map(row => ({
+        ...row,
+        aMais: Number(packageCount(row.aduanaAMais, row.aduanaUnidades, "extra")),
         faltantes: Number(packageCount(row.aduanaFaltantes, row.aduanaUnidades, "missing"))
       }));
       input.forEach(row => {
