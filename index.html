@@ -3466,11 +3466,11 @@
 
     #fechamentoView .closure-layout {
       display: grid;
-      grid-template-columns: minmax(780px, 920px) minmax(330px, 350px);
+      grid-template-columns: minmax(0, 920px);
       gap: 16px;
       align-items: start;
       justify-content: start;
-      min-width: 1140px;
+      min-width: 0;
     }
 
     #fechamentoView .closure {
@@ -11233,9 +11233,8 @@ body.editor-open .global-theme-toggle {
       </div>
     </section>
     <section class="panel-view tailwind-mode tw-scope tw-bg-[#e8f0f7] tw-p-3" id="fechamentoView" aria-label="Fechamento de onda">
-      <div class="closure-layout tw-grid tw-grid-cols-[minmax(780px,920px)_minmax(330px,350px)] tw-gap-4 tw-items-start">
+      <div class="closure-layout tw-grid tw-grid-cols-1 tw-gap-4 tw-items-start">
         <div class="closure tw-grid tw-gap-1.5" id="closureContent"></div>
-        <div class="closure-message tw-overflow-hidden tw-rounded-lg tw-border tw-border-[#c7d3df] tw-bg-[#edf4fb]" id="closureMessage"></div>
       </div>
     </section>
     <section class="panel-view tailwind-mode" id="fechamentoExecutivoView" aria-label="Fechamento executivo 16 por 9">
@@ -15415,7 +15414,6 @@ body.editor-open .global-theme-toggle {
           `;
         }).join("")}
       `;
-      document.getElementById("closureMessage").innerHTML = renderClosureMessageHtml();
     }
 
     function executiveWaveIdentity(value) {
