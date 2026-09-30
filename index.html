@@ -5770,6 +5770,189 @@
       }
     }
 
+    /* PDF estratificado de pacotes por lado */
+    .package-pdf-report {
+      color: #05294d;
+      font-family: "Segoe UI", Arial, sans-serif;
+    }
+    .package-pdf-header {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 10px;
+      align-items: start;
+      margin-bottom: 4mm;
+      padding: 4mm;
+      border: 1px solid #b8cedf;
+      border-radius: 7px;
+      background: #eef7fc;
+    }
+    .package-pdf-header h2 {
+      margin: 0;
+      color: #05294d;
+      font: 950 19pt/1 "Arial Black", "Segoe UI Black", "Segoe UI", Arial, sans-serif;
+      text-transform: uppercase;
+    }
+    .package-pdf-header p {
+      margin: 1.5mm 0 0;
+      color: #315873;
+      font: 800 9pt/1.25 "Segoe UI", Arial, sans-serif;
+    }
+    .package-pdf-status {
+      padding: 2.4mm 3.2mm;
+      border: 1px solid #e1a400;
+      border-radius: 5px;
+      background: #ffd83d;
+      color: #05294d;
+      font: 950 8pt/1 "Segoe UI", Arial, sans-serif;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+    .package-pdf-status.final {
+      border-color: #079052;
+      background: #20ba6a;
+      color: #fff;
+    }
+    .package-pdf-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 2mm 5mm;
+      margin-bottom: 4mm;
+      padding: 2.5mm 3mm;
+      border: 1px solid #d3e0e9;
+      border-radius: 5px;
+      background: #f8fbfd;
+      color: #315873;
+      font: 800 8pt/1.2 "Segoe UI", Arial, sans-serif;
+    }
+    .package-pdf-summary {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 3mm;
+      margin-bottom: 5mm;
+    }
+    .package-pdf-summary article {
+      display: grid;
+      grid-template-columns: 18mm minmax(0, 1fr);
+      align-items: center;
+      gap: 2mm;
+      min-height: 19mm;
+      padding: 2.5mm 3mm;
+      border: 1px solid #cbdbe6;
+      border-radius: 6px;
+      background: #fff;
+    }
+    .package-pdf-summary strong {
+      color: #ed1b2f;
+      font: 950 23pt/.9 "Arial Black", "Segoe UI Black", "Segoe UI", Arial, sans-serif;
+      text-align: center;
+    }
+    .package-pdf-summary span {
+      color: #05294d;
+      font: 950 8pt/1.15 "Segoe UI", Arial, sans-serif;
+      text-transform: uppercase;
+    }
+    .package-pdf-side {
+      margin: 0 0 5mm;
+      border: 1px solid #b8cedf;
+      border-radius: 6px;
+      overflow: hidden;
+      break-inside: auto;
+      page-break-inside: auto;
+    }
+    .package-pdf-side-title {
+      margin: 0;
+      padding: 2.5mm 3mm;
+      border-bottom: 1mm solid #ffd200;
+      background: #063354;
+      color: #fff;
+      font: 950 11pt/1 "Arial Black", "Segoe UI Black", "Segoe UI", Arial, sans-serif;
+      text-transform: uppercase;
+      break-after: avoid;
+      page-break-after: avoid;
+    }
+    .package-pdf-staff {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      border-bottom: 1px solid #d5e2eb;
+      background: #eef6fb;
+      color: #05294d;
+      font: 800 8pt/1.2 "Segoe UI", Arial, sans-serif;
+    }
+    .package-pdf-staff span { padding: 2mm 3mm; }
+    .package-pdf-staff span + span { border-left: 1px solid #b8cedf; }
+    .package-pdf-table {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: fixed;
+      font: 750 7.6pt/1.18 "Segoe UI", Arial, sans-serif;
+    }
+    .package-pdf-table thead { display: table-header-group; }
+    .package-pdf-table tr {
+      break-inside: avoid;
+      page-break-inside: avoid;
+    }
+    .package-pdf-table th,
+    .package-pdf-table td {
+      padding: 1.7mm 1.8mm;
+      border: 1px solid #d5e2eb;
+      overflow-wrap: anywhere;
+      vertical-align: middle;
+    }
+    .package-pdf-table th {
+      background: #e5f1f8;
+      color: #173f60;
+      font-weight: 950;
+      text-transform: uppercase;
+      text-align: center;
+    }
+    .package-pdf-table td {
+      background: #fff;
+      color: #05294d;
+      text-align: center;
+    }
+    .package-pdf-table td:first-child {
+      text-align: left;
+      font-weight: 900;
+    }
+    .package-pdf-table small {
+      display: block;
+      margin-top: .6mm;
+      color: #60768a;
+      font-size: 6.5pt;
+      font-weight: 700;
+    }
+    .package-pdf-count {
+      display: inline-block;
+      min-width: 8mm;
+      padding: .8mm 1.8mm;
+      border-radius: 4px;
+      background: #ed1b2f;
+      color: #fff;
+      font-weight: 950;
+      text-align: center;
+    }
+    .package-pdf-zero {
+      color: #6c7886;
+      font-weight: 900;
+    }
+    .package-pdf-side-total {
+      padding: 2mm 3mm;
+      background: #eef6fb;
+      color: #05294d;
+      font: 900 8pt/1.2 "Segoe UI", Arial, sans-serif;
+    }
+    .package-pdf-empty {
+      padding: 4mm !important;
+      color: #697b8b !important;
+      text-align: center !important;
+      font-weight: 800 !important;
+    }
+    .package-pdf-footer-note {
+      margin-top: 2mm;
+      color: #4c667b;
+      font: 750 7.2pt/1.25 "Segoe UI", Arial, sans-serif;
+    }
+
     @page { size: A4 portrait; margin: 5mm; }
     @media print {
       * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
@@ -11666,6 +11849,7 @@ body.editor-open .global-theme-toggle {
       <button class="primary" type="button" data-print-type="docas">Docas</button>
       <button type="button" data-print-type="justificativas">Justificativas</button>
       <button type="button" data-print-type="fechamento">Fechamento</button>
+      <button type="button" data-print-type="pacotes-lado">Fechamento por lado</button>
     </div>
   </aside>
 
@@ -15328,7 +15512,114 @@ body.editor-open .global-theme-toggle {
       `;
     }
 
+    function renderPackageClosurePrint(waves = data.ondas || [], range = {}) {
+      const model = packageClosureModel();
+      const selectedWaves = new Set((waves || []).map(waveLabel));
+      const start = Number(range.start || 0);
+      const end = Number(range.end || 0);
+      const inDockRange = dock => {
+        const value = Number(validDockValue(dock));
+        if (!value) return !start && !end;
+        if (start && value < start) return false;
+        if (end && value > end) return false;
+        return true;
+      };
+      const inWave = row => !selectedWaves.size || selectedWaves.has(waveLabel(row.onda));
+      const groups = model.groups.map(group => {
+        const rows = group.rows.filter(row => inWave(row) && inDockRange(row.doca));
+        return {
+          ...group,
+          rows,
+          aMais: rows.reduce((sum, row) => sum + Number(row.aMais || 0), 0),
+          faltantes: rows.reduce((sum, row) => sum + Number(row.faltantes || 0), 0)
+        };
+      });
+      const routes = groups.reduce((sum, group) => sum + group.rows.length, 0);
+      const aMais = groups.reduce((sum, group) => sum + group.aMais, 0);
+      const faltantes = groups.reduce((sum, group) => sum + group.faltantes, 0);
+      const count = value => value > 0
+        ? `<span class="package-pdf-count">${value}</span>`
+        : '<span class="package-pdf-zero">0</span>';
+      const finalMode = model.useFinal;
+      const status = finalMode ? "FECHAMENTO FINAL • CSV APLICADO" : "AO VIVO • EXPEDIÇÃO EM ANDAMENTO";
+      const waveText = selectedWaves.size ? [...selectedWaves].map(displayWave).join(" • ") : "Todas as ondas";
+      const dockText = start || end ? `Docas ${start || 1} a ${end || data.docas || 92}` : "Todas as docas";
+
+      const sideHtml = groups.map(group => {
+        const staff = group.label === "Sem lado identificado" ? {} : data.responsaveisPorLado?.[group.label] || {};
+        const headers = finalMode
+          ? "<th>Rota / Onda</th><th>Doca</th><th>ID do pacote</th><th>A mais</th><th>Faltantes</th>"
+          : "<th>Rota / Onda</th><th>Doca</th><th>A mais</th><th>Faltantes</th>";
+        const colCount = finalMode ? 5 : 4;
+        const body = group.rows.length ? group.rows.map(row => {
+          if (finalMode) {
+            const items = row.ocorrencias?.length ? row.ocorrencias.map(item => ({
+              id: item.shipmentId,
+              auditAt: item.auditAt,
+              aMais: item.estado === "aMais" ? 1 : 0,
+              faltantes: item.estado === "faltantes" ? 1 : 0
+            })) : [{ id: "—", aMais: row.aMais, faltantes: row.faltantes }];
+            return items.map(item => `<tr>
+              <td>${escapeHtml(row.rota || "—")}<small>${escapeHtml(displayWave(row.onda || "") || row.onda || "")}</small></td>
+              <td>${escapeHtml(row.doca || "—")}</td>
+              <td>${escapeHtml(item.id || "—")}${item.auditAt ? `<small>${escapeHtml(item.auditAt)}</small>` : ""}</td>
+              <td>${count(item.aMais)}</td>
+              <td>${count(item.faltantes)}</td>
+            </tr>`).join("");
+          }
+          return `<tr>
+            <td>${escapeHtml(row.rota || "—")}<small>${escapeHtml(displayWave(row.onda || "") || row.onda || "")}</small></td>
+            <td>${escapeHtml(row.doca || "—")}</td>
+            <td>${count(row.aMais)}</td>
+            <td>${count(row.faltantes)}</td>
+          </tr>`;
+        }).join("") : `<tr><td class="package-pdf-empty" colspan="${colCount}">Sem divergências neste lado para os filtros selecionados.</td></tr>`;
+
+        return `<section class="package-pdf-side">
+          <h3 class="package-pdf-side-title">${escapeHtml(group.label)}</h3>
+          <div class="package-pdf-staff">
+            <span><b>Coordenador:</b> ${escapeHtml(staff.coordenador || "Não informado")}</span>
+            <span><b>PS:</b> ${escapeHtml(staff.ps || "Não informado")}</span>
+          </div>
+          <table class="package-pdf-table">
+            <thead><tr>${headers}</tr></thead>
+            <tbody>${body}</tbody>
+          </table>
+          <div class="package-pdf-side-total">Total do lado: ${group.aMais} a mais • ${group.faltantes} faltantes</div>
+        </section>`;
+      }).join("");
+
+      return `<section class="package-pdf-report">
+        <header class="package-pdf-header">
+          <div>
+            <h2>Fechamento por lado</h2>
+            <p>Pacotes a mais e faltantes • Rotas, docas e responsáveis</p>
+          </div>
+          <strong class="package-pdf-status ${finalMode ? "final" : ""}">${status}</strong>
+        </header>
+        <div class="package-pdf-meta">
+          <span><b>Data:</b> ${escapeHtml(data.data || "—")}</span>
+          <span><b>Ondas:</b> ${escapeHtml(waveText)}</span>
+          <span><b>Filtro:</b> ${escapeHtml(dockText)}</span>
+          ${finalMode ? `<span><b>CSV:</b> ${escapeHtml(model.final?.fileName || "aplicado")}</span>` : ""}
+        </div>
+        <div class="package-pdf-summary">
+          <article><strong>${routes}</strong><span>Rotas com<br>ocorrência</span></article>
+          <article><strong>${aMais}</strong><span>Pacotes<br>a mais</span></article>
+          <article><strong>${faltantes}</strong><span>Pacotes<br>faltantes</span></article>
+        </div>
+        ${sideHtml}
+        <p class="package-pdf-footer-note">Docas vinculadas pela Extração • Responsáveis definidos no Editor de Dados • ${finalMode ? "IDs de pacote provenientes do CSV final da Aduana." : "Contagens ao vivo provenientes dos dados atuais da operação."}</p>
+      </section>`;
+    }
+
     function renderPrintTable(type = "docas", waves = data.ondas || [], range = {}) {
+      const printRows = document.getElementById("printRows");
+      if (type === "pacotes-lado") {
+        printRows.className = "print-package-closure";
+        printRows.innerHTML = renderPackageClosurePrint(waves, range);
+        return;
+      }
       const start = Number(range.start || 0);
       const end = Number(range.end || 0);
       let docasRowCount = 0;
@@ -15400,7 +15691,6 @@ body.editor-open .global-theme-toggle {
       const closureIntro = type === "fechamento"
         ? `${renderFinalWaveSummary()}<section class="print-wave print-closure-message"><div class="closure-message">${renderClosureMessageHtml()}</div></section>${renderPrintClosureImpactSummary(waves, start, end)}`
         : "";
-      const printRows = document.getElementById("printRows");
       printRows.className = type === "docas" && docasRowCount > 0
         ? (docasRowCount <= 14 ? "print-docas-large" : docasRowCount <= 28 ? "print-docas-medium" : "")
         : "";
