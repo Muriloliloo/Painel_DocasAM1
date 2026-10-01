@@ -17077,10 +17077,12 @@ body.editor-open .global-theme-toggle {
 
     async function downloadCurrentWavePng(hd = false) {
       const button = document.getElementById(hd ? "downloadWavePngHdBtn" : "downloadWavePngBtn");
-      const app = document.querySelector(".app");
+      const stats = document.querySelector(".stats");
       const grid = document.getElementById("dockGrid");
+      const legend = document.querySelector(".legend");
+      const footer = document.querySelector(".footer-strip");
 
-      if (!app || !grid || typeof window.html2canvas !== "function") {
+      if (!stats || !grid || typeof window.html2canvas !== "function") {
         alert("Não foi possível gerar a imagem do painel.");
         return;
       }
@@ -17092,90 +17094,180 @@ body.editor-open .global-theme-toggle {
         button.innerHTML = `<i class="bi bi-hourglass-split" aria-hidden="true"></i><span>Gerando</span>`;
       }
 
+      let exportStage = null;
+
       try {
         if (document.fonts?.ready) await document.fonts.ready;
         await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
 
-        const appRect = app.getBoundingClientRect();
+        // Usa exatamente as dimensões que estão corretas na tela.
+        const statsRect = stats.getBoundingClientRect();
         const gridRect = grid.getBoundingClientRect();
-        const exportWidth = Math.max(1180, Math.round(appRect.width || 1810));
-        const gridHeight = Math.max(430, Math.round(gridRect.height || 560));
-        const scale = hd ? 4 : 2;
+        const legendRect = legend?.getBoundingClientRect();
+        const footerRect = footer?.getBoundingClientRect();
 
-        const canvas = await window.html2canvas(app, {
+        const contentWidth = Math.max(
+          1,
+          Math.round(statsRect.width),
+          Math.round(gridRect.width)
+        );
+        const statsHeight = Math.max(1, Math.round(statsRect.height));
+        const gridHeight = Math.max(1, Math.round(gridRect.height));
+        const legendHeight = Math.max(28, Math.round(legendRect?.height || 28));
+        const footerHeight = Math.max(28, Math.round(footerRect?.height || 28));
+
+        exportStage = document.createElement("section");
+        exportStage.className = "app docas-mode wave-png-export-stage";
+        exportStage.setAttribute("aria-hidden", "true");
+        exportStage.style.cssText = [
+          "position:fixed",
+          "left:0",
+          "top:0",
+          "z-index:2147483646",
+          `width:${contentWidth}px`,
+          "min-width:0",
+          "max-width:none",
+          "height:auto",
+          "min-height:0",
+          "display:flex",
+          "flex-direction:column",
+          "gap:0",
+          "margin:0",
+          "padding:0",
+          "overflow:visible",
+          "border:0",
+          "border-radius:0",
+          "box-shadow:none",
+          "background:#e8f0f7",
+          "pointer-events:none"
+        ].join(";");
+
+        const statsClone = stats.cloneNode(true);
+        const gridClone = grid.cloneNode(true);
+        const legendClone = legend ? legend.cloneNode(true) : null;
+        const footerClone = footer ? footer.cloneNode(true) : null;
+
+        statsClone.removeAttribute("id");
+        gridClone.id = "dockGridPngExport";
+
+        statsClone.style.cssText += [
+          "position:relative!important",
+          "left:auto!important",
+          "right:auto!important",
+          "top:auto!important",
+          "bottom:auto!important",
+          `width:${contentWidth}px!important`,
+          `height:${statsHeight}px!important`,
+          `min-height:${statsHeight}px!important`,
+          `max-height:${statsHeight}px!important`,
+          "margin:0!important",
+          "padding-left:12px!important",
+          "padding-right:12px!important",
+          "overflow:hidden!important",
+          "flex:0 0 auto!important"
+        ].join(";");
+
+        gridClone.style.cssText += [
+          "position:relative!important",
+          "left:auto!important",
+          "right:auto!important",
+          "top:auto!important",
+          "bottom:auto!important",
+          `width:${contentWidth}px!important`,
+          `height:${gridHeight}px!important`,
+          `min-height:${gridHeight}px!important`,
+          `max-height:${gridHeight}px!important`,
+          "margin:6px 0 0!important",
+          "padding:0!important",
+          "overflow:hidden!important",
+          "flex:0 0 auto!important"
+        ].join(";");
+
+        if (legendClone) {
+          legendClone.style.cssText += [
+            "position:relative!important",
+            "left:auto!important",
+            "right:auto!important",
+            "top:auto!important",
+            "bottom:auto!important",
+            "display:flex!important",
+            `width:${contentWidth}px!important`,
+            `height:${legendHeight}px!important`,
+            `min-height:${legendHeight}px!important`,
+            "margin:0!important",
+            "padding:0 2px!important",
+            "overflow:visible!important",
+            "flex:0 0 auto!important"
+          ].join(";");
+        }
+
+        if (footerClone) {
+          footerClone.style.cssText += [
+            "position:relative!important",
+            "left:auto!important",
+            "right:auto!important",
+            "top:auto!important",
+            "bottom:auto!important",
+            `width:${contentWidth}px!important`,
+            `height:${footerHeight}px!important`,
+            `min-height:${footerHeight}px!important`,
+            "margin:0!important",
+            "overflow:hidden!important",
+            "flex:0 0 auto!important"
+          ].join(";");
+        }
+
+        exportStage.appendChild(statsClone);
+        exportStage.appendChild(gridClone);
+        if (legendClone) exportStage.appendChild(legendClone);
+        if (footerClone) exportStage.appendChild(footerClone);
+        document.body.appendChild(exportStage);
+
+        // A grade clonada tem o mesmo tamanho da tela. Recalcula o encaixe
+        // dos textos nesse tamanho antes de rasterizar para não cortar linhas.
+        gridClone.querySelectorAll(".slot[data-route-key]").forEach(slot => fitDockCardContent(slot));
+
+        // Congela dimensões de cada card após o encaixe para evitar qualquer
+        // relayout enquanto html2canvas faz a leitura.
+        const originalSlots = Array.from(grid.querySelectorAll(".slot"));
+        const clonedSlots = Array.from(gridClone.querySelectorAll(".slot"));
+        clonedSlots.forEach((slot, index) => {
+          const originalSlot = originalSlots[index];
+          if (!originalSlot) return;
+          const rect = originalSlot.getBoundingClientRect();
+          if (rect.width > 0) {
+            slot.style.setProperty("width", `${rect.width}px`, "important");
+            slot.style.setProperty("min-width", "0", "important");
+          }
+          if (rect.height > 0) {
+            slot.style.setProperty("height", `${rect.height}px`, "important");
+            slot.style.setProperty("min-height", `${rect.height}px`, "important");
+            slot.style.setProperty("max-height", `${rect.height}px`, "important");
+          }
+        });
+
+        await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+
+        const captureWidth = Math.ceil(exportStage.scrollWidth);
+        const captureHeight = Math.ceil(exportStage.scrollHeight);
+        const scale = hd ? 4 : 2.5;
+
+        const canvas = await window.html2canvas(exportStage, {
           scale,
           useCORS: true,
           allowTaint: true,
           backgroundColor: "#e8f0f7",
           logging: false,
-          width: exportWidth,
-          windowWidth: exportWidth,
+          width: captureWidth,
+          height: captureHeight,
+          windowWidth: captureWidth,
+          windowHeight: captureHeight,
           scrollX: 0,
           scrollY: 0,
-          onclone: clonedDocument => {
-            const clonedApp = clonedDocument.querySelector(".app");
-            if (!clonedApp) return;
-
-            // Exporta somente o painel operacional da onda, sem alterar a tela real.
-            Array.from(clonedApp.children).forEach(child => {
-              if (!child.matches(".stats, #dockGrid, .legend, .footer-strip")) {
-                child.style.setProperty("display", "none", "important");
-              }
-            });
-
-            clonedApp.classList.add("docas-mode");
-            clonedApp.style.setProperty("display", "block", "important");
-            clonedApp.style.setProperty("position", "relative", "important");
-            clonedApp.style.setProperty("width", `${exportWidth}px`, "important");
-            clonedApp.style.setProperty("min-width", `${exportWidth}px`, "important");
-            clonedApp.style.setProperty("max-width", "none", "important");
-            clonedApp.style.setProperty("height", "auto", "important");
-            clonedApp.style.setProperty("min-height", "0", "important");
-            clonedApp.style.setProperty("overflow", "visible", "important");
-            clonedApp.style.setProperty("padding", "0", "important");
-
-            const stats = clonedApp.querySelector(".stats");
-            if (stats) {
-              stats.style.setProperty("position", "relative", "important");
-              stats.style.setProperty("width", "calc(100% - 28px)", "important");
-              stats.style.setProperty("height", "76px", "important");
-              stats.style.setProperty("margin", "6px 14px 0", "important");
-            }
-
-            const clonedGrid = clonedApp.querySelector("#dockGrid");
-            if (clonedGrid) {
-              clonedGrid.style.setProperty("position", "relative", "important");
-              clonedGrid.style.setProperty("width", "calc(100% - 28px)", "important");
-              clonedGrid.style.setProperty("height", `${gridHeight}px`, "important");
-              clonedGrid.style.setProperty("min-height", `${gridHeight}px`, "important");
-              clonedGrid.style.setProperty("max-height", `${gridHeight}px`, "important");
-              clonedGrid.style.setProperty("margin", "8px 14px 4px", "important");
-              clonedGrid.style.setProperty("overflow", "hidden", "important");
-            }
-
-            const legend = clonedApp.querySelector(".legend");
-            if (legend) {
-              legend.style.setProperty("position", "relative", "important");
-              legend.style.setProperty("left", "auto", "important");
-              legend.style.setProperty("right", "auto", "important");
-              legend.style.setProperty("bottom", "auto", "important");
-              legend.style.setProperty("display", "flex", "important");
-              legend.style.setProperty("width", "calc(100% - 28px)", "important");
-              legend.style.setProperty("height", "30px", "important");
-              legend.style.setProperty("margin", "0 14px", "important");
-              legend.style.setProperty("padding", "0", "important");
-            }
-
-            const footer = clonedApp.querySelector(".footer-strip");
-            if (footer) {
-              footer.style.setProperty("position", "relative", "important");
-              footer.style.setProperty("left", "auto", "important");
-              footer.style.setProperty("right", "auto", "important");
-              footer.style.setProperty("bottom", "auto", "important");
-              footer.style.setProperty("width", "100%", "important");
-              footer.style.setProperty("margin", "0", "important");
-            }
-          }
+          x: 0,
+          y: 0,
+          imageTimeout: 15000,
+          removeContainer: true
         });
 
         const link = document.createElement("a");
@@ -17188,6 +17280,7 @@ body.editor-open .global-theme-toggle {
         console.error("Falha ao exportar a onda em PNG:", error);
         alert("Não foi possível gerar o PNG. Atualize a página e tente novamente.");
       } finally {
+        exportStage?.remove();
         if (button) {
           button.disabled = false;
           button.classList.remove("is-loading");
