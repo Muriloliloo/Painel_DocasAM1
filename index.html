@@ -293,6 +293,29 @@
       line-height: 1;
     }
 
+    .actions .wave-png-btn {
+      min-width: 62px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      border-color: rgba(255, 210, 0, .42);
+    }
+
+    .actions .wave-png-btn.hd {
+      min-width: 76px;
+    }
+
+    .actions .wave-png-btn i {
+      font-size: 15px;
+      line-height: 1;
+    }
+
+    .actions .wave-png-btn.is-loading {
+      opacity: .68;
+      cursor: wait;
+    }
+
     .sync-refresh-btn.is-loading i {
       animation: sync-refresh-spin .75s linear infinite;
     }
@@ -11276,6 +11299,12 @@ body.editor-open .global-theme-toggle {
         <button id="refreshSyncBtn" class="sync-refresh-btn" type="button" title="Atualizar dados do painel" aria-label="Atualizar dados do painel">
           <i class="bi bi-arrow-clockwise" aria-hidden="true"></i><span class="sync-refresh-label">Atualizar</span>
         </button>
+        <button id="downloadWavePngBtn" class="wave-png-btn" type="button" title="Baixar a onda atual em PNG" aria-label="Baixar a onda atual em PNG">
+          <i class="bi bi-image" aria-hidden="true"></i><span>PNG</span>
+        </button>
+        <button id="downloadWavePngHdBtn" class="wave-png-btn hd" type="button" title="Baixar a onda atual em PNG HD" aria-label="Baixar a onda atual em PNG HD">
+          <i class="bi bi-badge-hd" aria-hidden="true"></i><span>PNG HD</span>
+        </button>
         <span class="sync-refresh-status" id="syncRefreshStatus" role="status" aria-live="polite"></span>
         <button id="authBtn" class="auth-badge" type="button"><span>Firebase</span><strong>Local</strong></button>
         <button id="testTimerBtn" class="test-mode admin-only" type="button">Teste</button>
@@ -17037,6 +17066,136 @@ body.editor-open .global-theme-toggle {
       return copied;
     }
 
+    function waveExportFileName(hd = false) {
+      const number = normalize(waveLabel(currentWave)).match(/\d+/)?.[0] || "1";
+      const wave = `onda-${String(Number(number)).padStart(2, "0")}`;
+      const date = normalize(data.data || new Date().toLocaleDateString("pt-BR"))
+        .replace(/[^0-9A-Za-z_-]+/g, "-")
+        .replace(/^-+|-+$/g, "") || "painel";
+      return `painel-${wave}-${date}${hd ? "-hd" : ""}.png`;
+    }
+
+    async function downloadCurrentWavePng(hd = false) {
+      const button = document.getElementById(hd ? "downloadWavePngHdBtn" : "downloadWavePngBtn");
+      const app = document.querySelector(".app");
+      const grid = document.getElementById("dockGrid");
+
+      if (!app || !grid || typeof window.html2canvas !== "function") {
+        alert("Não foi possível gerar a imagem do painel.");
+        return;
+      }
+
+      const originalHtml = button?.innerHTML || "";
+      if (button) {
+        button.disabled = true;
+        button.classList.add("is-loading");
+        button.innerHTML = `<i class="bi bi-hourglass-split" aria-hidden="true"></i><span>Gerando</span>`;
+      }
+
+      try {
+        if (document.fonts?.ready) await document.fonts.ready;
+        await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+
+        const appRect = app.getBoundingClientRect();
+        const gridRect = grid.getBoundingClientRect();
+        const exportWidth = Math.max(1180, Math.round(appRect.width || 1810));
+        const gridHeight = Math.max(430, Math.round(gridRect.height || 560));
+        const scale = hd ? 4 : 2;
+
+        const canvas = await window.html2canvas(app, {
+          scale,
+          useCORS: true,
+          allowTaint: true,
+          backgroundColor: "#e8f0f7",
+          logging: false,
+          width: exportWidth,
+          windowWidth: exportWidth,
+          scrollX: 0,
+          scrollY: 0,
+          onclone: clonedDocument => {
+            const clonedApp = clonedDocument.querySelector(".app");
+            if (!clonedApp) return;
+
+            // Exporta somente o painel operacional da onda, sem alterar a tela real.
+            Array.from(clonedApp.children).forEach(child => {
+              if (!child.matches(".stats, #dockGrid, .legend, .footer-strip")) {
+                child.style.setProperty("display", "none", "important");
+              }
+            });
+
+            clonedApp.classList.add("docas-mode");
+            clonedApp.style.setProperty("display", "block", "important");
+            clonedApp.style.setProperty("position", "relative", "important");
+            clonedApp.style.setProperty("width", `${exportWidth}px`, "important");
+            clonedApp.style.setProperty("min-width", `${exportWidth}px`, "important");
+            clonedApp.style.setProperty("max-width", "none", "important");
+            clonedApp.style.setProperty("height", "auto", "important");
+            clonedApp.style.setProperty("min-height", "0", "important");
+            clonedApp.style.setProperty("overflow", "visible", "important");
+            clonedApp.style.setProperty("padding", "0", "important");
+
+            const stats = clonedApp.querySelector(".stats");
+            if (stats) {
+              stats.style.setProperty("position", "relative", "important");
+              stats.style.setProperty("width", "calc(100% - 28px)", "important");
+              stats.style.setProperty("height", "76px", "important");
+              stats.style.setProperty("margin", "6px 14px 0", "important");
+            }
+
+            const clonedGrid = clonedApp.querySelector("#dockGrid");
+            if (clonedGrid) {
+              clonedGrid.style.setProperty("position", "relative", "important");
+              clonedGrid.style.setProperty("width", "calc(100% - 28px)", "important");
+              clonedGrid.style.setProperty("height", `${gridHeight}px`, "important");
+              clonedGrid.style.setProperty("min-height", `${gridHeight}px`, "important");
+              clonedGrid.style.setProperty("max-height", `${gridHeight}px`, "important");
+              clonedGrid.style.setProperty("margin", "8px 14px 4px", "important");
+              clonedGrid.style.setProperty("overflow", "hidden", "important");
+            }
+
+            const legend = clonedApp.querySelector(".legend");
+            if (legend) {
+              legend.style.setProperty("position", "relative", "important");
+              legend.style.setProperty("left", "auto", "important");
+              legend.style.setProperty("right", "auto", "important");
+              legend.style.setProperty("bottom", "auto", "important");
+              legend.style.setProperty("display", "flex", "important");
+              legend.style.setProperty("width", "calc(100% - 28px)", "important");
+              legend.style.setProperty("height", "30px", "important");
+              legend.style.setProperty("margin", "0 14px", "important");
+              legend.style.setProperty("padding", "0", "important");
+            }
+
+            const footer = clonedApp.querySelector(".footer-strip");
+            if (footer) {
+              footer.style.setProperty("position", "relative", "important");
+              footer.style.setProperty("left", "auto", "important");
+              footer.style.setProperty("right", "auto", "important");
+              footer.style.setProperty("bottom", "auto", "important");
+              footer.style.setProperty("width", "100%", "important");
+              footer.style.setProperty("margin", "0", "important");
+            }
+          }
+        });
+
+        const link = document.createElement("a");
+        link.download = waveExportFileName(hd);
+        link.href = canvas.toDataURL("image/png", 1);
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+      } catch (error) {
+        console.error("Falha ao exportar a onda em PNG:", error);
+        alert("Não foi possível gerar o PNG. Atualize a página e tente novamente.");
+      } finally {
+        if (button) {
+          button.disabled = false;
+          button.classList.remove("is-loading");
+          button.innerHTML = originalHtml;
+        }
+      }
+    }
+
     async function downloadExecutiveClosureImage() {
       const button = document.getElementById("executiveShareBtn");
       const board = document.getElementById("executiveClosureBoard");
@@ -18058,6 +18217,8 @@ body.editor-open .global-theme-toggle {
       document.querySelector(".app")?.classList.remove("editor-open");
       document.body.classList.remove("editor-open");
     });
+    document.getElementById("downloadWavePngBtn")?.addEventListener("click", () => downloadCurrentWavePng(false));
+    document.getElementById("downloadWavePngHdBtn")?.addEventListener("click", () => downloadCurrentWavePng(true));
     document.getElementById("printBtn").addEventListener("click", openPdfDrawer);
     document.getElementById("closePdfBtn").addEventListener("click", () => {
       document.getElementById("pdfDrawer").classList.remove("open");
