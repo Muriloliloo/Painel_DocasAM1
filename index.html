@@ -17077,12 +17077,13 @@ body.editor-open .global-theme-toggle {
 
     async function downloadCurrentWavePng(hd = false) {
       const button = document.getElementById(hd ? "downloadWavePngHdBtn" : "downloadWavePngBtn");
+      const app = document.querySelector(".app");
       const stats = document.querySelector(".stats");
       const grid = document.getElementById("dockGrid");
       const legend = document.querySelector(".legend");
       const footer = document.querySelector(".footer-strip");
 
-      if (!stats || !grid || typeof window.html2canvas !== "function") {
+      if (!app || !stats || !grid || typeof window.html2canvas !== "function") {
         alert("Não foi possível gerar a imagem do painel.");
         return;
       }
@@ -17094,185 +17095,91 @@ body.editor-open .global-theme-toggle {
         button.innerHTML = `<i class="bi bi-hourglass-split" aria-hidden="true"></i><span>Gerando</span>`;
       }
 
-      let exportStage = null;
-
       try {
         if (document.fonts?.ready) await document.fonts.ready;
+
+        // Garante que todos os cards estejam no estado visual final exatamente
+        // como aparecem para o usuário antes da captura.
+        grid.querySelectorAll(".slot[data-route-key]").forEach(slot => fitDockCardContent(slot));
         await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
 
-        // Usa exatamente as dimensões que estão corretas na tela.
+        const appRect = app.getBoundingClientRect();
         const statsRect = stats.getBoundingClientRect();
         const gridRect = grid.getBoundingClientRect();
         const legendRect = legend?.getBoundingClientRect();
         const footerRect = footer?.getBoundingClientRect();
 
-        const contentWidth = Math.max(
-          1,
-          Math.round(statsRect.width),
-          Math.round(gridRect.width)
+        // Área útil: do início do reporte até o fim do rodapé e somente a largura
+        // ocupada pelo painel de docas. Nenhum clone é redimensionado.
+        const cropLeft = Math.max(0, Math.floor(Math.min(
+          statsRect.left,
+          gridRect.left,
+          legendRect?.left ?? gridRect.left
+        ) - appRect.left));
+        const cropRight = Math.min(
+          Math.ceil(appRect.width),
+          Math.ceil(Math.max(
+            statsRect.right,
+            gridRect.right,
+            legendRect?.right ?? gridRect.right
+          ) - appRect.left)
         );
-        const statsHeight = Math.max(1, Math.round(statsRect.height));
-        const gridHeight = Math.max(1, Math.round(gridRect.height));
-        const legendHeight = Math.max(28, Math.round(legendRect?.height || 28));
-        const footerHeight = Math.max(28, Math.round(footerRect?.height || 28));
+        const cropTop = Math.max(0, Math.floor(statsRect.top - appRect.top));
+        const cropBottom = Math.min(
+          Math.ceil(appRect.height),
+          Math.ceil((footerRect?.bottom ?? gridRect.bottom) - appRect.top)
+        );
 
-        exportStage = document.createElement("section");
-        exportStage.className = "app docas-mode wave-png-export-stage";
-        exportStage.setAttribute("aria-hidden", "true");
-        exportStage.style.cssText = [
-          "position:fixed",
-          "left:0",
-          "top:0",
-          "z-index:2147483646",
-          `width:${contentWidth}px`,
-          "min-width:0",
-          "max-width:none",
-          "height:auto",
-          "min-height:0",
-          "display:flex",
-          "flex-direction:column",
-          "gap:0",
-          "margin:0",
-          "padding:0",
-          "overflow:visible",
-          "border:0",
-          "border-radius:0",
-          "box-shadow:none",
-          "background:#e8f0f7",
-          "pointer-events:none"
-        ].join(";");
-
-        const statsClone = stats.cloneNode(true);
-        const gridClone = grid.cloneNode(true);
-        const legendClone = legend ? legend.cloneNode(true) : null;
-        const footerClone = footer ? footer.cloneNode(true) : null;
-
-        statsClone.removeAttribute("id");
-        gridClone.id = "dockGridPngExport";
-
-        statsClone.style.cssText += [
-          "position:relative!important",
-          "left:auto!important",
-          "right:auto!important",
-          "top:auto!important",
-          "bottom:auto!important",
-          `width:${contentWidth}px!important`,
-          `height:${statsHeight}px!important`,
-          `min-height:${statsHeight}px!important`,
-          `max-height:${statsHeight}px!important`,
-          "margin:0!important",
-          "padding-left:12px!important",
-          "padding-right:12px!important",
-          "overflow:hidden!important",
-          "flex:0 0 auto!important"
-        ].join(";");
-
-        gridClone.style.cssText += [
-          "position:relative!important",
-          "left:auto!important",
-          "right:auto!important",
-          "top:auto!important",
-          "bottom:auto!important",
-          `width:${contentWidth}px!important`,
-          `height:${gridHeight}px!important`,
-          `min-height:${gridHeight}px!important`,
-          `max-height:${gridHeight}px!important`,
-          "margin:6px 0 0!important",
-          "padding:0!important",
-          "overflow:hidden!important",
-          "flex:0 0 auto!important"
-        ].join(";");
-
-        if (legendClone) {
-          legendClone.style.cssText += [
-            "position:relative!important",
-            "left:auto!important",
-            "right:auto!important",
-            "top:auto!important",
-            "bottom:auto!important",
-            "display:flex!important",
-            `width:${contentWidth}px!important`,
-            `height:${legendHeight}px!important`,
-            `min-height:${legendHeight}px!important`,
-            "margin:0!important",
-            "padding:0 2px!important",
-            "overflow:visible!important",
-            "flex:0 0 auto!important"
-          ].join(";");
-        }
-
-        if (footerClone) {
-          footerClone.style.cssText += [
-            "position:relative!important",
-            "left:auto!important",
-            "right:auto!important",
-            "top:auto!important",
-            "bottom:auto!important",
-            `width:${contentWidth}px!important`,
-            `height:${footerHeight}px!important`,
-            `min-height:${footerHeight}px!important`,
-            "margin:0!important",
-            "overflow:hidden!important",
-            "flex:0 0 auto!important"
-          ].join(";");
-        }
-
-        exportStage.appendChild(statsClone);
-        exportStage.appendChild(gridClone);
-        if (legendClone) exportStage.appendChild(legendClone);
-        if (footerClone) exportStage.appendChild(footerClone);
-        document.body.appendChild(exportStage);
-
-        // A grade clonada tem o mesmo tamanho da tela. Recalcula o encaixe
-        // dos textos nesse tamanho antes de rasterizar para não cortar linhas.
-        gridClone.querySelectorAll(".slot[data-route-key]").forEach(slot => fitDockCardContent(slot));
-
-        // Congela dimensões de cada card após o encaixe para evitar qualquer
-        // relayout enquanto html2canvas faz a leitura.
-        const originalSlots = Array.from(grid.querySelectorAll(".slot"));
-        const clonedSlots = Array.from(gridClone.querySelectorAll(".slot"));
-        clonedSlots.forEach((slot, index) => {
-          const originalSlot = originalSlots[index];
-          if (!originalSlot) return;
-          const rect = originalSlot.getBoundingClientRect();
-          if (rect.width > 0) {
-            slot.style.setProperty("width", `${rect.width}px`, "important");
-            slot.style.setProperty("min-width", "0", "important");
-          }
-          if (rect.height > 0) {
-            slot.style.setProperty("height", `${rect.height}px`, "important");
-            slot.style.setProperty("min-height", `${rect.height}px`, "important");
-            slot.style.setProperty("max-height", `${rect.height}px`, "important");
-          }
-        });
-
-        await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
-
-        const captureWidth = Math.ceil(exportStage.scrollWidth);
-        const captureHeight = Math.ceil(exportStage.scrollHeight);
+        const cropWidth = Math.max(1, cropRight - cropLeft);
+        const cropHeight = Math.max(1, cropBottom - cropTop);
         const scale = hd ? 4 : 2.5;
 
-        const canvas = await window.html2canvas(exportStage, {
+        // Captura o DOM REAL. Isso preserva exatamente os transforms, fontes,
+        // alturas e encaixes já calculados nos cards da tela.
+        const fullCanvas = await window.html2canvas(app, {
           scale,
           useCORS: true,
           allowTaint: true,
           backgroundColor: "#e8f0f7",
           logging: false,
-          width: captureWidth,
-          height: captureHeight,
-          windowWidth: captureWidth,
-          windowHeight: captureHeight,
           scrollX: 0,
           scrollY: 0,
-          x: 0,
-          y: 0,
+          width: Math.ceil(appRect.width),
+          height: Math.ceil(appRect.height),
+          windowWidth: Math.ceil(appRect.width),
+          windowHeight: Math.ceil(appRect.height),
           imageTimeout: 15000,
-          removeContainer: true
+          ignoreElements: element => {
+            return element.matches?.(
+              ".topbar, .toolbar, .side-rail, .wave-title, .panel-view, .simple-docks-view, .print-table-wrap, .drawer, .pdf-drawer, .login-modal, .route-history-modal, .alerts-modal, .process-alert-toast, .global-theme-toggle, .dark-brand-relief"
+            );
+          }
         });
+
+        // Recorta a captura sem qualquer reflow do painel.
+        const output = document.createElement("canvas");
+        output.width = Math.round(cropWidth * scale);
+        output.height = Math.round(cropHeight * scale);
+        const ctx = output.getContext("2d");
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = "high";
+        ctx.fillStyle = "#e8f0f7";
+        ctx.fillRect(0, 0, output.width, output.height);
+        ctx.drawImage(
+          fullCanvas,
+          Math.round(cropLeft * scale),
+          Math.round(cropTop * scale),
+          Math.round(cropWidth * scale),
+          Math.round(cropHeight * scale),
+          0,
+          0,
+          output.width,
+          output.height
+        );
 
         const link = document.createElement("a");
         link.download = waveExportFileName(hd);
-        link.href = canvas.toDataURL("image/png", 1);
+        link.href = output.toDataURL("image/png", 1);
         document.body.appendChild(link);
         link.click();
         link.remove();
@@ -17280,7 +17187,6 @@ body.editor-open .global-theme-toggle {
         console.error("Falha ao exportar a onda em PNG:", error);
         alert("Não foi possível gerar o PNG. Atualize a página e tente novamente.");
       } finally {
-        exportStage?.remove();
         if (button) {
           button.disabled = false;
           button.classList.remove("is-loading");
