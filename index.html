@@ -11267,17 +11267,17 @@ body.editor-open .global-theme-toggle {
       }
     }
   
-    /* Exportação PNG da onda: canvas fixo Full HD, sem compressão dos cards. */
+    /* Exportação PNG da onda: composição dedicada 2K, sem scale dos cards da tela. */
     .wave-png-export-stage {
-      --docas-grid-gap: 24px !important;
-      --docas-card-gap: 8px !important;
+      --docas-grid-gap: 30px !important;
+      --docas-card-gap: 10px !important;
       position: fixed !important;
-      left: -10000px !important;
+      left: -12000px !important;
       top: 0 !important;
       z-index: -1 !important;
-      width: 1920px !important;
-      min-width: 1920px !important;
-      max-width: 1920px !important;
+      width: 2560px !important;
+      min-width: 2560px !important;
+      max-width: 2560px !important;
       height: auto !important;
       min-height: 0 !important;
       display: flex !important;
@@ -11291,73 +11291,95 @@ body.editor-open .global-theme-toggle {
       box-shadow: none !important;
       background: #e8f0f7 !important;
       pointer-events: none !important;
+      visibility: visible !important;
+      opacity: 1 !important;
     }
 
     .wave-png-export-stage .stats {
       position: relative !important;
-      width: calc(100% - 28px) !important;
-      height: 78px !important;
-      min-height: 78px !important;
-      max-height: 78px !important;
-      margin: 8px 14px 0 !important;
-      padding: 7px 12px !important;
-      grid-template-columns: minmax(315px, 2.3fr) repeat(8, minmax(118px, 1fr)) minmax(102px, .8fr) !important;
+      width: calc(100% - 32px) !important;
+      height: 104px !important;
+      min-height: 104px !important;
+      max-height: 104px !important;
+      margin: 10px 16px 0 !important;
+      padding: 10px 16px !important;
+      grid-template-columns: minmax(390px, 2.35fr) repeat(8, minmax(150px, 1fr)) minmax(135px, .85fr) !important;
       overflow: hidden !important;
       flex: 0 0 auto !important;
     }
 
+    .wave-png-export-stage .report-title {
+      padding-left: 18px !important;
+    }
+
     .wave-png-export-stage .report-title strong {
-      font-size: 26px !important;
+      font-size: 34px !important;
       line-height: 1 !important;
     }
 
     .wave-png-export-stage .wave-stat,
     .wave-png-export-stage .stat span,
     .wave-png-export-stage .countdown span {
-      font-size: 12px !important;
+      font-size: 15px !important;
       line-height: 1 !important;
     }
 
     .wave-png-export-stage .stat strong,
     .wave-png-export-stage .countdown strong {
-      font-size: 27px !important;
+      font-size: 35px !important;
       line-height: 1 !important;
     }
 
     .wave-png-export-stage .dock-grid {
       position: relative !important;
-      width: calc(100% - 28px) !important;
-      height: 620px !important;
-      min-height: 620px !important;
-      max-height: 620px !important;
-      margin: 8px 14px 0 !important;
+      width: calc(100% - 32px) !important;
+      height: 860px !important;
+      min-height: 860px !important;
+      max-height: 860px !important;
+      margin: 10px 16px 0 !important;
       padding: 0 !important;
-      gap: 24px !important;
+      gap: 30px !important;
       overflow: hidden !important;
       align-items: stretch !important;
       flex: 0 0 auto !important;
     }
 
     .wave-png-export-stage .dock-block {
-      gap: 8px !important;
-      padding-top: 24px !important;
+      gap: 10px !important;
+      min-width: 0 !important;
+      padding-top: 34px !important;
     }
 
-    .wave-png-export-stage .dock-column {
-      gap: 8px !important;
+    .wave-png-export-stage .dock-zone-labels {
+      height: 28px !important;
+      gap: 10px !important;
     }
 
     .wave-png-export-stage .dock-zone-label {
-      height: 20px !important;
-      padding: 2px 7px !important;
-      font-size: 10px !important;
+      height: 28px !important;
+      padding: 4px 10px !important;
+      font-size: 14px !important;
       line-height: 1 !important;
+    }
+
+    .wave-png-export-stage .dock-zone-staff {
+      gap: 10px !important;
+    }
+
+    .wave-png-export-stage .dock-column {
+      grid-template-rows: repeat(7, minmax(0, 1fr)) !important;
+      gap: 10px !important;
     }
 
     .wave-png-export-stage .slot {
       min-height: 0 !important;
-      padding: 6px 5px 4px !important;
+      padding: 10px 8px 7px !important;
       overflow: hidden !important;
+      contain: none !important;
+    }
+
+    .wave-png-export-stage .slot::before {
+      height: 7px !important;
     }
 
     .wave-png-export-stage .dock-card-content {
@@ -11368,64 +11390,90 @@ body.editor-open .global-theme-toggle {
       transform: none !important;
       transform-origin: top left !important;
       align-self: stretch !important;
+      flex: 1 1 auto !important;
     }
 
     .wave-png-export-stage .dock-card-head {
-      height: 12px !important;
-      min-height: 12px !important;
-      margin-bottom: 1px !important;
+      width: 100% !important;
+      height: 19px !important;
+      min-height: 19px !important;
+      margin: 0 0 3px !important;
+      gap: 7px !important;
     }
 
     .wave-png-export-stage .dock-number,
     .wave-png-export-stage .dock-number-inline {
-      font-size: 15px !important;
+      font-size: 20px !important;
       line-height: 1 !important;
     }
 
     .wave-png-export-stage .dock-person {
-      font-size: 9px !important;
+      font-size: 13px !important;
       line-height: 1 !important;
     }
 
     .wave-png-export-stage .route {
-      font-size: 15px !important;
-      line-height: 1.05 !important;
-      margin: 0 !important;
-      padding: 0 0 1px !important;
+      width: 100% !important;
+      font-size: 22px !important;
+      line-height: 1.08 !important;
+      margin: 1px 0 0 !important;
+      padding: 0 0 2px !important;
+      overflow: hidden !important;
+      text-overflow: ellipsis !important;
+      white-space: nowrap !important;
+      transform: none !important;
     }
 
     .wave-png-export-stage .dock-minutes,
-    .wave-png-export-stage .dock-status,
     .wave-png-export-stage .dock-carrier-bottom,
     .wave-png-export-stage .dock-extra-line,
     .wave-png-export-stage .load-timer {
       height: auto !important;
       min-height: 0 !important;
-      margin-top: 1px !important;
-      font-size: 8px !important;
-      line-height: 1.05 !important;
+      margin-top: 2px !important;
+      font-size: 12px !important;
+      line-height: 1.1 !important;
+    }
+
+    .wave-png-export-stage .dock-status {
+      height: auto !important;
+      min-height: 0 !important;
+      margin-top: 2px !important;
+      font-size: 13px !important;
+      line-height: 1.08 !important;
     }
 
     .wave-png-export-stage .package-discrepancy {
       display: inline-block !important;
-      margin-top: 1px !important;
-      padding: 1px 4px !important;
-      font-size: 7px !important;
+      margin-top: 2px !important;
+      padding: 2px 6px !important;
+      font-size: 11px !important;
       line-height: 1 !important;
       white-space: nowrap !important;
     }
 
-    .wave-png-export-stage .dock-footer-line,
+    .wave-png-export-stage .dock-footer-line {
+      min-height: 14px !important;
+      margin-top: auto !important;
+      font-size: 11px !important;
+      line-height: 1 !important;
+    }
+
     .wave-png-export-stage .dock-footer-line strong {
-      min-height: 10px !important;
-      font-size: 8px !important;
+      font-size: 12px !important;
+      line-height: 1 !important;
+    }
+
+    .wave-png-export-stage .dock-free {
+      font-size: 14px !important;
       line-height: 1 !important;
     }
 
     .wave-png-export-stage .zone-staff-card {
-      min-height: 36px !important;
-      font-size: 9px !important;
-      line-height: 1.15 !important;
+      min-height: 48px !important;
+      padding: 5px 9px !important;
+      font-size: 12px !important;
+      line-height: 1.2 !important;
     }
 
     .wave-png-export-stage .legend {
@@ -11434,15 +11482,20 @@ body.editor-open .global-theme-toggle {
       right: auto !important;
       bottom: auto !important;
       display: flex !important;
-      width: calc(100% - 28px) !important;
-      height: 32px !important;
-      min-height: 32px !important;
-      margin: 0 14px !important;
+      width: calc(100% - 32px) !important;
+      height: 42px !important;
+      min-height: 42px !important;
+      margin: 0 16px !important;
       padding: 0 !important;
-      gap: 22px !important;
+      gap: 28px !important;
       color: #001b35 !important;
-      font-size: 12px !important;
+      font-size: 15px !important;
       flex: 0 0 auto !important;
+    }
+
+    .wave-png-export-stage .legend .dot {
+      width: 14px !important;
+      height: 14px !important;
     }
 
     .wave-png-export-stage .footer-strip {
@@ -11451,13 +11504,14 @@ body.editor-open .global-theme-toggle {
       right: auto !important;
       bottom: auto !important;
       width: 100% !important;
-      height: 34px !important;
-      min-height: 34px !important;
+      height: 44px !important;
+      min-height: 44px !important;
       margin: 0 !important;
+      font-size: 12px !important;
       flex: 0 0 auto !important;
     }
 
-  </style>
+    </style>
 </head>
 <body>
   <main class="app">
@@ -17266,14 +17320,82 @@ body.editor-open .global-theme-toggle {
       return `painel-${wave}-${date}${hd ? "-hd" : ""}.png`;
     }
 
+    function renderWaveExportGrid(target, wave = currentWave) {
+      const map = routeByDock(wave);
+      const loaded = loadedKeys();
+      const shipped = expedidaKeys();
+      const statusMap = baseStatusByRoute();
+      const baseMap = baseDetailsByRoute();
+      const maxDock = Number(data.docas || 92);
+      target.innerHTML = "";
+
+      dockLayoutBlocks.forEach((block, blockIndex) => {
+        const blockEl = document.createElement("div");
+        blockEl.className = `dock-block block-${blockIndex + 1}`;
+
+        const zoneRow = document.createElement("div");
+        zoneRow.className = "dock-zone-labels";
+        zoneRow.style.setProperty("--dock-zone-columns", String(block.length));
+        (dockZoneLabels[blockIndex] || []).forEach(zone => {
+          const label = document.createElement("span");
+          label.className = "dock-zone-label";
+          label.style.gridColumn = `${zone.column} / span ${zone.span}`;
+          label.textContent = zone.label;
+          zoneRow.appendChild(label);
+        });
+        blockEl.appendChild(zoneRow);
+
+        const staffRow = document.createElement("div");
+        staffRow.className = "dock-zone-staff";
+        staffRow.style.setProperty("--dock-zone-columns", String(block.length));
+        staffRow.innerHTML = (dockZoneLabels[blockIndex] || []).map(zoneStaffCardHtml).join("");
+        blockEl.appendChild(staffRow);
+
+        block.forEach(column => {
+          const columnEl = document.createElement("div");
+          columnEl.className = "dock-column";
+
+          column.forEach(dock => {
+            if (!dock || dock > maxDock) {
+              const spacer = document.createElement("div");
+              spacer.className = "dock-spacer";
+              columnEl.appendChild(spacer);
+              return;
+            }
+
+            // Cria o card novamente a partir dos dados, sem copiar qualquer
+            // transform/scale calculado para a tela do navegador.
+            const slot = createDockSlot(
+              dock,
+              map.get(dock) || [],
+              loaded,
+              shipped,
+              statusMap,
+              baseMap
+            );
+            const content = slot.querySelector(".dock-card-content");
+            if (content) {
+              content.style.transform = "none";
+              content.style.width = "100%";
+              content.style.minHeight = "0";
+            }
+            columnEl.appendChild(slot);
+          });
+
+          blockEl.appendChild(columnEl);
+        });
+
+        target.appendChild(blockEl);
+      });
+    }
+
     async function downloadCurrentWavePng(hd = false) {
       const button = document.getElementById(hd ? "downloadWavePngHdBtn" : "downloadWavePngBtn");
       const stats = document.querySelector(".stats");
-      const grid = document.getElementById("dockGrid");
       const legend = document.querySelector(".legend");
       const footer = document.querySelector(".footer-strip");
 
-      if (!stats || !grid || typeof window.html2canvas !== "function") {
+      if (!stats || typeof window.html2canvas !== "function") {
         alert("Não foi possível gerar a imagem do painel.");
         return;
       }
@@ -17290,40 +17412,38 @@ body.editor-open .global-theme-toggle {
       try {
         if (document.fonts?.ready) await document.fonts.ready;
 
-        // Monta uma versão de exportação com largura Full HD fixa.
-        // A estrutura visual é a mesma do painel; só deixa de depender do zoom/tamanho
-        // lógico do navegador usado no momento do download.
         exportStage = document.createElement("section");
         exportStage.className = "app docas-mode wave-png-export-stage";
         exportStage.setAttribute("aria-hidden", "true");
 
+        // O cabeçalho de indicadores não sofre compressão; podemos copiar seus
+        // valores atuais. A grade é reconstruída abaixo diretamente dos dados.
         const statsClone = stats.cloneNode(true);
-        const gridClone = grid.cloneNode(true);
+        statsClone.removeAttribute("id");
+
+        const exportGrid = document.createElement("section");
+        exportGrid.className = "dock-grid";
+        exportGrid.id = "dockGridPngExport";
+        renderWaveExportGrid(exportGrid, currentWave);
+
         const legendClone = legend ? legend.cloneNode(true) : null;
         const footerClone = footer ? footer.cloneNode(true) : null;
 
-        statsClone.removeAttribute("id");
-        gridClone.id = "dockGridPngExport";
-
-        // Remove o scale calculado para a tela real. No quadro Full HD os textos
-        // têm espaço suficiente e devem ser renderizados em tamanho natural.
-        gridClone.querySelectorAll(".dock-card-content").forEach(content => {
-          content.style.removeProperty("transform");
-          content.style.removeProperty("width");
-          content.style.removeProperty("min-height");
-        });
-
         exportStage.appendChild(statsClone);
-        exportStage.appendChild(gridClone);
+        exportStage.appendChild(exportGrid);
         if (legendClone) exportStage.appendChild(legendClone);
         if (footerClone) exportStage.appendChild(footerClone);
         document.body.appendChild(exportStage);
 
+        // Duas passagens garantem que fontes e dimensões 2K estejam totalmente
+        // calculadas antes da rasterização.
         await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
 
-        const exportWidth = 1920;
+        const exportWidth = 2560;
         const exportHeight = Math.ceil(exportStage.scrollHeight);
-        const scale = hd ? 3 : 2;
+
+        // PNG normal já nasce em 2560px. PNG HD dobra para 5120px.
+        const scale = hd ? 2 : 1;
 
         const canvas = await window.html2canvas(exportStage, {
           scale,
@@ -17334,7 +17454,7 @@ body.editor-open .global-theme-toggle {
           width: exportWidth,
           height: exportHeight,
           windowWidth: exportWidth,
-          windowHeight: Math.max(900, exportHeight),
+          windowHeight: Math.max(1100, exportHeight),
           scrollX: 0,
           scrollY: 0,
           x: 0,
