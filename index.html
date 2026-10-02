@@ -11267,12 +11267,10 @@ body.editor-open .global-theme-toggle {
       }
     }
   
-    /* Exportação PNG da onda: composição dedicada 2K, sem scale dos cards da tela. */
+    /* Exportação PNG da onda: composição própria, isolada do layout responsivo da tela. */
     .wave-png-export-stage {
-      --docas-grid-gap: 30px !important;
-      --docas-card-gap: 10px !important;
       position: fixed !important;
-      left: -12000px !important;
+      left: -14000px !important;
       top: 0 !important;
       z-index: -1 !important;
       width: 2560px !important;
@@ -11280,235 +11278,355 @@ body.editor-open .global-theme-toggle {
       max-width: 2560px !important;
       height: auto !important;
       min-height: 0 !important;
-      display: flex !important;
-      flex-direction: column !important;
-      gap: 0 !important;
       margin: 0 !important;
-      padding: 0 !important;
+      padding: 12px 14px 0 !important;
       overflow: visible !important;
-      border: 0 !important;
-      border-radius: 0 !important;
-      box-shadow: none !important;
+      box-sizing: border-box !important;
       background: #e8f0f7 !important;
+      color: #061b35 !important;
+      font-family: "Segoe UI", Arial, sans-serif !important;
       pointer-events: none !important;
-      visibility: visible !important;
-      opacity: 1 !important;
     }
 
-    .wave-png-export-stage .stats {
-      position: relative !important;
-      width: calc(100% - 32px) !important;
-      height: 104px !important;
-      min-height: 104px !important;
-      max-height: 104px !important;
-      margin: 10px 16px 0 !important;
-      padding: 10px 16px !important;
-      grid-template-columns: minmax(390px, 2.35fr) repeat(8, minmax(150px, 1fr)) minmax(135px, .85fr) !important;
-      overflow: hidden !important;
-      flex: 0 0 auto !important;
+    .wave-png-export-stage * {
+      box-sizing: border-box !important;
+      text-rendering: geometricPrecision !important;
+      -webkit-font-smoothing: antialiased !important;
     }
 
-    .wave-png-export-stage .report-title {
-      padding-left: 18px !important;
+    .png-wave-stats {
+      height: 112px;
+      display: grid;
+      grid-template-columns: 2.35fr repeat(8, 1fr) .92fr;
+      align-items: stretch;
+      overflow: hidden;
+      border: 1px solid #bdcfdf;
+      border-radius: 10px;
+      background: #fff;
+      box-shadow: 0 4px 14px rgba(9,42,70,.08);
     }
 
-    .wave-png-export-stage .report-title strong {
-      font-size: 34px !important;
-      line-height: 1 !important;
+    .png-report-title,
+    .png-stat {
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 8px 16px;
+      border-right: 1px solid #d7e0e9;
+      text-align: center;
     }
 
-    .wave-png-export-stage .wave-stat,
-    .wave-png-export-stage .stat span,
-    .wave-png-export-stage .countdown span {
-      font-size: 15px !important;
-      line-height: 1 !important;
+    .png-report-title {
+      align-items: flex-start;
+      padding-left: 34px;
+      text-align: left;
     }
 
-    .wave-png-export-stage .stat strong,
-    .wave-png-export-stage .countdown strong {
-      font-size: 35px !important;
-      line-height: 1 !important;
+    .png-report-title strong {
+      font: 950 34px/1 "Segoe UI", Arial, sans-serif;
+      letter-spacing: -.7px;
+      color: #071d39;
+      white-space: nowrap;
     }
 
-    .wave-png-export-stage .dock-grid {
-      position: relative !important;
-      width: calc(100% - 32px) !important;
-      height: 860px !important;
-      min-height: 860px !important;
-      max-height: 860px !important;
-      margin: 10px 16px 0 !important;
-      padding: 0 !important;
-      gap: 30px !important;
-      overflow: hidden !important;
-      align-items: stretch !important;
-      flex: 0 0 auto !important;
+    .png-report-title span,
+    .png-stat span {
+      font: 900 14px/1 "Segoe UI", Arial, sans-serif;
+      color: #071d39;
+      text-transform: uppercase;
+      white-space: nowrap;
     }
 
-    .wave-png-export-stage .dock-block {
-      gap: 10px !important;
-      min-width: 0 !important;
-      padding-top: 34px !important;
+    .png-report-title span { color: #0a5a96; }
+
+    .png-stat strong {
+      font: 950 34px/1 "Segoe UI", Arial, sans-serif;
+      color: #071d39;
+      white-space: nowrap;
     }
 
-    .wave-png-export-stage .dock-zone-labels {
-      height: 28px !important;
-      gap: 10px !important;
+    .png-stat.preview strong,
+    .png-stat.customs strong { color: #ff7900; }
+    .png-stat.guard strong { color: #006dff; }
+    .png-stat.loaded strong { color: #00a651; }
+    .png-stat.pending strong { color: #e30613; }
+    .png-stat:last-child { border-right: 0; }
+
+    .png-docks-grid {
+      height: 950px;
+      display: grid;
+      grid-template-columns: 2fr 4fr 6fr;
+      gap: 28px;
+      margin-top: 10px;
+      overflow: hidden;
     }
 
-    .wave-png-export-stage .dock-zone-label {
-      height: 28px !important;
-      padding: 4px 10px !important;
-      font-size: 14px !important;
-      line-height: 1 !important;
+    .png-dock-block {
+      min-width: 0;
+      display: grid;
+      grid-template-rows: 30px minmax(0,1fr) 58px;
+      gap: 8px;
+      overflow: hidden;
     }
 
-    .wave-png-export-stage .dock-zone-staff {
-      gap: 10px !important;
+    .png-zone-row,
+    .png-staff-row,
+    .png-columns {
+      min-width: 0;
+      display: grid;
+      gap: 10px;
     }
 
-    .wave-png-export-stage .dock-column {
-      grid-template-rows: repeat(7, minmax(0, 1fr)) !important;
-      gap: 10px !important;
+    .png-zone-label {
+      min-width: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 4px 8px;
+      overflow: hidden;
+      border: 1px solid #214b6d;
+      border-bottom: 4px solid #ffd200;
+      border-radius: 6px 6px 3px 3px;
+      background: #062642;
+      color: #fff;
+      font: 950 14px/1 "Segoe UI", Arial, sans-serif;
+      text-transform: uppercase;
+      white-space: nowrap;
+      text-overflow: ellipsis;
     }
 
-    .wave-png-export-stage .slot {
-      min-height: 0 !important;
-      padding: 10px 8px 7px !important;
-      overflow: hidden !important;
-      contain: none !important;
+    .png-column {
+      min-width: 0;
+      display: grid;
+      grid-template-rows: repeat(7, minmax(0,1fr));
+      gap: 10px;
     }
 
-    .wave-png-export-stage .slot::before {
-      height: 7px !important;
+    .png-card {
+      position: relative;
+      min-width: 0;
+      min-height: 0;
+      display: grid;
+      grid-template-rows: 20px 29px 17px 19px 16px minmax(14px,1fr);
+      align-content: center;
+      overflow: hidden;
+      padding: 11px 10px 8px;
+      border: 1px solid #c7d5e2;
+      border-radius: 6px;
+      background: #fff;
+      color: #001b35;
+      box-shadow: 0 2px 6px rgba(15,39,67,.12);
+      text-align: center;
     }
 
-    .wave-png-export-stage .dock-card-content {
-      width: 100% !important;
-      min-width: 0 !important;
-      min-height: 0 !important;
-      max-width: 100% !important;
-      transform: none !important;
-      transform-origin: top left !important;
-      align-self: stretch !important;
-      flex: 1 1 auto !important;
+    .png-card::before {
+      content: "";
+      position: absolute;
+      inset: 0 0 auto;
+      height: 7px;
+      background: #c6ced7;
     }
 
-    .wave-png-export-stage .dock-card-head {
-      width: 100% !important;
-      height: 19px !important;
-      min-height: 19px !important;
-      margin: 0 0 3px !important;
-      gap: 7px !important;
+    .png-card.pending::before { background: #e30613; }
+    .png-card.loaded::before { background: #00a651; }
+    .png-card.customs::before { background: #ff8500; }
+    .png-card.guard::before { background: #006dff; }
+
+    .png-card-head {
+      min-width: 0;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      overflow: hidden;
+      font-weight: 900;
     }
 
-    .wave-png-export-stage .dock-number,
-    .wave-png-export-stage .dock-number-inline {
-      font-size: 20px !important;
-      line-height: 1 !important;
+    .png-dock-number {
+      flex: 0 0 auto;
+      color: #001b35;
+      font: 950 19px/1 "Segoe UI", Arial, sans-serif;
     }
 
-    .wave-png-export-stage .dock-person {
-      font-size: 13px !important;
-      line-height: 1 !important;
+    .png-person {
+      min-width: 0;
+      flex: 1 1 auto;
+      overflow: hidden;
+      color: #111;
+      font: 900 12px/1 "Segoe UI", Arial, sans-serif;
+      text-align: left;
+      white-space: nowrap;
+      text-overflow: ellipsis;
     }
 
-    .wave-png-export-stage .route {
-      width: 100% !important;
-      font-size: 22px !important;
-      line-height: 1.08 !important;
-      margin: 1px 0 0 !important;
-      padding: 0 0 2px !important;
-      overflow: hidden !important;
-      text-overflow: ellipsis !important;
-      white-space: nowrap !important;
-      transform: none !important;
+    .png-route {
+      min-width: 0;
+      overflow: hidden;
+      color: #001b35;
+      font: 950 22px/1.08 "Arial Black","Segoe UI Black","Segoe UI",Arial,sans-serif;
+      white-space: nowrap;
+      text-overflow: ellipsis;
     }
 
-    .wave-png-export-stage .dock-minutes,
-    .wave-png-export-stage .dock-carrier-bottom,
-    .wave-png-export-stage .dock-extra-line,
-    .wave-png-export-stage .load-timer {
-      height: auto !important;
-      min-height: 0 !important;
-      margin-top: 2px !important;
-      font-size: 12px !important;
-      line-height: 1.1 !important;
+    .png-minutes,
+    .png-carrier {
+      min-width: 0;
+      overflow: hidden;
+      color: #001b35;
+      font: 850 12px/1 "Segoe UI",Arial,sans-serif;
+      white-space: nowrap;
+      text-overflow: ellipsis;
     }
 
-    .wave-png-export-stage .dock-status {
-      height: auto !important;
-      min-height: 0 !important;
-      margin-top: 2px !important;
-      font-size: 13px !important;
-      line-height: 1.08 !important;
+    .png-status {
+      min-width: 0;
+      overflow: hidden;
+      font: 950 12px/1.05 "Segoe UI",Arial,sans-serif;
+      text-transform: uppercase;
+      white-space: nowrap;
+      text-overflow: ellipsis;
     }
 
-    .wave-png-export-stage .package-discrepancy {
-      display: inline-block !important;
-      margin-top: 2px !important;
-      padding: 2px 6px !important;
-      font-size: 11px !important;
-      line-height: 1 !important;
-      white-space: nowrap !important;
+    .png-card.pending .png-status { color: #e30613; }
+    .png-card.loaded .png-status { color: #00a651; }
+    .png-card.customs .png-status { color: #ff7900; }
+    .png-card.guard .png-status { color: #006dff; }
+
+    .png-discrepancy {
+      justify-self: center;
+      align-self: center;
+      max-width: 96%;
+      padding: 3px 7px;
+      overflow: hidden;
+      border-radius: 4px;
+      background: #ed1b24;
+      color: #fff;
+      font: 950 10px/1 "Segoe UI",Arial,sans-serif;
+      text-transform: uppercase;
+      white-space: nowrap;
+      text-overflow: ellipsis;
     }
 
-    .wave-png-export-stage .dock-footer-line {
-      min-height: 14px !important;
-      margin-top: auto !important;
-      font-size: 11px !important;
-      line-height: 1 !important;
+    .png-card-footer {
+      min-width: 0;
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 8px;
+      overflow: hidden;
+      color: #111;
+      font: 850 11px/1 "Segoe UI",Arial,sans-serif;
+      white-space: nowrap;
     }
 
-    .wave-png-export-stage .dock-footer-line strong {
-      font-size: 12px !important;
-      line-height: 1 !important;
+    .png-card-footer strong {
+      overflow: hidden;
+      font: 950 12px/1 "Segoe UI",Arial,sans-serif;
+      text-overflow: ellipsis;
     }
 
-    .wave-png-export-stage .dock-free {
-      font-size: 14px !important;
-      line-height: 1 !important;
+    .png-card.free {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding-top: 18px;
     }
 
-    .wave-png-export-stage .zone-staff-card {
-      min-height: 48px !important;
-      padding: 5px 9px !important;
-      font-size: 12px !important;
-      line-height: 1.2 !important;
+    .png-card.free .png-dock-number {
+      position: absolute;
+      top: 15px;
+      left: 11px;
     }
 
-    .wave-png-export-stage .legend {
-      position: relative !important;
-      left: auto !important;
-      right: auto !important;
-      bottom: auto !important;
-      display: flex !important;
-      width: calc(100% - 32px) !important;
-      height: 42px !important;
-      min-height: 42px !important;
-      margin: 0 16px !important;
-      padding: 0 !important;
-      gap: 28px !important;
-      color: #001b35 !important;
-      font-size: 15px !important;
-      flex: 0 0 auto !important;
+    .png-free-label {
+      color: #001b35;
+      font: 950 13px/1 "Segoe UI",Arial,sans-serif;
+      text-transform: uppercase;
     }
 
-    .wave-png-export-stage .legend .dot {
-      width: 14px !important;
-      height: 14px !important;
+    .png-staff {
+      min-width: 0;
+      display: grid;
+      align-content: center;
+      gap: 5px;
+      padding: 7px 12px;
+      overflow: hidden;
+      border-radius: 4px;
+      background: #062642;
+      color: #fff;
+      font: 850 12px/1.12 "Segoe UI",Arial,sans-serif;
+      white-space: nowrap;
     }
 
-    .wave-png-export-stage .footer-strip {
-      position: relative !important;
-      left: auto !important;
-      right: auto !important;
-      bottom: auto !important;
-      width: 100% !important;
-      height: 44px !important;
-      min-height: 44px !important;
-      margin: 0 !important;
-      font-size: 12px !important;
-      flex: 0 0 auto !important;
+    .png-staff div {
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .png-staff b {
+      color: #ffd200;
+      font-weight: 950;
+    }
+
+    .png-legend {
+      height: 44px;
+      display: flex;
+      align-items: center;
+      gap: 30px;
+      padding: 0 3px;
+      color: #001b35;
+      font: 950 14px/1 "Segoe UI",Arial,sans-serif;
+      text-transform: uppercase;
+    }
+
+    .png-legend span {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .png-dot {
+      width: 14px;
+      height: 14px;
+      display: inline-block;
+      border-radius: 3px;
+    }
+
+    .png-dot.customs { background: #ff8500; }
+    .png-dot.pending { background: #e30613; }
+    .png-dot.guard { background: #006dff; }
+    .png-dot.loaded { background: #00a651; }
+    .png-dot.free { background: #c6ced7; }
+
+    .png-footer {
+      height: 44px;
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      gap: 20px;
+      margin: 0 -14px;
+      padding: 0 18px;
+      overflow: hidden;
+      background: linear-gradient(90deg,#062642 0%,#062642 32%,#ffd200 67%,#ffd200 100%);
+      border-top: 2px solid #d8a900;
+      color: #fff;
+      font: 900 12px/1 "Segoe UI",Arial,sans-serif;
+      white-space: nowrap;
+    }
+
+    .png-footer .center {
+      color: #ef1727;
+      font-weight: 950;
+      text-transform: uppercase;
+    }
+
+    .png-footer .right {
+      justify-self: end;
+      color: #ef1727;
+      font-weight: 950;
     }
 
     </style>
@@ -17320,6 +17438,98 @@ body.editor-open .global-theme-toggle {
       return `painel-${wave}-${date}${hd ? "-hd" : ""}.png`;
     }
 
+    function pngStateClass(state) {
+      return state === "customs" ? "customs"
+        : state === "guard" ? "guard"
+        : state === "loaded" ? "loaded"
+        : state === "pending" ? "pending"
+        : "free";
+    }
+
+    function createPngDockCard(dock, rows, loaded, shipped, statusMap, baseMap) {
+      const displayRows = rows.map(row => mergeRouteBaseDetails(row, baseMap));
+      const primary = displayRows[0];
+
+      if (!primary) {
+        const card = document.createElement("div");
+        card.className = "png-card free";
+        card.innerHTML = `<span class="png-dock-number">${dock}</span><span class="png-free-label">Docas livres</span>`;
+        return card;
+      }
+
+      const key = routeKey(primary.rota);
+      const state = routeDockState(primary, loaded, shipped, statusMap);
+      const stateClass = pngStateClass(state);
+      const routeText = displayRows.map(row => row.rota).filter(Boolean).join(" / ");
+      const person = routePersonName(primary);
+      const carrier = firstCarrierName(cleanTransportadora(primary.transportadora || "")) || "-";
+      const minutes = dockMinuteLabel(primary, key);
+      const status = dockStatusLabel(state);
+      const discrepancy = packageDiscrepancyLabel(primary, state);
+      const auditTime = normalize(primary.auditTime || "");
+      const packages = dockPackageLabel(primary);
+
+      const card = document.createElement("div");
+      card.className = `png-card ${stateClass}`;
+      card.innerHTML = `
+        <div class="png-card-head">
+          <span class="png-dock-number">${dock}</span>
+          <span class="png-person">${escapeHtml(person || "")}</span>
+        </div>
+        <div class="png-route">${escapeHtml(routeText)}</div>
+        <div class="png-minutes">${escapeHtml(minutes)}</div>
+        <div class="png-status">${escapeHtml(status)}</div>
+        <div class="png-carrier">${escapeHtml(carrier)}</div>
+        ${discrepancy ? `<div class="png-discrepancy">${escapeHtml(discrepancy)}</div>` : "<div></div>"}
+        <div class="png-card-footer">
+          <span>${escapeHtml(auditTime)}</span>
+          <strong>${escapeHtml(packages)}</strong>
+        </div>
+      `;
+      return card;
+    }
+
+    function createPngStats(wave) {
+      const rows = rowsForWave(wave);
+      const counts = dockSlotCounts(wave);
+      const loaded = counts.loaded || 0;
+      const customs = counts.customs || 0;
+      const guard = counts.guard || 0;
+      const pending = counts.pending || 0;
+      const preview = rows.length ? (loaded / rows.length) * 100 : 0;
+      const time = parseWaveTime(wave) || {};
+
+      const stats = document.createElement("section");
+      stats.className = "png-wave-stats";
+      stats.innerHTML = `
+        <div class="png-report-title"><strong>REPORTE OOT 3.0</strong><span>${escapeHtml(displayWave(wave))}</span></div>
+        <div class="png-stat"><span>Início</span><strong>${escapeHtml(formatMetricHour(time.inicio))}</strong></div>
+        <div class="png-stat"><span>Término</span><strong>${escapeHtml(formatMetricHour(time.fim))}</strong></div>
+        <div class="png-stat preview"><span>Prévia</span><strong>${preview.toFixed(1).replace(".", ",")}%</strong></div>
+        <div class="png-stat"><span>Qtde rotas</span><strong>${rows.length}</strong></div>
+        <div class="png-stat guard"><span>Guardando</span><strong>${guard}</strong></div>
+        <div class="png-stat loaded"><span>Expedida</span><strong>${loaded}</strong></div>
+        <div class="png-stat customs"><span>Em aduana</span><strong>${customs}</strong></div>
+        <div class="png-stat pending"><span>Pendentes</span><strong>${pending}</strong></div>
+        <div class="png-stat"><span>Tempo restante</span><strong>${escapeHtml(remainingWaveTime(wave))}</strong></div>
+      `;
+      return stats;
+    }
+
+    function createPngStaff(zone) {
+      const staff = data.responsaveisPorLado?.[zone.label] || {};
+      const coordinator = normalize(staff.coordenador) || "Não informado";
+      const ps = normalize(staff.ps) || "Não informado";
+      const el = document.createElement("div");
+      el.className = "png-staff";
+      el.style.gridColumn = `${zone.column} / span ${zone.span}`;
+      el.innerHTML = `
+        <div><b>${zone.label === "Line Hall" ? "Coord." : "Coordenador"}:</b> ${escapeHtml(coordinator)}</div>
+        <div><b>PS:</b> ${escapeHtml(ps)}</div>
+      `;
+      return el;
+    }
+
     function renderWaveExportGrid(target, wave = currentWave) {
       const map = routeByDock(wave);
       const loaded = loadedKeys();
@@ -17330,72 +17540,86 @@ body.editor-open .global-theme-toggle {
       target.innerHTML = "";
 
       dockLayoutBlocks.forEach((block, blockIndex) => {
-        const blockEl = document.createElement("div");
-        blockEl.className = `dock-block block-${blockIndex + 1}`;
+        const blockEl = document.createElement("section");
+        blockEl.className = "png-dock-block";
 
         const zoneRow = document.createElement("div");
-        zoneRow.className = "dock-zone-labels";
-        zoneRow.style.setProperty("--dock-zone-columns", String(block.length));
+        zoneRow.className = "png-zone-row";
+        zoneRow.style.gridTemplateColumns = `repeat(${block.length}, minmax(0,1fr))`;
         (dockZoneLabels[blockIndex] || []).forEach(zone => {
-          const label = document.createElement("span");
-          label.className = "dock-zone-label";
+          const label = document.createElement("div");
+          label.className = "png-zone-label";
           label.style.gridColumn = `${zone.column} / span ${zone.span}`;
           label.textContent = zone.label;
           zoneRow.appendChild(label);
         });
-        blockEl.appendChild(zoneRow);
 
-        const staffRow = document.createElement("div");
-        staffRow.className = "dock-zone-staff";
-        staffRow.style.setProperty("--dock-zone-columns", String(block.length));
-        staffRow.innerHTML = (dockZoneLabels[blockIndex] || []).map(zoneStaffCardHtml).join("");
-        blockEl.appendChild(staffRow);
+        const columns = document.createElement("div");
+        columns.className = "png-columns";
+        columns.style.gridTemplateColumns = `repeat(${block.length}, minmax(0,1fr))`;
 
         block.forEach(column => {
           const columnEl = document.createElement("div");
-          columnEl.className = "dock-column";
-
+          columnEl.className = "png-column";
           column.forEach(dock => {
             if (!dock || dock > maxDock) {
               const spacer = document.createElement("div");
-              spacer.className = "dock-spacer";
+              spacer.className = "png-card free";
+              spacer.style.visibility = "hidden";
               columnEl.appendChild(spacer);
-              return;
+            } else {
+              columnEl.appendChild(createPngDockCard(
+                dock,
+                map.get(dock) || [],
+                loaded,
+                shipped,
+                statusMap,
+                baseMap
+              ));
             }
-
-            // Cria o card novamente a partir dos dados, sem copiar qualquer
-            // transform/scale calculado para a tela do navegador.
-            const slot = createDockSlot(
-              dock,
-              map.get(dock) || [],
-              loaded,
-              shipped,
-              statusMap,
-              baseMap
-            );
-            const content = slot.querySelector(".dock-card-content");
-            if (content) {
-              content.style.transform = "none";
-              content.style.width = "100%";
-              content.style.minHeight = "0";
-            }
-            columnEl.appendChild(slot);
           });
-
-          blockEl.appendChild(columnEl);
+          columns.appendChild(columnEl);
         });
 
+        const staffRow = document.createElement("div");
+        staffRow.className = "png-staff-row";
+        staffRow.style.gridTemplateColumns = `repeat(${block.length}, minmax(0,1fr))`;
+        (dockZoneLabels[blockIndex] || []).forEach(zone => staffRow.appendChild(createPngStaff(zone)));
+
+        blockEl.appendChild(zoneRow);
+        blockEl.appendChild(columns);
+        blockEl.appendChild(staffRow);
         target.appendChild(blockEl);
       });
     }
 
+    function createPngLegend() {
+      const legend = document.createElement("div");
+      legend.className = "png-legend";
+      legend.innerHTML = `
+        <span><i class="png-dot customs"></i>Em aduana</span>
+        <span><i class="png-dot pending"></i>Pendente</span>
+        <span><i class="png-dot guard"></i>Guardando</span>
+        <span><i class="png-dot loaded"></i>Expedida</span>
+        <span><i class="png-dot free"></i>Docas livres</span>
+      `;
+      return legend;
+    }
+
+    function createPngFooter() {
+      const footer = document.createElement("footer");
+      footer.className = "png-footer";
+      footer.innerHTML = `
+        <span>ÚLTIMA ATUALIZAÇÃO: ${escapeHtml(data.ultimaAtualizacao || currentTimeLabel())} &nbsp; | &nbsp; ATUALIZADO POR: SISTEMA ↻</span>
+        <span class="center">FOCO • DISCIPLINA • QUALIDADE • SEGURANÇA</span>
+        <span class="right">DHL SUPPLY CHAIN &nbsp; | &nbsp; MERCADO LIVRE</span>
+      `;
+      return footer;
+    }
+
     async function downloadCurrentWavePng(hd = false) {
       const button = document.getElementById(hd ? "downloadWavePngHdBtn" : "downloadWavePngBtn");
-      const stats = document.querySelector(".stats");
-      const legend = document.querySelector(".legend");
-      const footer = document.querySelector(".footer-strip");
-
-      if (!stats || typeof window.html2canvas !== "function") {
+      if (typeof window.html2canvas !== "function") {
         alert("Não foi possível gerar a imagem do painel.");
         return;
       }
@@ -17408,41 +17632,27 @@ body.editor-open .global-theme-toggle {
       }
 
       let exportStage = null;
-
       try {
         if (document.fonts?.ready) await document.fonts.ready;
 
         exportStage = document.createElement("section");
-        exportStage.className = "app docas-mode wave-png-export-stage";
+        exportStage.className = "wave-png-export-stage";
         exportStage.setAttribute("aria-hidden", "true");
 
-        // O cabeçalho de indicadores não sofre compressão; podemos copiar seus
-        // valores atuais. A grade é reconstruída abaixo diretamente dos dados.
-        const statsClone = stats.cloneNode(true);
-        statsClone.removeAttribute("id");
+        exportStage.appendChild(createPngStats(currentWave));
 
-        const exportGrid = document.createElement("section");
-        exportGrid.className = "dock-grid";
-        exportGrid.id = "dockGridPngExport";
-        renderWaveExportGrid(exportGrid, currentWave);
+        const grid = document.createElement("section");
+        grid.className = "png-docks-grid";
+        renderWaveExportGrid(grid, currentWave);
+        exportStage.appendChild(grid);
+        exportStage.appendChild(createPngLegend());
+        exportStage.appendChild(createPngFooter());
 
-        const legendClone = legend ? legend.cloneNode(true) : null;
-        const footerClone = footer ? footer.cloneNode(true) : null;
-
-        exportStage.appendChild(statsClone);
-        exportStage.appendChild(exportGrid);
-        if (legendClone) exportStage.appendChild(legendClone);
-        if (footerClone) exportStage.appendChild(footerClone);
         document.body.appendChild(exportStage);
-
-        // Duas passagens garantem que fontes e dimensões 2K estejam totalmente
-        // calculadas antes da rasterização.
         await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
 
         const exportWidth = 2560;
         const exportHeight = Math.ceil(exportStage.scrollHeight);
-
-        // PNG normal já nasce em 2560px. PNG HD dobra para 5120px.
         const scale = hd ? 2 : 1;
 
         const canvas = await window.html2canvas(exportStage, {
@@ -17454,7 +17664,7 @@ body.editor-open .global-theme-toggle {
           width: exportWidth,
           height: exportHeight,
           windowWidth: exportWidth,
-          windowHeight: Math.max(1100, exportHeight),
+          windowHeight: Math.max(1200, exportHeight),
           scrollX: 0,
           scrollY: 0,
           x: 0,
