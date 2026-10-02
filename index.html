@@ -11266,6 +11266,197 @@ body.editor-open .global-theme-toggle {
         border-top: 1px solid #a9c2d3;
       }
     }
+  
+    /* Exportação PNG da onda: canvas fixo Full HD, sem compressão dos cards. */
+    .wave-png-export-stage {
+      --docas-grid-gap: 24px !important;
+      --docas-card-gap: 8px !important;
+      position: fixed !important;
+      left: -10000px !important;
+      top: 0 !important;
+      z-index: -1 !important;
+      width: 1920px !important;
+      min-width: 1920px !important;
+      max-width: 1920px !important;
+      height: auto !important;
+      min-height: 0 !important;
+      display: flex !important;
+      flex-direction: column !important;
+      gap: 0 !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      overflow: visible !important;
+      border: 0 !important;
+      border-radius: 0 !important;
+      box-shadow: none !important;
+      background: #e8f0f7 !important;
+      pointer-events: none !important;
+    }
+
+    .wave-png-export-stage .stats {
+      position: relative !important;
+      width: calc(100% - 28px) !important;
+      height: 78px !important;
+      min-height: 78px !important;
+      max-height: 78px !important;
+      margin: 8px 14px 0 !important;
+      padding: 7px 12px !important;
+      grid-template-columns: minmax(315px, 2.3fr) repeat(8, minmax(118px, 1fr)) minmax(102px, .8fr) !important;
+      overflow: hidden !important;
+      flex: 0 0 auto !important;
+    }
+
+    .wave-png-export-stage .report-title strong {
+      font-size: 26px !important;
+      line-height: 1 !important;
+    }
+
+    .wave-png-export-stage .wave-stat,
+    .wave-png-export-stage .stat span,
+    .wave-png-export-stage .countdown span {
+      font-size: 12px !important;
+      line-height: 1 !important;
+    }
+
+    .wave-png-export-stage .stat strong,
+    .wave-png-export-stage .countdown strong {
+      font-size: 27px !important;
+      line-height: 1 !important;
+    }
+
+    .wave-png-export-stage .dock-grid {
+      position: relative !important;
+      width: calc(100% - 28px) !important;
+      height: 620px !important;
+      min-height: 620px !important;
+      max-height: 620px !important;
+      margin: 8px 14px 0 !important;
+      padding: 0 !important;
+      gap: 24px !important;
+      overflow: hidden !important;
+      align-items: stretch !important;
+      flex: 0 0 auto !important;
+    }
+
+    .wave-png-export-stage .dock-block {
+      gap: 8px !important;
+      padding-top: 24px !important;
+    }
+
+    .wave-png-export-stage .dock-column {
+      gap: 8px !important;
+    }
+
+    .wave-png-export-stage .dock-zone-label {
+      height: 20px !important;
+      padding: 2px 7px !important;
+      font-size: 10px !important;
+      line-height: 1 !important;
+    }
+
+    .wave-png-export-stage .slot {
+      min-height: 0 !important;
+      padding: 6px 5px 4px !important;
+      overflow: hidden !important;
+    }
+
+    .wave-png-export-stage .dock-card-content {
+      width: 100% !important;
+      min-width: 0 !important;
+      min-height: 0 !important;
+      max-width: 100% !important;
+      transform: none !important;
+      transform-origin: top left !important;
+      align-self: stretch !important;
+    }
+
+    .wave-png-export-stage .dock-card-head {
+      height: 12px !important;
+      min-height: 12px !important;
+      margin-bottom: 1px !important;
+    }
+
+    .wave-png-export-stage .dock-number,
+    .wave-png-export-stage .dock-number-inline {
+      font-size: 15px !important;
+      line-height: 1 !important;
+    }
+
+    .wave-png-export-stage .dock-person {
+      font-size: 9px !important;
+      line-height: 1 !important;
+    }
+
+    .wave-png-export-stage .route {
+      font-size: 15px !important;
+      line-height: 1.05 !important;
+      margin: 0 !important;
+      padding: 0 0 1px !important;
+    }
+
+    .wave-png-export-stage .dock-minutes,
+    .wave-png-export-stage .dock-status,
+    .wave-png-export-stage .dock-carrier-bottom,
+    .wave-png-export-stage .dock-extra-line,
+    .wave-png-export-stage .load-timer {
+      height: auto !important;
+      min-height: 0 !important;
+      margin-top: 1px !important;
+      font-size: 8px !important;
+      line-height: 1.05 !important;
+    }
+
+    .wave-png-export-stage .package-discrepancy {
+      display: inline-block !important;
+      margin-top: 1px !important;
+      padding: 1px 4px !important;
+      font-size: 7px !important;
+      line-height: 1 !important;
+      white-space: nowrap !important;
+    }
+
+    .wave-png-export-stage .dock-footer-line,
+    .wave-png-export-stage .dock-footer-line strong {
+      min-height: 10px !important;
+      font-size: 8px !important;
+      line-height: 1 !important;
+    }
+
+    .wave-png-export-stage .zone-staff-card {
+      min-height: 36px !important;
+      font-size: 9px !important;
+      line-height: 1.15 !important;
+    }
+
+    .wave-png-export-stage .legend {
+      position: relative !important;
+      left: auto !important;
+      right: auto !important;
+      bottom: auto !important;
+      display: flex !important;
+      width: calc(100% - 28px) !important;
+      height: 32px !important;
+      min-height: 32px !important;
+      margin: 0 14px !important;
+      padding: 0 !important;
+      gap: 22px !important;
+      color: #001b35 !important;
+      font-size: 12px !important;
+      flex: 0 0 auto !important;
+    }
+
+    .wave-png-export-stage .footer-strip {
+      position: relative !important;
+      left: auto !important;
+      right: auto !important;
+      bottom: auto !important;
+      width: 100% !important;
+      height: 34px !important;
+      min-height: 34px !important;
+      margin: 0 !important;
+      flex: 0 0 auto !important;
+    }
+
   </style>
 </head>
 <body>
@@ -17077,13 +17268,12 @@ body.editor-open .global-theme-toggle {
 
     async function downloadCurrentWavePng(hd = false) {
       const button = document.getElementById(hd ? "downloadWavePngHdBtn" : "downloadWavePngBtn");
-      const app = document.querySelector(".app");
       const stats = document.querySelector(".stats");
       const grid = document.getElementById("dockGrid");
       const legend = document.querySelector(".legend");
       const footer = document.querySelector(".footer-strip");
 
-      if (!app || !stats || !grid || typeof window.html2canvas !== "function") {
+      if (!stats || !grid || typeof window.html2canvas !== "function") {
         alert("Não foi possível gerar a imagem do painel.");
         return;
       }
@@ -17095,91 +17285,67 @@ body.editor-open .global-theme-toggle {
         button.innerHTML = `<i class="bi bi-hourglass-split" aria-hidden="true"></i><span>Gerando</span>`;
       }
 
+      let exportStage = null;
+
       try {
         if (document.fonts?.ready) await document.fonts.ready;
 
-        // Garante que todos os cards estejam no estado visual final exatamente
-        // como aparecem para o usuário antes da captura.
-        grid.querySelectorAll(".slot[data-route-key]").forEach(slot => fitDockCardContent(slot));
+        // Monta uma versão de exportação com largura Full HD fixa.
+        // A estrutura visual é a mesma do painel; só deixa de depender do zoom/tamanho
+        // lógico do navegador usado no momento do download.
+        exportStage = document.createElement("section");
+        exportStage.className = "app docas-mode wave-png-export-stage";
+        exportStage.setAttribute("aria-hidden", "true");
+
+        const statsClone = stats.cloneNode(true);
+        const gridClone = grid.cloneNode(true);
+        const legendClone = legend ? legend.cloneNode(true) : null;
+        const footerClone = footer ? footer.cloneNode(true) : null;
+
+        statsClone.removeAttribute("id");
+        gridClone.id = "dockGridPngExport";
+
+        // Remove o scale calculado para a tela real. No quadro Full HD os textos
+        // têm espaço suficiente e devem ser renderizados em tamanho natural.
+        gridClone.querySelectorAll(".dock-card-content").forEach(content => {
+          content.style.removeProperty("transform");
+          content.style.removeProperty("width");
+          content.style.removeProperty("min-height");
+        });
+
+        exportStage.appendChild(statsClone);
+        exportStage.appendChild(gridClone);
+        if (legendClone) exportStage.appendChild(legendClone);
+        if (footerClone) exportStage.appendChild(footerClone);
+        document.body.appendChild(exportStage);
+
         await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
 
-        const appRect = app.getBoundingClientRect();
-        const statsRect = stats.getBoundingClientRect();
-        const gridRect = grid.getBoundingClientRect();
-        const legendRect = legend?.getBoundingClientRect();
-        const footerRect = footer?.getBoundingClientRect();
+        const exportWidth = 1920;
+        const exportHeight = Math.ceil(exportStage.scrollHeight);
+        const scale = hd ? 3 : 2;
 
-        // Área útil: do início do reporte até o fim do rodapé e somente a largura
-        // ocupada pelo painel de docas. Nenhum clone é redimensionado.
-        const cropLeft = Math.max(0, Math.floor(Math.min(
-          statsRect.left,
-          gridRect.left,
-          legendRect?.left ?? gridRect.left
-        ) - appRect.left));
-        const cropRight = Math.min(
-          Math.ceil(appRect.width),
-          Math.ceil(Math.max(
-            statsRect.right,
-            gridRect.right,
-            legendRect?.right ?? gridRect.right
-          ) - appRect.left)
-        );
-        const cropTop = Math.max(0, Math.floor(statsRect.top - appRect.top));
-        const cropBottom = Math.min(
-          Math.ceil(appRect.height),
-          Math.ceil((footerRect?.bottom ?? gridRect.bottom) - appRect.top)
-        );
-
-        const cropWidth = Math.max(1, cropRight - cropLeft);
-        const cropHeight = Math.max(1, cropBottom - cropTop);
-        const scale = hd ? 4 : 2.5;
-
-        // Captura o DOM REAL. Isso preserva exatamente os transforms, fontes,
-        // alturas e encaixes já calculados nos cards da tela.
-        const fullCanvas = await window.html2canvas(app, {
+        const canvas = await window.html2canvas(exportStage, {
           scale,
           useCORS: true,
           allowTaint: true,
           backgroundColor: "#e8f0f7",
           logging: false,
+          width: exportWidth,
+          height: exportHeight,
+          windowWidth: exportWidth,
+          windowHeight: Math.max(900, exportHeight),
           scrollX: 0,
           scrollY: 0,
-          width: Math.ceil(appRect.width),
-          height: Math.ceil(appRect.height),
-          windowWidth: Math.ceil(appRect.width),
-          windowHeight: Math.ceil(appRect.height),
+          x: 0,
+          y: 0,
           imageTimeout: 15000,
-          ignoreElements: element => {
-            return element.matches?.(
-              ".topbar, .toolbar, .side-rail, .wave-title, .panel-view, .simple-docks-view, .print-table-wrap, .drawer, .pdf-drawer, .login-modal, .route-history-modal, .alerts-modal, .process-alert-toast, .global-theme-toggle, .dark-brand-relief"
-            );
-          }
+          removeContainer: true
         });
-
-        // Recorta a captura sem qualquer reflow do painel.
-        const output = document.createElement("canvas");
-        output.width = Math.round(cropWidth * scale);
-        output.height = Math.round(cropHeight * scale);
-        const ctx = output.getContext("2d");
-        ctx.imageSmoothingEnabled = true;
-        ctx.imageSmoothingQuality = "high";
-        ctx.fillStyle = "#e8f0f7";
-        ctx.fillRect(0, 0, output.width, output.height);
-        ctx.drawImage(
-          fullCanvas,
-          Math.round(cropLeft * scale),
-          Math.round(cropTop * scale),
-          Math.round(cropWidth * scale),
-          Math.round(cropHeight * scale),
-          0,
-          0,
-          output.width,
-          output.height
-        );
 
         const link = document.createElement("a");
         link.download = waveExportFileName(hd);
-        link.href = output.toDataURL("image/png", 1);
+        link.href = canvas.toDataURL("image/png", 1);
         document.body.appendChild(link);
         link.click();
         link.remove();
@@ -17187,6 +17353,7 @@ body.editor-open .global-theme-toggle {
         console.error("Falha ao exportar a onda em PNG:", error);
         alert("Não foi possível gerar o PNG. Atualize a página e tente novamente.");
       } finally {
+        exportStage?.remove();
         if (button) {
           button.disabled = false;
           button.classList.remove("is-loading");
