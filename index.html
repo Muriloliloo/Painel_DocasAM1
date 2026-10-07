@@ -15879,7 +15879,7 @@ body.editor-open .global-theme-toggle {
       const massSelect = document.getElementById("massReason");
       if (massSelect) {
         const previousMassValue = massSelect.value;
-        massSelect.innerHTML = `<option value=""></option>${reasonOptions.map(motivo => `<option value="${escapeHtml(motivo)}">${escapeHtml(motivo)}</option>`).join("")}`;
+        massSelect.innerHTML = `<option value=""></option>${reasonOptions.slice().sort((a, b) => a.localeCompare(b, "pt-BR", { sensitivity: "base" })).map(motivo => `<option value="${escapeHtml(motivo)}">${escapeHtml(motivo)}</option>`).join("")}`;
         if (previousMassValue && reasonOptions.some(motivo => plainText(motivo) === plainText(previousMassValue))) {
           const canonical = reasonOptions.find(motivo => plainText(motivo) === plainText(previousMassValue));
           massSelect.value = canonical || "";
