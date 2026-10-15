@@ -13778,15 +13778,25 @@ body.editor-open .global-theme-toggle {
 
     const dockZoneLabels = [
       [{ label: "Lado Heineken", displayLabel: "A (09–15) · Heineken", column: 1, span: 1, range: "docas 09 a 15" }],
-      [{ label: "Lado Central", column: 1, span: 7, range: "docas 16 a 56" }],
+      [
+        { label: "Lado Central B", legacyLabel: "Lado Central", displayLabel: "B (16–30) · Central", column: 1, span: 3, range: "docas 16 a 30" },
+        { label: "Lado Central C", legacyLabel: "Lado Central", displayLabel: "C (31–56) · Central", column: 4, span: 4, range: "docas 31 a 56" }
+      ],
       [
         { label: "Lado Parede", displayLabel: "D (57–71) · Parede", column: 1, span: 3, range: "docas 57 a 71" },
         { label: "Line Hall", displayLabel: "E (86–91) · LH", column: 4, span: 1, range: "docas 86 a 91" }
       ]
     ];
 
+    function staffForZone(label) {
+      const staff = data.responsaveisPorLado || {};
+      if (Object.prototype.hasOwnProperty.call(staff, label)) return staff[label] || {};
+      const zone = dockZoneLabels.flat().find(item => item.label === label);
+      return zone?.legacyLabel ? (staff[zone.legacyLabel] || {}) : {};
+    }
+
     function zoneStaffCardHtml(zone) {
-      const staff = data.responsaveisPorLado?.[zone.label] || {};
+      const staff = staffForZone(zone.label);
       const coordinator = normalize(staff.coordenador) || "Não informado";
       const ps = normalize(staff.ps) || "Não informado";
       return `<div class="zone-staff-card" style="grid-column: ${zone.column} / span ${zone.span}" aria-label="Responsáveis: ${escapeHtml(zone.label)}">
@@ -13797,8 +13807,8 @@ body.editor-open .global-theme-toggle {
 
     function populateZoneStaffEditor() {
       document.getElementById("zoneStaffFields").innerHTML = dockZoneLabels.flat().map((zone, index) => {
-        const staff = data.responsaveisPorLado?.[zone.label] || {};
-        return `<fieldset><legend>${escapeHtml(zone.label)}</legend>
+        const staff = staffForZone(zone.label);
+        return `<fieldset><legend>${escapeHtml(zone.displayLabel || zone.label)}</legend>
           <label for="zoneCoordinator${index}">Coordenador<input id="zoneCoordinator${index}" type="text" maxlength="100" value="${escapeHtml(staff.coordenador || "")}" placeholder="Nome do coordenador"></label>
           <label for="zonePs${index}">PS<input id="zonePs${index}" type="text" maxlength="100" value="${escapeHtml(staff.ps || "")}" placeholder="Nome do PS"></label>
         </fieldset>`;
@@ -13806,10 +13816,10 @@ body.editor-open .global-theme-toggle {
     }
 
     function readZoneStaffEditor() {
-      return Object.fromEntries(dockZoneLabels.flat().map((zone, index) => [zone.label, {
+      return { ...data.responsaveisPorLado, ...Object.fromEntries(dockZoneLabels.flat().map((zone, index) => [zone.label, {
         coordenador: normalize(document.getElementById(`zoneCoordinator${index}`).value),
         ps: normalize(document.getElementById(`zonePs${index}`).value)
-      }]));
+      }])) };
     }
 
     function formatMetricHour(value) {
@@ -15198,11 +15208,7 @@ body.editor-open .global-theme-toggle {
         })).filter(column => column.docks.length);
         if (!visibleColumns.length) return;
         const block = visibleColumns.map(column => column.docks);
-        // B and C share the existing Central staff/data key; split only their visual headers.
-        const presentationZones = blockIndex === 1 ? [
-          { ...dockZoneLabels[1][0], displayLabel: "B (16–30) · Central", column: 1, span: 3, range: "docas 16 a 30" },
-          { ...dockZoneLabels[1][0], displayLabel: "C (31–56) · Central", column: 4, span: 4, range: "docas 31 a 56" }
-        ] : (dockZoneLabels[blockIndex] || []);
+        const presentationZones = dockZoneLabels[blockIndex] || [];
         const visibleZones = presentationZones.map(zone => {
           const indices = visibleColumns.map((column, index) =>
             column.originalColumn >= zone.column && column.originalColumn < zone.column + zone.span ? index : -1
@@ -15623,7 +15629,7 @@ body.editor-open .global-theme-toggle {
           startNewPage ? "package-pdf-new-page" : "",
           keepTogether ? "package-pdf-keep-together" : ""
         ].filter(Boolean).join(" ");
-        const staff = group.label === "Sem lado identificado" ? {} : data.responsaveisPorLado?.[group.label] || {};
+        const staff = group.label === "Sem lado identificado" ? {} : staffForZone(group.label);
         const headers = finalMode
           ? "<th>Rota / Onda</th><th>Doca</th><th>ID do pacote</th><th>A mais</th><th>Faltantes</th>"
           : "<th>Rota / Onda</th><th>Doca</th><th>A mais</th><th>Faltantes</th>";
@@ -15730,7 +15736,7 @@ body.editor-open .global-theme-toggle {
       model.groups.forEach(group => {
         const staff = group.label === "Sem lado identificado"
           ? {}
-          : data.responsaveisPorLado?.[group.label] || {};
+          : staffForZone(group.label);
 
         group.rows
           .filter(row => inWave(row) && inDockRange(row.doca))
@@ -16415,7 +16421,7 @@ body.editor-open .global-theme-toggle {
         </div>
         <div class="package-closure-sides">
           ${model.groups.map(group => {
-            const staff = group.label === "Sem lado identificado" ? {} : data.responsaveisPorLado?.[group.label] || {};
+            const staff = group.label === "Sem lado identificado" ? {} : staffForZone(group.label);
             const columnHeader = finalMode
               ? '<th>ROTA / ONDA</th><th>DOCA</th><th>ID DO PACOTE</th><th>A MAIS</th><th>FALTANTES</th>'
               : '<th>ROTA / ONDA</th><th>DOCA</th><th>A MAIS</th><th>FALTANTES</th>';
