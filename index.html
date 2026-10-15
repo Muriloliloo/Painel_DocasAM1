@@ -16241,7 +16241,7 @@ body.editor-open .global-theme-toggle {
         const rota = routeToken(rawRoute);
         const idRota = rawRoute.split("|")[1]?.trim() || "";
         const status = plainText(cells[col("estado")]);
-        const states = { correto: "corretos", faltante: "faltantes", "a mais": "aMais", avariado: "avariados" };
+        const states = { correto: "corretos", faltante: "faltantes", "a mais": "aMais", avariado: "avariados", pendente: "pendentes" };
         const dateText = normalize(cells[col("data auditoria")]);
         const match = dateText.match(/^(\d{2})\/(\d{2})\/(\d{4})\s+(\d{2}):(\d{2}):(\d{2})$/);
         if (!shipment || !rota || !states[status] || !match) throw new Error(`Linha ${index + 2}: pacote, rota, estado ou data inválidos. Nenhum dado foi aplicado.`);
@@ -16286,6 +16286,7 @@ body.editor-open .global-theme-toggle {
         rows: [...routes.values()],
         packages: offenders.length,
         totalPackages: packages.size,
+        pendingPackages: [...packages.values()].filter(item => item.state === "pendentes").length,
         duplicates
       };
     }
@@ -16475,7 +16476,7 @@ body.editor-open .global-theme-toggle {
       const status = document.getElementById("finalAuditStatus");
       if (!pendingFinalAudit) { status.textContent = "Usando as contagens da Base Aduana. Importe o CSV ao finalizar a última onda."; return; }
       const total = pendingFinalAudit.rows.reduce((sum, row) => ({ aMais: sum.aMais + row.aMais, faltantes: sum.faltantes + row.faltantes }), { aMais: 0, faltantes: 0 });
-      status.textContent = `${pendingFinalAudit.fileName} • ${pendingFinalAudit.date} • ${pendingFinalAudit.packages} ofensores únicos • ${total.aMais} a mais • ${total.faltantes} faltantes • pacotes corretos/avariados ignorados • ${pendingFinalAudit.duplicates} linhas repetidas descartadas. Clique em Aplicar para salvar. Um novo CSV substitui o anterior por completo.`;
+      status.textContent = `${pendingFinalAudit.fileName} • ${pendingFinalAudit.date} • ${pendingFinalAudit.packages} ofensores únicos • ${total.aMais} a mais • ${total.faltantes} faltantes • ${pendingFinalAudit.pendingPackages || 0} pendentes (não contabilizados como a mais/faltantes) • pacotes corretos/avariados ignorados • ${pendingFinalAudit.duplicates} linhas repetidas descartadas. Clique em Aplicar para salvar. Um novo CSV substitui o anterior por completo.`;
     }
 
     function openFinalAuditEditor() {
