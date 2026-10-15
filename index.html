@@ -13771,17 +13771,17 @@ body.editor-open .global-theme-toggle {
 
 
     const dockLayoutBlocks = [
-      [[1, 2, 3, 4, 5, 6, 7, 8], [9, 10, 11, 12, 13, 14, 15], [16, 17, 0, 0, 0, 0, 0]],
-      [[18, 19, 20, 21, 22, 23, 24], [25, 26, 27, 28, 29, 30, 31], [32, 33, 34, 35, 36, 37, 38], [39, 40, 41, 42, 43, 44, 45], [46, 47, 48, 49, 50, 0, 0]],
-      [[51, 52, 53, 54, 55, 56, 57], [58, 59, 60, 61, 62, 63, 64], [65, 66, 67, 68, 69, 70, 71], [72, 73, 74, 75, 76, 77, 78], [79, 80, 81, 82, 83, 84, 85], [86, 87, 88, 89, 90, 91, 92]]
+      [[9, 10, 11, 12, 13, 14, 15]],
+      [[16, 17, 18, 19, 20, 21, 22], [23, 24, 25, 26, 27, 28, 29], [30, 0, 0, 0, 0, 0, 0], [31, 32, 33, 34, 35, 36, 37], [38, 39, 40, 41, 42, 43, 44], [45, 46, 47, 48, 49, 50, 51], [52, 53, 54, 55, 56, 0, 0]],
+      [[57, 58, 59, 60, 61, 62, 63], [64, 65, 66, 67, 68, 69, 70], [71, 0, 0, 0, 0, 0, 0], [86, 87, 88, 89, 90, 91, 0]]
     ];
 
     const dockZoneLabels = [
-      [{ label: "Lado Heineken", column: 1, span: 3, range: "docas 09 a 17" }],
-      [{ label: "Lado Central", column: 1, span: 5, range: "docas 18 a 50" }],
+      [{ label: "Lado Heineken", displayLabel: "A (09–15) · Heineken", column: 1, span: 1, range: "docas 09 a 15" }],
+      [{ label: "Lado Central", column: 1, span: 7, range: "docas 16 a 56" }],
       [
-        { label: "Lado Parede", column: 1, span: 5, range: "docas 51 a 71" },
-        { label: "Line Hall", column: 6, span: 1, range: "docas 86 a 92" }
+        { label: "Lado Parede", displayLabel: "D (57–71) · Parede", column: 1, span: 3, range: "docas 57 a 71" },
+        { label: "Line Hall", displayLabel: "E (86–91) · LH", column: 4, span: 1, range: "docas 86 a 91" }
       ]
     ];
 
@@ -15177,7 +15177,7 @@ body.editor-open .global-theme-toggle {
 
     // Presentation filter only: retain these docks in data, totals and history.
     function isDockCardVisible(dock) {
-      return !(dock >= 1 && dock <= 8) && !(dock >= 72 && dock <= 85);
+      return (dock >= 9 && dock <= 71) || (dock >= 86 && dock <= 91) || !dock;
     }
 
     function renderGrid() {
@@ -15198,7 +15198,12 @@ body.editor-open .global-theme-toggle {
         })).filter(column => column.docks.length);
         if (!visibleColumns.length) return;
         const block = visibleColumns.map(column => column.docks);
-        const visibleZones = (dockZoneLabels[blockIndex] || []).map(zone => {
+        // B and C share the existing Central staff/data key; split only their visual headers.
+        const presentationZones = blockIndex === 1 ? [
+          { ...dockZoneLabels[1][0], displayLabel: "B (16–30) · Central", column: 1, span: 3, range: "docas 16 a 30" },
+          { ...dockZoneLabels[1][0], displayLabel: "C (31–56) · Central", column: 4, span: 4, range: "docas 31 a 56" }
+        ] : (dockZoneLabels[blockIndex] || []);
+        const visibleZones = presentationZones.map(zone => {
           const indices = visibleColumns.map((column, index) =>
             column.originalColumn >= zone.column && column.originalColumn < zone.column + zone.span ? index : -1
           ).filter(index => index >= 0);
@@ -15216,7 +15221,7 @@ body.editor-open .global-theme-toggle {
           const label = document.createElement("span");
           label.className = "dock-zone-label";
           label.style.gridColumn = `${zone.column} / span ${zone.span}`;
-          label.textContent = zone.label;
+          label.textContent = zone.displayLabel || zone.label;
           label.title = `${zone.label} — ${zone.range}`;
           label.setAttribute("aria-label", `${zone.label}, ${zone.range}`);
           zoneRow.appendChild(label);
