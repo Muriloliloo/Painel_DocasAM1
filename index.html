@@ -14109,6 +14109,7 @@ body.editor-open .global-theme-toggle {
       const cards = [];
 
       for (let dock = 1; dock <= maxDock; dock += 1) {
+        if (!isDockCardVisible(dock)) continue;
         const rows = map.get(dock) || [];
         const displayRows = rows.map(row => mergeRouteBaseDetails(row, baseMap));
         const primary = displayRows[0];
@@ -14143,7 +14144,7 @@ body.editor-open .global-theme-toggle {
       const gridStyle = getComputedStyle(grid);
       const wrapStyle = getComputedStyle(wrap);
       const gap = Number.parseFloat(gridStyle.columnGap) || 7;
-      const totalDocks = Math.max(1, Number(data.docas || 92));
+      const totalDocks = Math.max(1, grid.children.length);
 
       let minimumCardWidth = 112;
       let minimumColumns = 8;
@@ -15174,6 +15175,11 @@ body.editor-open .global-theme-toggle {
       syncHybridPdfFilters();
     }
 
+    // Presentation filter only: retain these docks in data, totals and history.
+    function isDockCardVisible(dock) {
+      return !(dock >= 1 && dock <= 8) && !(dock >= 72 && dock <= 85);
+    }
+
     function renderGrid() {
       const grid = document.getElementById("dockGrid");
       if (syncLoadingStarts()) saveData({ localOnly: true, advanceRevision: false });
@@ -15185,15 +15191,28 @@ body.editor-open .global-theme-toggle {
       const maxDock = Number(data.docas || 92);
       grid.innerHTML = "";
 
-      dockLayoutBlocks.forEach((block, blockIndex) => {
+      dockLayoutBlocks.forEach((originalBlock, blockIndex) => {
+        const visibleColumns = originalBlock.map((column, index) => ({
+          originalColumn: index + 1,
+          docks: column.filter(isDockCardVisible)
+        })).filter(column => column.docks.length);
+        if (!visibleColumns.length) return;
+        const block = visibleColumns.map(column => column.docks);
+        const visibleZones = (dockZoneLabels[blockIndex] || []).map(zone => {
+          const indices = visibleColumns.map((column, index) =>
+            column.originalColumn >= zone.column && column.originalColumn < zone.column + zone.span ? index : -1
+          ).filter(index => index >= 0);
+          return indices.length ? { ...zone, column: indices[0] + 1, span: indices.length } : null;
+        }).filter(Boolean);
         const blockEl = document.createElement("div");
         blockEl.className = `dock-block block-${blockIndex + 1}`;
+        blockEl.style.flex = `${block.length} 1 0`;
 
         const zoneRow = document.createElement("div");
         zoneRow.className = "dock-zone-labels";
         zoneRow.style.setProperty("--dock-zone-columns", String(block.length));
         zoneRow.setAttribute("aria-label", "Setores operacionais das docas");
-        (dockZoneLabels[blockIndex] || []).forEach(zone => {
+        visibleZones.forEach(zone => {
           const label = document.createElement("span");
           label.className = "dock-zone-label";
           label.style.gridColumn = `${zone.column} / span ${zone.span}`;
@@ -15206,7 +15225,7 @@ body.editor-open .global-theme-toggle {
         const staffRow = document.createElement("div");
         staffRow.className = "dock-zone-staff";
         staffRow.style.setProperty("--dock-zone-columns", String(block.length));
-        staffRow.innerHTML = (dockZoneLabels[blockIndex] || []).map(zoneStaffCardHtml).join("");
+        staffRow.innerHTML = visibleZones.map(zoneStaffCardHtml).join("");
         blockEl.appendChild(staffRow);
 
         block.forEach(column => {
