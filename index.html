@@ -16174,6 +16174,25 @@ body.editor-open .global-theme-toggle {
     }
     let pendingFinalAudit = null;
 
+    function finalAuditDateKey(value) {
+      const text = String(value || "").trim();
+      const br = text.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+      const iso = text.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+      if (!br && !iso) return "";
+      const [, day, month, year] = br || [null, iso[3], iso[2], iso[1]];
+      const date = new Date(Date.UTC(+year, +month - 1, +day));
+      if (date.getUTCFullYear() !== +year || date.getUTCMonth() !== +month - 1 || date.getUTCDate() !== +day) return "";
+      return `${String(day).padStart(2, "0")}/${String(month).padStart(2, "0")}/${year}`;
+    }
+
+    function finalAuditDateError(csvDate, panelDate) {
+      const csvKey = finalAuditDateKey(csvDate);
+      const panelKey = finalAuditDateKey(panelDate);
+      if (!panelKey) return "Preencha a Data do painel com uma data válida (DD/MM/AAAA) antes de importar o CSV.";
+      if (!csvKey || csvKey !== panelKey) return `CSV: ${csvKey || csvDate}. Data do painel: ${panelKey}. As datas são de dias diferentes. Confira a Data no editor ou selecione o CSV correspondente à expedição.`;
+      return "";
+    }
+
     function parseFinalAuditCsv(text) {
       const source = String(text || "").replace(/^\uFEFF/, "");
       const firstLine = source.split(/\r?\n/)[0];
@@ -16254,7 +16273,7 @@ body.editor-open .global-theme-toggle {
 
     function packageClosureModel(source = data) {
       const final = source.aduanaFechamentoFinal;
-      const useFinal = Boolean(final && final.date === normalize(source.data));
+      const useFinal = Boolean(final && finalAuditDateKey(final.date) && finalAuditDateKey(final.date) === finalAuditDateKey(source.data));
       const extraction = source.extracao || [];
       const groups = dockZoneLabels.flat().map(zone => ({ label: zone.label, rows: [], aMais: 0, faltantes: 0 }));
       groups.push({ label: "Sem lado identificado", rows: [], aMais: 0, faltantes: 0 });
@@ -18113,11 +18132,12 @@ body.editor-open .global-theme-toggle {
       button.disabled = true;
       try {
         const parsed = parseFinalAuditCsv(await file.text());
-        if (parsed.date !== normalize(document.getElementById("dataInput").value)) throw new Error("A data do CSV difere da Data do painel. Selecione o relatório do dia correto.");
+        const dateError = finalAuditDateError(parsed.date, document.getElementById("dataInput").value);
+        if (dateError) throw new Error(dateError);
         pendingFinalAudit = { ...parsed, fileName: file.name, importedAt: new Date().toISOString() };
         updateFinalAuditEditorStatus();
       } catch (error) {
-        document.getElementById("finalAuditStatus").textContent = `${error.message} A seleção anterior foi mantida.`;
+        document.getElementById("finalAuditStatus").textContent = `${error.message} ${pendingFinalAudit ? "O CSV anterior foi mantido." : "Nenhum CSV foi importado."}`;
         event.target.value = "";
       } finally { button.disabled = false; }
     });
@@ -18129,8 +18149,9 @@ body.editor-open .global-theme-toggle {
     });
     document.getElementById("applyBtn").addEventListener("click", async () => {
       if (!requireAdminAction()) return;
-      if (pendingFinalAudit && pendingFinalAudit.date !== normalize(document.getElementById("dataInput").value)) {
-        alert("A data do CSV deve ser igual à Data do painel. Confira o arquivo ou volte à Base Aduana.");
+      const finalDateError = pendingFinalAudit && finalAuditDateError(pendingFinalAudit.date, document.getElementById("dataInput").value);
+      if (finalDateError) {
+        alert(finalDateError);
         return;
       }
       const applyButton = document.getElementById("applyBtn");
