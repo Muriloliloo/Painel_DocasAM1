@@ -13773,7 +13773,7 @@ body.editor-open .global-theme-toggle {
     const dockLayoutBlocks = [
       [[9, 10, 11, 12, 13, 14, 15]],
       [[16, 17, 18, 19, 20, 21, 22], [23, 24, 25, 26, 27, 28, 29], [30, 0, 0, 0, 0, 0, 0], [31, 32, 33, 34, 35, 36, 37], [38, 39, 40, 41, 42, 43, 44], [45, 46, 47, 48, 49, 50, 51], [52, 53, 54, 55, 56, 0, 0]],
-      [[57, 58, 59, 60, 61, 62, 63], [64, 65, 66, 67, 68, 69, 70], [71, 0, 0, 0, 0, 0, 0], [86, 87, 88, 89, 90, 91, 0]]
+      [[57, 58, 59, 60, 61, 62, 63], [64, 65, 66, 67, 68, 69, 70], [71, 0, 0, 0, 0, 0, 0], [86, 87, 88, 89, 90, 91, 92]]
     ];
 
     const dockZoneLabels = [
@@ -13784,7 +13784,7 @@ body.editor-open .global-theme-toggle {
       ],
       [
         { label: "Lado Parede", displayLabel: "D (57–71) · Parede", column: 1, span: 3, range: "docas 57 a 71" },
-        { label: "Line Hall", displayLabel: "E (86–91) · LH", column: 4, span: 1, range: "docas 86 a 91" }
+        { label: "Line Hall", displayLabel: "E (86–92) · LH", column: 4, span: 1, range: "docas 86 a 92" }
       ]
     ];
 
@@ -15187,7 +15187,7 @@ body.editor-open .global-theme-toggle {
 
     // Presentation filter only: retain these docks in data, totals and history.
     function isDockCardVisible(dock) {
-      return (dock >= 9 && dock <= 71) || (dock >= 86 && dock <= 91) || !dock;
+      return (dock >= 9 && dock <= 71) || (dock >= 86 && dock <= 92) || !dock;
     }
 
     function renderGrid() {
