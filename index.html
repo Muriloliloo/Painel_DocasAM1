@@ -11244,6 +11244,64 @@ body.editor-open .global-theme-toggle {
       }
     }
   
+
+    /* Dados 1 — monitoramento de QR Aduana AM1. */
+    .dados1-view{display:none}
+    .app.docas-mode.dados1-mode{width:100vw;max-width:none;min-width:0;min-height:0;height:100vh;height:100dvh;border-radius:0;background:#edf3f8}
+    body.dados1-mode-active{width:100%;min-width:0;display:block;overflow:hidden}
+    .app.dados1-mode > :is(.topbar,.toolbar,.stats,.legend,.wave-title,.dock-grid,.simple-docks-view,.routes-mode-view,.dashboard-view,.footer-strip,.final-countdown-alert){display:none!important}
+    .app.dados1-mode .side-rail{top:0;bottom:0;z-index:120;overflow-y:auto;overflow-x:hidden;gap:clamp(5px,.7vw,12px);padding-top:clamp(10px,1.3vw,20px);scrollbar-width:none}
+    .app.dados1-mode .side-rail::-webkit-scrollbar{display:none}
+    #dados1RailBtn,.app.dados1-mode .side-rail button{cursor:pointer}
+    .app.dados1-mode .dados1-view{position:absolute;inset:0 0 0 var(--docas-rail-w);z-index:100;display:block;overflow:auto;background:#edf3f8;color:#05294d;padding:clamp(13px,2vw,28px)}
+    .dados1-shell{display:grid;gap:18px;max-width:1900px;margin:auto}
+    .dados1-head{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:14px}
+    .dados1-head h2{font:900 clamp(22px,2vw,35px)/1.15 "Segoe UI",Arial,sans-serif;margin:0 0 7px;color:#062642}
+    .dados1-head p,.dados1-note{font:600 12px/1.5 "Segoe UI",Arial,sans-serif;margin:0;color:#536c7c}
+    .dados1-tag{background:#e0f3e9;color:#147443;padding:9px 13px;border-radius:30px;font-size:12px;font-weight:850}
+    .dados1-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+    .dados1-kpi{min-width:0;display:grid;gap:9px;padding:clamp(14px,1.5vw,21px);background:white;border:1px solid #cddae5;border-radius:12px;box-shadow:0 4px 12px #23415b0b}
+    .dados1-kpi span{font-size:13px;font-weight:800;color:#456478}
+    .dados1-kpi strong{font-size:clamp(30px,3vw,46px);line-height:1;color:#0b3558}
+    .dados1-kpi small,.dados1-wave small{font-size:11px;color:#668091}
+    .dados1-kpi.ok strong{color:#14844c}.dados1-kpi.bad strong{color:#d13449}.dados1-kpi.pct strong{color:#117da7}
+    .dados1-section-title{font-size:20px;font-weight:900;margin:0;color:#072b49}
+    .dados1-waves{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px}
+    .dados1-wave{min-width:0;display:grid;gap:10px;text-align:left;background:#fff;border:1px solid #cbd9e4;border-radius:12px;padding:14px;color:#062642;cursor:pointer}
+    .dados1-wave:hover{border-color:#0a8fc0}.dados1-wave.active{border-color:#0587be;outline:2px solid #0786bf30;background:#f2faff}
+    .dados1-wave strong{font-size:16px;font-weight:900}
+    .dados1-wave-counts{display:flex;flex-wrap:wrap;justify-content:space-between;gap:6px;font-size:12px;font-weight:900}
+    .dados1-ok{color:#09824b}.dados1-bad{color:#d12e40}
+    .dados1-track{display:block;height:9px;background:#e2eaf0;border-radius:20px;overflow:hidden}
+    .dados1-fill{display:block;height:100%;background:#1bab71;border-radius:20px}
+    .dados1-panel{overflow:hidden;background:#fff;border:1px solid #cbd9e4;border-radius:12px}
+    .dados1-panel-head{display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px;padding:16px 18px;border-bottom:1px solid #dce6ed;background:#f5f9fc}
+    .dados1-panel-head h3{font-size:18px;font-weight:900;margin:0 0 4px}
+    .dados1-panel-head p{font-size:12px;margin:0;color:#607889}
+    .dados1-filters{display:flex;flex-wrap:wrap;gap:8px}
+    .dados1-filters input,.dados1-filters select{min-height:38px;min-width:130px;border:1px solid #bdd1df;background:#fff;border-radius:7px;padding:8px;color:#123c56;font:700 12px "Segoe UI",Arial,sans-serif}
+    .dados1-filters input{min-width:200px}
+    .dados1-table-wrap{overflow-x:auto}
+    .dados1-table{width:100%;border-collapse:collapse;text-align:left;font-size:13px}
+    .dados1-table th,.dados1-table td{padding:12px 15px;border-bottom:1px solid #e5edf3;white-space:nowrap}
+    .dados1-table th{background:#eaf1f7;color:#254a62;text-transform:uppercase;font-size:11px}
+    .dados1-table td{color:#153e58;font-weight:650}.dados1-table td:first-child{font-weight:900}
+    .dados1-table tr:hover td{background:#f4faff}
+    .dados1-table .dados1-empty{text-align:center;padding:25px!important;color:#668091}
+    @media(max-width:1180px){.dados1-waves{grid-template-columns:repeat(3,minmax(0,1fr))}}
+    @media(max-width:800px){.dados1-kpis,.dados1-waves{grid-template-columns:repeat(2,minmax(0,1fr))}}
+    @media(max-width:620px){.app.dados1-mode{--docas-rail-w:58px}.app.dados1-mode .side-rail{gap:4px;padding-top:8px}.app.dados1-mode .side-rail button{min-height:42px;padding-inline:2px;font-size:8px}.app.dados1-mode .dados1-view{padding:12px 9px}.dados1-filters{width:100%}.dados1-filters input,.dados1-filters select{flex:1 1 100%;min-width:0}}
+    body.dark-mode .app.dados1-mode .dados1-view{background:#102330;color:#e8f3fa}
+    body.dark-mode .dados1-view :is(.dados1-kpi,.dados1-wave,.dados1-panel){background:#153449;border-color:#436478}
+    body.dark-mode .dados1-view :is(.dados1-head h2,.dados1-section-title,.dados1-wave strong,.dados1-panel-head h3,.dados1-table td,.dados1-kpi strong){color:#e8f3fa}
+    body.dark-mode .dados1-view :is(.dados1-head p,.dados1-note,.dados1-wave small,.dados1-kpi span,.dados1-kpi small){color:#bbd0df}
+    body.dark-mode .dados1-view .dados1-panel-head,body.dark-mode .dados1-view .dados1-table th{background:#1b3d52;color:#d3e6f2}
+    body.dark-mode .dados1-view .dados1-wave.active{background:#184764}
+    body.dark-mode .dados1-view .dados1-table td{border-bottom-color:#3c5869}
+    body.dark-mode .dados1-view .dados1-kpi.ok strong,body.dark-mode .dados1-view .dados1-ok{color:#47dfa0}
+    body.dark-mode .dados1-view .dados1-kpi.bad strong,body.dark-mode .dados1-view .dados1-bad{color:#ff7585}
+    body.dark-mode .dados1-view .dados1-kpi.pct strong{color:#70c5f6}
+    body.dark-mode .dados1-view .dados1-filters :is(input,select){background:#0f2839;color:#fff;border-color:#537083}
     </style>
 </head>
 <body>
@@ -11296,6 +11354,7 @@ body.editor-open .global-theme-toggle {
         <span class="alert-rail-badge" id="alertRailBadge" hidden>0</span>
       </button>
       <button id="dashboardRailBtn" type="button" title="Abrir Dashboard operacional"><span class="rail-icon"><i class="bi bi-speedometer2" aria-hidden="true"></i></span><span>Dashboard</span></button>
+      <button id="dados1RailBtn" type="button" title="Controle de QR da Aduana"><span class="rail-icon"><i class="bi bi-qr-code-scan" aria-hidden="true"></i></span><span>Dados 1</span></button>
       <button type="button"><span class="rail-icon">⚙</span><span>Config.</span></button>
       <button type="button"><span class="rail-icon">?</span><span>Ajuda</span></button>
     </aside>
@@ -11511,6 +11570,25 @@ body.editor-open .global-theme-toggle {
       </footer>
     </section>
 
+
+    <section class="dados1-view" id="dados1View" aria-labelledby="dados1Title" aria-hidden="true">
+      <div class="dados1-shell">
+        <header class="dados1-head"><div><h2 id="dados1Title"><i class="bi bi-qr-code-scan"></i> Controle de QR — Aduana AM1</h2><p>Extração de Dados × Base Aduana: rotas com e sem QR por onda.</p></div><span class="dados1-tag">Atualiza pelo Editor de Dados</span></header>
+        <section class="dados1-kpis" aria-label="Resumo de QR AM1">
+          <article class="dados1-kpi"><span>Total de rotas AM1</span><strong id="dados1Total">0</strong><small>Fonte: Extração de Dados</small></article>
+          <article class="dados1-kpi ok"><span>QR subidos</span><strong id="dados1Subidos">0</strong><small>Pendente, Em andamento ou Concluída</small></article>
+          <article class="dados1-kpi bad"><span>QR não subidos</span><strong id="dados1Faltantes">0</strong><small>Sem status válido na Base Aduana</small></article>
+          <article class="dados1-kpi pct"><span>Progresso de QR</span><strong id="dados1Percentual">0,0%</strong><small>Subidos / total de rotas</small></article>
+        </section>
+        <h3 class="dados1-section-title">Acompanhamento por onda</h3>
+        <div id="dados1WaveCards" class="dados1-waves" aria-label="Cinco ondas AM1"></div>
+        <section class="dados1-panel"><div class="dados1-panel-head"><div><h3>Rotas sem QR registrado <span id="dados1TableTotal">(0)</span></h3><p>Selecione uma onda ou busque pelas rotas faltantes.</p></div>
+          <div class="dados1-filters"><select id="dados1WaveFilter" aria-label="Selecionar onda"><option value="">Todas as ondas</option><option>Onda 1</option><option>Onda 2</option><option>Onda 3</option><option>Onda 4</option><option>Onda 5</option></select><input id="dados1Search" type="search" placeholder="Rota, doca ou transportadora" aria-label="Buscar rotas"></div></div>
+          <div class="dados1-table-wrap"><table class="dados1-table"><thead><tr><th>Rota</th><th>Onda</th><th>Doca</th><th>Transportadora</th><th>Situação</th></tr></thead><tbody id="dados1MissingRows"></tbody></table></div>
+        </section>
+        <p id="dados1UpdateLabel" class="dados1-note">A situação Pendente da Aduana já significa QR subido.</p>
+      </div>
+    </section>
     <section class="stats">
       <div class="report-title"><strong>REPORTE OOT 3.0</strong><span class="wave-stat" id="waveStatLabel">ONDA 01</span></div>
       <div class="stat"><span>Início</span><strong id="waveStartTime">08H30</strong></div>
@@ -14543,12 +14621,75 @@ body.editor-open .global-theme-toggle {
       renderDashboardAlertsPreview(alerts);
     }
 
+
+    // O status da auditoria indica a subida do QR, não o término da conferência.
+    let dados1OndaFiltro = "";
+    let dados1Busca = "";
+    function qrAduanaStatus(row = {}) {
+      const status = plainText(row.estadoAduana || "").replace(/\s+/g, " ");
+      if (status === "pendente") return "Pendente";
+      if (status === "em andamento") return "Em andamento";
+      if (status === "concluida") return "Concluída";
+      return "";
+    }
+    function qrMonitoramentoAM1() {
+      const base = new Map();
+      uniqueBaseRows(Array.isArray(data.baseAduana) ? data.baseAduana : []).forEach(row => {
+        const key = routeKey(row.rota);
+        if (key) base.set(key, qrAduanaStatus(row));
+      });
+      const waves = allowedWaves.map(onda => ({ onda, total: 0, subidos: 0, faltantes: 0, pendentes: 0, andamento: 0, concluidas: 0 }));
+      const waveMap = new Map(waves.map(wave => [wave.onda, wave]));
+      const seen = new Set(), missingRows = [];
+      (Array.isArray(data.extracao) ? data.extracao : []).forEach(row => {
+        const onda = waveLabel(row.onda), rota = routeKey(row.rota), wave = waveMap.get(onda);
+        if (!wave || !rota.endsWith("_AM1") || seen.has(onda + "|" + rota)) return;
+        seen.add(onda + "|" + rota);
+        wave.total += 1;
+        const status = base.get(rota);
+        if (status) {
+          wave.subidos += 1;
+          if (status === "Pendente") wave.pendentes++;
+          else if (status === "Em andamento") wave.andamento++;
+          else if (status === "Concluída") wave.concluidas++;
+        } else {
+          wave.faltantes++;
+          missingRows.push({rota, onda, doca: validDockValue(row.doca) || "--", transportadora: normalize(row.transportadora) || "Não informada"});
+        }
+      });
+      const total = waves.reduce((s,w) => s+w.total,0), subidos = waves.reduce((s,w) => s+w.subidos,0);
+      return {total,subidos,faltantes:total-subidos,waves,missingRows};
+    }
+    function renderDados1Faltantes(m) {
+      const rows = m.missingRows.filter(row => (!dados1OndaFiltro || row.onda === dados1OndaFiltro) &&
+        (!dados1Busca || plainText([row.rota,row.onda,row.doca,row.transportadora].join(" ")).includes(plainText(dados1Busca))));
+      const table = document.getElementById("dados1MissingRows");
+      table.innerHTML = rows.length ? rows.map(row => `<tr><td>${escapeHtml(row.rota)}</td><td>${escapeHtml(row.onda)}</td><td>${escapeHtml(row.doca)}</td><td>${escapeHtml(row.transportadora)}</td><td class="dados1-bad">QR não subido</td></tr>`).join("") :
+        `<tr><td colspan="5" class="dados1-empty">${m.total ? "Nenhuma rota sem QR nos filtros selecionados." : "Aguardando a Extração de Dados AM1."}</td></tr>`;
+      document.getElementById("dados1TableTotal").textContent = "(" + rows.length + ")";
+    }
+    function renderDados1() {
+      const m = qrMonitoramentoAM1();
+      document.getElementById("dados1Total").textContent = m.total;
+      document.getElementById("dados1Subidos").textContent = m.subidos;
+      document.getElementById("dados1Faltantes").textContent = m.faltantes;
+      document.getElementById("dados1Percentual").textContent = (m.total ? m.subidos/m.total*100 : 0).toFixed(1).replace(".", ",") + "%";
+      document.getElementById("dados1WaveCards").innerHTML = m.waves.map(w => {
+        const p = w.total ? 100*w.subidos/w.total : 0, active = w.onda === dados1OndaFiltro;
+        return `<button class="dados1-wave${active ? " active" : ""}" type="button" data-qr-wave="${escapeHtml(w.onda)}" aria-pressed="${active}"><strong>${escapeHtml(w.onda)}</strong><span class="dados1-wave-counts"><span class="dados1-ok">${w.subidos} subidos</span><span class="dados1-bad">${w.faltantes} faltam</span></span><span class="dados1-track"><span class="dados1-fill" style="width:${p.toFixed(2)}%"></span></span><small>${w.total} rotas · ${p.toFixed(1).replace(".", ",")}% QR subidos</small><small>${w.pendentes} pendentes · ${w.andamento} andamento · ${w.concluidas} concluídas</small></button>`;
+      }).join("");
+      document.getElementById("dados1WaveFilter").value = dados1OndaFiltro;
+      document.getElementById("dados1Search").value = dados1Busca;
+      document.getElementById("dados1UpdateLabel").textContent = "Extração AM1 × Base Aduana. Pendente, Em andamento e Concluída = QR subido. Atualizado às " + currentTimeLabel() + ".";
+      renderDados1Faltantes(m);
+    }
     function updateDockRailState() {
       const alertsOpen = document.getElementById("alertsModal")?.classList.contains("open");
       document.getElementById("overviewRailBtn")?.classList.toggle("active", !alertsOpen && currentView === "docas" && dockDisplayMode === "overview");
       document.getElementById("simpleDocksBtn")?.classList.toggle("active", !alertsOpen && currentView === "docas" && dockDisplayMode === "simple");
       document.getElementById("routeHistoryBtn")?.classList.toggle("active", !alertsOpen && currentView === "routes");
       document.getElementById("dashboardRailBtn")?.classList.toggle("active", !alertsOpen && currentView === "dashboard");
+      document.getElementById("dados1RailBtn")?.classList.toggle("active", !alertsOpen && currentView === "dados1");
     }
 
     function formatHistoryDate(value) {
@@ -17343,19 +17484,23 @@ body.editor-open .global-theme-toggle {
       const simpleMode = currentView === "docas" && dockDisplayMode === "simple";
       const routesMode = currentView === "routes";
       const dashboardMode = currentView === "dashboard";
-      app?.classList.toggle("docas-mode", currentView === "docas" || routesMode || dashboardMode);
-      app?.classList.toggle("report-mode", currentView !== "docas" && !routesMode && !dashboardMode);
+      const dados1Mode = currentView === "dados1";
+      app?.classList.toggle("docas-mode", currentView === "docas" || routesMode || dashboardMode || dados1Mode);
+      app?.classList.toggle("report-mode", currentView !== "docas" && !routesMode && !dashboardMode && !dados1Mode);
       app?.classList.toggle("simple-docks-mode", simpleMode);
       app?.classList.toggle("routes-mode", routesMode);
       app?.classList.toggle("dashboard-mode", dashboardMode);
+      app?.classList.toggle("dados1-mode", dados1Mode);
       document.body.classList.toggle("simple-docks-active", simpleMode);
       document.body.classList.toggle("routes-mode-active", routesMode);
       document.body.classList.toggle("dashboard-mode-active", dashboardMode);
+      document.body.classList.toggle("dados1-mode-active", dados1Mode);
       document.querySelectorAll("[data-view]").forEach(button => button.classList.toggle("active", button.dataset.view === currentView));
       document.getElementById("dockGrid").style.display = currentView === "docas" && !simpleMode ? "flex" : "none";
       document.getElementById("simpleDocksView")?.setAttribute("aria-hidden", simpleMode ? "false" : "true");
       document.getElementById("routesModeView")?.setAttribute("aria-hidden", routesMode ? "false" : "true");
       document.getElementById("dashboardView")?.setAttribute("aria-hidden", dashboardMode ? "false" : "true");
+      document.getElementById("dados1View")?.setAttribute("aria-hidden", dados1Mode ? "false" : "true");
       document.querySelector(".legend")?.classList.toggle("active", currentView === "docas" && !simpleMode);
       document.getElementById("justificativasView").classList.toggle("active", currentView === "justificativas");
       document.getElementById("fechamentoView").classList.toggle("active", currentView === "fechamento");
@@ -17363,6 +17508,7 @@ body.editor-open .global-theme-toggle {
       if (simpleMode) renderSimpleDocks();
       if (routesMode) renderRoutesMode();
       if (dashboardMode) renderDashboard();
+      if (dados1Mode) renderDados1();
       updateDockRailState();
       renderJustifications();
       renderSummary();
@@ -17974,6 +18120,15 @@ body.editor-open .global-theme-toggle {
       currentView = "dashboard";
       renderViews();
     });
+    document.getElementById("dados1RailBtn")?.addEventListener("click", () => { currentView = "dados1"; renderViews(); });
+    document.getElementById("dados1WaveCards")?.addEventListener("click", event => {
+      const btn = event.target.closest("[data-qr-wave]");
+      if (!btn) return;
+      dados1OndaFiltro = dados1OndaFiltro === btn.dataset.qrWave ? "" : btn.dataset.qrWave;
+      renderDados1();
+    });
+    document.getElementById("dados1WaveFilter")?.addEventListener("change", event => { dados1OndaFiltro = event.target.value; renderDados1(); });
+    document.getElementById("dados1Search")?.addEventListener("input", event => { dados1Busca = event.target.value; renderDados1Faltantes(qrMonitoramentoAM1()); });
     document.getElementById("simpleDocksBtn")?.addEventListener("click", () => {
       currentView = "docas";
       dockDisplayMode = "simple";
