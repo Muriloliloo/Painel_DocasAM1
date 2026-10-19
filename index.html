@@ -12490,6 +12490,23 @@ body.editor-open .global-theme-toggle {
       return `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}:${String(now.getSeconds()).padStart(2, "0")}`;
     }
 
+    // Data operacional do cabeçalho, independente da data de um CSV histórico.
+    function currentSaoPauloDate() {
+      return new Intl.DateTimeFormat("pt-BR", {
+        timeZone: "America/Sao_Paulo",
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric"
+      }).format(new Date());
+    }
+
+    function refreshTopOperationalMetrics() {
+      const routes = document.getElementById("totalRotasTopo");
+      const date = document.getElementById("dataTopo");
+      if (routes) routes.textContent = String(countAm1RoutesFromSummary());
+      if (date) date.textContent = currentSaoPauloDate();
+    }
+
     function parseDelimitedRows(text, delimiter = "\t") {
       const source = String(text || "").replace(/\r\n/g, "\n").replace(/\r/g, "\n");
       const rows = [];
@@ -13386,6 +13403,29 @@ body.editor-open .global-theme-toggle {
       return data.extracao.filter(row => !wave || waveLabel(row.onda) === waveLabel(wave));
     }
 
+    // Fonte única do total AM1: mesmas cinco ondas do "Resumo por onda" em Justificativas.
+    // A identificação tem de TERMINAR em _AM1; ignora AM0, AMDE, AM101 e duplicações.
+    function plannedAm1Rows(wave, extraction = data.extracao) {
+      const targetWave = waveLabel(wave);
+      if (!allowedWaves.includes(targetWave)) return [];
+      const unique = new Map();
+      (Array.isArray(extraction) ? extraction : []).forEach(row => {
+        const key = routeKey(row?.rota);
+        if (waveLabel(row?.onda) !== targetWave || !key.endsWith("_AM1")) return;
+        if (!unique.has(key)) unique.set(key, row);
+      });
+      return Array.from(unique.values());
+    }
+
+    function shippedAm1Rows(wave) {
+      const shipped = expedidaKeys();
+      return plannedAm1Rows(wave).filter(row => shipped.has(routeKey(row.rota)));
+    }
+
+    function countAm1RoutesFromSummary(extraction = data.extracao) {
+      return allowedWaves.reduce((sum, wave) => sum + plannedAm1Rows(wave, extraction).length, 0);
+    }
+
     function shippedRows(wave = null) {
       const expedidas = expedidaKeys();
       return plannedRows(wave).filter(row => expedidas.has(routeKey(row.rota)));
@@ -13490,8 +13530,8 @@ body.editor-open .global-theme-toggle {
 
     function summaryTotals() {
       const waveRows = (data.ondas || []).map(wave => {
-        const planned = plannedRows(wave).length;
-        const shipped = operationalShippedRows(wave);
+        const planned = plannedAm1Rows(wave).length;
+        const shipped = shippedAm1Rows(wave).length;
         const delay = Math.max(0, planned - shipped);
         return { ciclo: "AM1", wave, planned, shipped, delay };
       });
@@ -13505,8 +13545,8 @@ body.editor-open .global-theme-toggle {
 
     function am1Totals() {
       return (data.ondas || []).reduce((acc, wave) => {
-        const planned = plannedRows(wave).length;
-        const shipped = operationalShippedRows(wave);
+        const planned = plannedAm1Rows(wave).length;
+        const shipped = shippedAm1Rows(wave).length;
         const delay = Math.max(0, planned - shipped);
         return {
           planned: acc.planned + planned,
@@ -13518,8 +13558,8 @@ body.editor-open .global-theme-toggle {
 
     function realTimeAm1Totals() {
       return (data.ondas || []).reduce((acc, wave) => {
-        const planned = plannedRows(wave).length;
-        const shipped = shippedRows(wave).length;
+        const planned = plannedAm1Rows(wave).length;
+        const shipped = shippedAm1Rows(wave).length;
         const delay = Math.max(0, planned - shipped);
         return {
           planned: acc.planned + planned,
@@ -16374,8 +16414,8 @@ body.editor-open .global-theme-toggle {
       const waves = data.ondas || [];
       const lossBudget = lossBudgetByWave();
       document.getElementById("summaryRows").innerHTML = waves.map(wave => {
-        const planned = plannedRows(wave).length;
-        const shipped = shippedRows(wave).length;
+        const planned = plannedAm1Rows(wave).length;
+        const shipped = shippedAm1Rows(wave).length;
         const delay = Math.max(0, planned - shipped);
         return `<tr class="tw-h-16 tw-bg-white"><td>AM1</td><td>${displayWave(wave)}</td><td>${planned}</td><td>${shipped}</td><td>${delay}</td><td>${formatPercent(planned ? shipped / planned * 100 : 0)}</td><td>${lossBudget.get(waveLabel(wave)) || 0}</td></tr>`;
       }).join("") + extraRows().map(row => {
@@ -17580,8 +17620,7 @@ body.editor-open .global-theme-toggle {
     }
     function render() {
       document.getElementById("titulo").textContent = data.titulo;
-      document.getElementById("totalRotasTopo").textContent = data.totalRotas || data.extracao.length || "";
-      document.getElementById("dataTopo").textContent = data.data || "";
+      refreshTopOperationalMetrics();
       const testButton = document.getElementById("testTimerBtn");
       testButton.classList.toggle("active", Boolean(data.modoTesteCronometro));
       testButton.textContent = "Teste";
@@ -17680,8 +17719,10 @@ body.editor-open .global-theme-toggle {
       if (!requireAdminAction()) return;
       openFinalAuditEditor();
       populateZoneStaffEditor();
-      document.getElementById("totalRotasInput").value = data.totalRotas || data.extracao.length || "";
-      document.getElementById("dataInput").value = data.data || "";
+      document.getElementById("totalRotasInput").value = String(countAm1RoutesFromSummary());
+      document.getElementById("totalRotasInput").readOnly = true;
+      document.getElementById("totalRotasInput").title = "Calculado automaticamente pelas cinco ondas AM1 no Resumo por onda.";
+      document.getElementById("dataInput").value = currentSaoPauloDate();
       document.getElementById("extracaoPaste").value = toPaste(data.extracao);
       document.getElementById("basePaste").value = toBasePaste(data.baseOperacional || data.base || [], "operacional");
       document.getElementById("basePaste").placeholder = "Cole a atualização operacional. As rotas precisam existir na Extração.";
@@ -18450,8 +18491,8 @@ body.editor-open .global-theme-toggle {
         ...data,
         aduanaFechamentoFinal: pendingFinalAudit,
         responsaveisPorLado: readZoneStaffEditor(),
-        totalRotas: normalize(document.getElementById("totalRotasInput").value),
-        data: normalize(document.getElementById("dataInput").value),
+        totalRotas: String(countAm1RoutesFromSummary(mergedExtracao)),
+        data: normalize(document.getElementById("dataInput").value) || currentSaoPauloDate(),
         extracao: mergedExtracao,
         baseOperacional: data.baseOperacional,
         baseAduana: data.baseAduana,
@@ -18524,6 +18565,7 @@ body.editor-open .global-theme-toggle {
     initializeFirebase();
     setInterval(() => {
       document.getElementById("footerUpdate").textContent = `${data.data || ""} ${currentTimeLabel()}`.trim();
+      refreshTopOperationalMetrics();
       renderStats();
       if (currentView === "docas" && dockDisplayMode === "simple") renderSimpleDocksMetrics();
       else if (currentView === "docas") renderGrid();
