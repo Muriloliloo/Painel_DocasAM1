@@ -11254,6 +11254,15 @@ body.editor-open .global-theme-toggle {
     .app.dados1-mode .side-rail::-webkit-scrollbar{display:none}
     #dados1RailBtn,.app.dados1-mode .side-rail button{cursor:pointer}
     .app.dados1-mode .dados1-view{position:absolute;inset:0 0 0 var(--docas-rail-w);z-index:100;display:block;overflow:auto;background:#edf3f8;color:#05294d;padding:clamp(13px,2vw,28px)}
+    .dados1-home-btn{display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:10px 16px;border:1px solid #111;border-radius:8px;background:#fff;color:#111;font:800 14px "Segoe UI",Arial,sans-serif;cursor:pointer}
+    .dados1-home-btn:hover{background:#e2eaf0}
+    .dados1-home-btn:focus-visible{outline:3px solid #0587be;outline-offset:3px}
+    body:not(.dark-mode) .dados1-view :is(.dados1-head p,.dados1-note,.dados1-kpi span,.dados1-kpi small,.dados1-wave small,.dados1-panel-head p,.dados1-empty){color:#111}
+    body:not(.dark-mode) .dados1-view .dados1-filters :is(input,select){color:#111}
+    body:not(.dark-mode) .dados1-view .dados1-filters input::placeholder{color:#222;opacity:1}
+    body.dark-mode .dados1-view :is(.dados1-panel-head p,.dados1-empty){color:#eef6fc}
+    body.dark-mode .dados1-view .dados1-filters input::placeholder{color:#eef6fc;opacity:1}
+    body.dark-mode .dados1-view .dados1-table tr:hover td{background:#20465e}
     .dados1-shell{display:grid;gap:18px;max-width:1900px;margin:auto}
     .dados1-head{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:14px}
     .dados1-head h2{font:900 clamp(22px,2vw,35px)/1.15 "Segoe UI",Arial,sans-serif;margin:0 0 7px;color:#062642}
@@ -11354,7 +11363,7 @@ body.editor-open .global-theme-toggle {
         <span class="alert-rail-badge" id="alertRailBadge" hidden>0</span>
       </button>
       <button id="dashboardRailBtn" type="button" title="Abrir Dashboard operacional"><span class="rail-icon"><i class="bi bi-speedometer2" aria-hidden="true"></i></span><span>Dashboard</span></button>
-      <button id="dados1RailBtn" type="button" title="Controle de QR da Aduana"><span class="rail-icon"><i class="bi bi-qr-code-scan" aria-hidden="true"></i></span><span>Dados 1</span></button>
+      <button id="dados1RailBtn" type="button" title="Controle de Subida de Rotas - AM1"><span class="rail-icon"><i class="bi bi-qr-code-scan" aria-hidden="true"></i></span><span>Dados 1</span></button>
       <button type="button"><span class="rail-icon">⚙</span><span>Config.</span></button>
       <button type="button"><span class="rail-icon">?</span><span>Ajuda</span></button>
     </aside>
@@ -11573,7 +11582,8 @@ body.editor-open .global-theme-toggle {
 
     <section class="dados1-view" id="dados1View" aria-labelledby="dados1Title" aria-hidden="true">
       <div class="dados1-shell">
-        <header class="dados1-head"><div><h2 id="dados1Title"><i class="bi bi-qr-code-scan"></i> Controle de QR — Aduana AM1</h2><p>Extração de Dados × Base Aduana: rotas com e sem QR por onda.</p></div><span class="dados1-tag">Atualiza pelo Editor de Dados</span></header>
+        <div><button id="dados1HomeBtn" class="dados1-home-btn" type="button"><i class="bi bi-arrow-left" aria-hidden="true"></i> Voltar à tela inicial</button></div>
+        <header class="dados1-head"><div><h2 id="dados1Title"><i class="bi bi-qr-code-scan"></i> Controle de Subida de Rotas - AM1</h2><p>Extração de Dados × Base Aduana: rotas com e sem QR por onda.</p></div><span class="dados1-tag">Atualiza pelo Editor de Dados</span></header>
         <section class="dados1-kpis" aria-label="Resumo de QR AM1">
           <article class="dados1-kpi"><span>Total de rotas AM1</span><strong id="dados1Total">0</strong><small>Fonte: Extração de Dados</small></article>
           <article class="dados1-kpi ok"><span>QR subidos</span><strong id="dados1Subidos">0</strong><small>Pendente, Em andamento ou Concluída</small></article>
@@ -18119,6 +18129,12 @@ body.editor-open .global-theme-toggle {
     document.getElementById("dashboardRailBtn")?.addEventListener("click", () => {
       currentView = "dashboard";
       renderViews();
+    });
+    document.getElementById("dados1HomeBtn")?.addEventListener("click", () => {
+      currentView = "docas";
+      dockDisplayMode = "overview";
+      renderViews();
+      document.getElementById("overviewRailBtn")?.focus();
     });
     document.getElementById("dados1RailBtn")?.addEventListener("click", () => { currentView = "dados1"; renderViews(); });
     document.getElementById("dados1WaveCards")?.addEventListener("click", event => {
