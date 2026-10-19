@@ -11246,6 +11246,34 @@ body.editor-open .global-theme-toggle {
   
 
     /* Dados 1 — monitoramento de QR Aduana AM1. */
+    /* Feedback consistente para os botões de navegação lateral. */
+    .app .side-rail button:not(:disabled){
+      cursor:pointer;
+      transition:background-color .18s ease,color .18s ease,border-color .18s ease;
+    }
+    .app .side-rail button .rail-icon{transition:transform .18s ease}
+    @media (hover:hover){
+      .app .side-rail button:not(:disabled):hover{
+        background:rgba(255,210,0,.14);
+        color:#ffd200;
+        border-left-color:#ffd200;
+      }
+      .app .side-rail button:not(:disabled):hover .rail-icon{transform:scale(1.1)}
+      body.dark-mode .app .side-rail button:not(:disabled):hover{
+        background:rgba(255,218,50,.16)!important;
+        color:#ffda32!important;
+        border-left-color:#ffda32!important;
+      }
+    }
+    .app .side-rail button:focus-visible{
+      outline:2px solid #ffd200;
+      outline-offset:-3px;
+      background:rgba(255,210,0,.14);
+    }
+    @media (prefers-reduced-motion:reduce){
+      .app .side-rail button,.app .side-rail button .rail-icon{transition:none}
+      .app .side-rail button:not(:disabled):hover .rail-icon{transform:none}
+    }
     .dados1-view{display:none}
     .app.docas-mode.dados1-mode{width:100vw;max-width:none;min-width:0;min-height:0;height:100vh;height:100dvh;border-radius:0;background:#edf3f8}
     body.dados1-mode-active{width:100%;min-width:0;display:block;overflow:hidden}
