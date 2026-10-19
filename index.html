@@ -16467,6 +16467,33 @@ body.editor-open .global-theme-toggle {
       return "";
     }
 
+    // A divergência de datas exige ciência do operador, mas nunca força a data atual.
+    // O aceite ocorre apenas ao clicar em Aplicar, antes de alterar/sincronizar dados.
+    function confirmEditorDateBeforeApply() {
+      const field = document.getElementById("dataInput");
+      const rawDate = normalize(field?.value);
+      const today = currentSaoPauloDate();
+      const chosen = finalAuditDateKey(rawDate || today);
+      if (!chosen) {
+        alert("Data inválida. Informe uma data no formato DD/MM/AAAA (ou AAAA-MM-DD).");
+        field?.focus();
+        return "";
+      }
+      const notices = [];
+      if (chosen !== today) {
+        notices.push(`Data atual (São Paulo): ${today}\nData informada no editor: ${chosen}`);
+      }
+      if (pendingFinalAudit) {
+        const csvNotice = finalAuditDateError(pendingFinalAudit.date, chosen);
+        if (csvNotice) notices.push(`CSV FINAL DA ADUANA\n${csvNotice}`);
+      }
+      if (notices.length && !window.confirm(
+        `ATENÇÃO: DATAS DIVERGENTES!\n\n${notices.join("\n\n")}\n\nDeseja prosseguir e salvar com a data ${chosen}?\n\nOK = Prosseguir | Cancelar = Voltar ao editor`
+      )) return "";
+      if (field) field.value = chosen;
+      return chosen;
+    }
+
     function parseFinalAuditCsv(text) {
       const source = String(text || "").replace(/^\uFEFF/, "");
       const firstLine = source.split(/\r?\n/)[0];
@@ -16721,6 +16748,8 @@ body.editor-open .global-theme-toggle {
       if (!pendingFinalAudit) { status.textContent = "Usando as contagens da Base Aduana. Importe o CSV ao finalizar a última onda."; return; }
       const total = pendingFinalAudit.rows.reduce((sum, row) => ({ aMais: sum.aMais + row.aMais, faltantes: sum.faltantes + row.faltantes }), { aMais: 0, faltantes: 0 });
       status.textContent = `${pendingFinalAudit.fileName} • ${pendingFinalAudit.date} • ${pendingFinalAudit.packages} ofensores únicos • ${total.aMais} a mais • ${total.faltantes} faltantes • ${pendingFinalAudit.pendingPackages || 0} pendentes (não contabilizados como a mais/faltantes) • pacotes corretos/avariados ignorados • ${pendingFinalAudit.duplicates} linhas repetidas descartadas. Clique em Aplicar para salvar. Um novo CSV substitui o anterior por completo.`;
+      const mismatch = finalAuditDateError(pendingFinalAudit.date, document.getElementById("dataInput")?.value || currentSaoPauloDate());
+      if (mismatch) status.textContent += ` ⚠ ${mismatch} Você poderá confirmar e prosseguir ao clicar em Aplicar.`;
     }
 
     function openFinalAuditEditor() {
@@ -17722,7 +17751,8 @@ body.editor-open .global-theme-toggle {
       document.getElementById("totalRotasInput").value = String(countAm1RoutesFromSummary());
       document.getElementById("totalRotasInput").readOnly = true;
       document.getElementById("totalRotasInput").title = "Calculado automaticamente pelas cinco ondas AM1 no Resumo por onda.";
-      document.getElementById("dataInput").value = currentSaoPauloDate();
+      // Não sobrescreve a data histórica/futura escolhida pelo operador ao reabrir.
+      document.getElementById("dataInput").value = finalAuditDateKey(data.data) || currentSaoPauloDate();
       document.getElementById("extracaoPaste").value = toPaste(data.extracao);
       document.getElementById("basePaste").value = toBasePaste(data.baseOperacional || data.base || [], "operacional");
       document.getElementById("basePaste").placeholder = "Cole a atualização operacional. As rotas precisam existir na Extração.";
@@ -18428,8 +18458,7 @@ body.editor-open .global-theme-toggle {
       button.disabled = true;
       try {
         const parsed = parseFinalAuditCsv(await file.text());
-        const dateError = finalAuditDateError(parsed.date, document.getElementById("dataInput").value);
-        if (dateError) throw new Error(dateError);
+        // A data do CSV pode divergir: o operador será alertado antes de aplicar.
         pendingFinalAudit = { ...parsed, fileName: file.name, importedAt: new Date().toISOString() };
         updateFinalAuditEditorStatus();
       } catch (error) {
@@ -18443,13 +18472,11 @@ body.editor-open .global-theme-toggle {
       document.getElementById("finalAuditFile").value = "";
       updateFinalAuditEditorStatus();
     });
+    document.getElementById("dataInput")?.addEventListener("change", updateFinalAuditEditorStatus);
     document.getElementById("applyBtn").addEventListener("click", async () => {
       if (!requireAdminAction()) return;
-      const finalDateError = pendingFinalAudit && finalAuditDateError(pendingFinalAudit.date, document.getElementById("dataInput").value);
-      if (finalDateError) {
-        alert(finalDateError);
-        return;
-      }
+      const editorDate = confirmEditorDateBeforeApply();
+      if (!editorDate) return;
       const applyButton = document.getElementById("applyBtn");
       const pasteStatus = document.getElementById("pasteClearStatus");
       const originalApplyText = applyButton?.textContent || "Aplicar";
@@ -18492,7 +18519,7 @@ body.editor-open .global-theme-toggle {
         aduanaFechamentoFinal: pendingFinalAudit,
         responsaveisPorLado: readZoneStaffEditor(),
         totalRotas: String(countAm1RoutesFromSummary(mergedExtracao)),
-        data: normalize(document.getElementById("dataInput").value) || currentSaoPauloDate(),
+        data: editorDate,
         extracao: mergedExtracao,
         baseOperacional: data.baseOperacional,
         baseAduana: data.baseAduana,
