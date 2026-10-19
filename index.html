@@ -11364,6 +11364,57 @@ body.editor-open .global-theme-toggle {
     body.dark-mode .dados1-view .dados1-kpi.bad strong,body.dark-mode .dados1-view .dados1-bad{color:#ff7585}
     body.dark-mode .dados1-view .dados1-kpi.pct strong{color:#70c5f6}
     body.dark-mode .dados1-view .dados1-filters :is(input,select){background:#0f2839;color:#fff;border-color:#537083}
+
+    /* WhatsApp: envio do PNG sem limitar o Farol à legenda de mídia. */
+    .wa-farol-overlay[hidden] { display: none !important; }
+    .wa-farol-overlay {
+      position: fixed; inset: 0; z-index: 99999;
+      display: grid; place-items: center; padding: 18px;
+      background: rgba(3, 22, 38, .67);
+    }
+    .wa-farol-guide {
+      width: min(100%, 570px); max-height: min(90dvh, 760px); overflow: auto;
+      border: 1px solid #b7d3e4; border-radius: 14px;
+      background: #fff; color: #082b45;
+      box-shadow: 0 18px 55px rgba(0, 0, 0, .32);
+      font: 600 14px/1.5 "Segoe UI", Arial, sans-serif;
+    }
+    .wa-farol-guide header {
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
+      padding: 15px 19px; background: #083450; color: white;
+    }
+    .wa-farol-guide h2 { margin: 0; font-size: 18px; font-weight: 900; color: #fff; }
+    .wa-farol-guide .wa-farol-close {
+      width: 34px; height: 34px; background: #174c68; border: 1px solid #628aa0;
+      border-radius: 6px; color: #fff; cursor: pointer; font-size: 23px;
+    }
+    .wa-farol-guide .wa-farol-content { padding: 17px 19px 20px; }
+    .wa-farol-guide p { margin: 0 0 12px; }
+    .wa-farol-guide ol { margin: 0 0 16px; padding-left: 22px; }
+    .wa-farol-guide li + li { margin-top: 7px; }
+    .wa-farol-guide strong { font-weight: 900; }
+    .wa-farol-guide .wa-farol-note {
+      background: #fff7dc; border-left: 4px solid #f0b300; padding: 10px 12px;
+      border-radius: 5px; margin-bottom: 13px;
+    }
+    .wa-farol-guide .wa-farol-copy-row { display: flex; gap: 9px; flex-wrap: wrap; align-items: center; }
+    .wa-farol-guide #waFarolPartSelect {
+      flex: 1 1 145px; min-height: 39px; border: 1px solid #b8c9d5;
+      border-radius: 6px; background: #fff; color: #082b45; padding: 6px;
+      font: 800 13px/1.1 "Segoe UI", Arial, sans-serif;
+    }
+    .wa-farol-guide #waFarolCopyPartBtn {
+      flex: 1 1 180px; min-height: 39px; border: 1px solid #0d6b52;
+      background: #008f63; border-radius: 6px; color: white;
+      font: 900 13px/1.1 "Segoe UI", Arial, sans-serif; cursor: pointer;
+    }
+    .wa-farol-guide #waFarolCopyPartBtn:hover { background: #006e4e; }
+    .wa-farol-guide #waFarolFeedback {
+      min-height: 18px; margin-top: 10px; color: #0b694f; font-weight: 800;
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .wa-farol-guide * { scroll-behavior: auto; }
+    }
     </style>
 </head>
 <body>
@@ -11919,6 +11970,29 @@ body.editor-open .global-theme-toggle {
       </span>
     </footer>
   </main>
+
+  <div class="wa-farol-overlay" id="waFarolOverlay" hidden>
+    <section class="wa-farol-guide" role="dialog" aria-modal="true" aria-labelledby="waFarolTitle">
+      <header>
+        <h2 id="waFarolTitle">Enviar fechamento completo no WhatsApp</h2>
+        <button id="waFarolCloseBtn" class="wa-farol-close" type="button" aria-label="Fechar orientação">×</button>
+      </header>
+      <div class="wa-farol-content">
+        <p id="waFarolIntro" role="status"></p>
+        <div class="wa-farol-note"><strong>Não cole o Farol na legenda da foto.</strong> A legenda tem limite menor e pode ocultar os ofensores por motivos.</div>
+        <ol>
+          <li>Envie a <strong>imagem PNG sem legenda</strong> na conversa ou no grupo.</li>
+          <li>Depois, na <strong>caixa normal de mensagem</strong> do WhatsApp, cole o Farol com <strong>Ctrl + V</strong> e envie.</li>
+          <li id="waFarolPartsInstruction" hidden>Se houver várias partes, envie cada uma em sequência, usando o botão abaixo.</li>
+        </ol>
+        <div class="wa-farol-copy-row">
+          <select id="waFarolPartSelect" aria-label="Selecionar parte do Farol"></select>
+          <button id="waFarolCopyPartBtn" type="button">Copiar Farol para mensagem</button>
+        </div>
+        <p id="waFarolFeedback" role="status" aria-live="polite"></p>
+      </div>
+    </section>
+  </div>
 
   <aside class="drawer" id="drawer" aria-label="Editor de dados">
     <header>
@@ -17319,6 +17393,66 @@ body.editor-open .global-theme-toggle {
       ].join("\n");
     }
 
+
+    // No WhatsApp, a legenda de uma imagem é menor que uma mensagem normal.
+    // Em casos extremos, dividir o texto sem perder linhas, partes ou motivos.
+    function executiveFarolWhatsAppParts(text = buildExecutiveFarolWhatsAppText(), maxChars = 3300) {
+      const parts = [];
+      let remaining = String(text || "");
+      while (remaining.length > maxChars) {
+        let cut = remaining.lastIndexOf("\n\n", maxChars);
+        if (cut < Math.floor(maxChars / 2)) cut = remaining.lastIndexOf("\n", maxChars);
+        if (cut < Math.floor(maxChars / 2)) cut = remaining.lastIndexOf(" ", maxChars);
+        if (cut < Math.floor(maxChars / 2)) cut = maxChars;
+        parts.push(remaining.slice(0, cut).trimEnd());
+        remaining = remaining.slice(cut).trimStart();
+      }
+      if (remaining) parts.push(remaining);
+      return parts.length <= 1 ? parts : parts.map((part, index) =>
+        "📊 FAROL SSP15 · Parte " + (index + 1) + "/" + parts.length + "\n\n" + part
+      );
+    }
+
+    function showExecutiveWhatsappGuide(parts, initialCopied = false) {
+      const overlay = document.getElementById("waFarolOverlay");
+      const select = document.getElementById("waFarolPartSelect");
+      const intro = document.getElementById("waFarolIntro");
+      const feedback = document.getElementById("waFarolFeedback");
+      const instructions = document.getElementById("waFarolPartsInstruction");
+      if (!overlay || !select || !intro || !feedback || !instructions) return;
+      const segments = parts.length ? parts : executiveFarolWhatsAppParts();
+      select.innerHTML = "";
+      segments.forEach((part, index) => {
+        const option = document.createElement("option");
+        option.value = String(index);
+        option.textContent = segments.length === 1
+          ? "Farol completo · " + part.length + " caracteres"
+          : "Parte " + (index + 1) + "/" + segments.length + " · " + part.length + " caracteres";
+        select.appendChild(option);
+      });
+      select.value = "0";
+      select.hidden = segments.length === 1;
+      instructions.hidden = segments.length === 1;
+      intro.textContent = (initialCopied
+        ? "PNG baixado! O Farol " + (segments.length > 1 ? "(parte 1/" + segments.length + ")" : "completo") + " já foi copiado."
+        : "PNG baixado! Copie o Farol pelo botão abaixo.")
+        + " Texto total: " + buildExecutiveFarolWhatsAppText().length + " caracteres.";
+      feedback.textContent = segments.length > 1
+        ? "O Farol foi dividido em " + segments.length + " mensagens para não perder informações."
+        : "Envie o Farol como mensagem separada da imagem.";
+      overlay.hidden = false;
+      overlay.dataset.farolParts = String(segments.length);
+      // Estado mantido apenas nesta sessão; nenhum dado operacional é alterado.
+      window.__executiveFarolParts = segments;
+      document.getElementById("waFarolCloseBtn")?.focus();
+    }
+
+    function closeExecutiveWhatsappGuide() {
+      const overlay = document.getElementById("waFarolOverlay");
+      if (overlay) overlay.hidden = true;
+      document.getElementById("executiveShareBtn")?.focus();
+    }
+
     async function writeExecutiveClipboard(text) {
       try {
         if (navigator.clipboard?.writeText) {
@@ -17349,7 +17483,9 @@ body.editor-open .global-theme-toggle {
     async function copyExecutiveFarolWhatsApp(showFeedback = true) {
       const button = document.getElementById("executiveCopyFarolBtn");
       const original = button?.innerHTML || "";
-      const copied = await writeExecutiveClipboard(buildExecutiveFarolWhatsAppText());
+      const parts = executiveFarolWhatsAppParts();
+      const copied = await writeExecutiveClipboard(parts[0] || "");
+      if (showFeedback && parts.length > 1) showExecutiveWhatsappGuide(parts, copied);
       if (showFeedback && button) {
         button.innerHTML = copied
           ? `<i class="bi bi-check2-circle" aria-hidden="true"></i><span>Farol copiado</span>`
@@ -17380,7 +17516,8 @@ body.editor-open .global-theme-toggle {
         button.innerHTML = `<i class="bi bi-hourglass-split" aria-hidden="true"></i><span>Gerando PNG</span>`;
       }
 
-      const farolCopied = await copyExecutiveFarolWhatsApp(false);
+      const whatsappFarolParts = executiveFarolWhatsAppParts();
+      const farolCopied = await writeExecutiveClipboard(whatsappFarolParts[0] || "");
 
       try {
         await document.fonts?.ready;
@@ -17424,6 +17561,7 @@ body.editor-open .global-theme-toggle {
         link.click();
         link.remove();
         window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+        showExecutiveWhatsappGuide(whatsappFarolParts, farolCopied);
 
         if (button) {
           button.innerHTML = farolCopied
@@ -18585,6 +18723,27 @@ body.editor-open .global-theme-toggle {
         setRefreshSyncState("loading", "Conexão restaurada. Sincronizando alterações pendentes...");
         saveDataToCloud();
       }
+    });
+
+
+    document.getElementById("waFarolCloseBtn")?.addEventListener("click", closeExecutiveWhatsappGuide);
+    document.getElementById("waFarolOverlay")?.addEventListener("click", event => {
+      if (event.target.id === "waFarolOverlay") closeExecutiveWhatsappGuide();
+    });
+    document.addEventListener("keydown", event => {
+      if (event.key === "Escape" && !document.getElementById("waFarolOverlay")?.hidden) closeExecutiveWhatsappGuide();
+    });
+    document.getElementById("waFarolCopyPartBtn")?.addEventListener("click", async () => {
+      const parts = window.__executiveFarolParts || executiveFarolWhatsAppParts();
+      const select = document.getElementById("waFarolPartSelect");
+      const feedback = document.getElementById("waFarolFeedback");
+      const index = Math.max(0, Math.min(Number(select?.value || 0), parts.length - 1));
+      const copied = await writeExecutiveClipboard(parts[index]);
+      if (!feedback) return;
+      feedback.textContent = copied
+        ? "Parte " + (index + 1) + "/" + parts.length + " copiada. Cole na caixa de MENSAGEM, não na legenda."
+        : "A cópia não foi permitida pelo navegador. Tente novamente pelo botão Copiar Farol.";
+      if (copied && select && index + 1 < parts.length) select.value = String(index + 1);
     });
 
     rebuildConsolidatedBase(data.extracao || []);
