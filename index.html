@@ -11690,8 +11690,8 @@ body.editor-open .global-theme-toggle {
         <header class="dados1-head"><div><h2 id="dados1Title"><i class="bi bi-qr-code-scan"></i> Controle de Subida de Rotas - AM1</h2><p>Extração de Dados × Base Aduana: rotas com e sem QR por onda.</p></div><span class="dados1-tag">Atualiza pelo Editor de Dados</span></header>
         <section class="dados1-kpis" aria-label="Resumo de QR AM1">
           <article class="dados1-kpi"><span>Total de rotas AM1</span><strong id="dados1Total">0</strong><small>Fonte: Extração de Dados</small></article>
-          <article class="dados1-kpi ok"><span>QR subidos</span><strong id="dados1Subidos">0</strong><small>Pendente, Em andamento ou Concluída</small></article>
-          <article class="dados1-kpi bad"><span>QR não subidos</span><strong id="dados1Faltantes">0</strong><small>Sem status válido na Base Aduana</small></article>
+          <article class="dados1-kpi ok"><span>QR subidos</span><strong id="dados1Subidos">0</strong><small>Aduana registrada ou rota expedida</small></article>
+          <article class="dados1-kpi bad"><span>QR não subidos</span><strong id="dados1Faltantes">0</strong><small>Sem Aduana registrada ou expedição</small></article>
           <article class="dados1-kpi pct"><span>Progresso de QR</span><strong id="dados1Percentual">0,0%</strong><small>Subidos / total de rotas</small></article>
         </section>
         <h3 class="dados1-section-title">Acompanhamento por onda</h3>
@@ -11700,7 +11700,7 @@ body.editor-open .global-theme-toggle {
           <div class="dados1-filters"><select id="dados1WaveFilter" aria-label="Selecionar onda"><option value="">Todas as ondas</option><option>Onda 1</option><option>Onda 2</option><option>Onda 3</option><option>Onda 4</option><option>Onda 5</option></select><input id="dados1Search" type="search" placeholder="Rota, doca ou transportadora" aria-label="Buscar rotas"></div></div>
           <div class="dados1-table-wrap"><table class="dados1-table"><thead><tr><th>Rota</th><th>Onda</th><th>Doca</th><th>Transportadora</th><th>Situação</th></tr></thead><tbody id="dados1MissingRows"></tbody></table></div>
         </section>
-        <p id="dados1UpdateLabel" class="dados1-note">A situação Pendente da Aduana já significa QR subido.</p>
+        <p id="dados1UpdateLabel" class="dados1-note">Aduana registrada ou EXPEDIDA na Base Operacional significa QR subido.</p>
       </div>
     </section>
     <section class="stats">
@@ -14799,7 +14799,7 @@ body.editor-open .global-theme-toggle {
     }
 
 
-    // O status da auditoria indica a subida do QR, não o término da conferência.
+    // A Aduana em Pendente/Em andamento/Concluída ou a Base Operacional em EXPEDIDA confirmam subida do QR.
     let dados1OndaFiltro = "";
     let dados1Busca = "";
     function qrAduanaStatus(row = {}) {
@@ -14815,7 +14815,13 @@ body.editor-open .global-theme-toggle {
         const key = routeKey(row.rota);
         if (key) base.set(key, qrAduanaStatus(row));
       });
-      const waves = allowedWaves.map(onda => ({ onda, total: 0, subidos: 0, faltantes: 0, pendentes: 0, andamento: 0, concluidas: 0 }));
+      // Uma rota EXPEDIDA na Base Operacional também já foi subida pelo motorista.
+      const expedidasOperacionais = new Set();
+      uniqueBaseRows(Array.isArray(data.baseOperacional) ? data.baseOperacional : []).forEach(row => {
+        const key = routeKey(row.rota);
+        if (key && (isExpedida(row.processo) || isExpedida(row.status))) expedidasOperacionais.add(key);
+      });
+      const waves = allowedWaves.map(onda => ({ onda, total: 0, subidos: 0, faltantes: 0, pendentes: 0, andamento: 0, concluidas: 0, expedidas: 0 }));
       const waveMap = new Map(waves.map(wave => [wave.onda, wave]));
       const seen = new Set(), missingRows = [];
       (Array.isArray(data.extracao) ? data.extracao : []).forEach(row => {
@@ -14824,11 +14830,14 @@ body.editor-open .global-theme-toggle {
         seen.add(onda + "|" + rota);
         wave.total += 1;
         const status = base.get(rota);
-        if (status) {
+        const expedida = expedidasOperacionais.has(rota);
+        if (status || expedida) {
+          // A Aduana tem precedência na classificação; a mesma rota nunca é somada duas vezes.
           wave.subidos += 1;
           if (status === "Pendente") wave.pendentes++;
           else if (status === "Em andamento") wave.andamento++;
           else if (status === "Concluída") wave.concluidas++;
+          else if (expedida) wave.expedidas++;
         } else {
           wave.faltantes++;
           missingRows.push({rota, onda, doca: validDockValue(row.doca) || "--", transportadora: normalize(row.transportadora) || "Não informada"});
@@ -14853,11 +14862,11 @@ body.editor-open .global-theme-toggle {
       document.getElementById("dados1Percentual").textContent = (m.total ? m.subidos/m.total*100 : 0).toFixed(1).replace(".", ",") + "%";
       document.getElementById("dados1WaveCards").innerHTML = m.waves.map(w => {
         const p = w.total ? 100*w.subidos/w.total : 0, active = w.onda === dados1OndaFiltro;
-        return `<button class="dados1-wave${active ? " active" : ""}" type="button" data-qr-wave="${escapeHtml(w.onda)}" aria-pressed="${active}"><strong>${escapeHtml(w.onda)}</strong><span class="dados1-wave-counts"><span class="dados1-ok">${w.subidos} subidos</span><span class="dados1-bad">${w.faltantes} faltam</span></span><span class="dados1-track"><span class="dados1-fill" style="width:${p.toFixed(2)}%"></span></span><small>${w.total} rotas · ${p.toFixed(1).replace(".", ",")}% QR subidos</small><small>${w.pendentes} pendentes · ${w.andamento} andamento · ${w.concluidas} concluídas</small></button>`;
+        return `<button class="dados1-wave${active ? " active" : ""}" type="button" data-qr-wave="${escapeHtml(w.onda)}" aria-pressed="${active}"><strong>${escapeHtml(w.onda)}</strong><span class="dados1-wave-counts"><span class="dados1-ok">${w.subidos} subidos</span><span class="dados1-bad">${w.faltantes} faltam</span></span><span class="dados1-track"><span class="dados1-fill" style="width:${p.toFixed(2)}%"></span></span><small>${w.total} rotas · ${p.toFixed(1).replace(".", ",")}% QR subidos</small><small>${w.pendentes} pendentes · ${w.andamento} andamento · ${w.concluidas} concluídas · ${w.expedidas} expedidas (oper.)</small></button>`;
       }).join("");
       document.getElementById("dados1WaveFilter").value = dados1OndaFiltro;
       document.getElementById("dados1Search").value = dados1Busca;
-      document.getElementById("dados1UpdateLabel").textContent = "Extração AM1 × Base Aduana. Pendente, Em andamento e Concluída = QR subido. Atualizado às " + currentTimeLabel() + ".";
+      document.getElementById("dados1UpdateLabel").textContent = "Extração AM1 × Base Aduana + Base Operacional. Pendente, Em andamento, Concluída ou EXPEDIDA = QR subido. Atualizado às " + currentTimeLabel() + ".";
       renderDados1Faltantes(m);
     }
     function updateDockRailState() {
