@@ -16589,6 +16589,8 @@ body.editor-open .global-theme-toggle {
       const packages = new Map();
       const dates = new Set();
       let duplicates = 0;
+      let ignoredWithoutRoute = 0;
+      let ignoredOtherCycles = 0;
       records.forEach((cells, index) => {
         const shipment = normalize(cells[col("shipment id")]);
         const rawRoute = normalize(cells[col("id da rota")]);
@@ -16596,9 +16598,18 @@ body.editor-open .global-theme-toggle {
         const idRota = rawRoute.split("|")[1]?.trim() || "";
         const status = plainText(cells[col("estado")]);
         const states = { correto: "corretos", faltante: "faltantes", "a mais": "aMais", avariado: "avariados", pendente: "pendentes" };
+        // O audited_shipments pode conter outras operações e linhas sem o nome
+        // da rota (apenas ID numérico). Não atribuir pacotes à rota pela placa.
+        if (!rota) {
+          // Um pacote CORRETO sem rota não altera os ofensores finais.
+          if (status === "correto" && shipment) { ignoredWithoutRoute++; return; }
+          throw new Error(`Linha ${index + 2}: rota não identificada no CSV (${rawRoute || "vazia"}). Revise o registro antes de importar: pode ser um pacote ofensor. Nenhum dado foi aplicado.`);
+        }
+        // Projeto AM1: outras operações não entram nos totais nem no fechamento.
+        if (!rota.endsWith("_AM1")) { ignoredOtherCycles++; return; }
         const dateText = normalize(cells[col("data auditoria")]);
         const match = dateText.match(/^(\d{2})\/(\d{2})\/(\d{4})\s+(\d{2}):(\d{2}):(\d{2})$/);
-        if (!shipment || !rota || !states[status] || !match) throw new Error(`Linha ${index + 2}: pacote, rota, estado ou data inválidos. Nenhum dado foi aplicado.`);
+        if (!shipment || !states[status] || !match) throw new Error(`Linha ${index + 2}: pacote, rota, estado ou data inválidos. Nenhum dado foi aplicado.`);
         const [, day, month, year, hour, minute, second] = match;
         const stamp = Date.UTC(+year, +month - 1, +day, +hour, +minute, +second);
         const date = new Date(stamp);
@@ -16641,7 +16652,9 @@ body.editor-open .global-theme-toggle {
         packages: offenders.length,
         totalPackages: packages.size,
         pendingPackages: [...packages.values()].filter(item => item.state === "pendentes").length,
-        duplicates
+        duplicates,
+        ignoredWithoutRoute,
+        ignoredOtherCycles
       };
     }
 
@@ -16830,7 +16843,12 @@ body.editor-open .global-theme-toggle {
       const status = document.getElementById("finalAuditStatus");
       if (!pendingFinalAudit) { status.textContent = "Usando as contagens da Base Aduana. Importe o CSV ao finalizar a última onda."; return; }
       const total = pendingFinalAudit.rows.reduce((sum, row) => ({ aMais: sum.aMais + row.aMais, faltantes: sum.faltantes + row.faltantes }), { aMais: 0, faltantes: 0 });
-      status.textContent = `${pendingFinalAudit.fileName} • ${pendingFinalAudit.date} • ${pendingFinalAudit.packages} ofensores únicos • ${total.aMais} a mais • ${total.faltantes} faltantes • ${pendingFinalAudit.pendingPackages || 0} pendentes (não contabilizados como a mais/faltantes) • pacotes corretos/avariados ignorados • ${pendingFinalAudit.duplicates} linhas repetidas descartadas. Clique em Aplicar para salvar. Um novo CSV substitui o anterior por completo.`;
+      const withoutRoute = Number(pendingFinalAudit.ignoredWithoutRoute || 0);
+      const otherCycles = Number(pendingFinalAudit.ignoredOtherCycles || 0);
+      const discardedNotice = (withoutRoute || otherCycles)
+        ? ` ⚠ Ignorados: ${otherCycles} registros de outras operações e ${withoutRoute} pacote(s) CORRETO(S) sem rota identificada (não alteram os ofensores AM1).`
+        : "";
+      status.textContent = `${pendingFinalAudit.fileName} • ${pendingFinalAudit.date} • AM1: ${pendingFinalAudit.packages} ofensores únicos • ${total.aMais} a mais • ${total.faltantes} faltantes • ${pendingFinalAudit.pendingPackages || 0} pendentes (não contabilizados como a mais/faltantes) • pacotes corretos/avariados ignorados • ${pendingFinalAudit.duplicates} linhas repetidas descartadas.${discardedNotice} Clique em Aplicar para salvar. Um novo CSV substitui o anterior por completo.`;
       const mismatch = finalAuditDateError(pendingFinalAudit.date, document.getElementById("dataInput")?.value || currentSaoPauloDate());
       if (mismatch) status.textContent += ` ⚠ ${mismatch} Você poderá confirmar e prosseguir ao clicar em Aplicar.`;
     }
