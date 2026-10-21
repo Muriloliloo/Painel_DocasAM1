@@ -12019,6 +12019,10 @@ body.editor-open .global-theme-toggle {
         <label for="finalAuditFile">Arquivo CSV da Aduana</label>
         <input id="finalAuditFile" type="file" accept=".csv,text/csv">
         <p id="finalAuditStatus" role="status" aria-live="polite"></p>
+        <details id="finalAuditRepeatedIds" hidden>
+          <summary style="cursor:pointer;font-weight:800">Conferir IDs encontrados em mais de uma rota</summary>
+          <pre id="finalAuditRepeatedIdsList" style="white-space:pre-wrap;overflow-wrap:anywhere;max-height:230px;overflow:auto;font:600 12px/1.45 'Segoe UI',Arial,sans-serif;background:#f2f7fb;color:#063354;border:1px solid #c7d8e5;border-radius:6px;padding:12px"></pre>
+        </details>
         <button id="clearFinalAuditBtn" type="button">Voltar à Base Aduana (salvar em Aplicar)</button>
       </details>
       <details class="zone-staff-editor" open>
@@ -16627,7 +16631,27 @@ body.editor-open .global-theme-toggle {
       // pacotes "A MAIS" e "FALTANTE". "CORRETO" e "AVARIADO" não entram no card/PDF.
       // Como 'packages' já guarda apenas o estado mais recente de cada pacote,
       // um pacote que terminou como CORRETO também deixa de ser considerado ofensor.
-      const offenders = [...packages.values()].filter(item => item.state === "aMais" || item.state === "faltantes");
+      const finalPackages = [...packages.values()];
+      const offenders = finalPackages.filter(item => item.state === "aMais" || item.state === "faltantes");
+      // Identificadores únicos são diferentes de ocorrências operacionais por rota.
+      // O mesmo pacote pode constar como FALTANTE em uma rota e A MAIS em outra.
+      const uniqueOffenderPackages = new Set(offenders.map(item => item.shipmentId)).size;
+      const byShipmentId = new Map();
+      finalPackages.forEach(item => {
+        if (!byShipmentId.has(item.shipmentId)) byShipmentId.set(item.shipmentId, []);
+        byShipmentId.get(item.shipmentId).push(item);
+      });
+      const multiRouteShipments = [...byShipmentId.entries()]
+        .map(([shipmentId, rows]) => ({ shipmentId, rows }))
+        .filter(entry => new Set(entry.rows.map(item => item.idRota || item.rota)).size > 1);
+      const crossRouteOffenderPairs = multiRouteShipments.filter(entry =>
+        entry.rows.some(item => item.state === "aMais") && entry.rows.some(item => item.state === "faltantes")
+      ).length;
+      const statusLabels = { corretos: "Correto", aMais: "A mais", faltantes: "Faltante", avariados: "Avariado", pendentes: "Pendente" };
+      const crossRouteExamples = multiRouteShipments.slice(0, 100).map(entry => ({
+        shipmentId: entry.shipmentId,
+        rotas: entry.rows.map(item => `${item.rota} (${statusLabels[item.state] || item.state})`)
+      }));
       const routes = new Map();
       offenders.forEach(item => {
         const key = item.idRota || item.rota;
@@ -16653,6 +16677,10 @@ body.editor-open .global-theme-toggle {
         totalPackages: packages.size,
         pendingPackages: [...packages.values()].filter(item => item.state === "pendentes").length,
         duplicates,
+        uniqueOffenderPackages,
+        crossRouteShipmentIds: multiRouteShipments.length,
+        crossRouteOffenderPairs,
+        crossRouteExamples,
         ignoredWithoutRoute,
         ignoredOtherCycles
       };
@@ -16841,14 +16869,35 @@ body.editor-open .global-theme-toggle {
 
     function updateFinalAuditEditorStatus() {
       const status = document.getElementById("finalAuditStatus");
-      if (!pendingFinalAudit) { status.textContent = "Usando as contagens da Base Aduana. Importe o CSV ao finalizar a última onda."; return; }
+      const repeatedDetails = document.getElementById("finalAuditRepeatedIds");
+      const repeatedList = document.getElementById("finalAuditRepeatedIdsList");
+      if (!pendingFinalAudit) {
+        status.textContent = "Usando as contagens da Base Aduana. Importe o CSV ao finalizar a última onda.";
+        if (repeatedDetails) { repeatedDetails.hidden = true; repeatedDetails.open = false; }
+        if (repeatedList) repeatedList.textContent = "";
+        return;
+      }
       const total = pendingFinalAudit.rows.reduce((sum, row) => ({ aMais: sum.aMais + row.aMais, faltantes: sum.faltantes + row.faltantes }), { aMais: 0, faltantes: 0 });
       const withoutRoute = Number(pendingFinalAudit.ignoredWithoutRoute || 0);
       const otherCycles = Number(pendingFinalAudit.ignoredOtherCycles || 0);
       const discardedNotice = (withoutRoute || otherCycles)
         ? ` ⚠ Ignorados: ${otherCycles} registros de outras operações e ${withoutRoute} pacote(s) CORRETO(S) sem rota identificada (não alteram os ofensores AM1).`
         : "";
-      status.textContent = `${pendingFinalAudit.fileName} • ${pendingFinalAudit.date} • AM1: ${pendingFinalAudit.packages} ofensores únicos • ${total.aMais} a mais • ${total.faltantes} faltantes • ${pendingFinalAudit.pendingPackages || 0} pendentes (não contabilizados como a mais/faltantes) • pacotes corretos/avariados ignorados • ${pendingFinalAudit.duplicates} linhas repetidas descartadas.${discardedNotice} Clique em Aplicar para salvar. Um novo CSV substitui o anterior por completo.`;
+      const uniqueOffenders = Number(pendingFinalAudit.uniqueOffenderPackages ?? pendingFinalAudit.packages);
+      const sharedIds = Number(pendingFinalAudit.crossRouteShipmentIds || 0);
+      const pairedIds = Number(pendingFinalAudit.crossRouteOffenderPairs || 0);
+      status.textContent = `${pendingFinalAudit.fileName} • ${pendingFinalAudit.date} • AM1: ${pendingFinalAudit.packages} ocorrências por rota (${uniqueOffenders} IDs únicos com ocorrência) • ${total.aMais} a mais • ${total.faltantes} faltantes • ${pendingFinalAudit.pendingPackages || 0} pendentes (não contabilizados como a mais/faltantes) • ${pendingFinalAudit.duplicates} repetições na mesma rota descartadas • ${sharedIds} IDs em rotas diferentes (${pairedIds} com A mais e Faltante).${discardedNotice} Clique em Aplicar para salvar. Um novo CSV substitui o anterior por completo.`;
+      if (repeatedDetails) {
+        repeatedDetails.hidden = sharedIds === 0;
+        if (!sharedIds) repeatedDetails.open = false;
+      }
+      if (repeatedList) {
+        repeatedList.textContent = sharedIds
+          ? (pendingFinalAudit.crossRouteExamples || []).map(entry =>
+              `${entry.shipmentId} → ${(entry.rotas || []).join("  ↔  ")}`
+            ).join("\n") + (sharedIds > (pendingFinalAudit.crossRouteExamples || []).length ? `\n...e mais ${sharedIds - pendingFinalAudit.crossRouteExamples.length} IDs.` : "")
+          : "";
+      }
       const mismatch = finalAuditDateError(pendingFinalAudit.date, document.getElementById("dataInput")?.value || currentSaoPauloDate());
       if (mismatch) status.textContent += ` ⚠ ${mismatch} Você poderá confirmar e prosseguir ao clicar em Aplicar.`;
     }
