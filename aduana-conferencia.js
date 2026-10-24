@@ -249,6 +249,9 @@
     ".aduana-tag{display:inline-block;padding:4px 8px;border-radius:30px;background:#e3ebf2;color:#324c62;font-weight:800;white-space:nowrap}",
     ".aduana-tag.ok{background:#daf5e8;color:#136946}.aduana-tag.fail{background:#ffe2e5;color:#a52633}.aduana-tag.warn{background:#fff1ce;color:#885816}",
     ".aduana-exports{display:flex;align-items:center;gap:9px;flex-wrap:wrap;padding:13px;border-top:1px solid #dde7ed}",
+    ".aduana-importbar{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin:12px 0 16px;background:#fff;padding:10px 12px;border:1px solid #d5dee8;border-radius:9px}",
+    ".aduana-importbar label{display:inline-flex;align-items:center;justify-content:center;background:#063354;color:#fff;cursor:pointer}",
+    ".aduana-importbar input{max-width:100%;font-size:12px}",
     "body.dark-mode .app.aduana-mode .aduana-view{background:#152a3c;color:#edf3f8}",
     "body.dark-mode .aduana-panel,body.dark-mode .aduana-kpi,body.dark-mode .aduana-note{background:#1d374d;border-color:#3b5a74;color:#ebf2f8}",
     "body.dark-mode .aduana-table tbody tr:nth-child(odd),body.dark-mode .aduana-detail tr:nth-child(even){background:#27445a}",
@@ -306,6 +309,12 @@
       '<span class="aduana-muted">SSP15 · AM1 · '+esc(m.date||"Data não informada")+'</span></div>'+
       '<header class="aduana-head"><h2>CONTROLE DE ADUANA</h2><p>Confronto entre Sistema e IDs Físicos</p></header>'+
       '<p class="aduana-note">'+guidance+'</p>'+
+      '<div class="aduana-importbar"><label class="aduana-btn" for="aduanaReimportFile">Atualizar planilha IDs Físicos</label>'+
+      '<input id="aduanaReimportFile" type="file" accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" aria-label="Atualizar IDs físicos por CSV ou Excel">'+
+      '<span id="aduanaReimportStatus" class="aduana-muted" role="status">'+(m.physicalReady
+        ? esc(m.physical.fileName||"Arquivo físico importado")+' · '+m.totalPhysical+' ID(s) físicos'+
+          (m.physicalUnmapped ? ' · <strong style="color:#b13434">'+m.physicalUnmapped+' sem lado identificado — reimporte a planilha para atualizar a separação B/C/D/LH.</strong>' : ' · lados reconhecidos')
+        : 'Importe o arquivo físico CSV ou XLSX')+'</span></div>'+
       '<section class="aduana-kpis">'+
       '<article class="aduana-kpi"><span>Quantidade a mais na aduana</span><strong>'+formatValue(m.total,m.systemReady)+'</strong><small>Sistema · Shipment IDs únicos</small></article>'+
       '<article class="aduana-kpi encontrado"><span>Quantidade encontrada</span><strong>'+formatValue(m.totalFound,m.systemReady&&m.physicalReady)+'</strong><small>IDs únicos bipados no físico (contagem)</small></article>'+
@@ -333,6 +342,15 @@
       '<button type="button" class="aduana-btn" data-aduana-export="fisico">Baixar CSV IDs Físicos</button>'+
       '<a class="aduana-btn" href="'+SHEET_URL+'" target="_blank" rel="noopener noreferrer">Abrir planilha IDs Físicos ↗</a></div></section></div>';
     $("aduanaBack")?.addEventListener("click",()=>window.ControleAduana?.onBack?.());
+    $("aduanaReimportFile")?.addEventListener("change",async event=>{
+      const file=event.target.files?.[0];
+      if (!file)return;
+      const status=$("aduanaReimportStatus");
+      if (status)status.textContent="Lendo planilha e atualizando os lados...";
+      try { await window.ControleAduana?.onImportPhysical?.(file); }
+      catch (err) { if (status)status.textContent="Erro: "+(err?.message || String(err)); }
+      finally {event.target.value="";}
+    });
     $("aduanaSearch")?.addEventListener("input",event=>{query=event.target.value;renderRows();});
     $("aduanaView").querySelectorAll("[data-aduana-mode]").forEach(button=>button.addEventListener("click",()=>{
       mode=button.dataset.aduanaMode;
@@ -372,5 +390,5 @@
     document.body.appendChild(a);a.click();a.remove();
     window.setTimeout(()=>URL.revokeObjectURL(url),1000);
   }
-  window.ControleAduana = { parsePhysicalCsv, parsePhysicalFile, render, onBack:null, onClassify:null };
+  window.ControleAduana = { parsePhysicalCsv, parsePhysicalFile, render, onBack:null, onClassify:null, onImportPhysical:null };
 })();
