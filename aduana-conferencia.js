@@ -189,7 +189,12 @@
     }
     const systemIds=new Map(),crossSides=new Set();
     if(systemReady)for(const route of final.rows || []){
-      const loc=routesById.get(text(route.idRota))||routesByName.get(text(route.rota).toUpperCase())||
+      // Defesa extra contra dados antigos/importados antes do filtro do CSV.
+      // Mesmo com o arquivo fisico contendo IDs de outras operações, a única
+      // referência permitida é uma rota cujo nome termina exatamente em _AM1.
+      const routeName=text(route.rota).toUpperCase();
+      if(!routeName.endsWith("_AM1"))continue;
+      const loc=routesById.get(text(route.idRota))||routesByName.get(routeName)||
         {side:sideFromDock(route.doca)||"Não identificado",doca:text(route.doca),rota:text(route.rota)};
       for(const event of route.ocorrencias || []){
         if(event.estado!=="aMais")continue;
