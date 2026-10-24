@@ -57,7 +57,7 @@
       if (result.byteLength>MAX_XML) throw Error("Conteúdo XLSX maior que o limite seguro.");
       return decoder.decode(result);
     }
-    return {xmlText};
+    return {xmlText, listPaths:()=>[...files.keys()]};
   }
   function parseXml(string, name) {
     const doc=new DOMParser().parseFromString(string,"application/xml");
@@ -112,10 +112,12 @@
     const zip=archive(bytes);
     const workbookXml=await zip.xmlText("xl/workbook.xml");
     const relationXml=await zip.xmlText("xl/_rels/workbook.xml.rels");
-    if(!workbookXml||!relationXml)throw Error("Arquivo não possui estrutura de planilha XLSX reconhecida.");
+    if(!workbookXml)throw Error("Não foi possível ler xl/workbook.xml. Confirme se o arquivo é uma planilha XLSX válida.");
     const workbook=parseXml(workbookXml,"workbook.xml");
-    const relation=parseXml(relationXml,"workbook.xml.rels");
-    const rels=new Map(children(relation,"Relationship").map(e=>[e.getAttribute("Id"),e.getAttribute("Target")]));
+    // Nem todos os exportadores preservam o índice de relacionamentos.
+    // A primeira aba continua legível pelos caminhos worksheet padrão.
+    const relation=relationXml ? parseXml(relationXml,"workbook.xml.rels") : null;
+    const rels=new Map(relation ? children(relation,"Relationship").map(e=>[e.getAttribute("Id"),e.getAttribute("Target")]) : []);
     const settings=children(workbook,"workbookPr")[0];
     const date1904=Boolean(settings&&["1","true"].includes(settings.getAttribute("date1904")));
     const ss=await zip.xmlText("xl/sharedStrings.xml");
@@ -125,11 +127,17 @@
     for(const sheet of sheets) {
       const relId=sheet.getAttribute("r:id")||sheet.getAttributeNS("http://schemas.openxmlformats.org/officeDocument/2006/relationships","id");
       const target=rels.get(relId);
-      if(!target)continue;
-      const xml=await zip.xmlText(resolvePath(target));
-      if(!xml)continue;
-      const rows=worksheetRows(parseXml(xml,"worksheet.xml"),shared);
-      if(rows.length) return { rows, sheetName:sheet.getAttribute("name")||"", date1904 };
+      const paths=[
+        ...(target ? [resolvePath(target)] : []),
+        "xl/worksheets/sheet"+(sheet.getAttribute("sheetId")||"1")+".xml",
+        ...zip.listPaths().filter(path=>/^xl\/worksheets\/sheet\d+\.xml$/i.test(path))
+      ];
+      for(const path of new Set(paths)) {
+        const xml=await zip.xmlText(path);
+        if(!xml)continue;
+        const rows=worksheetRows(parseXml(xml,"worksheet.xml"),shared);
+        if(rows.length) return { rows, sheetName:sheet.getAttribute("name")||"", date1904 };
+      }
     }
     throw Error("O XLSX não contém registros em nenhuma aba.");
   }
@@ -153,5 +161,5 @@
       return '"'+String(item??"").replace(/"/g,'""')+'"';
     }).join(";")).join("\r\n");
   }
-  window.AduanaXlsx={isXlsx,read,toCsv};
+  window.AduanaXlsx={isXlsx,read,toCsv,version:"20261024-r3"};
 })();
