@@ -16920,9 +16920,21 @@ body.editor-open .global-theme-toggle {
     function updatePhysicalAuditEditorStatus() {
       const node = document.getElementById("physicalAuditStatus");
       if (!node) return;
-      node.textContent = pendingPhysicalAudit
-        ? `${pendingPhysicalAudit.fileName || "IDs Físicos"} • ${pendingPhysicalAudit.ids.length} IDs únicos • ${Number(pendingPhysicalAudit.duplicates || 0)} duplicado(s) ignorado(s) • ${Number(pendingPhysicalAudit.invalid || 0)} inválido(s) ignorado(s). Clique em Aplicar para salvar.`
-        : "Nenhum CSV físico selecionado. Selecione o segundo arquivo e clique em Aplicar.";
+      if (!pendingPhysicalAudit) {
+        node.textContent = "Nenhum arquivo físico selecionado. Importe CSV ou XLSX e clique em Aplicar.";
+        return;
+      }
+      const counts = pendingPhysicalAudit.sideCounts || {};
+      const ids = pendingPhysicalAudit.ids || [];
+      const detailCount = ids.filter(id => {
+        const side = pendingPhysicalAudit.details?.[id]?.ladoFisico || "";
+        return side && side !== "Não identificado";
+      }).length;
+      node.textContent = `${pendingPhysicalAudit.fileName || "IDs Físicos"} • ${ids.length} IDs únicos • ` +
+        (detailCount === ids.length
+          ? `Lados reconhecidos: B ${counts["Lado B"] ?? "—"}, C ${counts["Lado C"] ?? "—"}, D ${counts["Lado D"] ?? "—"}, LH ${counts.LH ?? "—"}.`
+          : `ATENÇÃO: somente ${detailCount}/${ids.length} IDs têm lado salvo; reimporte o XLSX completo.`) +
+        ` • ${Number(pendingPhysicalAudit.duplicates || 0)} duplicados ignorados.`;
     }
 
     function openFinalAuditEditor() {
@@ -18785,6 +18797,11 @@ body.editor-open .global-theme-toggle {
       if (!requireAdminAction()) return;
       const editorDate = confirmEditorDateBeforeApply();
       if (!editorDate) return;
+      if (pendingPhysicalAudit?.schemaVersion >= 3 && Number(pendingPhysicalAudit.unknownSides || 0) > 0) {
+        alert("A planilha de IDs Físicos contém " + pendingPhysicalAudit.unknownSides +
+          " pacote(s) sem lado válido. Revise a coluna Lados para preservar a distribuição correta.");
+        return;
+      }
       const applyButton = document.getElementById("applyBtn");
       const pasteStatus = document.getElementById("pasteClearStatus");
       const originalApplyText = applyButton?.textContent || "Aplicar";
