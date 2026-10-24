@@ -244,9 +244,9 @@
     installStyles();
     const m = current = calculate(data,packageModel);
     const guidance = !m.systemReady
-      ? "Importe o CSV <b>audited_shipments</b> no Editor de Dados e clique em <b>Aplicar</b>. A base do sistema considera somente os IDs AM1 no estado final <b>A mais</b>."
+      ? "Importe o arquivo CSV ou XLSX <b>audited_shipments</b> no Editor de Dados e clique em <b>Aplicar</b>. A base do sistema considera somente os IDs AM1 no estado final <b>A mais</b>."
       : !m.physicalReady
-      ? "Base do sistema carregada. Importe o segundo CSV <b>IDs Físicos</b> no Editor de Dados e clique em <b>Aplicar</b> para comparar os arquivos."
+      ? "Base do sistema carregada. Importe o segundo arquivo CSV ou XLSX <b>IDs Físicos</b> no Editor de Dados e clique em <b>Aplicar</b> para comparar os arquivos."
       : "Confronto realizado por <b>Shipment ID único</b>. A quantidade não encontrada corresponde aos IDs do sistema sem leitura física.";
     const sides = m.sides.filter(row=>!["Lado A","Não identificado"].includes(row.side)||row.system).map(row=>
       '<tr><td class="sub">– '+esc(row.side)+'</td><td>'+formatValue(row.system,m.systemReady)+'</td><td>'+formatValue(row.found,m.systemReady&&m.physicalReady)+'</td><td>'+formatValue(row.missing,m.systemReady&&m.physicalReady)+'</td></tr>').join("");
