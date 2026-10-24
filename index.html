@@ -12185,7 +12185,7 @@ body.editor-open .global-theme-toggle {
   <script src="firebase-config.js"></script>
   <script src="ondas-dados.js"></script>
   <script src="aduana-xlsx.js?v=20261024-r4"></script>
-  <script src="aduana-conferencia.js?v=20261024-r9"></script>
+  <script src="aduana-conferencia.js?v=20261024-r10"></script>
   <script>
     const storageKey = "ondas-dados";
     const syncMetaKey = `${storageKey}-sync-meta-v1`;
@@ -16973,7 +16973,7 @@ body.editor-open .global-theme-toggle {
       }).length;
       node.textContent = `${pendingPhysicalAudit.fileName || "IDs Físicos"} • ${ids.length} IDs únicos • ` +
         (detailCount === ids.length
-          ? `Lados reconhecidos: B ${counts["Lado B"] ?? "—"}, C ${counts["Lado C"] ?? "—"}, D ${counts["Lado D"] ?? "—"}, LH ${counts.LH ?? "—"}.`
+          ? `Lados reconhecidos: A ${counts["Lado A"] ?? 0}, B ${counts["Lado B"] ?? "—"}, C ${counts["Lado C"] ?? "—"}, D ${counts["Lado D"] ?? "—"}, E/LH ${counts["Lado E"] ?? counts.LH ?? "—"}.`
           : `ATENÇÃO: somente ${detailCount}/${ids.length} IDs têm lado salvo; reimporte o XLSX completo.`) +
         ` • ${Number(pendingPhysicalAudit.duplicates || 0)} duplicados ignorados.`;
     }
