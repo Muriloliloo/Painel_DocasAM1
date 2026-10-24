@@ -11,7 +11,7 @@
   const idKey = value => text(value).replace(/^\uFEFF/, "").replace(/^'/, "").toUpperCase();
   const $ = id => document.getElementById(id);
   const TYPES = ["", "GM", "Volumoso", "Outro"];
-  const COLORS = ["", "Amarelo", "Azul", "Vermelho"];
+  const COLORS = ["", "Amarelo", "Azul", "Vermelho", "Verde"];
   let mode = "todos", query = "", current = null;
   const modelDate = value => {
     const v = text(value);
@@ -53,12 +53,15 @@
     if (!text(raw)) throw new Error("O CSV de IDs Físicos está vazio.");
     const rows = parseRows(raw, delimiterFor(raw));
     if (!rows.length) throw new Error("O CSV de IDs Físicos não contém registros.");
-    const aliases = new Set(["id", "id pacote", "id do pacote", "id fisico", "ids fisicos", "shipment id", "shipment", "barcode", "codigo", "codigo de barras", "numero do pacote", "pacote"]);
+    const aliases = new Set(["id", "id pacote", "id do pacote", "id fisico", "ids fisicos", "shipment id", "shipment", "barcode", "codigo", "codigo de barras", "numero do pacote", "pacote", "quantidade encontrada", "ids encontrados"]);
     const header = rows[0].map(h => norm(h).replace(/[_-]+/g," ").replace(/\s+/g," "));
     let idCol = header.findIndex(h=>aliases.has(h));
     const typeCol = header.findIndex(h=>["tipo","categoria","classificacao","classificacao fisica"].includes(h));
     const colorCol = header.findIndex(h=>["cor","cor volumoso"].includes(h));
-    const hasHeader = idCol >= 0 || typeCol >= 0 || colorCol >= 0 || header.some(h=>["rota","situacao","status","observacao"].includes(h));
+    const sideCol = header.findIndex(h=>["lado","lados","lado fisico","setor"].includes(h));
+    const volumosoCol = header.findIndex(h=>h==="volumoso");
+    const gmCol = header.findIndex(h=>h==="gm");
+    const hasHeader = idCol >= 0 || typeCol >= 0 || colorCol >= 0 || sideCol >= 0 || volumosoCol >= 0 || gmCol >= 0 || header.some(h=>["rota","situacao","status","observacao"].includes(h));
     if (hasHeader && idCol < 0) throw new Error("CSV sem coluna de ID. Use 'Shipment ID', 'ID' ou 'ID Físico'.");
     if (idCol < 0) idCol = 0;
     const found = new Set(), details = {};
@@ -71,12 +74,32 @@
       found.add(id);
       const rawType = norm(typeCol >= 0 ? row[typeCol] : "");
       const rawColor = norm(colorCol >= 0 ? row[colorCol] : "");
-      const tipo = rawType.includes("volum") ? "Volumoso" : rawType === "gm" ? "GM" : rawType ? "Outro" : "";
+      const flagVolumoso = volumosoCol >= 0 && ["volumoso","sim","x","1","true"].includes(norm(row[volumosoCol]));
+      const flagGM = gmCol >= 0 && ["gm","sim","x","1","true"].includes(norm(row[gmCol]));
+      const tipo = flagVolumoso ? "Volumoso" : flagGM ? "GM" : rawType.includes("volum") ? "Volumoso" : rawType === "gm" ? "GM" : rawType ? "Outro" : "";
       const cor = COLORS.find(c=>c && norm(c)===rawColor) || "";
-      if (tipo || cor) details[id] = { tipo, cor };
+      const ladoFisico = sideCol >= 0 ? sideFromPhysical(row[sideCol]) : "";
+      if (tipo || cor || ladoFisico) details[id] = { tipo, cor, ladoFisico };
     }
     if (!found.size) throw new Error("Nenhum Shipment ID válido foi encontrado no CSV de bipagem.");
     return { ids:[...found], details, duplicates, invalid, blank, fileName:text(fileName), importedAt:new Date().toISOString(), date:"" };
+  }
+  async function parsePhysicalFile(file) {
+    if (window.AduanaXlsx?.isXlsx(file)) {
+      const result = await window.AduanaXlsx.read(file);
+      return parsePhysicalCsv(window.AduanaXlsx.toCsv(result), file.name);
+    }
+    if (!/\.csv$/i.test(file?.name || "")) throw new Error("Arquivo inválido. Selecione CSV ou XLSX.");
+    return parsePhysicalCsv(await file.text(), file.name);
+  }
+  function sideFromPhysical(value) {
+    const side = norm(value).replace(/\s+/g, " ");
+    if (/\b(?:line hall|linha hall|lh)\b/.test(side)) return "LH";
+    if (/\b(?:central b|lado b)\b/.test(side)) return "Lado B";
+    if (/\b(?:central c|lado c)\b/.test(side)) return "Lado C";
+    if (/\b(?:parede|lado d)\b/.test(side)) return "Lado D";
+    if (/\b(?:heineken|lado a)\b/.test(side)) return "Lado A";
+    return side ? "Não identificado" : "";
   }
   function sideLabel(label) {
     return { "Lado Central B":"Lado B", "Lado Central C":"Lado C", "Lado Parede":"Lado D", "Line Hall":"LH", "Lado Heineken":"Lado A" }[label] || "Não identificado";
@@ -108,7 +131,8 @@
     const rows = [...systemIds.values()].map(r => ({
       ...r, situacao:physicalReady ? (physicallyScanned.has(r.id)?"Encontrado":"Não encontrado") : "Aguardando físico",
       tipo:text(physical && physical.details && physical.details[r.id] && physical.details[r.id].tipo),
-      cor:text(physical && physical.details && physical.details[r.id] && physical.details[r.id].cor)
+      cor:text(physical && physical.details && physical.details[r.id] && physical.details[r.id].cor),
+      ladoFisico:text(physical && physical.details && physical.details[r.id] && physical.details[r.id].ladoFisico)
     }));
     const found = rows.filter(r=>r.situacao==="Encontrado");
     const missing = rows.filter(r=>r.situacao==="Não encontrado");
@@ -117,7 +141,8 @@
       onlyPhysical++;
       rows.push({ id, origem:"Somente físico", side:"—", doca:"", rota:"", situacao:"Fora da lista",
         tipo:text(physical.details && physical.details[id] && physical.details[id].tipo),
-        cor:text(physical.details && physical.details[id] && physical.details[id].cor) });
+        cor:text(physical.details && physical.details[id] && physical.details[id].cor),
+        ladoFisico:text(physical.details && physical.details[id] && physical.details[id].ladoFisico) });
     }
     const sides = ["Lado B","Lado C","Lado D","LH","Lado A","Não identificado"].map(side=>({
       side, system:rows.filter(r=>r.origem==="Sistema" && r.side===side).length,
@@ -127,6 +152,7 @@
       date, systemReady, physicalReady, rows, sides, physical, final, total:systemIds.size,
       totalFound:found.length,totalMissing:missing.length,totalPhysical:physicallyScanned.size,
       onlyPhysical,crossSides:crossSides.size,
+      sideMismatches: found.filter(r=>r.ladoFisico && r.ladoFisico!=="Não identificado" && r.side!=="Não identificado" && r.side!==r.ladoFisico).length,
       countType:tipo=>found.filter(r=>r.tipo===tipo).length,
       countColor:cor=>found.filter(r=>r.cor===cor).length
     };
@@ -201,17 +227,17 @@
       if (mode==="encontrados" && row.situacao!=="Encontrado") return false;
       if (mode==="faltantes" && row.situacao!=="Não encontrado") return false;
       if (mode==="extra" && row.origem!=="Somente físico") return false;
-      return !query || [row.id,row.rota,row.side,row.origem].some(value=>norm(value).includes(norm(query)));
+      return !query || [row.id,row.rota,row.side,row.ladoFisico,row.origem].some(value=>norm(value).includes(norm(query)));
     });
     $("aduanaRowsCount").textContent = visible.length+" registro(s)";
     $("aduanaDetails").innerHTML = visible.length ? visible.map(row=>{
       const editable = m.physicalReady && (row.situacao==="Encontrado" || row.origem==="Somente físico");
       const tag = row.situacao==="Encontrado" ? "ok" : row.situacao==="Não encontrado" ? "fail" : row.origem==="Somente físico" ? "warn" : "";
-      return '<tr><td>'+esc(row.id)+'</td><td>'+esc(row.origem)+'</td><td>'+esc(row.side)+'</td><td>'+esc(row.rota)+'</td><td>'+esc(row.doca)+'</td>'+
+      return '<tr><td>'+esc(row.id)+'</td><td>'+esc(row.origem)+'</td><td>'+esc(row.side)+'</td><td>'+esc(row.ladoFisico || '—')+'</td><td>'+esc(row.rota)+'</td><td>'+esc(row.doca)+'</td>'+
         '<td><span class="aduana-tag '+tag+'">'+esc(row.situacao)+'</span></td><td>'+
         (editable?selector("tipo",row.id,row.tipo,TYPES):"—")+'</td><td>'+
         (editable?selector("cor",row.id,row.cor,COLORS):"—")+'</td></tr>';
-    }).join("") : '<tr><td colspan="8" style="padding:24px;text-align:center">Nenhum registro para os filtros selecionados.</td></tr>';
+    }).join("") : '<tr><td colspan="9" style="padding:24px;text-align:center">Nenhum registro para os filtros selecionados.</td></tr>';
   }
   function render(data, packageModel) {
     if (!$("aduanaView")) return;
@@ -224,7 +250,7 @@
       : "Confronto realizado por <b>Shipment ID único</b>. A quantidade não encontrada corresponde aos IDs do sistema sem leitura física.";
     const sides = m.sides.filter(row=>!["Lado A","Não identificado"].includes(row.side)||row.system).map(row=>
       '<tr><td class="sub">– '+esc(row.side)+'</td><td>'+formatValue(row.system,m.systemReady)+'</td><td>'+formatValue(row.found,m.systemReady&&m.physicalReady)+'</td><td>'+formatValue(row.missing,m.systemReady&&m.physicalReady)+'</td></tr>').join("");
-    const metrics = [["Volumoso",m.countType("Volumoso")],["Amarelo",m.countColor("Amarelo")],["Azul",m.countColor("Azul")],["Vermelho",m.countColor("Vermelho")],["GM",m.countType("GM")]].map(row=>
+    const metrics = [["Volumoso",m.countType("Volumoso")],["Amarelo",m.countColor("Amarelo")],["Azul",m.countColor("Azul")],["Vermelho",m.countColor("Vermelho")],["Verde",m.countColor("Verde")],["GM",m.countType("GM")]].map(row=>
       '<tr><td>'+row[0]+'</td><td>'+formatValue(row[1],m.physicalReady&&m.systemReady)+'</td></tr>').join("");
     $("aduanaView").innerHTML =
       '<div class="aduana-shell"><div class="aduana-top"><button type="button" id="aduanaBack" class="aduana-back">← Voltar à tela inicial</button>'+
@@ -237,15 +263,16 @@
       '<article class="aduana-kpi nao-encontrado"><span>Quantidade não encontrada</span><strong>'+formatValue(m.totalMissing,m.systemReady&&m.physicalReady)+'</strong><small>IDs do sistema sem bipagem física</small></article></section>'+
       '<div class="aduana-columns"><section class="aduana-panel"><h3>CONTROLE POR LADO</h3><table class="aduana-table"><thead><tr><th>Item</th><th>Sistema</th><th>Encontrada</th><th>Não encontrada</th></tr></thead><tbody>'+sides+'</tbody></table></section>'+
       '<section class="aduana-panel"><h3>CLASSIFICAÇÃO DOS PACOTES ENCONTRADOS</h3><table class="aduana-table"><thead><tr><th>Item</th><th>Quantidade</th></tr></thead><tbody>'+metrics+'</tbody></table>'+
-      '<div class="aduana-panel-inner aduana-muted">Os campos Tipo (GM/Volumoso) e Cor (Amarelo/Azul/Vermelho) são classificações independentes. Podem vir no CSV físico ou ser preenchidos na tabela abaixo.</div></section></div>'+
+      '<div class="aduana-panel-inner aduana-muted">Os campos Tipo (GM/Volumoso), Cor (Amarelo/Azul/Vermelho/Verde) e Lado Físico podem vir do CSV/XLSX de bipagem. O Tipo e a Cor também podem ser ajustados abaixo.</div></section></div>'+
       '<p class="aduana-note"><b>Validação:</b> '+(m.physicalReady ? m.totalPhysical+' IDs físicos únicos, '+Number(m.physical.duplicates||0)+' duplicado(s) ignorado(s), '+m.onlyPhysical+' ID(s) bipado(s) sem correspondência no sistema.' : "Aguardando CSV da bipagem física.")+
-      (m.crossSides ? ' <b>Atenção:</b> '+m.crossSides+' ID(s) aparecem em mais de um lado do CSV do sistema; conferir identificação de rota.' : "")+'</p>'+
+      (m.crossSides ? ' <b>Atenção:</b> '+m.crossSides+' ID(s) aparecem em mais de um lado do sistema; conferir identificação de rota.' : "")+
+      (m.sideMismatches ? ' <b>Atenção:</b> '+m.sideMismatches+' ID(s) com lado físico diferente do lado do sistema.' : "")+'</p>'+
       '<section class="aduana-panel"><h3>SHIPMENT IDs — SISTEMA × FÍSICO</h3><div class="aduana-panel-inner"><div class="aduana-filters">'+
       [['todos','Todos'],['encontrados','Encontrados'],['faltantes','Não encontrados'],['extra','Somente físico']].map(item=>
         '<button type="button" class="aduana-filter '+(mode===item[0]?'active':'')+'" data-aduana-mode="'+item[0]+'">'+item[1]+'</button>').join("")+
       '<input id="aduanaSearch" aria-label="Buscar Shipment ID, rota ou lado" placeholder="Buscar ID, rota ou lado..." type="search" value="'+esc(query)+'"></div>'+
       '<p class="aduana-muted" id="aduanaRowsCount"></p></div>'+
-      '<div class="aduana-scroll"><table class="aduana-detail"><thead><tr><th>Shipment ID</th><th>Origem</th><th>Lado</th><th>Rota</th><th>Doca</th><th>Conferência</th><th>Tipo</th><th>Cor</th></tr></thead><tbody id="aduanaDetails"></tbody></table></div>'+
+      '<div class="aduana-scroll"><table class="aduana-detail"><thead><tr><th>Shipment ID</th><th>Origem</th><th>Lado Sistema</th><th>Lado Físico</th><th>Rota</th><th>Doca</th><th>Conferência</th><th>Tipo</th><th>Cor</th></tr></thead><tbody id="aduanaDetails"></tbody></table></div>'+
       '<div class="aduana-exports"><button type="button" class="aduana-btn primary" data-aduana-export="confronto">Baixar confronto CSV</button>'+
       '<button type="button" class="aduana-btn" data-aduana-export="sistema">Baixar CSV Sistema</button>'+
       '<button type="button" class="aduana-btn" data-aduana-export="fisico">Baixar CSV IDs Físicos</button>'+
@@ -277,10 +304,10 @@
       data=[["Shipment ID","Origem","Lado","Rota","Doca","Encontrado no físico"],...m.rows.filter(r=>r.origem==="Sistema").map(r=>[r.id,r.origem,r.side,r.rota,r.doca,m.physicalReady?(r.situacao==="Encontrado"?"SIM":"NÃO"):"PENDENTE"])];
       file="Sistema";
     } else if(type==="fisico") {
-      data=[["Shipment ID","Origem","Encontrado no sistema","Tipo","Cor"],...m.rows.filter(r=>r.origem==="Somente físico"||r.situacao==="Encontrado").map(r=>[r.id,"Físico",r.origem==="Sistema"?"SIM":"NÃO",r.tipo,r.cor])];
+      data=[["Shipment ID","Origem","Encontrado no sistema","Lado Físico","Tipo","Cor"],...m.rows.filter(r=>r.origem==="Somente físico"||r.situacao==="Encontrado").map(r=>[r.id,"Físico",r.origem==="Sistema"?"SIM":"NÃO",r.ladoFisico,r.tipo,r.cor])];
       file="IDs_Fisicos";
     } else {
-      data=[["Shipment ID","Origem","Lado","Rota","Doca","Situação","Tipo","Cor"],...m.rows.map(r=>[r.id,r.origem,r.side,r.rota,r.doca,r.situacao,r.tipo,r.cor])];
+      data=[["Shipment ID","Origem","Lado Sistema","Lado Físico","Rota","Doca","Situação","Tipo","Cor"],...m.rows.map(r=>[r.id,r.origem,r.side,r.ladoFisico,r.rota,r.doca,r.situacao,r.tipo,r.cor])];
       file="Confronto_Aduana";
     }
     const content="\uFEFF"+data.map(row=>row.map(csvCell).join(";")).join("\r\n");
@@ -290,5 +317,5 @@
     document.body.appendChild(a);a.click();a.remove();
     window.setTimeout(()=>URL.revokeObjectURL(url),1000);
   }
-  window.ControleAduana = { parsePhysicalCsv, render, onBack:null, onClassify:null };
+  window.ControleAduana = { parsePhysicalCsv, parsePhysicalFile, render, onBack:null, onClassify:null };
 })();
