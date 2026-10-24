@@ -12143,8 +12143,8 @@ body.editor-open .global-theme-toggle {
 
   <script src="firebase-config.js"></script>
   <script src="ondas-dados.js"></script>
-  <script src="aduana-xlsx.js"></script>
-  <script src="aduana-conferencia.js"></script>
+  <script src="aduana-xlsx.js?v=20261024-r4"></script>
+  <script src="aduana-conferencia.js?v=20261024-r4"></script>
   <script>
     const storageKey = "ondas-dados";
     const syncMetaKey = `${storageKey}-sync-meta-v1`;
@@ -18743,7 +18743,7 @@ body.editor-open .global-theme-toggle {
         pendingPhysicalAudit = parsed;
         updatePhysicalAuditEditorStatus();
       } catch (error) {
-        node.textContent = `${error.message} ${pendingPhysicalAudit ? "A leitura física anterior foi preservada." : "Nenhum CSV físico foi aplicado."}`;
+        node.textContent = `${error.message} (Leitor XLSX: ${window.AduanaXlsx?.version || "não carregado"}). ${pendingPhysicalAudit ? "A leitura física anterior foi preservada." : "Nenhum arquivo físico foi aplicado."}`;
         event.target.value = "";
       }
     });
