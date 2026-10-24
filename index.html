@@ -12019,8 +12019,8 @@ body.editor-open .global-theme-toggle {
       <details class="zone-staff-editor" open>
         <summary>Fechamento final da Aduana — importar CSV</summary>
         <p>Ao finalizar a última onda, selecione o relatório audited_shipments do dia. O CSV substituirá as contagens ao vivo somente no fechamento por lado.</p>
-        <label for="finalAuditFile">Arquivo CSV da Aduana</label>
-        <input id="finalAuditFile" type="file" accept=".csv,text/csv">
+        <label for="finalAuditFile">Arquivo do sistema — CSV ou XLSX</label>
+        <input id="finalAuditFile" type="file" accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet">
         <p id="finalAuditStatus" role="status" aria-live="polite"></p>
         <details id="finalAuditRepeatedIds" hidden>
           <summary style="cursor:pointer;font-weight:800">Conferir IDs encontrados em mais de uma rota</summary>
@@ -12031,8 +12031,8 @@ body.editor-open .global-theme-toggle {
       <details class="zone-staff-editor" open>
         <summary>Conferência física da Aduana — segundo CSV</summary>
         <p>Importe o CSV dos Shipment IDs bipados fisicamente, após a importação do CSV do sistema. Ele será confrontado com os pacotes "A mais" da auditoria final AM1. Não substitui o CSV do sistema.</p>
-        <label for="physicalAuditFile">Arquivo CSV — IDs Físicos</label>
-        <input id="physicalAuditFile" type="file" accept=".csv,text/csv">
+        <label for="physicalAuditFile">Arquivo de IDs Físicos — CSV ou XLSX</label>
+        <input id="physicalAuditFile" type="file" accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet">
         <p id="physicalAuditStatus" role="status" aria-live="polite"></p>
         <button id="clearPhysicalAuditBtn" type="button">Limpar leitura física (salvar em Aplicar)</button>
       </details>
@@ -12143,6 +12143,7 @@ body.editor-open .global-theme-toggle {
 
   <script src="firebase-config.js"></script>
   <script src="ondas-dados.js"></script>
+  <script src="aduana-xlsx.js"></script>
   <script src="aduana-conferencia.js"></script>
   <script>
     const storageKey = "ondas-dados";
@@ -18714,7 +18715,10 @@ body.editor-open .global-theme-toggle {
       const button = document.getElementById("applyBtn");
       button.disabled = true;
       try {
-        const parsed = parseFinalAuditCsv(await file.text());
+        const csvText = window.AduanaXlsx?.isXlsx(file)
+          ? window.AduanaXlsx.toCsv(await window.AduanaXlsx.read(file))
+          : await file.text();
+        const parsed = parseFinalAuditCsv(csvText);
         // A data do CSV pode divergir: o operador será alertado antes de aplicar.
         pendingFinalAudit = { ...parsed, fileName: file.name, importedAt: new Date().toISOString() };
         updateFinalAuditEditorStatus();
@@ -18735,7 +18739,7 @@ body.editor-open .global-theme-toggle {
       if (!file) return;
       const node = document.getElementById("physicalAuditStatus");
       try {
-        const parsed = window.ControleAduana.parsePhysicalCsv(await file.text(), file.name);
+        const parsed = await window.ControleAduana.parsePhysicalFile(file);
         pendingPhysicalAudit = parsed;
         updatePhysicalAuditEditorStatus();
       } catch (error) {
