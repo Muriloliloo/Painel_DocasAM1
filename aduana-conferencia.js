@@ -276,6 +276,19 @@
     ".aduana-table{width:100%;border-collapse:collapse}.aduana-table th{text-align:left;background:#fff4c7;font-size:12px;text-transform:uppercase}",
     ".aduana-table td,.aduana-table th{padding:10px 12px;border-bottom:1px solid #dce5eb}.aduana-table td:not(:first-child),.aduana-table th:not(:first-child){text-align:right;font-weight:850}",
     ".aduana-table tbody tr:nth-child(odd){background:#f1f3f5}",
+    ".aduana-table .aduana-subtotal{background:#fff1bf;font-weight:800}",
+    ".aduana-table .aduana-adjust{background:#f4f7fa;color:#9b4221;font-size:12px}",
+    ".aduana-table .aduana-total{background:#ffe17a;color:#122c40;font-weight:950}",
+    ".aduana-table .aduana-total td:nth-child(4){font-size:19px;color:#b62b34}",
+    ".aduana-reconcile{display:grid;gap:7px;line-height:1.45;background:#fffdf2;border-top:1px solid #ead78b;color:#153e58}",
+    ".aduana-reconcile strong{font-size:13px;color:#063354}",
+    ".aduana-reconcile span{font-size:12px;font-weight:750}",
+    ".aduana-reconcile small{font-size:11px;color:#637485}",
+    "body.dark-mode .aduana-table .aduana-subtotal{background:#5c4b20;color:#fff4ce}",
+    "body.dark-mode .aduana-table .aduana-adjust{background:#253c51;color:#ffc1ab}",
+    "body.dark-mode .aduana-table .aduana-total{background:#e2b739;color:#14293c}",
+    "body.dark-mode .aduana-reconcile{background:#1d374d;border-color:#826e3d;color:#f2e2b3}",
+    "body.dark-mode .aduana-reconcile strong{color:#ffdf63}",
     ".aduana-table .sub{padding-left:23px}",
     ".aduana-panel-inner{padding:14px}",
     ".aduana-filters{display:flex;gap:8px;align-items:center;flex-wrap:wrap}",
@@ -364,9 +377,15 @@
       '<article class="aduana-kpi"><span>Quantidade a mais na aduana</span><strong>'+formatValue(m.total,m.systemReady)+'</strong><small>Sistema · Shipment IDs únicos</small></article>'+
       '<article class="aduana-kpi encontrado"><span>Quantidade encontrada</span><strong>'+formatValue(m.totalFound,m.systemReady&&m.physicalReady)+'</strong><small>IDs únicos bipados no físico (contagem)</small></article>'+
       '<article class="aduana-kpi nao-encontrado"><span>Saldo não encontrado</span><strong>'+formatValue(m.totalMissing,m.systemReady&&m.physicalReady)+'</strong><small>Diferença entre Sistema e Físico; não identifica os IDs pendentes</small></article></section>'+
-      '<div class="aduana-columns"><section class="aduana-panel"><h3>CONTROLE POR LADO</h3><table class="aduana-table"><thead><tr><th>Item</th><th>Sistema</th><th>Físico encontrado</th><th>Não encontrado</th><th>Excedente físico</th></tr></thead><tbody>'+sides+
-      '<tr style="background:#fff1bf"><td><strong>TOTAL</strong></td><td>'+formatValue(m.total,m.systemReady)+'</td><td>'+formatValue(m.totalFound,m.systemReady&&m.physicalReady)+'</td><td>'+(m.grossMissing===null?"—":formatValue(m.grossMissing,m.systemReady&&m.physicalReady))+'</td><td>'+(m.grossExcess===null?"—":formatValue(m.grossExcess,m.systemReady&&m.physicalReady))+'</td></tr></tbody></table>'+
-      '<div class="aduana-panel-inner aduana-muted">Saldo líquido da operação: '+formatValue(m.totalMissing,m.systemReady&&m.physicalReady)+'. '+(m.physicalNeedsReimport?'A separação dos pendentes por lado ficará disponível após reimportar a planilha física com a coluna Lados.':'Não encontrados por lado menos excedentes físicos = saldo líquido. A conciliação exata de IDs está na tabela inferior.')+'</div></section>'+
+      '<div class="aduana-columns"><section class="aduana-panel"><h3>CONTROLE POR LADO</h3><table class="aduana-table"><thead><tr><th>Item</th><th>Sistema</th><th>Físico encontrado</th><th>Faltantes por lado (bruto)</th><th>Excedente físico</th></tr></thead><tbody>'+sides+
+      '<tr class="aduana-subtotal"><td><strong>SUBTOTAL POR LADO</strong></td><td>'+formatValue(m.total,m.systemReady)+'</td><td>'+formatValue(m.totalFound,m.systemReady&&m.physicalReady)+'</td><td>'+(m.grossMissing===null?"—":formatValue(m.grossMissing,m.systemReady&&m.physicalReady))+'</td><td>'+(m.grossExcess===null?"—":formatValue(m.grossExcess,m.systemReady&&m.physicalReady))+'</td></tr>'+
+      '<tr class="aduana-adjust"><td><strong>AJUSTE DOS EXCEDENTES</strong></td><td>—</td><td>—</td><td>'+(m.grossExcess===null?"—":"−"+m.grossExcess)+'</td><td>Já considerado</td></tr>'+
+      '<tr class="aduana-total"><td><strong>SALDO FINAL (LÍQUIDO)</strong></td><td>'+formatValue(m.total,m.systemReady)+'</td><td>'+formatValue(m.totalFound,m.systemReady&&m.physicalReady)+'</td><td>'+formatValue(m.totalMissing,m.systemReady&&m.physicalReady)+'</td><td>—</td></tr></tbody></table>'+
+      '<div class="aduana-panel-inner aduana-reconcile">'+(m.systemReady&&m.physicalReady&&!m.physicalNeedsReimport
+        ? '<strong>Conciliação: '+m.total+' pacotes no sistema = '+m.totalFound+' encontrados + '+m.totalMissing+' saldo não encontrado.</strong>'+
+          '<span>Por lados: '+m.grossMissing+' faltantes brutos − '+m.grossExcess+' excedentes físicos = '+m.totalMissing+' saldo líquido.</span>'
+        : '<span>Para calcular o saldo por lado, importe e aplique as bases válidas de sistema e IDs físicos, com a identificação de cada setor.</span>')+
+      '<small>O saldo é calculado por quantidades, não comprova a identidade dos IDs não localizados.</small></div></section>'+
       '<section class="aduana-panel"><h3>CLASSIFICAÇÃO DOS PACOTES</h3><table class="aduana-table"><thead><tr><th>Item</th><th>Encontrada</th><th>Não encontrada</th></tr></thead><tbody>'+metrics+'</tbody></table>'+
       '<div class="aduana-panel-inner aduana-muted">Os encontrados são classificados pela planilha física. Como o sistema não informa Cor/Tipo dos demais pacotes, o saldo pendente aparece como "Sem classificação", sem atribuição fictícia a GM, Volumoso ou cores.</div></section></div>'+
       '<p class="aduana-note"><b>Conciliação de IDs:</b> '+(m.physicalReady
