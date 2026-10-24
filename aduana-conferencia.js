@@ -49,48 +49,71 @@
     if (row.some(Boolean)) rows.push(row);
     return rows;
   }
-  function parsePhysicalCsv(raw, fileName) {
-    if (!text(raw)) throw new Error("O CSV de IDs Físicos está vazio.");
-    const rows = parseRows(raw, delimiterFor(raw));
-    if (!rows.length) throw new Error("O CSV de IDs Físicos não contém registros.");
-    const aliases = new Set(["id", "id pacote", "id do pacote", "id fisico", "ids fisicos", "shipment id", "shipment", "barcode", "codigo", "codigo de barras", "numero do pacote", "pacote", "quantidade encontrada", "ids encontrados"]);
-    const header = rows[0].map(h => norm(h).replace(/[_-]+/g," ").replace(/\s+/g," "));
-    let idCol = header.findIndex(h=>aliases.has(h));
-    const typeCol = header.findIndex(h=>["tipo","categoria","classificacao","classificacao fisica"].includes(h));
-    const colorCol = header.findIndex(h=>["cor","cor volumoso"].includes(h));
-    const sideCol = header.findIndex(h=>["lado","lados","lado fisico","setor"].includes(h));
-    const volumosoCol = header.findIndex(h=>h==="volumoso");
-    const gmCol = header.findIndex(h=>h==="gm");
-    const hasHeader = idCol >= 0 || typeCol >= 0 || colorCol >= 0 || sideCol >= 0 || volumosoCol >= 0 || gmCol >= 0 || header.some(h=>["rota","situacao","status","observacao"].includes(h));
-    if (hasHeader && idCol < 0) throw new Error("CSV sem coluna de ID. Use 'Shipment ID', 'ID' ou 'ID Físico'.");
-    if (idCol < 0) idCol = 0;
-    const found = new Set(), details = {};
-    let duplicates = 0, invalid = 0, blank = 0;
-    for (const row of rows.slice(hasHeader ? 1 : 0)) {
-      const id = idKey(row[idCol]);
-      if (!id) { blank++; continue; }
-      if (!/^[A-Z0-9._-]+$/.test(id) || id.length > 90) { invalid++; continue; }
-      if (found.has(id)) { duplicates++; continue; }
-      found.add(id);
-      const rawType = norm(typeCol >= 0 ? row[typeCol] : "");
-      const rawColor = norm(colorCol >= 0 ? row[colorCol] : "");
-      const flagVolumoso = volumosoCol >= 0 && ["volumoso","sim","x","1","true"].includes(norm(row[volumosoCol]));
-      const flagGM = gmCol >= 0 && ["gm","sim","x","1","true"].includes(norm(row[gmCol]));
-      const tipo = flagVolumoso ? "Volumoso" : flagGM ? "GM" : rawType.includes("volum") ? "Volumoso" : rawType === "gm" ? "GM" : rawType ? "Outro" : "";
-      const cor = COLORS.find(c=>c && norm(c)===rawColor) || "";
-      const ladoFisico = sideCol >= 0 ? sideFromPhysical(row[sideCol]) : "";
-      if (tipo || cor || ladoFisico) details[id] = { tipo, cor, ladoFisico };
+  function parsePhysicalRows(rows, fileName) {
+    if (!Array.isArray(rows) || !rows.length) throw new Error("Arquivo de IDs Físicos vazio.");
+    const alias = h => norm(h).replace(/[_-]+/g," ").replace(/\s+/g," ").trim();
+    const expected = new Set(["id","id pacote","id do pacote","id fisico","ids fisicos","shipment id","shipment","barcode","codigo","codigo de barras","numero do pacote","pacote","quantidade encontrada","ids encontrados"]);
+    const headerIndex = rows.slice(0,15).findIndex(row=>Array.isArray(row) && row.some(cell=>expected.has(alias(cell))));
+    const header=headerIndex>=0 ? (rows[headerIndex]||[]).map(alias) : [];
+    const col=list=>header.findIndex(h=>list.includes(h));
+    const idCol=col([...expected]);
+    const sideCol=col(["lado","lados","lado fisico","setor","lado encontrado"]);
+    const colorCol=col(["cor","cor volumoso"]);
+    const typeCol=col(["tipo","categoria","classificacao","classificacao fisica"]);
+    const volumosoCol=col(["volumoso"]);
+    const gmCol=col(["gm"]);
+    const hasHeader=headerIndex>=0;
+    if(hasHeader && idCol<0)throw new Error("Arquivo físico sem coluna de Shipment ID.");
+    const ids=new Set(),details=Object.create(null);
+    let duplicates=0,invalid=0,blank=0;
+    const dataRows=rows.slice(hasHeader?headerIndex+1:0);
+    for (const row of dataRows) {
+      if(!Array.isArray(row))continue;
+      const id=idKey(row[idCol>=0?idCol:0]);
+      if(!id){blank++;continue}
+      if(!/^[A-Z0-9._-]+$/.test(id)||id.length>90){invalid++;continue}
+      if(ids.has(id)){duplicates++;continue}
+      ids.add(id);
+      const tipoRaw=norm(typeCol>=0?row[typeCol]:"");
+      const tipoVol=volumosoCol>=0&&["volumoso","sim","x","1","true"].includes(norm(row[volumosoCol]));
+      const tipoGm=gmCol>=0&&["gm","sim","x","1","true"].includes(norm(row[gmCol]));
+      const tipo=tipoVol?"Volumoso":tipoGm?"GM":tipoRaw.includes("volum")?"Volumoso":tipoRaw==="gm"?"GM":tipoRaw?"Outro":"";
+      const corRaw=norm(colorCol>=0?row[colorCol]:"");
+      const cor=COLORS.find(value=>value&&norm(value)===corRaw)||"";
+      const ladoFisico=sideCol>=0?sideFromPhysical(row[sideCol]):"";
+      // Sempre preserve objeto completo por ID, inclusive os campos ausentes.
+      details[id]={tipo,cor,ladoFisico};
     }
-    if (!found.size) throw new Error("Nenhum Shipment ID válido foi encontrado no CSV de bipagem.");
-    return { ids:[...found], details, duplicates, invalid, blank, schemaVersion:2, fileName:text(fileName), importedAt:new Date().toISOString(), date:"" };
+    if(!ids.size)throw new Error("Nenhum Shipment ID válido foi encontrado no arquivo físico.");
+    const sideCounts={"Lado B":0,"Lado C":0,"Lado D":0,"LH":0,"Lado A":0};
+    const colorCounts={"Amarelo":0,"Azul":0,"Vermelho":0,"Verde":0};
+    let unknownSides=0,unclassified=0;
+    for(const id of ids) {
+      const row=details[id];
+      if(Object.prototype.hasOwnProperty.call(sideCounts,row.ladoFisico))sideCounts[row.ladoFisico]++;
+      else unknownSides++;
+      if(row.cor&&Object.prototype.hasOwnProperty.call(colorCounts,row.cor))colorCounts[row.cor]++;
+      if(!row.tipo)unclassified++;
+    }
+    if(sideCol<0)throw new Error("O arquivo contém IDs, mas não a coluna Lados. Confira o cabeçalho da planilha física.");
+    if(unknownSides===ids.size)throw new Error("Nenhum dos lados da planilha foi reconhecido. Aceitos: LADO CENTRAL B, LADO CENTRAL C, LADO PAREDE e LINE HALL.");
+    return {
+      ids:[...ids],details,duplicates,invalid,blank,
+      sideCounts,colorCounts,unknownSides,unclassified,
+      schemaVersion:3,fileName:text(fileName),importedAt:new Date().toISOString(),date:""
+    };
+  }
+  function parsePhysicalCsv(raw,fileName) {
+    if(!text(raw))throw new Error("O arquivo CSV de IDs Físicos está vazio.");
+    return parsePhysicalRows(parseRows(raw,delimiterFor(raw)),fileName);
   }
   async function parsePhysicalFile(file) {
-    if (window.AduanaXlsx?.isXlsx(file)) {
-      const result = await window.AduanaXlsx.read(file);
-      return parsePhysicalCsv(window.AduanaXlsx.toCsv(result), file.name);
+    if(window.AduanaXlsx?.isXlsx(file)) {
+      const result=await window.AduanaXlsx.read(file);
+      return parsePhysicalRows(result.rows,file.name);
     }
-    if (!/\.csv$/i.test(file?.name || "")) throw new Error("Arquivo inválido. Selecione CSV ou XLSX.");
-    return parsePhysicalCsv(await file.text(), file.name);
+    if(!/\.csv$/i.test(file?.name||""))throw new Error("Arquivo inválido. Selecione CSV ou XLSX.");
+    return parsePhysicalCsv(await file.text(),file.name);
   }
   function sideFromPhysical(value) {
     const side = norm(value).replace(/\s+/g, " ");
