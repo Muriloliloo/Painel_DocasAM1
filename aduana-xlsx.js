@@ -97,6 +97,7 @@
         else if(kind==="s")value=shared[Number(v)]||"";
         else if(kind==="str" || kind==="e")value=v;
         else if(kind==="b")value=v==="1"?"VERDADEIRO":"FALSO";
+        else if (/^[+-]?\d+(?:\.\d+)?[eE][+-]?\d+$/.test(v) && Number.isSafeInteger(Number(v))) value=String(Number(v)); // O Excel armazena Shipment IDs em notação científica.
         else value=v; // Texto preservado (inclusive Shipment ID numérico).
         arr[col]=String(value||"").trim();
       }
@@ -161,5 +162,5 @@
       return '"'+String(item??"").replace(/"/g,'""')+'"';
     }).join(";")).join("\r\n");
   }
-  window.AduanaXlsx={isXlsx,read,toCsv,version:"20261024-r3"};
+  window.AduanaXlsx={isXlsx,read,toCsv,version:"20261024-r4"};
 })();
