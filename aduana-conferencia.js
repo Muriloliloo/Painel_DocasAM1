@@ -352,13 +352,13 @@
     const m=current;
     let data, file;
     if (type==="sistema") {
-      data=[["Shipment ID","Origem","Lado","Rota","Doca","Encontrado no físico"],...m.rows.filter(r=>r.origem==="Sistema").map(r=>[r.id,r.origem,r.side,r.rota,r.doca,m.physicalReady?(r.situacao==="Encontrado"?"SIM":"NÃO"):"PENDENTE"])];
+      data=[["Shipment ID","Origem","Lado Sistema","Rota","Doca","Conciliação por ID"],...m.systemRows.map(r=>[r.id,"Sistema",r.side,r.rota,r.doca,m.physicalReady?(r.match?"SIM":"NÃO"):"PENDENTE"])];
       file="Sistema";
     } else if(type==="fisico") {
-      data=[["Shipment ID","Origem","Encontrado no sistema","Lado Físico","Tipo","Cor"],...m.rows.filter(r=>r.origem==="Somente físico"||r.situacao==="Encontrado").map(r=>[r.id,"Físico",r.origem==="Sistema"?"SIM":"NÃO",r.ladoFisico,r.tipo,r.cor])];
+      data=[["Shipment ID","Origem","Conciliação com sistema por ID","Lado Físico","Tipo","Cor"],...m.physicalRows.map(r=>[r.id,"Físico",r.match?"SIM":"NÃO",r.ladoFisico,r.tipo,r.cor])];
       file="IDs_Fisicos";
     } else {
-      data=[["Shipment ID","Origem","Lado Sistema","Lado Físico","Rota","Doca","Situação","Tipo","Cor"],...m.rows.map(r=>[r.id,r.origem,r.side,r.ladoFisico,r.rota,r.doca,r.situacao,r.tipo,r.cor])];
+      data=[["Shipment ID","Origem","Lado Sistema","Lado Físico","Rota","Doca","Situação por ID","Tipo","Cor"],...m.rows.map(r=>[r.id,r.origem,r.side,r.ladoFisico,r.rota,r.doca,r.situacao,r.tipo,r.cor])];
       file="Confronto_Aduana";
     }
     const content="\uFEFF"+data.map(row=>row.map(csvCell).join(";")).join("\r\n");
