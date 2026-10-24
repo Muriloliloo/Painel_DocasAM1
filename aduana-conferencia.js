@@ -266,22 +266,22 @@
   }
   function renderRows() {
     if (!current || !$("aduanaDetails")) return;
-    const m = current;
-    const visible = m.rows.filter(row=>{
-      if (mode==="encontrados" && row.situacao!=="Encontrado") return false;
-      if (mode==="faltantes" && row.situacao!=="Não encontrado") return false;
-      if (mode==="extra" && row.origem!=="Somente físico") return false;
-      return !query || [row.id,row.rota,row.side,row.ladoFisico,row.origem].some(value=>norm(value).includes(norm(query)));
+    const m=current;
+    const visible=m.rows.filter(row=>{
+      if(mode==="encontrados"&&row.origem!=="Físico")return false;
+      if(mode==="faltantes"&&row.origem!=="Sistema")return false;
+      if(mode==="extra"&&!(row.origem==="Físico"&&!row.match))return false;
+      return !query||[row.id,row.rota,row.side,row.ladoFisico,row.origem].some(value=>norm(value).includes(norm(query)));
     });
-    $("aduanaRowsCount").textContent = visible.length+" registro(s)";
-    $("aduanaDetails").innerHTML = visible.length ? visible.map(row=>{
-      const editable = m.physicalReady && (row.situacao==="Encontrado" || row.origem==="Somente físico");
-      const tag = row.situacao==="Encontrado" ? "ok" : row.situacao==="Não encontrado" ? "fail" : row.origem==="Somente físico" ? "warn" : "";
-      return '<tr><td>'+esc(row.id)+'</td><td>'+esc(row.origem)+'</td><td>'+esc(row.side)+'</td><td>'+esc(row.ladoFisico || '—')+'</td><td>'+esc(row.rota)+'</td><td>'+esc(row.doca)+'</td>'+
+    $("aduanaRowsCount").textContent=visible.length+" registro(s)"+(mode==="faltantes"?" sem ID físico equivalente no sistema (não equivalem ao saldo operacional)":mode==="extra"?" bipados sem correspondência exata no CSV do sistema":"");
+    $("aduanaDetails").innerHTML=visible.length?visible.map(row=>{
+      const editable=m.physicalReady&&row.origem==="Físico";
+      const tag=row.origem==="Físico"?(row.match?"ok":"warn"):"fail";
+      return '<tr><td>'+esc(row.id)+'</td><td>'+esc(row.origem)+'</td><td>'+esc(row.side)+'</td><td>'+esc(row.ladoFisico||"—")+'</td><td>'+esc(row.rota)+'</td><td>'+esc(row.doca)+'</td>'+
         '<td><span class="aduana-tag '+tag+'">'+esc(row.situacao)+'</span></td><td>'+
         (editable?selector("tipo",row.id,row.tipo,TYPES):"—")+'</td><td>'+
         (editable?selector("cor",row.id,row.cor,COLORS):"—")+'</td></tr>';
-    }).join("") : '<tr><td colspan="9" style="padding:24px;text-align:center">Nenhum registro para os filtros selecionados.</td></tr>';
+    }).join(""):'<tr><td colspan="9" style="padding:24px;text-align:center">Nenhum registro para os filtros selecionados.</td></tr>';
   }
   function render(data, packageModel) {
     if (!$("aduanaView")) return;
@@ -291,7 +291,7 @@
       ? "Importe o arquivo CSV ou XLSX <b>audited_shipments</b> no Editor de Dados e clique em <b>Aplicar</b>. A base do sistema considera somente os IDs AM1 no estado final <b>A mais</b>."
       : !m.physicalReady
       ? "Base do sistema carregada. Importe o segundo arquivo CSV ou XLSX <b>IDs Físicos</b> no Editor de Dados e clique em <b>Aplicar</b> para comparar os arquivos."
-      : "Confronto realizado por <b>Shipment ID único</b>. A quantidade não encontrada corresponde aos IDs do sistema sem leitura física.";
+      : "Resumo operacional: <b>encontrados</b> = quantidade de IDs únicos bipados no físico; <b>saldo</b> = quantidade do sistema menos bipagem. A conciliação por Shipment ID aparece separadamente, sem presumir correspondências.";
     const sides = m.sides.filter(row=>!["Lado A","Não identificado"].includes(row.side)||row.system).map(row=>
       '<tr><td class="sub">– '+esc(row.side)+'</td><td>'+formatValue(row.system,m.systemReady)+'</td><td>'+formatValue(row.found,m.systemReady&&m.physicalReady)+'</td><td>'+formatValue(row.missing,m.systemReady&&m.physicalReady)+'</td></tr>').join("");
     const metrics = [["Volumoso",m.countType("Volumoso")],["Amarelo",m.countColor("Amarelo")],["Azul",m.countColor("Azul")],["Vermelho",m.countColor("Vermelho")],["Verde",m.countColor("Verde")],["GM",m.countType("GM")]].map(row=>
