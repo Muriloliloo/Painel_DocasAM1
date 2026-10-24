@@ -12017,8 +12017,8 @@ body.editor-open .global-theme-toggle {
     </div>
     <section class="paste-area">
       <details class="zone-staff-editor" open>
-        <summary>Fechamento final da Aduana — importar CSV</summary>
-        <p>Ao finalizar a última onda, selecione o relatório audited_shipments do dia. O CSV substituirá as contagens ao vivo somente no fechamento por lado.</p>
+        <summary>Fechamento final da Aduana — importar CSV ou XLSX</summary>
+        <p>Ao finalizar a última onda, selecione o arquivo audited_shipments do sistema (.csv ou .xlsx). As contagens finais substituirão as contagens ao vivo somente no fechamento por lado.</p>
         <label for="finalAuditFile">Arquivo do sistema — CSV ou XLSX</label>
         <input id="finalAuditFile" type="file" accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet">
         <p id="finalAuditStatus" role="status" aria-live="polite"></p>
@@ -12029,8 +12029,8 @@ body.editor-open .global-theme-toggle {
         <button id="clearFinalAuditBtn" type="button">Voltar à Base Aduana (salvar em Aplicar)</button>
       </details>
       <details class="zone-staff-editor" open>
-        <summary>Conferência física da Aduana — segundo CSV</summary>
-        <p>Importe o CSV dos Shipment IDs bipados fisicamente, após a importação do CSV do sistema. Ele será confrontado com os pacotes "A mais" da auditoria final AM1. Não substitui o CSV do sistema.</p>
+        <summary>Conferência física da Aduana — segundo arquivo CSV ou XLSX</summary>
+        <p>Importe a planilha .xlsx (como IDs Físico) ou o CSV dos pacotes bipados, após importar o arquivo do sistema. O confronto considera os Shipment IDs únicos no estado final "A mais" da AM1.</p>
         <label for="physicalAuditFile">Arquivo de IDs Físicos — CSV ou XLSX</label>
         <input id="physicalAuditFile" type="file" accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet">
         <p id="physicalAuditStatus" role="status" aria-live="polite"></p>
