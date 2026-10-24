@@ -66,7 +66,7 @@
   }
   const children = (el,tag) => Array.from(el.getElementsByTagNameNS("*",tag));
   function resolvePath(path) {
-    let parts=String(path||"").startsWith("/") ? [] : ["xl"];
+    let parts=String(path||"").startsWith("/") || String(path||"").startsWith("xl/") ? [] : ["xl"];
     for (const bit of String(path||"").split("/")) {
       if (!bit || bit===".") continue;
       if (bit==="..") parts.pop();
