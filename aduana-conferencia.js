@@ -8,7 +8,7 @@
   const esc = value => String(value == null ? "" : value).replace(/[&<>"']/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c]));
   const text = value => String(value == null ? "" : value).trim();
   const norm = value => text(value).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
-  const idKey = value => text(value).replace(/^\uFEFF/, "").replace(/^'/, "").toUpperCase();
+  const idKey = value => { const raw=text(value).replace(/^\uFEFF/, "").replace(/^'/, ""); return /^[+]?[0-9]+(?:\.[0-9]+)?e[+]?[0-9]+$/i.test(raw) && Number.isSafeInteger(Number(raw)) ? String(Number(raw)) : raw.toUpperCase(); };
   const $ = id => document.getElementById(id);
   const TYPES = ["", "GM", "Volumoso", "Outro"];
   const COLORS = ["", "Amarelo", "Azul", "Vermelho", "Verde"];
