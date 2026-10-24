@@ -11416,6 +11416,46 @@ body.editor-open .global-theme-toggle {
       .wa-farol-guide * { scroll-behavior: auto; }
     }
   
+    /* AM1: isolar reporte OOT da grade de docas (24/10/2026).
+       Não modifica dados, posição das docas ou dimensionamento das colunas.
+       Evita que o reporte e o grid disputem linhas implícitas do layout. */
+    .app.docas-mode:not(.simple-docks-mode):not(.routes-mode):not(.dashboard-mode):not(.dados1-mode):not(.aduana-mode) > .stats {
+      position: absolute;
+      top: calc(var(--docas-topbar-h) + var(--docas-toolbar-h) + 6px);
+      left: calc(var(--docas-rail-w) + var(--docas-side-gap));
+      right: var(--docas-side-gap);
+      width: auto;
+      height: var(--docas-stats-h);
+      margin: 0;
+      z-index: 3;
+    }
+    .app.docas-mode:not(.simple-docks-mode):not(.routes-mode):not(.dashboard-mode):not(.dados1-mode):not(.aduana-mode) > #dockGrid {
+      position: absolute;
+      top: calc(var(--docas-topbar-h) + var(--docas-toolbar-h) + var(--docas-stats-h) + 17px);
+      bottom: calc(var(--docas-footer-h) + 33px);
+      left: calc(var(--docas-rail-w) + var(--docas-side-gap));
+      right: var(--docas-side-gap);
+      width: auto;
+      height: auto;
+      min-height: 0;
+      max-height: none;
+      margin: 0;
+      padding: 0;
+      z-index: 2;
+    }
+    /* Faixa dos setores sempre reservada acima da primeira fila de docas. */
+    .app.docas-mode:not(.simple-docks-mode) #dockGrid .dock-zone-labels {
+      top: 0;
+      height: 19px;
+    }
+    .app.docas-mode:not(.simple-docks-mode) #dockGrid .dock-block {
+      padding-top: 24px;
+    }
+    @media (max-height: 700px) {
+      .app.docas-mode:not(.simple-docks-mode):not(.routes-mode):not(.dashboard-mode):not(.dados1-mode):not(.aduana-mode) > #dockGrid {
+        bottom: calc(var(--docas-footer-h) + 30px);
+      }
+    }
   </style>
 </head>
 <body>
