@@ -146,6 +146,24 @@
   function sideDisplay(side) {
     return SIDE_ZONES.find(zone=>zone.side===side)?.label || side;
   }
+  // Usa exatamente os mesmos nomes de chave de Editor de Dados > Responsáveis por lado.
+  // Central B/C aceitam o cadastro legado somente quando não há cadastro específico.
+  const COORDINATOR_ZONE_KEYS = {
+    "Lado A": ["Lado Heineken"],
+    "Lado B": ["Lado Central B", "Lado Central"],
+    "Lado C": ["Lado Central C", "Lado Central"],
+    "Lado D": ["Lado Parede"],
+    "Lado E": ["Line Hall"]
+  };
+  function coordinatorForSide(data, side) {
+    const staff = data && data.responsaveisPorLado || {};
+    for (const key of COORDINATOR_ZONE_KEYS[side] || []) {
+      if (Object.prototype.hasOwnProperty.call(staff,key)) {
+        return text(staff[key] && staff[key].coordenador) || "Não informado";
+      }
+    }
+    return "Não informado";
+  }
   // Duas leituras distintas: saldo operacional (quantidade) e conciliação estrita (ID).
   // Não associar automaticamente o ID físico a uma rota do sistema quando não coincide.
   function calculate(data, packageModel) {
@@ -290,6 +308,11 @@
     "body.dark-mode .aduana-reconcile{background:#1d374d;border-color:#826e3d;color:#f2e2b3}",
     "body.dark-mode .aduana-reconcile strong{color:#ffdf63}",
     ".aduana-table .sub{padding-left:9px;text-align:center}",
+    ".aduana-side-label{font-weight:900;line-height:1.3;white-space:normal}",
+    ".aduana-side-coordinator{display:block;margin-top:4px;font-size:11px;font-weight:750;line-height:1.25;color:#3b596c;overflow-wrap:anywhere}",
+    ".aduana-side-coordinator b{font-weight:900;color:#073955}",
+    "body.dark-mode .aduana-side-coordinator{color:#cfdeea}",
+    "body.dark-mode .aduana-side-coordinator b{color:#ffda57}",
     ".aduana-panel-inner{padding:14px}",
     ".aduana-filters{display:flex;gap:8px;align-items:center;flex-wrap:wrap}",
     ".aduana-filters input{flex:1 1 200px;min-width:120px;padding:10px;border:1px solid #a9bfd0;border-radius:8px}",
@@ -358,7 +381,9 @@
       ? "<b>IMPORTAÇÃO FÍSICA INCOMPLETA:</b> os IDs foram salvos, mas seus lados não. Selecione novamente o arquivo Excel no botão abaixo para recuperar os lados, cores e tipos. O CSV do sistema será preservado."
       : "Resumo operacional: <b>encontrados</b> = quantidade de IDs únicos bipados no físico; <b>saldo</b> = quantidade do sistema menos bipagem. A conciliação por Shipment ID aparece separadamente, sem presumir correspondências.";
     const sides = m.sides.filter(row=>row.side!=="Não identificado"||row.system||row.found).map(row=>
-      '<tr><td class="sub">– '+esc(sideDisplay(row.side))+'</td><td>'+formatValue(row.system,m.systemReady)+'</td><td>'+formatValue(row.found,m.systemReady&&m.physicalReady)+'</td><td>'+(row.missing===null?"Aguardando identificação":formatValue(row.missing,m.systemReady&&m.physicalReady))+'</td><td>'+(row.excess===null?"—":formatValue(row.excess,m.systemReady&&m.physicalReady))+'</td></tr>').join("");
+      '<tr><td class="sub"><div class="aduana-side-label">'+esc(sideDisplay(row.side))+'</div>'+
+      (row.side==="Não identificado" ? '' : '<div class="aduana-side-coordinator"><b>Coordenador:</b> '+esc(coordinatorForSide(data,row.side))+'</div>')+
+      '</td><td>'+formatValue(row.system,m.systemReady)+'</td><td>'+formatValue(row.found,m.systemReady&&m.physicalReady)+'</td><td>'+(row.missing===null?"Aguardando identificação":formatValue(row.missing,m.systemReady&&m.physicalReady))+'</td><td>'+(row.excess===null?"—":formatValue(row.excess,m.systemReady&&m.physicalReady))+'</td></tr>').join("");
     const metrics = [["Volumoso",m.countType("Volumoso")],["Amarelo",m.countColor("Amarelo")],["Azul",m.countColor("Azul")],["Vermelho",m.countColor("Vermelho")],["Verde",m.countColor("Verde")],["GM",m.countType("GM")]].map(row=>
       '<tr><td>'+esc(row[0])+'</td><td>'+formatValue(row[1],m.physicalReady&&!m.physicalNeedsReimport)+'</td><td title="O CSV de Sistema não informa tipo/cor para IDs ainda não encontrados">—</td></tr>').join("")+
       '<tr><td><b>Sem classificação (saldo pendente)</b></td><td>—</td><td>'+formatValue(m.totalMissing,m.systemReady&&m.physicalReady)+'</td></tr>';
