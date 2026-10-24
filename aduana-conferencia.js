@@ -166,6 +166,10 @@
   }
   // Duas leituras distintas: saldo operacional (quantidade) e conciliação estrita (ID).
   // Não associar automaticamente o ID físico a uma rota do sistema quando não coincide.
+  // Regra principal: só entra em qualquer contagem um ID físico que também
+  // exista no relatório do sistema em ocorrência final "aMais".
+  // Mesmo que a leitura tenha sido feita em outro lado, o ID é conciliado,
+  // e a atribuição do fechamento por lado segue o lado do SISTEMA.
   function calculate(data, packageModel) {
     const date = modelDate(data && data.data);
     const final = data && data.aduanaFechamentoFinal;
@@ -176,94 +180,85 @@
     if (systemReady) {
       for (const group of packageModel.groups || []) {
         for (const route of group.rows || []) {
-          const loc = {side:sideFromDock(route.doca) || sideLabel(group.label), doca:text(route.doca), rota:text(route.rota)};
-          const id=text(route.idRota), name=text(route.rota).toUpperCase();
-          if(id && !routesById.has(id)) routesById.set(id,loc);
-          if(name && !routesByName.has(name)) routesByName.set(name,loc);
+          const loc={side:sideFromDock(route.doca)||sideLabel(group.label),doca:text(route.doca),rota:text(route.rota)};
+          const id=text(route.idRota),name=text(route.rota).toUpperCase();
+          if(id&&!routesById.has(id))routesById.set(id,loc);
+          if(name&&!routesByName.has(name))routesByName.set(name,loc);
         }
       }
     }
-    const systemIds=new Map(), crossSides=new Set();
-    if(systemReady) {
-      for(const route of final.rows || []) {
-        const loc=routesById.get(text(route.idRota))||routesByName.get(text(route.rota).toUpperCase())||
-          {side:sideFromDock(route.doca)||"Não identificado",doca:text(route.doca),rota:text(route.rota)};
-        for(const event of route.ocorrencias || []) {
-          if(event.estado!=="aMais")continue;
-          const id=idKey(event.shipmentId);
-          if(!id)continue;
-          if(!systemIds.has(id))systemIds.set(id,{id,...loc,origem:"Sistema"});
-          else if(systemIds.get(id).side!==loc.side)crossSides.add(id);
-        }
+    const systemIds=new Map(),crossSides=new Set();
+    if(systemReady)for(const route of final.rows || []){
+      const loc=routesById.get(text(route.idRota))||routesByName.get(text(route.rota).toUpperCase())||
+        {side:sideFromDock(route.doca)||"Não identificado",doca:text(route.doca),rota:text(route.rota)};
+      for(const event of route.ocorrencias || []){
+        if(event.estado!=="aMais")continue;
+        const id=idKey(event.shipmentId);
+        if(!id)continue;
+        if(!systemIds.has(id))systemIds.set(id,{id,...loc,origem:"Sistema"});
+        else if(systemIds.get(id).side!==loc.side)crossSides.add(id);
       }
     }
-    const physicalIds=new Set(physicalReady?physical.ids.map(idKey).filter(Boolean):[]);
-    const details = physicalReady ? physical.details || {} : {};
-    const physicalRows=[...physicalIds].map(id=>{
-      const d=details[id] || {};
+    // Deduplicação: IDs físicos são lidos uma única vez, independentemente
+    // do lado da planilha e de quantas linhas o arquivo contenha.
+    const physicalIds=new Set(physicalReady ? physical.ids.map(idKey).filter(Boolean) : []);
+    const details=physicalReady ? physical.details||{} : {};
+    const matchedPhysical=[];
+    const ignoredPhysicalIds=[];
+    for(const id of physicalIds){
       const match=systemIds.get(id);
-      return {
-        id, origem:"Físico", side:match?.side || "—",
+      if(!match){ignoredPhysicalIds.push(id);continue;}
+      const d=details[id]||{};
+      matchedPhysical.push({
+        id,origem:"Físico",side:match.side,
         ladoFisico:sideFromPhysical(d.ladoFisico||d.lados||d.Lados||d.lado||d.side)||"Não identificado",
-        rota:match?.rota||"",doca:match?.doca||"",
-        tipo:text(d.tipo),cor:text(d.cor),
-        situacao:match?"Encontrado (ID conciliado)":"Encontrado (sem vínculo no sistema)",
-        match:!!match
-      };
-    });
-    const matchedPhysical=physicalRows.filter(row=>row.match);
-    const nonMatchedPhysical=physicalRows.filter(row=>!row.match);
+        rota:match.rota,doca:match.doca,tipo:text(d.tipo),cor:text(d.cor),
+        situacao:"Encontrado",match:true
+      });
+    }
+    const matchedIds=new Set(matchedPhysical.map(row=>row.id));
     const systemRows=[...systemIds.values()].map(row=>{
-      const d=details[row.id] || {};
-      const matched=physicalIds.has(row.id);
+      const d=details[row.id]||{};
+      const match=matchedIds.has(row.id);
       return {
-        ...row,ladoFisico:sideFromPhysical(d.ladoFisico||d.lados||d.Lados||d.lado||d.side),tipo:text(d.tipo),cor:text(d.cor),
-        situacao:matched?"Encontrado (ID conciliado)":
-          physicalReady?"Sem correspondência de ID":"Aguardando conferência física",
-        match:matched
+        ...row,ladoFisico:match?sideFromPhysical(d.ladoFisico||d.lados||d.Lados||d.lado||d.side):"",
+        tipo:match?text(d.tipo):"",cor:match?text(d.cor):"",
+        situacao:match?"Encontrado":physicalReady?"Não encontrado":"Aguardando físico",
+        match
       };
     });
     const systemUnmatched=systemRows.filter(row=>!row.match);
-    // Tabela de detalhes mostra cada ID físico uma única vez; IDs exclusivos do sistema
-    // aparecem separadamente. Não os declarar definitivamente perdidos sem conciliação.
-    const rows=[
-      ...physicalRows,
-      ...systemUnmatched
-    ];
+    // Detalhamento, filtros e exportações só incluem IDs pertencentes ao sistema.
+    const rows=[...matchedPhysical,...systemUnmatched];
     const sideNames=[...SIDE_ZONES.map(zone=>zone.side),"Não identificado"];
-    const total=systemIds.size,totalPhysical=physicalIds.size;
-    // A contagem geral independe do preenchimento do lado, mas a distribuição não.
-    const totalFound=physicalReady&&systemReady?totalPhysical:0;
-    const totalMissing=physicalReady&&systemReady?total-totalPhysical:0;
-    const physicalUnmapped=physicalRows.filter(row=>!sideNames.includes(row.ladoFisico)||row.ladoFisico==="Não identificado").length;
-    const physicalNeedsReimport=physicalReady && physicalUnmapped>0;
+    const total=systemIds.size;
+    const totalFound=matchedPhysical.length;
+    const totalMissing=physicalReady&&systemReady?total-totalFound:0;
+    const physicalUnmapped=matchedPhysical.filter(row=>!sideNames.includes(row.ladoFisico)||row.ladoFisico==="Não identificado").length;
+    // Falta de lado no CSV não impede confronto por ID: apenas sinaliza.
+    const physicalNeedsReimport=physicalReady&&physicalUnmapped>0;
     const sides=sideNames.map(side=>{
       const system=systemRows.filter(row=>row.side===side).length;
-      const physicalCount=physicalRows.filter(row=>row.ladoFisico===side).length;
-      const missing=side==="Não identificado"?null:physicalNeedsReimport?null:Math.max(0,system-physicalCount);
-      const excess=side==="Não identificado"?null:physicalNeedsReimport?null:Math.max(0,physicalCount-system);
+      const found=matchedPhysical.filter(row=>row.side===side).length;
       return {
-        side,system,found:physicalCount,missing,excess,
-        balance:physicalNeedsReimport?null:system-physicalCount,
-        matched:matchedPhysical.filter(row=>row.side===side).length
+        side,system,found,
+        missing:physicalReady&&systemReady?system-found:null,
+        excess:0,balance:system-found,matched:found
       };
     });
-    const sideOverflow=physicalNeedsReimport?[]:sides.filter(side=>Number(side.excess)>0);
-    const grossMissing=physicalNeedsReimport?null:sides.reduce((sum,row)=>sum+Number(row.missing||0),0);
-    const grossExcess=physicalNeedsReimport?null:sides.reduce((sum,row)=>sum+Number(row.excess||0),0);
     return {
-      date,systemReady,physicalReady,rows,physicalRows,systemRows,sides,
-      physical,final,total,totalFound,totalMissing,totalPhysical,
-      matchedCount:matchedPhysical.length,
-      unmatchedPhysical:nonMatchedPhysical.length,
-      unmatchedSystem:systemUnmatched.length,
+      date,systemReady,physicalReady,rows,physicalRows:matchedPhysical,systemRows,sides,
+      physical,final,total,totalFound,totalMissing,totalPhysical:totalFound,
+      matchedCount:totalFound,
+      unmatchedPhysical:0,unmatchedSystem:systemUnmatched.length,
       crossSides:crossSides.size,
-      sideOverflow, grossMissing, grossExcess,
-      physicalUnmapped, physicalNeedsReimport,
-      onlyPhysical:nonMatchedPhysical.length,
-      sideMismatches:matchedPhysical.filter(row=>row.ladoFisico&&row.ladoFisico!=="Não identificado"&&row.side!=="Não identificado"&&row.side!==row.ladoFisico).length,
-      countType:tipo=>physicalRows.filter(row=>row.tipo===tipo).length,
-      countColor:cor=>physicalRows.filter(row=>row.cor===cor).length
+      sideOverflow:[],grossMissing:physicalReady&&systemReady?totalMissing:null,grossExcess:0,
+      physicalUnmapped,physicalNeedsReimport,
+      ignoredPhysicalIds, // Apenas diagnóstico interno; nunca é contabilizado.
+      onlyPhysical:0,
+      sideMismatches:matchedPhysical.filter(row=>row.ladoFisico!=="Não identificado"&&row.ladoFisico!==row.side).length,
+      countType:tipo=>matchedPhysical.filter(row=>row.tipo===tipo).length,
+      countColor:cor=>matchedPhysical.filter(row=>row.cor===cor).length
     };
   }
   const styles = [
