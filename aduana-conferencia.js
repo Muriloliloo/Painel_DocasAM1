@@ -104,57 +104,101 @@
   function sideLabel(label) {
     return { "Lado Central B":"Lado B", "Lado Central C":"Lado C", "Lado Parede":"Lado D", "Line Hall":"LH", "Lado Heineken":"Lado A" }[label] || "Não identificado";
   }
+  // Duas leituras distintas: saldo operacional (quantidade) e conciliação estrita (ID).
+  // Não associar automaticamente o ID físico a uma rota do sistema quando não coincide.
   function calculate(data, packageModel) {
-    const date = modelDate(data && data.data), final = data && data.aduanaFechamentoFinal, physical = data && data.aduanaFisica;
-    const systemReady = Boolean(final && packageModel && packageModel.useFinal && date && modelDate(final.date)===date);
-    const physicalReady = Boolean(physical && date && modelDate(physical.date)===date && Array.isArray(physical.ids));
-    const routesId = new Map(), routesName = new Map();
-    if (systemReady) for (const group of packageModel.groups || []) for (const route of group.rows || []) {
-      const loc = { side:sideLabel(group.label), doca:text(route.doca), rota:text(route.rota) };
-      const id = text(route.idRota), name = text(route.rota).toUpperCase();
-      if (id && !routesId.has(id)) routesId.set(id,loc);
-      if (name && !routesName.has(name)) routesName.set(name,loc);
-    }
-    const systemIds = new Map(), crossSides = new Set();
-    if (systemReady) for (const route of final.rows || []) {
-      const loc = routesId.get(text(route.idRota)) || routesName.get(text(route.rota).toUpperCase()) ||
-        { side:"Não identificado", doca:"", rota:text(route.rota) };
-      for (const event of route.ocorrencias || []) {
-        if (event.estado !== "aMais") continue;
-        const id = idKey(event.shipmentId);
-        if (!id) continue;
-        if (!systemIds.has(id)) systemIds.set(id,{ id, ...loc, origem:"Sistema" });
-        else if (systemIds.get(id).side !== loc.side) crossSides.add(id);
+    const date = modelDate(data && data.data);
+    const final = data && data.aduanaFechamentoFinal;
+    const physical = data && data.aduanaFisica;
+    const systemReady = Boolean(final && packageModel && packageModel.useFinal && date && modelDate(final.date) === date);
+    const physicalReady = Boolean(physical && date && modelDate(physical.date) === date && Array.isArray(physical.ids));
+    const routesById = new Map(), routesByName = new Map();
+    if (systemReady) {
+      for (const group of packageModel.groups || []) {
+        for (const route of group.rows || []) {
+          const loc = {side:sideLabel(group.label), doca:text(route.doca), rota:text(route.rota)};
+          const id=text(route.idRota), name=text(route.rota).toUpperCase();
+          if(id && !routesById.has(id)) routesById.set(id,loc);
+          if(name && !routesByName.has(name)) routesByName.set(name,loc);
+        }
       }
     }
-    const physicallyScanned = physicalReady ? new Set(physical.ids.map(idKey).filter(Boolean)) : new Set();
-    const rows = [...systemIds.values()].map(r => ({
-      ...r, situacao:physicalReady ? (physicallyScanned.has(r.id)?"Encontrado":"Não encontrado") : "Aguardando físico",
-      tipo:text(physical && physical.details && physical.details[r.id] && physical.details[r.id].tipo),
-      cor:text(physical && physical.details && physical.details[r.id] && physical.details[r.id].cor),
-      ladoFisico:text(physical && physical.details && physical.details[r.id] && physical.details[r.id].ladoFisico)
-    }));
-    const found = rows.filter(r=>r.situacao==="Encontrado");
-    const missing = rows.filter(r=>r.situacao==="Não encontrado");
-    let onlyPhysical = 0;
-    if (systemReady && physicalReady) for (const id of physicallyScanned) if (!systemIds.has(id)) {
-      onlyPhysical++;
-      rows.push({ id, origem:"Somente físico", side:"—", doca:"", rota:"", situacao:"Fora da lista",
-        tipo:text(physical.details && physical.details[id] && physical.details[id].tipo),
-        cor:text(physical.details && physical.details[id] && physical.details[id].cor),
-        ladoFisico:text(physical.details && physical.details[id] && physical.details[id].ladoFisico) });
+    const systemIds=new Map(), crossSides=new Set();
+    if(systemReady) {
+      for(const route of final.rows || []) {
+        const loc=routesById.get(text(route.idRota))||routesByName.get(text(route.rota).toUpperCase())||
+          {side:"Não identificado",doca:"",rota:text(route.rota)};
+        for(const event of route.ocorrencias || []) {
+          if(event.estado!=="aMais")continue;
+          const id=idKey(event.shipmentId);
+          if(!id)continue;
+          if(!systemIds.has(id))systemIds.set(id,{id,...loc,origem:"Sistema"});
+          else if(systemIds.get(id).side!==loc.side)crossSides.add(id);
+        }
+      }
     }
-    const sides = ["Lado B","Lado C","Lado D","LH","Lado A","Não identificado"].map(side=>({
-      side, system:rows.filter(r=>r.origem==="Sistema" && r.side===side).length,
-      found:found.filter(r=>r.side===side).length, missing:missing.filter(r=>r.side===side).length
-    }));
+    const physicalIds=new Set(physicalReady?physical.ids.map(idKey).filter(Boolean):[]);
+    const details = physicalReady ? physical.details || {} : {};
+    const physicalRows=[...physicalIds].map(id=>{
+      const d=details[id] || {};
+      const match=systemIds.get(id);
+      return {
+        id, origem:"Físico", side:match?.side || "—",
+        ladoFisico:text(d.ladoFisico)||"Não identificado",
+        rota:match?.rota||"",doca:match?.doca||"",
+        tipo:text(d.tipo),cor:text(d.cor),
+        situacao:match?"Encontrado (ID conciliado)":"Encontrado (sem vínculo no sistema)",
+        match:!!match
+      };
+    });
+    const matchedPhysical=physicalRows.filter(row=>row.match);
+    const nonMatchedPhysical=physicalRows.filter(row=>!row.match);
+    const systemRows=[...systemIds.values()].map(row=>{
+      const d=details[row.id] || {};
+      const matched=physicalIds.has(row.id);
+      return {
+        ...row,ladoFisico:text(d.ladoFisico),tipo:text(d.tipo),cor:text(d.cor),
+        situacao:matched?"Encontrado (ID conciliado)":
+          physicalReady?"Sem correspondência de ID":"Aguardando conferência física",
+        match:matched
+      };
+    });
+    const systemUnmatched=systemRows.filter(row=>!row.match);
+    // Tabela de detalhes mostra cada ID físico uma única vez; IDs exclusivos do sistema
+    // aparecem separadamente. Não os declarar definitivamente perdidos sem conciliação.
+    const rows=[
+      ...physicalRows,
+      ...systemUnmatched
+    ];
+    const sideNames=["Lado B","Lado C","Lado D","LH","Lado A","Não identificado"];
+    const sides=sideNames.map(side=>{
+      const system=systemRows.filter(row=>row.side===side).length;
+      const physicalCount=physicalRows.filter(row=>row.ladoFisico===side).length;
+      return {
+        side,system,found:physicalCount,
+        missing:system-physicalCount,
+        matched:matchedPhysical.filter(row=>row.side===side).length
+      };
+    });
+    const total=systemIds.size,totalPhysical=physicalIds.size;
+    // Estes são saldos de QUANTIDADES (não IDs conciliados).
+    const totalFound=physicalReady&&systemReady?totalPhysical:0;
+    const totalMissing=physicalReady&&systemReady?total-totalPhysical:0;
+    const physicalUnmapped=physicalRows.filter(row=>!sideNames.includes(row.ladoFisico)||row.ladoFisico==="Não identificado").length;
+    const sideOverflow=sides.filter(side=>side.missing<0);
     return {
-      date, systemReady, physicalReady, rows, sides, physical, final, total:systemIds.size,
-      totalFound:found.length,totalMissing:missing.length,totalPhysical:physicallyScanned.size,
-      onlyPhysical,crossSides:crossSides.size,
-      sideMismatches: found.filter(r=>r.ladoFisico && r.ladoFisico!=="Não identificado" && r.side!=="Não identificado" && r.side!==r.ladoFisico).length,
-      countType:tipo=>found.filter(r=>r.tipo===tipo).length,
-      countColor:cor=>found.filter(r=>r.cor===cor).length
+      date,systemReady,physicalReady,rows,physicalRows,systemRows,sides,
+      physical,final,total,totalFound,totalMissing,totalPhysical,
+      matchedCount:matchedPhysical.length,
+      unmatchedPhysical:nonMatchedPhysical.length,
+      unmatchedSystem:systemUnmatched.length,
+      crossSides:crossSides.size,
+      sideOverflow,
+      physicalUnmapped,
+      onlyPhysical:nonMatchedPhysical.length,
+      sideMismatches:matchedPhysical.filter(row=>row.ladoFisico&&row.ladoFisico!=="Não identificado"&&row.side!=="Não identificado"&&row.side!==row.ladoFisico).length,
+      countType:tipo=>physicalRows.filter(row=>row.tipo===tipo).length,
+      countColor:cor=>physicalRows.filter(row=>row.cor===cor).length
     };
   }
   const styles = [
