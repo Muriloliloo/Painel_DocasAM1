@@ -12144,7 +12144,7 @@ body.editor-open .global-theme-toggle {
   <script src="firebase-config.js"></script>
   <script src="ondas-dados.js"></script>
   <script src="aduana-xlsx.js?v=20261024-r4"></script>
-  <script src="aduana-conferencia.js?v=20261024-r7"></script>
+  <script src="aduana-conferencia.js?v=20261024-r8"></script>
   <script>
     const storageKey = "ondas-dados";
     const syncMetaKey = `${storageKey}-sync-meta-v1`;
@@ -18520,18 +18520,20 @@ body.editor-open .global-theme-toggle {
           const side = parsed.details?.[id]?.ladoFisico;
           return side && side !== "Não identificado";
         }).length;
-        if (!recognized) throw new Error("A coluna Lados da planilha não foi reconhecida. Confira o cabeçalho e o formato dos valores.");
-        if (recognized !== parsed.ids.length && !window.confirm(
-          "Foram encontrados " + parsed.ids.length + " IDs, mas apenas " + recognized +
-          " possuem um lado reconhecido. Deseja importar assim mesmo?"
-        )) return;
+        if (recognized !== parsed.ids.length) throw new Error(
+          "Importação cancelada para não perder classificações: " +
+          recognized + "/" + parsed.ids.length +
+          " IDs têm lado reconhecido. Confira a coluna Lados do arquivo original."
+        );
+        // Substitui a leitura física por uma cópia completa (ID, Lado, Cor e Tipo).
+        // Não altera o relatório aduanaFechamentoFinal do sistema.
         data.aduanaFisica = parsed;
         const previousRevision = Number(data.syncRevision || 0);
         saveData();
         renderViews();
         console.info("IDs Físicos atualizados por lado na aba Aduana.",{
           file: file.name, imported: parsed.ids.length, sides: recognized,
-          previousRevision, revision: data.syncRevision
+          sideCounts: parsed.sideCounts, previousRevision, revision: data.syncRevision
         });
       };
       window.ControleAduana.onClassify = (id, kind, value) => {
