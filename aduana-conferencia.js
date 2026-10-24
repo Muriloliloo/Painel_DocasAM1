@@ -144,7 +144,7 @@
       const match=systemIds.get(id);
       return {
         id, origem:"Físico", side:match?.side || "—",
-        ladoFisico:text(d.ladoFisico)||"Não identificado",
+        ladoFisico:sideFromPhysical(d.ladoFisico||d.lados||d.Lados||d.lado||d.side)||"Não identificado",
         rota:match?.rota||"",doca:match?.doca||"",
         tipo:text(d.tipo),cor:text(d.cor),
         situacao:match?"Encontrado (ID conciliado)":"Encontrado (sem vínculo no sistema)",
@@ -157,7 +157,7 @@
       const d=details[row.id] || {};
       const matched=physicalIds.has(row.id);
       return {
-        ...row,ladoFisico:text(d.ladoFisico),tipo:text(d.tipo),cor:text(d.cor),
+        ...row,ladoFisico:sideFromPhysical(d.ladoFisico||d.lados||d.Lados||d.lado||d.side),tipo:text(d.tipo),cor:text(d.cor),
         situacao:matched?"Encontrado (ID conciliado)":
           physicalReady?"Sem correspondência de ID":"Aguardando conferência física",
         match:matched
