@@ -32,7 +32,7 @@
       if (at+46+nameLength+extraLength+commentLength>bytes.length) throw Error("Índice ZIP incompleto.");
       const name = decoder.decode(bytes.subarray(at+46,at+46+nameLength)).replace(/^\/+/,"");
       if ((flags & 1) && name.endsWith(".xml")) throw Error("XLSX com criptografia não é aceito.");
-      if (pos !== 0xffffffff && name.endsWith(".xml")) files.set(name,{pos,method,compressed,inflated});
+      if (pos !== 0xffffffff && (name.endsWith(".xml") || name.endsWith(".rels"))) files.set(name,{pos,method,compressed,inflated});
       at+=46+nameLength+extraLength+commentLength;
     }
     async function xmlText(path) {
