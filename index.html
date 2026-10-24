@@ -12144,7 +12144,7 @@ body.editor-open .global-theme-toggle {
   <script src="firebase-config.js"></script>
   <script src="ondas-dados.js"></script>
   <script src="aduana-xlsx.js?v=20261024-r4"></script>
-  <script src="aduana-conferencia.js?v=20261024-r5"></script>
+  <script src="aduana-conferencia.js?v=20261024-r6"></script>
   <script>
     const storageKey = "ondas-dados";
     const syncMetaKey = `${storageKey}-sync-meta-v1`;
@@ -18509,6 +18509,31 @@ body.editor-open .global-theme-toggle {
     document.getElementById("aduanaRailBtn")?.addEventListener("click", () => { currentView = "aduana"; renderViews(); });
     if (window.ControleAduana) {
       window.ControleAduana.onBack = () => { currentView = "docas"; dockDisplayMode = "overview"; renderViews(); document.getElementById("overviewRailBtn")?.focus(); };
+      window.ControleAduana.onImportPhysical = async file => {
+        if (!requireAdminAction()) throw new Error("Entre com o usuário administrador para importar IDs Físicos.");
+        const date = finalAuditDateKey(data.data);
+        if (!date) throw new Error("Selecione uma data válida no Editor de Dados antes de importar.");
+        // Lê todo o arquivo antes de alterar qualquer dado salvo.
+        const parsed = await window.ControleAduana.parsePhysicalFile(file);
+        parsed.date = date;
+        const recognized = parsed.ids.filter(id => {
+          const side = parsed.details?.[id]?.ladoFisico;
+          return side && side !== "Não identificado";
+        }).length;
+        if (!recognized) throw new Error("A coluna Lados da planilha não foi reconhecida. Confira o cabeçalho e o formato dos valores.");
+        if (recognized !== parsed.ids.length && !window.confirm(
+          "Foram encontrados " + parsed.ids.length + " IDs, mas apenas " + recognized +
+          " possuem um lado reconhecido. Deseja importar assim mesmo?"
+        )) return;
+        data.aduanaFisica = parsed;
+        const previousRevision = Number(data.syncRevision || 0);
+        saveData();
+        renderViews();
+        console.info("IDs Físicos atualizados por lado na aba Aduana.",{
+          file: file.name, imported: parsed.ids.length, sides: recognized,
+          previousRevision, revision: data.syncRevision
+        });
+      };
       window.ControleAduana.onClassify = (id, kind, value) => {
         if (!requireAdminAction() || !data.aduanaFisica || !["tipo", "cor"].includes(kind)) { renderViews(); return; }
         if (!data.aduanaFisica.ids.some(item => String(item).trim().toUpperCase() === id)) return;
