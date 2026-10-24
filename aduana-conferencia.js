@@ -322,11 +322,13 @@
       ? "Importe o arquivo CSV ou XLSX <b>audited_shipments</b> no Editor de Dados e clique em <b>Aplicar</b>. A base do sistema considera somente os IDs AM1 no estado final <b>A mais</b>."
       : !m.physicalReady
       ? "Base do sistema carregada. Importe o segundo arquivo CSV ou XLSX <b>IDs Físicos</b> no Editor de Dados e clique em <b>Aplicar</b> para comparar os arquivos."
+      : m.physicalNeedsReimport
+      ? "<b>IMPORTAÇÃO FÍSICA INCOMPLETA:</b> os IDs foram salvos, mas seus lados não. Selecione novamente o arquivo Excel no botão abaixo para recuperar os lados, cores e tipos. O CSV do sistema será preservado."
       : "Resumo operacional: <b>encontrados</b> = quantidade de IDs únicos bipados no físico; <b>saldo</b> = quantidade do sistema menos bipagem. A conciliação por Shipment ID aparece separadamente, sem presumir correspondências.";
     const sides = m.sides.filter(row=>!["Lado A","Não identificado"].includes(row.side)||row.system||row.found).map(row=>
       '<tr><td class="sub">– '+esc(row.side)+'</td><td>'+formatValue(row.system,m.systemReady)+'</td><td>'+formatValue(row.found,m.systemReady&&m.physicalReady)+'</td><td>'+(row.missing===null?"Aguardando identificação":formatValue(row.missing,m.systemReady&&m.physicalReady))+'</td><td>'+(row.excess===null?"—":formatValue(row.excess,m.systemReady&&m.physicalReady))+'</td></tr>').join("");
     const metrics = [["Volumoso",m.countType("Volumoso")],["Amarelo",m.countColor("Amarelo")],["Azul",m.countColor("Azul")],["Vermelho",m.countColor("Vermelho")],["Verde",m.countColor("Verde")],["GM",m.countType("GM")]].map(row=>
-      '<tr><td>'+esc(row[0])+'</td><td>'+formatValue(row[1],m.physicalReady)+'</td><td title="O CSV de Sistema não informa tipo/cor para IDs ainda não encontrados">—</td></tr>').join("")+
+      '<tr><td>'+esc(row[0])+'</td><td>'+formatValue(row[1],m.physicalReady&&!m.physicalNeedsReimport)+'</td><td title="O CSV de Sistema não informa tipo/cor para IDs ainda não encontrados">—</td></tr>').join("")+
       '<tr><td><b>Sem classificação (saldo pendente)</b></td><td>—</td><td>'+formatValue(m.totalMissing,m.systemReady&&m.physicalReady)+'</td></tr>';
     $("aduanaView").innerHTML =
       '<div class="aduana-shell"><div class="aduana-top"><button type="button" id="aduanaBack" class="aduana-back">← Voltar à tela inicial</button>'+
