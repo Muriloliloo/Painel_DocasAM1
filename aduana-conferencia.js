@@ -85,7 +85,7 @@
       details[id]={tipo,cor,ladoFisico};
     }
     if(!ids.size)throw new Error("Nenhum Shipment ID válido foi encontrado no arquivo físico.");
-    const sideCounts={"Lado B":0,"Lado C":0,"Lado D":0,"LH":0,"Lado A":0};
+    const sideCounts={"Lado A":0,"Lado B":0,"Lado C":0,"Lado D":0,"Lado E":0};
     const colorCounts={"Amarelo":0,"Azul":0,"Vermelho":0,"Verde":0};
     let unknownSides=0,unclassified=0;
     for(const id of ids) {
@@ -115,17 +115,36 @@
     if(!/\.csv$/i.test(file?.name||""))throw new Error("Arquivo inválido. Selecione CSV ou XLSX.");
     return parsePhysicalCsv(await file.text(),file.name);
   }
+  // Setores do mesmo mapa do painel AM1; compatível com LH importado anteriormente.
+  const SIDE_ZONES = [
+    { side:"Lado A", label:"A (09–15) · HEINEKEN", begin:9, end:15 },
+    { side:"Lado B", label:"B (16–30) · CENTRAL", begin:16, end:30 },
+    { side:"Lado C", label:"C (31–56) · CENTRAL", begin:31, end:56 },
+    { side:"Lado D", label:"D (57–71) · PAREDE", begin:57, end:71 },
+    { side:"Lado E", label:"E (86–92) · LH", begin:86, end:92 }
+  ];
+  function sideFromDock(dock) {
+    const raw=text(dock).match(/\d+/);
+    if(!raw)return "";
+    const number=Number(raw[0]);
+    return SIDE_ZONES.find(z=>number>=z.begin&&number<=z.end)?.side||"";
+  }
   function sideFromPhysical(value) {
-    const side = norm(value).replace(/\s+/g, " ");
-    if (/\b(?:line hall|linha hall|lh)\b/.test(side)) return "LH";
-    if (/\b(?:central b|lado b)\b/.test(side)) return "Lado B";
-    if (/\b(?:central c|lado c)\b/.test(side)) return "Lado C";
-    if (/\b(?:parede|lado d)\b/.test(side)) return "Lado D";
-    if (/\b(?:heineken|lado a)\b/.test(side)) return "Lado A";
-    return side ? "Não identificado" : "";
+    const side=norm(value).replace(/\s+/g, " ").trim();
+    if(!side)return "";
+    if (/\b(?:line hall|linha hall|lh|lado e|setor e)\b/.test(side) || side==="e") return "Lado E";
+    if (/\b(?:central b|lado b|setor b)\b/.test(side) || side==="b") return "Lado B";
+    if (/\b(?:central c|lado c|setor c)\b/.test(side) || side==="c") return "Lado C";
+    if (/\b(?:parede|lado d|setor d)\b/.test(side) || side==="d") return "Lado D";
+    if (/\b(?:heineken|lado a|setor a)\b/.test(side) || side==="a") return "Lado A";
+    return "Não identificado";
   }
   function sideLabel(label) {
-    return { "Lado Central B":"Lado B", "Lado Central C":"Lado C", "Lado Parede":"Lado D", "Line Hall":"LH", "Lado Heineken":"Lado A" }[label] || "Não identificado";
+    const canonical = { "Lado Central B":"Lado B", "Lado Central C":"Lado C", "Lado Parede":"Lado D", "Line Hall":"Lado E", "Lado Heineken":"Lado A" }[label];
+    return canonical || sideFromPhysical(label) || "Não identificado";
+  }
+  function sideDisplay(side) {
+    return SIDE_ZONES.find(zone=>zone.side===side)?.label || side;
   }
   // Duas leituras distintas: saldo operacional (quantidade) e conciliação estrita (ID).
   // Não associar automaticamente o ID físico a uma rota do sistema quando não coincide.
@@ -139,7 +158,7 @@
     if (systemReady) {
       for (const group of packageModel.groups || []) {
         for (const route of group.rows || []) {
-          const loc = {side:sideLabel(group.label), doca:text(route.doca), rota:text(route.rota)};
+          const loc = {side:sideFromDock(route.doca) || sideLabel(group.label), doca:text(route.doca), rota:text(route.rota)};
           const id=text(route.idRota), name=text(route.rota).toUpperCase();
           if(id && !routesById.has(id)) routesById.set(id,loc);
           if(name && !routesByName.has(name)) routesByName.set(name,loc);
@@ -150,7 +169,7 @@
     if(systemReady) {
       for(const route of final.rows || []) {
         const loc=routesById.get(text(route.idRota))||routesByName.get(text(route.rota).toUpperCase())||
-          {side:"Não identificado",doca:"",rota:text(route.rota)};
+          {side:sideFromDock(route.doca)||"Não identificado",doca:text(route.doca),rota:text(route.rota)};
         for(const event of route.ocorrencias || []) {
           if(event.estado!=="aMais")continue;
           const id=idKey(event.shipmentId);
@@ -193,7 +212,7 @@
       ...physicalRows,
       ...systemUnmatched
     ];
-    const sideNames=["Lado B","Lado C","Lado D","LH","Lado A","Não identificado"];
+    const sideNames=[...SIDE_ZONES.map(zone=>zone.side),"Não identificado"];
     const total=systemIds.size,totalPhysical=physicalIds.size;
     // A contagem geral independe do preenchimento do lado, mas a distribuição não.
     const totalFound=physicalReady&&systemReady?totalPhysical:0;
@@ -325,8 +344,8 @@
       : m.physicalNeedsReimport
       ? "<b>IMPORTAÇÃO FÍSICA INCOMPLETA:</b> os IDs foram salvos, mas seus lados não. Selecione novamente o arquivo Excel no botão abaixo para recuperar os lados, cores e tipos. O CSV do sistema será preservado."
       : "Resumo operacional: <b>encontrados</b> = quantidade de IDs únicos bipados no físico; <b>saldo</b> = quantidade do sistema menos bipagem. A conciliação por Shipment ID aparece separadamente, sem presumir correspondências.";
-    const sides = m.sides.filter(row=>!["Lado A","Não identificado"].includes(row.side)||row.system||row.found).map(row=>
-      '<tr><td class="sub">– '+esc(row.side)+'</td><td>'+formatValue(row.system,m.systemReady)+'</td><td>'+formatValue(row.found,m.systemReady&&m.physicalReady)+'</td><td>'+(row.missing===null?"Aguardando identificação":formatValue(row.missing,m.systemReady&&m.physicalReady))+'</td><td>'+(row.excess===null?"—":formatValue(row.excess,m.systemReady&&m.physicalReady))+'</td></tr>').join("");
+    const sides = m.sides.filter(row=>row.side!=="Não identificado"||row.system||row.found).map(row=>
+      '<tr><td class="sub">– '+esc(sideDisplay(row.side))+'</td><td>'+formatValue(row.system,m.systemReady)+'</td><td>'+formatValue(row.found,m.systemReady&&m.physicalReady)+'</td><td>'+(row.missing===null?"Aguardando identificação":formatValue(row.missing,m.systemReady&&m.physicalReady))+'</td><td>'+(row.excess===null?"—":formatValue(row.excess,m.systemReady&&m.physicalReady))+'</td></tr>').join("");
     const metrics = [["Volumoso",m.countType("Volumoso")],["Amarelo",m.countColor("Amarelo")],["Azul",m.countColor("Azul")],["Vermelho",m.countColor("Vermelho")],["Verde",m.countColor("Verde")],["GM",m.countType("GM")]].map(row=>
       '<tr><td>'+esc(row[0])+'</td><td>'+formatValue(row[1],m.physicalReady&&!m.physicalNeedsReimport)+'</td><td title="O CSV de Sistema não informa tipo/cor para IDs ainda não encontrados">—</td></tr>').join("")+
       '<tr><td><b>Sem classificação (saldo pendente)</b></td><td>—</td><td>'+formatValue(m.totalMissing,m.systemReady&&m.physicalReady)+'</td></tr>';
@@ -339,7 +358,7 @@
       '<input id="aduanaReimportFile" type="file" accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" aria-label="Atualizar IDs físicos por CSV ou Excel">'+
       '<span id="aduanaReimportStatus" class="aduana-muted" role="status">'+(m.physicalReady
         ? esc(m.physical.fileName||"Arquivo físico importado")+' · '+m.totalPhysical+' ID(s) físicos'+
-          (m.physicalUnmapped ? ' · <strong style="color:#b13434">'+m.physicalUnmapped+' sem lado salvo no painel. Os IDs foram mantidos, mas é preciso selecionar novamente o XLSX para recuperar lado/cor/tipo.</strong>' : ' · B '+m.sides.find(x=>x.side==="Lado B").found+' · C '+m.sides.find(x=>x.side==="Lado C").found+' · D '+m.sides.find(x=>x.side==="Lado D").found+' · LH '+m.sides.find(x=>x.side==="LH").found)
+          (m.physicalUnmapped ? ' · <strong style="color:#b13434">'+m.physicalUnmapped+' sem lado salvo no painel. Os IDs foram mantidos, mas é preciso selecionar novamente o XLSX para recuperar lado/cor/tipo.</strong>' : ' · A '+m.sides.find(x=>x.side==="Lado A").found+' · B '+m.sides.find(x=>x.side==="Lado B").found+' · C '+m.sides.find(x=>x.side==="Lado C").found+' · D '+m.sides.find(x=>x.side==="Lado D").found+' · E/LH '+m.sides.find(x=>x.side==="Lado E").found)
         : 'Importe o arquivo físico CSV ou XLSX')+'</span></div>'+
       '<section class="aduana-kpis">'+
       '<article class="aduana-kpi"><span>Quantidade a mais na aduana</span><strong>'+formatValue(m.total,m.systemReady)+'</strong><small>Sistema · Shipment IDs únicos</small></article>'+
