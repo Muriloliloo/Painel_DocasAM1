@@ -194,25 +194,26 @@
       ...systemUnmatched
     ];
     const sideNames=["Lado B","Lado C","Lado D","LH","Lado A","Não identificado"];
-    const sides=sideNames.map(side=>{
-      const system=systemRows.filter(row=>row.side===side).length;
-      const physicalCount=physicalRows.filter(row=>row.ladoFisico===side).length;
-      return {
-        side,system,found:physicalCount,
-        missing:Math.max(0,system-physicalCount),
-        excess:Math.max(0,physicalCount-system),
-        balance:system-physicalCount,
-        matched:matchedPhysical.filter(row=>row.side===side).length
-      };
-    });
     const total=systemIds.size,totalPhysical=physicalIds.size;
-    // Estes são saldos de QUANTIDADES (não IDs conciliados).
+    // A contagem geral independe do preenchimento do lado, mas a distribuição não.
     const totalFound=physicalReady&&systemReady?totalPhysical:0;
     const totalMissing=physicalReady&&systemReady?total-totalPhysical:0;
     const physicalUnmapped=physicalRows.filter(row=>!sideNames.includes(row.ladoFisico)||row.ladoFisico==="Não identificado").length;
-    const sideOverflow=sides.filter(side=>side.excess>0);
-    const grossMissing=sides.reduce((sum,row)=>sum+row.missing,0);
-    const grossExcess=sides.reduce((sum,row)=>sum+row.excess,0);
+    const physicalNeedsReimport=physicalReady && physicalUnmapped>0;
+    const sides=sideNames.map(side=>{
+      const system=systemRows.filter(row=>row.side===side).length;
+      const physicalCount=physicalRows.filter(row=>row.ladoFisico===side).length;
+      const missing=side==="Não identificado"?null:physicalNeedsReimport?null:Math.max(0,system-physicalCount);
+      const excess=side==="Não identificado"?null:physicalNeedsReimport?null:Math.max(0,physicalCount-system);
+      return {
+        side,system,found:physicalCount,missing,excess,
+        balance:physicalNeedsReimport?null:system-physicalCount,
+        matched:matchedPhysical.filter(row=>row.side===side).length
+      };
+    });
+    const sideOverflow=physicalNeedsReimport?[]:sides.filter(side=>Number(side.excess)>0);
+    const grossMissing=physicalNeedsReimport?null:sides.reduce((sum,row)=>sum+Number(row.missing||0),0);
+    const grossExcess=physicalNeedsReimport?null:sides.reduce((sum,row)=>sum+Number(row.excess||0),0);
     return {
       date,systemReady,physicalReady,rows,physicalRows,systemRows,sides,
       physical,final,total,totalFound,totalMissing,totalPhysical,
@@ -221,7 +222,7 @@
       unmatchedSystem:systemUnmatched.length,
       crossSides:crossSides.size,
       sideOverflow, grossMissing, grossExcess,
-      physicalUnmapped,
+      physicalUnmapped, physicalNeedsReimport,
       onlyPhysical:nonMatchedPhysical.length,
       sideMismatches:matchedPhysical.filter(row=>row.ladoFisico&&row.ladoFisico!=="Não identificado"&&row.side!=="Não identificado"&&row.side!==row.ladoFisico).length,
       countType:tipo=>physicalRows.filter(row=>row.tipo===tipo).length,
@@ -323,7 +324,7 @@
       ? "Base do sistema carregada. Importe o segundo arquivo CSV ou XLSX <b>IDs Físicos</b> no Editor de Dados e clique em <b>Aplicar</b> para comparar os arquivos."
       : "Resumo operacional: <b>encontrados</b> = quantidade de IDs únicos bipados no físico; <b>saldo</b> = quantidade do sistema menos bipagem. A conciliação por Shipment ID aparece separadamente, sem presumir correspondências.";
     const sides = m.sides.filter(row=>!["Lado A","Não identificado"].includes(row.side)||row.system||row.found).map(row=>
-      '<tr><td class="sub">– '+esc(row.side)+'</td><td>'+formatValue(row.system,m.systemReady)+'</td><td>'+formatValue(row.found,m.systemReady&&m.physicalReady)+'</td><td>'+formatValue(row.missing,m.systemReady&&m.physicalReady)+'</td><td>'+formatValue(row.excess,m.systemReady&&m.physicalReady)+'</td></tr>').join("");
+      '<tr><td class="sub">– '+esc(row.side)+'</td><td>'+formatValue(row.system,m.systemReady)+'</td><td>'+formatValue(row.found,m.systemReady&&m.physicalReady)+'</td><td>'+(row.missing===null?"Aguardando identificação":formatValue(row.missing,m.systemReady&&m.physicalReady))+'</td><td>'+(row.excess===null?"—":formatValue(row.excess,m.systemReady&&m.physicalReady))+'</td></tr>').join("");
     const metrics = [["Volumoso",m.countType("Volumoso")],["Amarelo",m.countColor("Amarelo")],["Azul",m.countColor("Azul")],["Vermelho",m.countColor("Vermelho")],["Verde",m.countColor("Verde")],["GM",m.countType("GM")]].map(row=>
       '<tr><td>'+esc(row[0])+'</td><td>'+formatValue(row[1],m.physicalReady)+'</td><td title="O CSV de Sistema não informa tipo/cor para IDs ainda não encontrados">—</td></tr>').join("")+
       '<tr><td><b>Sem classificação (saldo pendente)</b></td><td>—</td><td>'+formatValue(m.totalMissing,m.systemReady&&m.physicalReady)+'</td></tr>';
@@ -336,15 +337,15 @@
       '<input id="aduanaReimportFile" type="file" accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" aria-label="Atualizar IDs físicos por CSV ou Excel">'+
       '<span id="aduanaReimportStatus" class="aduana-muted" role="status">'+(m.physicalReady
         ? esc(m.physical.fileName||"Arquivo físico importado")+' · '+m.totalPhysical+' ID(s) físicos'+
-          (m.physicalUnmapped ? ' · <strong style="color:#b13434">'+m.physicalUnmapped+' sem lado identificado — reimporte a planilha para atualizar a separação B/C/D/LH.</strong>' : ' · lados reconhecidos')
+          (m.physicalUnmapped ? ' · <strong style="color:#b13434">'+m.physicalUnmapped+' sem lado salvo no painel. Os IDs foram mantidos, mas é preciso selecionar novamente o XLSX para recuperar lado/cor/tipo.</strong>' : ' · B '+m.sides.find(x=>x.side==="Lado B").found+' · C '+m.sides.find(x=>x.side==="Lado C").found+' · D '+m.sides.find(x=>x.side==="Lado D").found+' · LH '+m.sides.find(x=>x.side==="LH").found)
         : 'Importe o arquivo físico CSV ou XLSX')+'</span></div>'+
       '<section class="aduana-kpis">'+
       '<article class="aduana-kpi"><span>Quantidade a mais na aduana</span><strong>'+formatValue(m.total,m.systemReady)+'</strong><small>Sistema · Shipment IDs únicos</small></article>'+
       '<article class="aduana-kpi encontrado"><span>Quantidade encontrada</span><strong>'+formatValue(m.totalFound,m.systemReady&&m.physicalReady)+'</strong><small>IDs únicos bipados no físico (contagem)</small></article>'+
       '<article class="aduana-kpi nao-encontrado"><span>Saldo não encontrado</span><strong>'+formatValue(m.totalMissing,m.systemReady&&m.physicalReady)+'</strong><small>Diferença entre Sistema e Físico; não identifica os IDs pendentes</small></article></section>'+
       '<div class="aduana-columns"><section class="aduana-panel"><h3>CONTROLE POR LADO</h3><table class="aduana-table"><thead><tr><th>Item</th><th>Sistema</th><th>Físico encontrado</th><th>Não encontrado</th><th>Excedente físico</th></tr></thead><tbody>'+sides+
-      '<tr style="background:#fff1bf"><td><strong>TOTAL</strong></td><td>'+formatValue(m.total,m.systemReady)+'</td><td>'+formatValue(m.totalFound,m.systemReady&&m.physicalReady)+'</td><td>'+formatValue(m.grossMissing,m.systemReady&&m.physicalReady)+'</td><td>'+formatValue(m.grossExcess,m.systemReady&&m.physicalReady)+'</td></tr></tbody></table>'+
-      '<div class="aduana-panel-inner aduana-muted">Saldo líquido da operação: '+formatValue(m.totalMissing,m.systemReady&&m.physicalReady)+'. Não encontrados (brutos) menos excedentes físicos = saldo líquido. Separação por lado conforme a planilha física. A conciliação exata de IDs está na tabela inferior.</div></section>'+
+      '<tr style="background:#fff1bf"><td><strong>TOTAL</strong></td><td>'+formatValue(m.total,m.systemReady)+'</td><td>'+formatValue(m.totalFound,m.systemReady&&m.physicalReady)+'</td><td>'+(m.grossMissing===null?"—":formatValue(m.grossMissing,m.systemReady&&m.physicalReady))+'</td><td>'+(m.grossExcess===null?"—":formatValue(m.grossExcess,m.systemReady&&m.physicalReady))+'</td></tr></tbody></table>'+
+      '<div class="aduana-panel-inner aduana-muted">Saldo líquido da operação: '+formatValue(m.totalMissing,m.systemReady&&m.physicalReady)+'. '+(m.physicalNeedsReimport?'A separação dos pendentes por lado ficará disponível após reimportar a planilha física com a coluna Lados.':'Não encontrados por lado menos excedentes físicos = saldo líquido. A conciliação exata de IDs está na tabela inferior.')+'</div></section>'+
       '<section class="aduana-panel"><h3>CLASSIFICAÇÃO DOS PACOTES</h3><table class="aduana-table"><thead><tr><th>Item</th><th>Encontrada</th><th>Não encontrada</th></tr></thead><tbody>'+metrics+'</tbody></table>'+
       '<div class="aduana-panel-inner aduana-muted">Os encontrados são classificados pela planilha física. Como o sistema não informa Cor/Tipo dos demais pacotes, o saldo pendente aparece como "Sem classificação", sem atribuição fictícia a GM, Volumoso ou cores.</div></section></div>'+
       '<p class="aduana-note"><b>Conciliação de IDs:</b> '+(m.physicalReady
