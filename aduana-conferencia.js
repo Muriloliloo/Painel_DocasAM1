@@ -295,7 +295,8 @@
     const sides = m.sides.filter(row=>!["Lado A","Não identificado"].includes(row.side)||row.system).map(row=>
       '<tr><td class="sub">– '+esc(row.side)+'</td><td>'+formatValue(row.system,m.systemReady)+'</td><td>'+formatValue(row.found,m.systemReady&&m.physicalReady)+'</td><td>'+formatValue(row.missing,m.systemReady&&m.physicalReady)+'</td></tr>').join("");
     const metrics = [["Volumoso",m.countType("Volumoso")],["Amarelo",m.countColor("Amarelo")],["Azul",m.countColor("Azul")],["Vermelho",m.countColor("Vermelho")],["Verde",m.countColor("Verde")],["GM",m.countType("GM")]].map(row=>
-      '<tr><td>'+row[0]+'</td><td>'+formatValue(row[1],m.physicalReady&&m.systemReady)+'</td></tr>').join("");
+      '<tr><td>'+esc(row[0])+'</td><td>'+formatValue(row[1],m.physicalReady)+'</td><td title="O CSV de Sistema não informa tipo/cor para IDs ainda não encontrados">—</td></tr>').join("")+
+      '<tr><td><b>Sem classificação (saldo pendente)</b></td><td>—</td><td>'+formatValue(m.totalMissing,m.systemReady&&m.physicalReady)+'</td></tr>';
     $("aduanaView").innerHTML =
       '<div class="aduana-shell"><div class="aduana-top"><button type="button" id="aduanaBack" class="aduana-back">← Voltar à tela inicial</button>'+
       '<span class="aduana-muted">SSP15 · AM1 · '+esc(m.date||"Data não informada")+'</span></div>'+
@@ -303,16 +304,22 @@
       '<p class="aduana-note">'+guidance+'</p>'+
       '<section class="aduana-kpis">'+
       '<article class="aduana-kpi"><span>Quantidade a mais na aduana</span><strong>'+formatValue(m.total,m.systemReady)+'</strong><small>Sistema · Shipment IDs únicos</small></article>'+
-      '<article class="aduana-kpi encontrado"><span>Quantidade encontrada</span><strong>'+formatValue(m.totalFound,m.systemReady&&m.physicalReady)+'</strong><small>Bipados fisicamente e presentes no sistema</small></article>'+
-      '<article class="aduana-kpi nao-encontrado"><span>Quantidade não encontrada</span><strong>'+formatValue(m.totalMissing,m.systemReady&&m.physicalReady)+'</strong><small>IDs do sistema sem bipagem física</small></article></section>'+
-      '<div class="aduana-columns"><section class="aduana-panel"><h3>CONTROLE POR LADO</h3><table class="aduana-table"><thead><tr><th>Item</th><th>Sistema</th><th>Encontrada</th><th>Não encontrada</th></tr></thead><tbody>'+sides+'</tbody></table></section>'+
-      '<section class="aduana-panel"><h3>CLASSIFICAÇÃO DOS PACOTES ENCONTRADOS</h3><table class="aduana-table"><thead><tr><th>Item</th><th>Quantidade</th></tr></thead><tbody>'+metrics+'</tbody></table>'+
-      '<div class="aduana-panel-inner aduana-muted">Os campos Tipo (GM/Volumoso), Cor (Amarelo/Azul/Vermelho/Verde) e Lado Físico podem vir do CSV/XLSX de bipagem. O Tipo e a Cor também podem ser ajustados abaixo.</div></section></div>'+
-      '<p class="aduana-note"><b>Validação:</b> '+(m.physicalReady ? m.totalPhysical+' IDs físicos únicos, '+Number(m.physical.duplicates||0)+' duplicado(s) ignorado(s), '+m.onlyPhysical+' ID(s) bipado(s) sem correspondência no sistema.' : "Aguardando CSV da bipagem física.")+
+      '<article class="aduana-kpi encontrado"><span>Quantidade encontrada</span><strong>'+formatValue(m.totalFound,m.systemReady&&m.physicalReady)+'</strong><small>IDs únicos bipados no físico (contagem)</small></article>'+
+      '<article class="aduana-kpi nao-encontrado"><span>Saldo não encontrado</span><strong>'+formatValue(m.totalMissing,m.systemReady&&m.physicalReady)+'</strong><small>Diferença entre Sistema e Físico; não identifica os IDs pendentes</small></article></section>'+
+      '<div class="aduana-columns"><section class="aduana-panel"><h3>CONTROLE POR LADO</h3><table class="aduana-table"><thead><tr><th>Item</th><th>Sistema</th><th>Físico</th><th>Saldo por lado</th></tr></thead><tbody>'+sides+
+      '<tr style="background:#fff1bf"><td><strong>TOTAL</strong></td><td>'+formatValue(m.total,m.systemReady)+'</td><td>'+formatValue(m.totalFound,m.systemReady&&m.physicalReady)+'</td><td>'+formatValue(m.totalMissing,m.systemReady&&m.physicalReady)+'</td></tr></tbody></table>'+
+      '<div class="aduana-panel-inner aduana-muted">Valores por lado são diferenças de quantidade. Saldo negativo indica mais pacotes físicos do que registros do sistema naquele lado.</div></section>'+
+      '<section class="aduana-panel"><h3>CLASSIFICAÇÃO DOS PACOTES</h3><table class="aduana-table"><thead><tr><th>Item</th><th>Encontrada</th><th>Não encontrada</th></tr></thead><tbody>'+metrics+'</tbody></table>'+
+      '<div class="aduana-panel-inner aduana-muted">Os encontrados são classificados pela planilha física. Como o sistema não informa Cor/Tipo dos demais pacotes, o saldo pendente aparece como "Sem classificação", sem atribuição fictícia a GM, Volumoso ou cores.</div></section></div>'+
+      '<p class="aduana-note"><b>Conciliação de IDs:</b> '+(m.physicalReady
+        ? m.matchedCount+' correspondência(s) exata(s) entre os arquivos · '+m.unmatchedPhysical+' físico(s) sem vínculo · '+m.unmatchedSystem+' registro(s) do sistema sem ID físico equivalente. '+Number(m.physical.duplicates||0)+' ID(s) físicos duplicados ignorados.'
+        : "Aguardando arquivo de IDs Físicos.")+
+      (m.physicalReady && m.unmatchedPhysical ? ' <strong>⚠ A diferença de '+m.totalMissing+' é apenas um saldo operacional, não comprova quais IDs estão faltando. Confira se os dois arquivos correspondem ao mesmo dia e se usam o mesmo tipo de ID.</strong>' : '')+
+      (m.sideOverflow.length ? ' <strong>⚠ Lado(s) com excedente físico: '+m.sideOverflow.map(item=>esc(item.side)+' ('+(-item.missing)+' extra)').join(', ')+'.</strong>' : '')+
       (m.crossSides ? ' <b>Atenção:</b> '+m.crossSides+' ID(s) aparecem em mais de um lado do sistema; conferir identificação de rota.' : "")+
       (m.sideMismatches ? ' <b>Atenção:</b> '+m.sideMismatches+' ID(s) com lado físico diferente do lado do sistema.' : "")+'</p>'+
-      '<section class="aduana-panel"><h3>SHIPMENT IDs — SISTEMA × FÍSICO</h3><div class="aduana-panel-inner"><div class="aduana-filters">'+
-      [['todos','Todos'],['encontrados','Encontrados'],['faltantes','Não encontrados'],['extra','Somente físico']].map(item=>
+      '<section class="aduana-panel"><h3>AUDITORIA POR ID — SISTEMA × FÍSICO</h3><div class="aduana-panel-inner"><div class="aduana-filters">'+
+      [['todos','Todos'],['encontrados','Bipados fisicamente'],['faltantes','Sistema sem ID correspondente'],['extra','Físicos sem correspondência']].map(item=>
         '<button type="button" class="aduana-filter '+(mode===item[0]?'active':'')+'" data-aduana-mode="'+item[0]+'">'+item[1]+'</button>').join("")+
       '<input id="aduanaSearch" aria-label="Buscar Shipment ID, rota ou lado" placeholder="Buscar ID, rota ou lado..." type="search" value="'+esc(query)+'"></div>'+
       '<p class="aduana-muted" id="aduanaRowsCount"></p></div>'+
