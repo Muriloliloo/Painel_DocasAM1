@@ -11468,6 +11468,7 @@ body.editor-open .global-theme-toggle {
       </button>
       <button id="dashboardRailBtn" type="button" title="Abrir Dashboard operacional"><span class="rail-icon"><i class="bi bi-speedometer2" aria-hidden="true"></i></span><span>Dashboard</span></button>
       <button id="dados1RailBtn" type="button" title="Controle de Subida de Rotas - AM1"><span class="rail-icon"><i class="bi bi-qr-code-scan" aria-hidden="true"></i></span><span>Dados 1</span></button>
+      <button id="aduanaRailBtn" type="button" title="Controle de Aduana — Sistema × IDs Físicos"><span class="rail-icon"><i class="bi bi-box-seam-fill" aria-hidden="true"></i></span><span>Aduana</span></button>
       <button type="button"><span class="rail-icon">⚙</span><span>Config.</span></button>
       <button type="button"><span class="rail-icon">?</span><span>Ajuda</span></button>
     </aside>
@@ -11683,6 +11684,8 @@ body.editor-open .global-theme-toggle {
       </footer>
     </section>
 
+
+    <section class="aduana-view" id="aduanaView" aria-label="Controle de Aduana — Sistema e IDs Físicos" aria-hidden="true"></section>
 
     <section class="dados1-view" id="dados1View" aria-labelledby="dados1Title" aria-hidden="true">
       <div class="dados1-shell">
@@ -12026,6 +12029,14 @@ body.editor-open .global-theme-toggle {
         <button id="clearFinalAuditBtn" type="button">Voltar à Base Aduana (salvar em Aplicar)</button>
       </details>
       <details class="zone-staff-editor" open>
+        <summary>Conferência física da Aduana — segundo CSV</summary>
+        <p>Importe o CSV dos Shipment IDs bipados fisicamente, após a importação do CSV do sistema. Ele será confrontado com os pacotes "A mais" da auditoria final AM1. Não substitui o CSV do sistema.</p>
+        <label for="physicalAuditFile">Arquivo CSV — IDs Físicos</label>
+        <input id="physicalAuditFile" type="file" accept=".csv,text/csv">
+        <p id="physicalAuditStatus" role="status" aria-live="polite"></p>
+        <button id="clearPhysicalAuditBtn" type="button">Limpar leitura física (salvar em Aplicar)</button>
+      </details>
+      <details class="zone-staff-editor" open>
         <summary>Responsáveis por lado</summary>
         <p>Informe o Coordenador e o PS de cada setor. Clique em Aplicar para salvar.</p>
         <div id="zoneStaffFields" class="zone-staff-fields"></div>
@@ -12132,6 +12143,7 @@ body.editor-open .global-theme-toggle {
 
   <script src="firebase-config.js"></script>
   <script src="ondas-dados.js"></script>
+  <script src="aduana-conferencia.js"></script>
   <script>
     const storageKey = "ondas-dados";
     const syncMetaKey = `${storageKey}-sync-meta-v1`;
@@ -14880,6 +14892,7 @@ body.editor-open .global-theme-toggle {
       document.getElementById("routeHistoryBtn")?.classList.toggle("active", !alertsOpen && currentView === "routes");
       document.getElementById("dashboardRailBtn")?.classList.toggle("active", !alertsOpen && currentView === "dashboard");
       document.getElementById("dados1RailBtn")?.classList.toggle("active", !alertsOpen && currentView === "dados1");
+      document.getElementById("aduanaRailBtn")?.classList.toggle("active", !alertsOpen && currentView === "aduana");
     }
 
     function formatHistoryDate(value) {
@@ -16534,6 +16547,7 @@ body.editor-open .global-theme-toggle {
       bindSummaryInputs();
     }
     let pendingFinalAudit = null;
+    let pendingPhysicalAudit = null;
 
     function finalAuditDateKey(value) {
       const text = String(value || "").trim();
@@ -16902,10 +16916,21 @@ body.editor-open .global-theme-toggle {
       if (mismatch) status.textContent += ` ⚠ ${mismatch} Você poderá confirmar e prosseguir ao clicar em Aplicar.`;
     }
 
+    function updatePhysicalAuditEditorStatus() {
+      const node = document.getElementById("physicalAuditStatus");
+      if (!node) return;
+      node.textContent = pendingPhysicalAudit
+        ? `${pendingPhysicalAudit.fileName || "IDs Físicos"} • ${pendingPhysicalAudit.ids.length} IDs únicos • ${Number(pendingPhysicalAudit.duplicates || 0)} duplicado(s) ignorado(s) • ${Number(pendingPhysicalAudit.invalid || 0)} inválido(s) ignorado(s). Clique em Aplicar para salvar.`
+        : "Nenhum CSV físico selecionado. Selecione o segundo arquivo e clique em Aplicar.";
+    }
+
     function openFinalAuditEditor() {
       pendingFinalAudit = data.aduanaFechamentoFinal ? JSON.parse(JSON.stringify(data.aduanaFechamentoFinal)) : null;
+      pendingPhysicalAudit = data.aduanaFisica ? JSON.parse(JSON.stringify(data.aduanaFisica)) : null;
       document.getElementById("finalAuditFile").value = "";
+      document.getElementById("physicalAuditFile").value = "";
       updateFinalAuditEditorStatus();
+      updatePhysicalAuditEditorStatus();
     }
 
     function renderClosure() {
@@ -17831,22 +17856,26 @@ body.editor-open .global-theme-toggle {
       const routesMode = currentView === "routes";
       const dashboardMode = currentView === "dashboard";
       const dados1Mode = currentView === "dados1";
-      app?.classList.toggle("docas-mode", currentView === "docas" || routesMode || dashboardMode || dados1Mode);
-      app?.classList.toggle("report-mode", currentView !== "docas" && !routesMode && !dashboardMode && !dados1Mode);
+      const aduanaMode = currentView === "aduana";
+      app?.classList.toggle("docas-mode", currentView === "docas" || routesMode || dashboardMode || dados1Mode || aduanaMode);
+      app?.classList.toggle("report-mode", currentView !== "docas" && !routesMode && !dashboardMode && !dados1Mode && !aduanaMode);
       app?.classList.toggle("simple-docks-mode", simpleMode);
       app?.classList.toggle("routes-mode", routesMode);
       app?.classList.toggle("dashboard-mode", dashboardMode);
       app?.classList.toggle("dados1-mode", dados1Mode);
+      app?.classList.toggle("aduana-mode", aduanaMode);
       document.body.classList.toggle("simple-docks-active", simpleMode);
       document.body.classList.toggle("routes-mode-active", routesMode);
       document.body.classList.toggle("dashboard-mode-active", dashboardMode);
       document.body.classList.toggle("dados1-mode-active", dados1Mode);
+      document.body.classList.toggle("aduana-mode-active", aduanaMode);
       document.querySelectorAll("[data-view]").forEach(button => button.classList.toggle("active", button.dataset.view === currentView));
       document.getElementById("dockGrid").style.display = currentView === "docas" && !simpleMode ? "flex" : "none";
       document.getElementById("simpleDocksView")?.setAttribute("aria-hidden", simpleMode ? "false" : "true");
       document.getElementById("routesModeView")?.setAttribute("aria-hidden", routesMode ? "false" : "true");
       document.getElementById("dashboardView")?.setAttribute("aria-hidden", dashboardMode ? "false" : "true");
       document.getElementById("dados1View")?.setAttribute("aria-hidden", dados1Mode ? "false" : "true");
+      document.getElementById("aduanaView")?.setAttribute("aria-hidden", aduanaMode ? "false" : "true");
       document.querySelector(".legend")?.classList.toggle("active", currentView === "docas" && !simpleMode);
       document.getElementById("justificativasView").classList.toggle("active", currentView === "justificativas");
       document.getElementById("fechamentoView").classList.toggle("active", currentView === "fechamento");
@@ -17855,6 +17884,7 @@ body.editor-open .global-theme-toggle {
       if (routesMode) renderRoutesMode();
       if (dashboardMode) renderDashboard();
       if (dados1Mode) renderDados1();
+      if (aduanaMode) window.ControleAduana?.render(data, packageClosureModel());
       updateDockRailState();
       renderJustifications();
       renderSummary();
@@ -18475,6 +18505,19 @@ body.editor-open .global-theme-toggle {
       document.getElementById("overviewRailBtn")?.focus();
     });
     document.getElementById("dados1RailBtn")?.addEventListener("click", () => { currentView = "dados1"; renderViews(); });
+    document.getElementById("aduanaRailBtn")?.addEventListener("click", () => { currentView = "aduana"; renderViews(); });
+    if (window.ControleAduana) {
+      window.ControleAduana.onBack = () => { currentView = "docas"; dockDisplayMode = "overview"; renderViews(); document.getElementById("overviewRailBtn")?.focus(); };
+      window.ControleAduana.onClassify = (id, kind, value) => {
+        if (!requireAdminAction() || !data.aduanaFisica || !["tipo", "cor"].includes(kind)) { renderViews(); return; }
+        if (!data.aduanaFisica.ids.some(item => String(item).trim().toUpperCase() === id)) return;
+        data.aduanaFisica.details ||= {};
+        data.aduanaFisica.details[id] ||= {};
+        data.aduanaFisica.details[id][kind] = value;
+        saveData();
+        renderViews();
+      };
+    }
     document.getElementById("dados1WaveCards")?.addEventListener("click", event => {
       const btn = event.target.closest("[data-qr-wave]");
       if (!btn) return;
@@ -18686,6 +18729,26 @@ body.editor-open .global-theme-toggle {
       document.getElementById("finalAuditFile").value = "";
       updateFinalAuditEditorStatus();
     });
+    document.getElementById("physicalAuditFile")?.addEventListener("change", async event => {
+      if (!requireAdminAction()) { event.target.value = ""; return; }
+      const file = event.target.files?.[0];
+      if (!file) return;
+      const node = document.getElementById("physicalAuditStatus");
+      try {
+        const parsed = window.ControleAduana.parsePhysicalCsv(await file.text(), file.name);
+        pendingPhysicalAudit = parsed;
+        updatePhysicalAuditEditorStatus();
+      } catch (error) {
+        node.textContent = `${error.message} ${pendingPhysicalAudit ? "A leitura física anterior foi preservada." : "Nenhum CSV físico foi aplicado."}`;
+        event.target.value = "";
+      }
+    });
+    document.getElementById("clearPhysicalAuditBtn")?.addEventListener("click", () => {
+      if (!requireAdminAction()) return;
+      pendingPhysicalAudit = null;
+      document.getElementById("physicalAuditFile").value = "";
+      updatePhysicalAuditEditorStatus();
+    });
     document.getElementById("dataInput")?.addEventListener("change", updateFinalAuditEditorStatus);
     document.getElementById("applyBtn").addEventListener("click", async () => {
       if (!requireAdminAction()) return;
@@ -18731,6 +18794,7 @@ body.editor-open .global-theme-toggle {
       data = {
         ...data,
         aduanaFechamentoFinal: pendingFinalAudit,
+        aduanaFisica: pendingPhysicalAudit ? { ...pendingPhysicalAudit, date: pendingPhysicalAudit.date || editorDate } : null,
         responsaveisPorLado: readZoneStaffEditor(),
         totalRotas: String(countAm1RoutesFromSummary(mergedExtracao)),
         data: editorDate,
