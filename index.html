@@ -12185,7 +12185,7 @@ body.editor-open .global-theme-toggle {
   <script src="firebase-config.js"></script>
   <script src="ondas-dados.js"></script>
   <script src="aduana-xlsx.js?v=20261024-r4"></script>
-  <script src="aduana-conferencia.js?v=20261026-r19"></script>
+  <script src="aduana-conferencia.js?v=20261026-r21"></script>
   <script>
     const storageKey = "ondas-dados";
     const syncMetaKey = `${storageKey}-sync-meta-v1`;
@@ -14041,8 +14041,47 @@ body.editor-open .global-theme-toggle {
         const archive=record.data();
         return {...archive.summary,savedAt:archive.savedAt||""};
       }));
+      const archived=found.filter(Boolean).sort((a,b)=>String(a.date).localeCompare(String(b.date)));
+      // Leitura dos IDs exclusivamente na colecao privada; nunca os inclua
+      // no resumo publico de paineis nem no estado operacional salvo.
+      if(archived.length && cloudState.user && isAdmin()){
+        try {
+          const privateQuery=cloudState.tools.query(
+            cloudState.tools.collection(cloudState.db,ADUANA_IDS_COLLECTION),
+            cloudState.tools.where("date",">=",days[days.length-1]),
+            cloudState.tools.where("date","<=",endingDay)
+          );
+          const privateDocs=await cloudState.tools.getDocs(privateQuery);
+          const byDate=new Map();
+          for(const doc of privateDocs.docs){
+            const record=doc.data();
+            if(record?.kind!=="aduana-am1-ids"||record.operation!=="AM1"||
+              record.facility!=="SSP15"||record.date!==doc.id||
+              !Array.isArray(record.shipments))continue;
+            const shipments=record.shipments.filter(item=>
+              String(item?.route||"").toUpperCase().endsWith("_AM1"));
+            byDate.set(doc.id,shipments);
+          }
+          for(const archive of archived){
+            archive.shipments=byDate.get(archive.date)||null;
+            archive.idsStatus=archive.shipments===null
+              ?"Nao ha Shipment IDs individuais arquivados para esta data.":"";
+          }
+        } catch(err) {
+          const message="Nao foi possivel consultar IDs privados: "+(err?.message||String(err));
+          for(const archive of archived){
+            archive.shipments=null;
+            archive.idsStatus=message;
+          }
+        }
+      } else {
+        for(const archive of archived){
+          archive.shipments=null;
+          archive.idsStatus="Somente administradores autenticados podem consultar Shipment IDs individuais.";
+        }
+      }
       requestAduanaCleanup();
-      return found.filter(Boolean).sort((a,b)=>String(a.date).localeCompare(String(b.date)));
+      return archived;
     }
 
     async function saveDataToCloud() {
