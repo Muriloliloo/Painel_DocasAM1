@@ -14,7 +14,7 @@
   const COLORS = ["", "Amarelo", "Azul", "Vermelho", "Verde"];
   const INVENTORY_STATUSES = ["Pendente", "Encontrado", "Não encontrado"];
   let inventoryDay="",inventoryLoaded=false,inventoryLoading=false,inventoryById=Object.create(null);
-  let inventoryMessage="",inventorySaving="",inventoryBulkStatus="Encontrado";
+  let inventoryMessage="",inventorySaving="",inventoryBulkStatus="";
   const inventorySelected=new Set();
   function inventoryState(value,found=false) {
     if(found)return "Encontrado";
@@ -482,7 +482,7 @@
     }
     const action=$("aduanaInventoryBulkApply");
     if(action){action.textContent="Aplicar aos "+inventorySelected.size+" selecionado(s)";
-      action.disabled=!canSelect||!inventorySelected.size;}
+      action.disabled=!canSelect||!inventorySelected.size||!inventoryBulkStatus;}
     const bulkOption=$("aduanaInventoryBulkStatus");
     if(bulkOption){bulkOption.value=inventoryBulkStatus;bulkOption.disabled=!canSelect;}
     $("aduanaRowsCount").textContent=visible.length+" registro(s) do sistema"+
@@ -900,6 +900,7 @@
       '<p class="aduana-muted" id="aduanaRowsCount"></p>'+
       '<div class="aduana-inventory-actions"><strong>Inventário dos IDs pendentes:</strong>'+
       '<select id="aduanaInventoryBulkStatus" aria-label="Status para aplicar em massa">'+
+      '<option value="">Escolha a situação...</option>'+
       '<option value="Encontrado">Encontrado no inventário</option>'+
       '<option value="Não encontrado">Não encontrado no inventário</option></select>'+
       '<button type="button" class="aduana-btn primary" id="aduanaInventoryBulkApply" disabled>Aplicar aos 0 selecionado(s)</button>'+
@@ -1014,9 +1015,10 @@
       catch (err) { if (status)status.textContent="Erro: "+(err?.message || String(err)); }
       finally {event.target.value="";}
     });
-    $("aduanaSearch")?.addEventListener("input",event=>{query=event.target.value;renderRows();});
+    $("aduanaSearch")?.addEventListener("input",event=>{query=event.target.value;inventorySelected.clear();renderRows();});
     $("aduanaView").querySelectorAll("[data-aduana-mode]").forEach(button=>button.addEventListener("click",()=>{
       mode=button.dataset.aduanaMode;
+      inventorySelected.clear();
       $("aduanaView").querySelectorAll("[data-aduana-mode]").forEach(other=>other.classList.toggle("active",other===button));
       renderRows();
     }));
@@ -1036,11 +1038,12 @@
       renderRows();
     });
     $("aduanaInventoryBulkStatus")?.addEventListener("change",event=>{
-      if(["Encontrado","Não encontrado"].includes(event.target.value))
-        inventoryBulkStatus=event.target.value;
+      inventoryBulkStatus=["Encontrado","Não encontrado"].includes(event.target.value)
+        ? event.target.value:"";
+      renderRows();
     });
     $("aduanaInventoryBulkApply")?.addEventListener("click",async()=>{
-      if(inventorySaving||!inventoryLoaded||!inventorySelected.size)return;
+      if(inventorySaving||!inventoryLoaded||!inventorySelected.size||!inventoryBulkStatus)return;
       const ids=[...inventorySelected];
       const day=inventoryDay;
       const status=inventoryBulkStatus;
@@ -1055,6 +1058,7 @@
         for(const id of ids)inventoryById[id]=status;
         syncInventoryHistory(ids,status);
         inventorySelected.clear();
+        inventoryBulkStatus="";
         inventoryMessage=ids.length+" ID(s) atualizados em massa para "+status+".";
       }catch(err){
         inventoryMessage="Falha no lote: "+(err?.message||String(err))+
