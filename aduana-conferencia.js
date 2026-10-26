@@ -325,6 +325,11 @@
     ".aduana-history-summary strong{font-size:15px}",
     ".aduana-history-table{overflow:auto}",
     ".aduana-history-class{margin:10px 0}",
+    ".aduana-history-ids{border-top:1px solid #d9e3ee;margin-top:14px;padding-top:12px}",
+    ".aduana-history-ids h4{font-size:14px;font-weight:900;margin:0 0 10px}",
+    ".aduana-history-ids select{padding:9px;border:1px solid #a9bfd0;border-radius:7px}",
+    ".aduana-history-ids td:first-child{font-family:Consolas,monospace;font-size:12px;white-space:nowrap}",
+    ".aduana-history-ids td{font-size:11px;overflow-wrap:anywhere}",
     "body.dark-mode .aduana-history-tools{background:#163246;color:#e5eef5;border-color:#34576d}",
     "body.dark-mode .aduana-history-summary{background:#494226;color:#fff}",
     ".aduana-filters{display:flex;gap:8px;align-items:center;flex-wrap:wrap}",
@@ -403,7 +408,29 @@
       sides,classifications,ignoredPhysical:m.ignoredPhysicalIds.length,
       validPhysicalCount:m.totalFound,version:1};
   }
+  // Os IDs individuais são montados somente para a coleção privada do Firestore.
+  // A versão agregada continua sem Shipment IDs e apta ao histórico geral.
+  function historyIdsSnapshot(data, packageModel) {
+    const base=historySnapshot(data,packageModel);
+    if(!base)return null;
+    const m=calculate(data,packageModel);
+    const shipments=m.systemRows.map(row=>({
+      id:String(row.id),
+      status:row.match?"Encontrado":"Não encontrado",
+      found:!!row.match,
+      route:text(row.rota),dock:text(row.doca),
+      systemSide:text(row.side),
+      physicalSide:row.match?text(row.ladoFisico):"",
+      type:row.match?text(row.tipo):"",
+      color:row.match?text(row.cor):""
+    }));
+    // Os IDs que não estão no CSV do sistema e as rotas que não são AM1
+    // nunca entram nesta lista.
+    return {date:base.date,dateBR:base.dateBR,facility:"SSP15",operation:"AM1",
+      totals:base.totals,shipments,version:2};
+  }
   let historyOpen=false,historyRecord=null,historyRecords=null,historyPeriod="dia",historyStatus="",historyDate="";
+  let historyIdSearch="",historyIdFilter="todos";
   function historyNowIso() {
     const parts=new Intl.DateTimeFormat("en-US",{timeZone:"America/Sao_Paulo",year:"numeric",month:"2-digit",day:"2-digit"}).formatToParts(new Date());
     const p=Object.fromEntries(parts.map(part=>[part.type,part.value]));
@@ -446,6 +473,68 @@
       '<p class="aduana-history-class"><b>Classificações:</b> '+esc(classificationText)+'</p>'+
       '<p class="aduana-muted">Somatório das operações com histórico disponível, não de IDs únicos entre datas. Dias sem registro não entram no somatório.</p>';
   }
+  function historyIdsMarkup(record) {
+    if(!Array.isArray(record.shipments))return '<p class="aduana-muted">Os IDs individuais deste dia não estão disponíveis neste histórico. Para recuperá-los, é necessário que tenham sido arquivados anteriormente com acesso de administrador.</p>';
+    const valid=record.shipments;
+    const visible=valid.filter(row=>{
+      if(historyIdFilter==="encontrados"&&!row.found)return false;
+      if(historyIdFilter==="faltantes"&&row.found)return false;
+      const term=norm(historyIdSearch);
+      return !term||[row.id,row.route,row.dock,row.systemSide,row.physicalSide].some(val=>norm(val).includes(term));
+    });
+    const rows=visible.slice(0,250).map(row=>
+      '<tr><td>'+esc(row.id)+'</td><td>'+esc(row.status)+'</td><td>'+esc(row.route)+'</td>'+
+      '<td>'+esc(row.dock)+'</td><td>'+esc(sideDisplay(row.systemSide))+'</td>'+
+      '<td>'+esc(row.physicalSide?sideDisplay(row.physicalSide):"—")+'</td>'+
+      '<td>'+esc(row.type||"—")+'</td><td>'+esc(row.color||"—")+'</td></tr>').join("");
+    return '<section class="aduana-history-ids"><h4>SHIPMENT IDs DO DIA — '+valid.length+' REGISTROS</h4>'+
+      '<div class="aduana-filters">'+
+      '<select id="aduanaHistoryIdFilter" aria-label="Filtrar situação dos Shipment IDs">'+
+      [['todos','Todos'],['encontrados','Encontrados'],['faltantes','Não encontrados']].map(([value,label])=>
+        '<option value="'+value+'"'+(historyIdFilter===value?' selected':'')+'>'+label+'</option>').join("")+'</select>'+
+      '<input id="aduanaHistoryIdSearch" type="search" aria-label="Buscar Shipment ID histórico" placeholder="Buscar ID, rota ou lado..." value="'+esc(historyIdSearch)+'">'+
+      '<button type="button" class="aduana-btn" id="aduanaHistoryExportIds">Exportar IDs CSV</button></div>'+
+      '<p class="aduana-muted">'+visible.length+' ID(s) no filtro'+(visible.length>250?' · mostrando os primeiros 250; utilize a pesquisa ou exporte o CSV':'')+'</p>'+
+      '<div class="aduana-history-table"><table class="aduana-table"><thead><tr><th>Shipment ID</th><th>Situação</th><th>Rota AM1</th><th>Doca</th><th>Lado sistema</th><th>Lado físico</th><th>Tipo</th><th>Cor</th></tr></thead><tbody>'+
+      (rows||'<tr><td colspan="8">Nenhum ID corresponde ao filtro.</td></tr>')+'</tbody></table></div></section>';
+  }
+  function downloadHistoryIdsCsv() {
+    if(!historyRecord||!Array.isArray(historyRecord.shipments))return;
+    const header=["Shipment ID","Situação","Rota","Doca","Lado Sistema","Lado Físico","Tipo","Cor"];
+    const escapeCsv=value=>'"'+String(value??"").replace(/^[=+\-@\t\r]/,"'").replace(/"/g,'""')+'"';
+    const lines=[header,...historyRecord.shipments.map(row=>[
+      row.id,row.status,row.route,row.dock,row.systemSide,row.physicalSide,row.type,row.color
+    ])].map(row=>row.map(escapeCsv).join(";")).join("\r\n");
+    const url=URL.createObjectURL(new Blob(["\uFEFF"+lines],{type:"text/csv;charset=utf-8"}));
+    const link=document.createElement("a");
+    link.href=url;link.download="Historico_Aduana_Ids_AM1_"+historyRecord.date+".csv";
+    document.body.appendChild(link);link.click();link.remove();
+    window.setTimeout(()=>URL.revokeObjectURL(url),1000);
+  }
+  function bindHistoryIdEvents() {
+    $("aduanaHistoryIdSearch")?.addEventListener("input",event=>{
+      historyIdSearch=event.target.value;
+      updateHistoryIdsOnly();
+    });
+    $("aduanaHistoryIdFilter")?.addEventListener("change",event=>{
+      historyIdFilter=event.target.value;
+      updateHistoryIdsOnly();
+    });
+    $("aduanaHistoryExportIds")?.addEventListener("click",downloadHistoryIdsCsv);
+  }
+  function updateHistoryIdsOnly(){
+    const wrapper=$("aduanaHistoryIdsContainer");
+    if(!wrapper)return;
+    const focused=document.activeElement?.id==="aduanaHistoryIdSearch";
+    const selection=focused?document.activeElement.selectionStart:null;
+    wrapper.innerHTML=historyIdsMarkup(historyRecord);
+    bindHistoryIdEvents();
+    if(focused){
+      const field=$("aduanaHistoryIdSearch");
+      field?.focus();
+      if(field&&selection!==null)field.setSelectionRange(selection,selection);
+    }
+  }
   function renderHistoryRecord() {
     const container=$("aduanaHistoryResult");
     if(!container)return;
@@ -464,7 +553,9 @@
       '<div class="aduana-history-table"><table class="aduana-table"><thead><tr><th>Setor</th><th>Coordenador</th><th>Sistema</th><th>Encontrados</th><th>Não encontrados</th></tr></thead>'+
       '<tbody>'+sideRows+'</tbody></table></div>'+
       '<p class="aduana-history-class"><b>Classificação:</b> '+esc(clstext)+'</p>'+
-      '<p class="aduana-muted">Registro histórico consolidado, sem IDs individuais. Arquivado: '+esc(r.savedAt||"")+'</p>';
+      '<div id="aduanaHistoryIdsContainer">'+historyIdsMarkup(r)+'</div>'+
+      '<p class="aduana-muted">Registro arquivado: '+esc(r.savedAt||"")+'</p>';
+    bindHistoryIdEvents();
   }
   function updateHistoryStatus(message) {
     historyStatus=message;
@@ -503,7 +594,7 @@
       '<button type="button" class="aduana-btn primary" id="aduanaHistoryFind">Consultar</button></div>'+
       '<p class="aduana-muted" id="aduanaHistoryStatus" role="status">'+esc(historyStatus)+'</p>'+
       '<div id="aduanaHistoryResult"></div>'+
-      '<small class="aduana-muted">Disponíveis os últimos 30 dias. O arquivo contém apenas indicadores consolidados, não IDs individuais.</small>'+
+      '<small class="aduana-muted">Últimos 30 dias. Os Shipment IDs individuais são consultados somente por administradores, para uma data específica.</small>'+
       '</div></section>'+
       '<p class="aduana-note">'+guidance+'</p>'+
       '<div class="aduana-importbar"><label class="aduana-btn" for="aduanaReimportFile">Atualizar planilha IDs Físicos</label>'+
@@ -646,5 +737,5 @@
     window.setTimeout(()=>URL.revokeObjectURL(url),1000);
   }
   window.ControleAduana = { parsePhysicalCsv, parsePhysicalFile, render, historySnapshot,
-    onBack:null, onClassify:null, onImportPhysical:null, onSaveHistory:null, onReadHistory:null, onReadHistoryRange:null };
+    onBack:null, onClassify:null, onImportPhysical:null, onSaveHistory:null, onReadHistory:null, onReadHistoryRange:null, historyIdsSnapshot };
 })();
