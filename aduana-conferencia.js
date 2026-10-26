@@ -14,6 +14,9 @@
   const COLORS = ["", "Amarelo", "Azul", "Vermelho", "Verde"];
   const INVENTORY_EXTRA_STATUSES = ["Devolvido", "Vinculado", "Atrelado", "Em rota"];
   const INVENTORY_STATUSES = ["Pendente", "Encontrado", "Não encontrado", ...INVENTORY_EXTRA_STATUSES];
+  // Somente Pendente e Nao encontrado continuam no saldo nao localizado.
+  // Outros status resolvem o saldo OPERACIONAL, mas nao comprovam bipagem no CSV fisico.
+  const INVENTORY_RESOLVED_STATUSES = new Set(["Encontrado", ...INVENTORY_EXTRA_STATUSES]);
   const inventoryOptions = selected =>
     '<optgroup label="Conferência física">'+
       ["Pendente","Encontrado","Não encontrado"].map(value=>
@@ -466,8 +469,9 @@
       (editable?'':' disabled')+'>'+
       inventoryOptions(status)+'</select></div>';
   }
-  // Um ID confirmado no inventário é conciliado sem alterar o confronto CSV.
-  function resolved(row){return !!row.match||inventoryForId(row.id,!!row.match)==="Encontrado";}
+  // Todo status diferente de Pendente ou Nao encontrado desconta do saldo,
+  // sem alterar a informacao de encontro FISICO preservada nos arquivos.
+  function resolved(row){return !!row.match||INVENTORY_RESOLVED_STATUSES.has(inventoryForId(row.id));}
   function liveTotals(m){
     const sides=new Map();let found=0,manual=0;
     for(const r of m.systemRows||[]){
@@ -487,8 +491,8 @@
     put("aduanaInventoryManualClassified",s.manual);
     put("aduanaMissingUnclassified",s.missing);
     put("aduanaReconcileText","Conciliação: "+m.total+" no sistema = "+s.found+
-      " encontrados ("+m.totalFound+" no físico + "+s.manual+
-      " no inventário) + "+s.missing+" ainda não encontrados.");
+      " encontrados/tratados ("+m.totalFound+" no físico + "+s.manual+
+      " regularizados por status no inventário) + "+s.missing+" pendentes/não encontrados.");
     document.querySelectorAll("[data-aduana-side-found]").forEach(e=>{
       e.textContent=String(s.sides.get(e.dataset.aduanaSideFound)?.found||0);
     });
@@ -530,8 +534,8 @@
     const bulkOption=$("aduanaInventoryBulkStatus");
     if(bulkOption){bulkOption.value=inventoryBulkStatus;bulkOption.disabled=!canSelect;}
     $("aduanaRowsCount").textContent=visible.length+" registro(s) do sistema"+
-      (mode==="faltantes"?" ainda não localizados (físico + inventário)":
-       mode==="encontrados"?" localizados (físico + inventário)":"")+
+      (mode==="faltantes"?" pendentes ou não encontrados":
+       mode==="encontrados"?" encontrados ou tratados por status":"")+
       " · Inventário: "+inventory.Encontrado+" encontrado(s) · "+
       inventory["Não encontrado"]+" não encontrado(s) · "+inventory.Pendente+" pendente(s)"+
       INVENTORY_EXTRA_STATUSES.filter(status=>inventory[status]>0)
@@ -553,7 +557,9 @@
       const tag=row.origem==="Físico"?(row.match?"ok":"warn"):"fail";
       return '<tr><td>'+esc(row.id)+'</td><td>'+esc(row.origem)+'</td><td>'+esc(row.side)+'</td><td>'+esc(row.ladoFisico||"—")+'</td><td>'+esc(row.rota)+'</td><td>'+esc(row.doca)+'</td>'+
         '<td><span class="aduana-tag '+tag+'">'+esc(row.situacao)+'</span>'+
-        (!row.match&&resolved(row)?' <span class="aduana-tag ok" title="Encontrado no inventário, mas não no CSV físico">✓ Inventário</span>':'')+
+        (!row.match&&resolved(row)?
+          ' <span class="aduana-tag ok" title="Status do inventário contabilizado como resolvido; não localizado no CSV físico">'+
+          esc(inventoryForId(row.id))+' · tratado</span>':'')+
         '</td><td>'+
         (editable?selector("tipo",row.id,row.tipo,TYPES):"—")+'</td><td>'+
         (editable?selector("cor",row.id,row.cor,COLORS):"—")+'</td><td>'+
@@ -902,7 +908,7 @@
       '<td data-aduana-side-missing="'+esc(row.side)+'">'+formatValue(row.missing,m.systemReady&&m.physicalReady)+'</td></tr>').join("");
     const metrics = [["Volumoso",m.countType("Volumoso")],["Amarelo",m.countColor("Amarelo")],["Azul",m.countColor("Azul")],["Vermelho",m.countColor("Vermelho")],["Verde",m.countColor("Verde")],["GM",m.countType("GM")]].map(row=>
       '<tr><td>'+esc(row[0])+'</td><td>'+formatValue(row[1],m.physicalReady&&m.systemReady)+'</td><td title="IDs não localizados não possuem classificação física confirmada">—</td></tr>').join("")+
-      '<tr><td><b>Encontrado via inventário (sem classificação física)</b></td><td id="aduanaInventoryManualClassified">0</td><td>—</td></tr>'+
+      '<tr><td><b>Tratado via inventário (sem classificação física)</b></td><td id="aduanaInventoryManualClassified">0</td><td>—</td></tr>'+
       '<tr><td><b>Sem classificação (ainda não encontrados)</b></td><td>—</td><td id="aduanaMissingUnclassified">'+formatValue(m.totalMissing,m.systemReady&&m.physicalReady)+'</td></tr>';
     $("aduanaView").innerHTML =
       '<div class="aduana-shell"><div class="aduana-top"><button type="button" id="aduanaBack" class="aduana-back">← Voltar à tela inicial</button>'+
@@ -937,16 +943,16 @@
         : 'Importe o arquivo físico CSV ou XLSX')+'</span></div>'+
       '<section class="aduana-kpis">'+
       '<article class="aduana-kpi"><span>Quantidade a mais na aduana</span><strong>'+formatValue(m.total,m.systemReady)+'</strong><small>Sistema · Shipment IDs únicos</small></article>'+
-      '<article class="aduana-kpi encontrado"><span>Quantidade encontrada</span><strong id="aduanaKpiFound">'+formatValue(m.totalFound,m.systemReady&&m.physicalReady)+'</strong><small>Encontrados no físico ou confirmados no inventário</small></article>'+
-      '<article class="aduana-kpi nao-encontrado"><span>Quantidade não encontrada</span><strong id="aduanaKpiMissing">'+formatValue(m.totalMissing,m.systemReady&&m.physicalReady)+'</strong><small>Restantes, incluindo pendentes no inventário</small></article></section>'+
-      '<div class="aduana-columns"><section class="aduana-panel"><h3>CONTROLE POR LADO</h3><table class="aduana-table"><thead><tr><th>Item</th><th>Sistema</th><th>Encontrado (físico + inventário)</th><th>Não encontrado</th></tr></thead><tbody>'+sides+
+      '<article class="aduana-kpi encontrado"><span>Quantidade encontrada</span><strong id="aduanaKpiFound">'+formatValue(m.totalFound,m.systemReady&&m.physicalReady)+'</strong><small>Físico + Encontrado, Devolvido, Vinculado, Atrelado ou Em rota</small></article>'+
+      '<article class="aduana-kpi nao-encontrado"><span>Quantidade não encontrada</span><strong id="aduanaKpiMissing">'+formatValue(m.totalMissing,m.systemReady&&m.physicalReady)+'</strong><small>Somente Pendente e Não encontrado</small></article></section>'+
+      '<div class="aduana-columns"><section class="aduana-panel"><h3>CONTROLE POR LADO</h3><table class="aduana-table"><thead><tr><th>Item</th><th>Sistema</th><th>Encontrado / tratado</th><th>Pendente / não encontrado</th></tr></thead><tbody>'+sides+
       '<tr class="aduana-total"><td><strong>TOTAL</strong></td><td>'+formatValue(m.total,m.systemReady)+'</td><td id="aduanaSideTotalFound">'+formatValue(m.totalFound,m.systemReady&&m.physicalReady)+'</td><td id="aduanaSideTotalMissing">'+formatValue(m.totalMissing,m.systemReady&&m.physicalReady)+'</td></tr></tbody></table>'+
       '<div class="aduana-panel-inner aduana-reconcile">'+(m.systemReady&&m.physicalReady
         ? '<strong id="aduanaReconcileText">Conciliação por ID: '+m.total+' no sistema = '+m.totalFound+' encontrados + '+m.totalMissing+' não encontrados.</strong>'
         : '<span>Importe as bases do sistema e físico para iniciar o confronto por ID.</span>')+
       '<small>Os pacotes físicos fora da lista do sistema são ignorados em todas as contagens. Se um ID válido estiver em outro lado físico, ele será contabilizado no lado atribuído pelo sistema.</small></div></section>'+
       '<section class="aduana-panel"><h3>CLASSIFICAÇÃO DOS PACOTES</h3><table class="aduana-table"><thead><tr><th>Item</th><th>Encontrada</th><th>Não encontrada</th></tr></thead><tbody>'+metrics+'</tbody></table>'+
-      '<div class="aduana-panel-inner aduana-muted">Tipo e cor continuam vindo apenas do físico. Confirmações do inventário atualizam totais sem presumir cor ou tipo.</div></section></div>'+
+      '<div class="aduana-panel-inner aduana-muted">Tipo e cor continuam vindo apenas do físico. Status resolvidos no inventário entram no saldo tratado, sem presumir localização física, tipo ou cor.</div></section></div>'+
       '<p class="aduana-note"><b>Critério obrigatório:</b> apenas Shipment IDs presentes no arquivo do sistema são contabilizados. IDs extras bipados no físico são descartados das estatísticas, do detalhamento e dos arquivos exportados.'+
       (m.sideMismatches?' <b>Atenção:</b> '+m.sideMismatches+' ID(s) válido(s) com lado físico diferente do lado do sistema; a contagem foi atribuída ao lado do sistema.':'')+
       (m.crossSides?' <b>Atenção:</b> '+m.crossSides+' ID(s) repetido(s) em lados diferentes na base do sistema; contabilizado(s) uma única vez.':'')+'</p>'+
@@ -963,7 +969,7 @@
       '<span class="aduana-muted">Marque os pendentes na coluna Inventário.</span></div>'+
       '<p class="aduana-muted" id="aduanaInventoryStatus" role="status"></p>'+
       '<div class="aduana-inventory-overview" id="aduanaInventoryOverview" aria-label="Resumo por situação do inventário"></div>'+
-      '<p class="aduana-muted">Devolvido, Vinculado, Atrelado e Em rota são situações operacionais. Somente Encontrado reduz o saldo não localizado.</p></div>'+
+      '<p class="aduana-muted">Encontrado, Devolvido, Vinculado, Atrelado e Em rota descontam do saldo não encontrado. Pendente e Não encontrado permanecem no saldo. Isso não altera o confronto original do CSV físico.</p></div>'+
       '<div class="aduana-scroll"><table class="aduana-detail"><thead><tr><th>Shipment ID</th><th>Origem</th><th>Lado Sistema</th><th>Lado Físico</th><th>Rota</th><th>Doca</th><th>Conferência</th><th>Tipo</th><th>Cor</th><th>Inventário'+
       '<label class="aduana-inventory-head" title="Selecionar pendentes sem conferência física no filtro atual">'+
       '<input type="checkbox" id="aduanaInventorySelectAll" aria-label="Selecionar todos os pendentes do filtro"> Selecionar pendentes</label></th></tr></thead><tbody id="aduanaDetails"></tbody></table></div>'+
@@ -1189,8 +1195,10 @@
     } else {
       data=[["Shipment ID","Origem","Lado Sistema","Lado Físico","Rota","Doca","Situação por ID (CSV)","Tipo","Cor","Inventário","Resultado consolidado","Confirmado por"],...m.rows.map(r=>
          [r.id,r.origem,r.side,r.ladoFisico,r.rota,r.doca,r.situacao,r.tipo,r.cor,
-          inventoryForId(r.id,r.match),resolved(r)?"Encontrado":"Não encontrado",
-          r.match?"CSV físico":resolved(r)?"Inventário manual":"—"])];
+          inventoryForId(r.id,r.match),
+          !resolved(r)?"Não encontrado":r.match||inventoryForId(r.id)==="Encontrado"
+            ?"Encontrado":"Tratado: "+inventoryForId(r.id),
+          r.match?"CSV físico":resolved(r)?"Status inventário: "+inventoryForId(r.id):"—"])];
       file="Confronto_Aduana";
     }
     const content="\uFEFF"+data.map(row=>row.map(csvCell).join(";")).join("\r\n");
