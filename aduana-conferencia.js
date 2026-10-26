@@ -474,7 +474,7 @@
       '<p class="aduana-muted">Somatório das operações com histórico disponível, não de IDs únicos entre datas. Dias sem registro não entram no somatório.</p>';
   }
   function historyIdsMarkup(record) {
-    if(!Array.isArray(record.shipments))return '<p class="aduana-muted">Os IDs individuais deste dia não estão disponíveis neste histórico. Para recuperá-los, é necessário que tenham sido arquivados anteriormente com acesso de administrador.</p>';
+    if(!Array.isArray(record.shipments))return '<p class="aduana-muted">'+esc(record.idsStatus||"Não há Shipment IDs individuais arquivados para esta data.")+'</p>';
     const valid=record.shipments;
     const visible=valid.filter(row=>{
       if(historyIdFilter==="encontrados"&&!row.found)return false;
