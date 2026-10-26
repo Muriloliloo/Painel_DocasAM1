@@ -12185,7 +12185,7 @@ body.editor-open .global-theme-toggle {
   <script src="firebase-config.js"></script>
   <script src="ondas-dados.js"></script>
   <script src="aduana-xlsx.js?v=20261024-r4"></script>
-  <script src="aduana-conferencia.js?v=20261026-r17"></script>
+  <script src="aduana-conferencia.js?v=20261026-r18"></script>
   <script>
     const storageKey = "ondas-dados";
     const syncMetaKey = `${storageKey}-sync-meta-v1`;
@@ -13850,6 +13850,48 @@ body.editor-open .global-theme-toggle {
     function aduanaHistoryDoc(day) {
       return cloudState.tools.doc(cloudState.db,"paineis","aduana-am1-"+day);
     }
+
+    // Histórico individual RESTRITO em coleção independente dos resumos públicos.
+    // Requer regras do Firestore que limitem leitura e escrita aos administradores.
+    const ADUANA_IDS_COLLECTION="aduanaHistoricoPrivadoAM1";
+    function aduanaPrivateIdsDoc(day){
+      return cloudState.tools.doc(cloudState.db,ADUANA_IDS_COLLECTION,day);
+    }
+    async function archiveIndividualAduanaIds(source,snapshot){
+      if(!isAdmin()||!cloudState.user)throw new Error("Acesso de administrador obrigatório.");
+      const ids=window.ControleAduana?.historyIdsSnapshot?.(source,packageClosureModel(source));
+      if(!ids||ids.date!==snapshot.date)throw new Error("IDs e fechamento pertencem a datas diferentes.");
+      if(ids.shipments.length!==snapshot.totals.system||
+        ids.shipments.filter(item=>item.found).length!==snapshot.totals.found)
+        throw new Error("Divergência entre a quantidade de IDs e os totais do fechamento.");
+      const record={
+        kind:"aduana-am1-ids",date:ids.date,operation:"AM1",facility:"SSP15",
+        totals:ids.totals,shipments:ids.shipments,version:2,
+        updatedAt:cloudState.tools.serverTimestamp(),
+        updatedBy:cloudState.user.email||"administrador"
+      };
+      if(serializedByteLength({...record,updatedAt:null})>780*1024)
+        throw new Error("Histórico individual excede o limite seguro de 780 KB por dia; os indicadores foram preservados.");
+      const ref=aduanaPrivateIdsDoc(ids.date);
+      const old=await cloudState.tools.getDoc(ref);
+      if(old.exists()&&JSON.stringify(old.data()?.shipments)===JSON.stringify(record.shipments)&&
+         JSON.stringify(old.data()?.totals)===JSON.stringify(record.totals))return;
+      await cloudState.tools.setDoc(ref,record);
+    }
+    async function readIndividualAduanaIds(day){
+      if(!cloudState.user||!isAdmin())
+        return {shipments:null,idsStatus:"Faça login como administrador para consultar Shipment IDs individuais."};
+      try{
+        const doc=await cloudState.tools.getDoc(aduanaPrivateIdsDoc(day));
+        if(!doc.exists())return {shipments:null,idsStatus:"Não há IDs individuais arquivados para esta data."};
+        const record=doc.data();
+        if(record.kind!=="aduana-am1-ids"||!Array.isArray(record.shipments))
+          throw new Error("Registro individual inválido.");
+        return {shipments:record.shipments,idsStatus:""};
+      }catch(err){
+        return {shipments:null,idsStatus:"Consulta aos IDs indisponível: "+(err?.message||String(err))+". Verifique as regras de acesso da coleção privada no Firebase."};
+      }
+    }
     async function purgeExpiredAduanaHistory() {
       if(!isAdmin()||!cloudState.tools.getDocs||!cloudState.tools.deleteDoc)return;
       const {start,end}=aduanaHistoryDateBounds();
@@ -13864,6 +13906,18 @@ body.editor-open .global-theme-toggle {
         if(/^\d{4}-\d{2}-\d{2}$/.test(day)&&day<start&&record.id==="aduana-am1-"+day){
           await cloudState.tools.deleteDoc(record.ref);
         }
+      }
+      // Exclusão física dos registros antigos da coleção privada.
+      // Esta rotina é acionada em novas gravações, não é um agendador permanente.
+      const iq=cloudState.tools.query(
+        cloudState.tools.collection(cloudState.db,ADUANA_IDS_COLLECTION),
+        cloudState.tools.where("kind","==","aduana-am1-ids")
+      );
+      const individualDocs=await cloudState.tools.getDocs(iq);
+      for(const entry of individualDocs.docs){
+        const day=String(entry.data()?.date||"");
+        if(/^\d{4}-\d{2}-\d{2}$/.test(day)&&day<start&&entry.id===day)
+          await cloudState.tools.deleteDoc(entry.ref);
       }
       lastAduanaHistoryCleanup=end;
     }
@@ -13888,6 +13942,8 @@ body.editor-open .global-theme-toggle {
         if(old.exists()&&JSON.stringify(old.data()?.summary)===JSON.stringify(snapshot)) {
           // Mesmo sem alteração nas métricas, execute a retenção: o dia pode
           // ter virado desde a última gravação e documentos antigos expirado.
+          try{await archiveIndividualAduanaIds(source,snapshot);}
+          catch(err){throw new Error("Indicadores arquivados; Shipment IDs NÃO foram salvos: "+(err?.message||String(err)));}
           purgeExpiredAduanaHistory().catch(err=>console.warn("Limpeza do histórico de Aduana:",err));
           return old.data();
         }
@@ -13898,6 +13954,8 @@ body.editor-open .global-theme-toggle {
           updatedBy:cloudState.user?.email||"administrador"
         };
         await cloudState.tools.setDoc(ref,archive);
+        try{await archiveIndividualAduanaIds(source,snapshot);}
+        catch(err){throw new Error("Indicadores arquivados; Shipment IDs NÃO foram salvos: "+(err?.message||String(err)));}
         purgeExpiredAduanaHistory().catch(err=>console.warn("Limpeza do histórico de Aduana:",err));
         return archive;
       })();
@@ -13910,7 +13968,8 @@ body.editor-open .global-theme-toggle {
       const record=await cloudState.tools.getDoc(aduanaHistoryDoc(day));
       if(!record.exists()||record.data()?.kind!=="aduana-am1-history")return null;
       const r=record.data();
-      return {...r.summary,savedAt:r.savedAt||""};
+      const privateIds=await readIndividualAduanaIds(day);
+      return {...r.summary,savedAt:r.savedAt||"",...privateIds};
     }
     // Consulta limitada aos 30 documentos diários, sem depender de índices compostos
     // do Firestore ou de armazenar grandes históricos no documento operacional.
@@ -18682,7 +18741,8 @@ body.editor-open .global-theme-toggle {
       window.ControleAduana.onBack = () => { currentView = "docas"; dockDisplayMode = "overview"; renderViews(); document.getElementById("overviewRailBtn")?.focus(); };
       window.ControleAduana.onSaveHistory = async () => {
         const archive=await saveAduanaHistorySnapshot(data);
-        return archive ? {...archive.summary,savedAt:archive.savedAt||""} : null;
+        if(!archive)return null;
+        return {...archive.summary,savedAt:archive.savedAt||"",...await readIndividualAduanaIds(archive.date)};
       };
       window.ControleAduana.onReadHistory = readAduanaHistorySnapshot;
       window.ControleAduana.onReadHistoryRange = readAduanaHistoryRange;
