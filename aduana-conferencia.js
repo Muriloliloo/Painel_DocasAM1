@@ -314,6 +314,19 @@
     "body.dark-mode .aduana-side-coordinator{color:#cfdeea}",
     "body.dark-mode .aduana-side-coordinator b{color:#ffda57}",
     ".aduana-panel-inner{padding:14px}",
+    ".aduana-history-tools{margin-top:12px;border:1px solid #cbd9e4;background:white;border-radius:10px;padding:11px 14px}",
+    ".aduana-history-actions{display:flex;flex-wrap:wrap;gap:9px;align-items:center}",
+    ".aduana-history-panel{border-top:1px solid #d9e4ec;margin-top:12px;padding-top:12px}",
+    ".aduana-history-panel[hidden]{display:none!important}",
+    ".aduana-history-search{display:flex;flex-wrap:wrap;gap:10px;align-items:end}",
+    ".aduana-history-search label{font-size:12px;font-weight:850;display:grid;gap:5px}",
+    ".aduana-history-search input{border:1px solid #a9bfd0;border-radius:6px;min-height:37px;padding:6px 9px}",
+    ".aduana-history-summary{display:flex;flex-wrap:wrap;gap:12px;margin:12px 0;padding:12px;background:#fff2c2;border-radius:7px;align-items:center}",
+    ".aduana-history-summary strong{font-size:15px}",
+    ".aduana-history-table{overflow:auto}",
+    ".aduana-history-class{margin:10px 0}",
+    "body.dark-mode .aduana-history-tools{background:#163246;color:#e5eef5;border-color:#34576d}",
+    "body.dark-mode .aduana-history-summary{background:#494226;color:#fff}",
     ".aduana-filters{display:flex;gap:8px;align-items:center;flex-wrap:wrap}",
     ".aduana-filters input{flex:1 1 200px;min-width:120px;padding:10px;border:1px solid #a9bfd0;border-radius:8px}",
     ".aduana-filter.active,.aduana-btn.primary{background:#063354;color:white}",
@@ -368,6 +381,64 @@
         (editable?selector("cor",row.id,row.cor,COLORS):"—")+'</td></tr>';
     }).join(""):'<tr><td colspan="9" style="padding:24px;text-align:center">Nenhum registro para os filtros selecionados.</td></tr>';
   }
+  // Snapshot compacto: não grava Shipment IDs, nomes de motoristas nem linhas brutas
+  // em documentos históricos potencialmente acessíveis a leitores do painel.
+  function historySnapshot(data, packageModel) {
+    const m=calculate(data,packageModel);
+    if(!m.systemReady||!m.physicalReady||!m.date)return null;
+    const br=m.date.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+    if(!br)return null;
+    const iso=br[3]+"-"+br[2]+"-"+br[1];
+    const sides=m.sides.filter(r=>r.side!=="Não identificado"||r.system||r.found).map(r=>({
+      side:r.side,label:sideDisplay(r.side),coordinator:coordinatorForSide(data,r.side),
+      system:r.system,found:r.found,missing:r.missing
+    }));
+    const classifications={
+      volumoso:m.countType("Volumoso"),gm:m.countType("GM"),
+      amarelo:m.countColor("Amarelo"),azul:m.countColor("Azul"),
+      vermelho:m.countColor("Vermelho"),verde:m.countColor("Verde")
+    };
+    return {date:iso,dateBR:m.date,facility:"SSP15",operation:"AM1",
+      totals:{system:m.total,found:m.totalFound,missing:m.totalMissing},
+      sides,classifications,ignoredPhysical:m.ignoredPhysicalIds.length,
+      validPhysicalCount:m.totalFound,version:1};
+  }
+  let historyOpen=false,historyRecord=null,historyStatus="",historyDate="";
+  function historyNowIso() {
+    const parts=new Intl.DateTimeFormat("en-US",{timeZone:"America/Sao_Paulo",year:"numeric",month:"2-digit",day:"2-digit"}).formatToParts(new Date());
+    const p=Object.fromEntries(parts.map(part=>[part.type,part.value]));
+    return p.year+"-"+p.month+"-"+p.day;
+  }
+  function historyMinimumIso() {
+    const day=historyNowIso();
+    const d=new Date(day+"T12:00:00Z");
+    d.setUTCDate(d.getUTCDate()-29);
+    return d.toISOString().slice(0,10);
+  }
+  function renderHistoryRecord() {
+    const container=$("aduanaHistoryResult");
+    if(!container)return;
+    if(!historyRecord){container.innerHTML='<p class="aduana-muted">Escolha uma data e clique em Consultar para recuperar o fechamento salvo.</p>';return;}
+    const r=historyRecord;
+    const sideRows=(Array.isArray(r.sides)?r.sides:[]).map(item=>
+      '<tr><td>'+esc(item.label||item.side)+'</td><td>'+esc(item.coordinator||"Não informado")+'</td>'+
+      '<td>'+Number(item.system||0)+'</td><td>'+Number(item.found||0)+'</td><td>'+Number(item.missing||0)+'</td></tr>').join("");
+    const cls=r.classifications||{};
+    const clstext=[["Volumoso",cls.volumoso],["GM",cls.gm],["Amarelo",cls.amarelo],["Azul",cls.azul],["Vermelho",cls.vermelho],["Verde",cls.verde]].map(([label,value])=>label+": "+Number(value||0)).join(" · ");
+    container.innerHTML='<div class="aduana-history-summary"><strong>'+esc(r.dateBR||r.date||"")+'</strong>'+
+      '<span>Sistema: <b>'+Number(r.totals?.system||0)+'</b></span>'+
+      '<span>Encontrados: <b>'+Number(r.totals?.found||0)+'</b></span>'+
+      '<span>Não encontrados: <b>'+Number(r.totals?.missing||0)+'</b></span></div>'+
+      '<div class="aduana-history-table"><table class="aduana-table"><thead><tr><th>Setor</th><th>Coordenador</th><th>Sistema</th><th>Encontrados</th><th>Não encontrados</th></tr></thead>'+
+      '<tbody>'+sideRows+'</tbody></table></div>'+
+      '<p class="aduana-history-class"><b>Classificação:</b> '+esc(clstext)+'</p>'+
+      '<p class="aduana-muted">Registro histórico consolidado, sem IDs individuais. Arquivado: '+esc(r.savedAt||"")+'</p>';
+  }
+  function updateHistoryStatus(message) {
+    historyStatus=message;
+    const el=$("aduanaHistoryStatus");
+    if(el)el.textContent=historyStatus;
+  }
   function render(data, packageModel) {
     if (!$("aduanaView")) return;
     installStyles();
@@ -388,6 +459,16 @@
       '<div class="aduana-shell"><div class="aduana-top"><button type="button" id="aduanaBack" class="aduana-back">← Voltar à tela inicial</button>'+
       '<span class="aduana-muted">SSP15 · AM1 · '+esc(m.date||"Data não informada")+'</span></div>'+
       '<header class="aduana-head"><h2>CONTROLE DE ADUANA</h2><p>Confronto entre Sistema e IDs Físicos</p></header>'+
+      '<section class="aduana-history-tools"><div class="aduana-history-actions">'+
+      '<button type="button" class="aduana-btn primary" id="aduanaHistorySave">Salvar fechamento no histórico</button>'+
+      '<button type="button" class="aduana-btn" id="aduanaHistoryToggle" aria-expanded="'+(historyOpen?'true':'false')+'">'+(historyOpen?'Ocultar histórico':'Consultar histórico · 30 dias')+'</button>'+
+      '</div><div class="aduana-history-panel" id="aduanaHistoryPanel"'+(historyOpen?'':' hidden')+'>'+
+      '<div class="aduana-history-search"><label>Data da expedição<input type="date" id="aduanaHistoryDate" min="'+historyMinimumIso()+'" max="'+historyNowIso()+'" value="'+esc(historyDate||historyNowIso())+'"></label>'+
+      '<button type="button" class="aduana-btn primary" id="aduanaHistoryFind">Consultar</button></div>'+
+      '<p class="aduana-muted" id="aduanaHistoryStatus" role="status">'+esc(historyStatus)+'</p>'+
+      '<div id="aduanaHistoryResult"></div>'+
+      '<small class="aduana-muted">Disponíveis os últimos 30 dias. O arquivo contém apenas indicadores consolidados, não IDs individuais.</small>'+
+      '</div></section>'+
       '<p class="aduana-note">'+guidance+'</p>'+
       '<div class="aduana-importbar"><label class="aduana-btn" for="aduanaReimportFile">Atualizar planilha IDs Físicos</label>'+
       '<input id="aduanaReimportFile" type="file" accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" aria-label="Atualizar IDs físicos por CSV ou Excel">'+
@@ -421,6 +502,44 @@
       '<button type="button" class="aduana-btn" data-aduana-export="fisico">Baixar CSV IDs Físicos</button>'+
       '<a class="aduana-btn" href="'+SHEET_URL+'" target="_blank" rel="noopener noreferrer">Abrir planilha IDs Físicos ↗</a></div></section></div>';
     $("aduanaBack")?.addEventListener("click",()=>window.ControleAduana?.onBack?.());
+    $("aduanaHistoryToggle")?.addEventListener("click",()=>{
+      historyOpen=!historyOpen;
+      const panel=$("aduanaHistoryPanel");
+      if(panel)panel.hidden=!historyOpen;
+      const button=$("aduanaHistoryToggle");
+      if(button){button.textContent=historyOpen?"Ocultar histórico":"Consultar histórico · 30 dias";button.setAttribute("aria-expanded",String(historyOpen));}
+      if(historyOpen)renderHistoryRecord();
+    });
+    $("aduanaHistorySave")?.addEventListener("click",async()=>{
+      const btn=$("aduanaHistorySave");if(btn)btn.disabled=true;
+      updateHistoryStatus("Salvando fechamento no Firebase...");
+      try {
+        const saved=await window.ControleAduana?.onSaveHistory?.();
+        if(!saved)throw new Error("Firebase indisponível ou sem permissão de gravação.");
+        historyRecord=saved;historyDate=saved.date;historyOpen=true;
+        const panel=$("aduanaHistoryPanel");if(panel)panel.hidden=false;
+        const toggle=$("aduanaHistoryToggle");
+        if(toggle){toggle.textContent="Ocultar histórico";toggle.setAttribute("aria-expanded","true");}
+        const input=$("aduanaHistoryDate");if(input)input.value=historyDate;
+        renderHistoryRecord();
+        updateHistoryStatus("Fechamento arquivado com sucesso no Firebase.");
+      } catch(err){updateHistoryStatus("Não foi possível salvar: "+(err?.message||String(err)));}
+      finally{if(btn)btn.disabled=false;}
+    });
+    $("aduanaHistoryFind")?.addEventListener("click",async()=>{
+      const input=$("aduanaHistoryDate"),day=input?.value||"";
+      if(!day||day<historyMinimumIso()||day>historyNowIso()){updateHistoryStatus("Selecione uma data dentro dos últimos 30 dias.");return;}
+      historyDate=day;
+      const btn=$("aduanaHistoryFind");if(btn)btn.disabled=true;
+      updateHistoryStatus("Consultando histórico no Firebase...");
+      try {
+        historyRecord=await window.ControleAduana?.onReadHistory?.(day)||null;
+        renderHistoryRecord();
+        updateHistoryStatus(historyRecord?"Fechamento localizado.":"Não existe fechamento arquivado para esta data.");
+      }catch(err){historyRecord=null;renderHistoryRecord();updateHistoryStatus("Falha na consulta: "+(err?.message||String(err)));}
+      finally{if(btn)btn.disabled=false;}
+    });
+    if(historyOpen)renderHistoryRecord();
     $("aduanaReimportFile")?.addEventListener("change",async event=>{
       const file=event.target.files?.[0];
       if (!file)return;
@@ -469,5 +588,6 @@
     document.body.appendChild(a);a.click();a.remove();
     window.setTimeout(()=>URL.revokeObjectURL(url),1000);
   }
-  window.ControleAduana = { parsePhysicalCsv, parsePhysicalFile, render, onBack:null, onClassify:null, onImportPhysical:null };
+  window.ControleAduana = { parsePhysicalCsv, parsePhysicalFile, render, historySnapshot,
+    onBack:null, onClassify:null, onImportPhysical:null, onSaveHistory:null, onReadHistory:null };
 })();
