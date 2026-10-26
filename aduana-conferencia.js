@@ -432,6 +432,7 @@
   let historyOpen=false,historyRecord=null,historyRecords=null,historyPeriod="dia",historyStatus="",historyDate="";
   let historyIdSearch="",historyIdFilter="todos";
   let historyGlobalId="",historyGlobalResult=null,historyGlobalStatus="";
+  let historyRangeIdSearch="",historyRangeIdFilter="todos",historyRangeIdPage=0;
   function historyNowIso() {
     const parts=new Intl.DateTimeFormat("en-US",{timeZone:"America/Sao_Paulo",year:"numeric",month:"2-digit",day:"2-digit"}).formatToParts(new Date());
     const p=Object.fromEntries(parts.map(part=>[part.type,part.value]));
@@ -465,6 +466,124 @@
       '<th>Lado sistema</th><th>Lado físico</th><th>Tipo</th><th>Cor</th></tr></thead>'+
       '<tbody>'+rows+'</tbody></table></div>';
   }
+  // A consulta por periodo recebe resumos e IDs privados apenas em memoria.
+  // Nenhum Shipment ID e incluido no documento de resumo publico.
+  function historyPeriodIdEntries() {
+    const all=(historyRecords||[]).flatMap(day=>
+      (Array.isArray(day.shipments)?day.shipments:[]).map(row=>({...row,date:day.date}))
+    ).sort((a,b)=>String(b.date).localeCompare(String(a.date))||
+      String(a.route||"").localeCompare(String(b.route||""))||
+      String(a.id||"").localeCompare(String(b.id||"")));
+    const search=norm(historyRangeIdSearch);
+    const filtered=all.filter(row=>{
+      if(historyRangeIdFilter==="encontrados"&&!row.found)return false;
+      if(historyRangeIdFilter==="faltantes"&&row.found)return false;
+      return !search||[row.id,row.date,row.route,row.dock,row.systemSide,row.physicalSide,row.type,row.color]
+        .some(value=>norm(value).includes(search));
+    });
+    return {all,filtered};
+  }
+  function historyPeriodIdsMarkup() {
+    const records=historyRecords||[];
+    if(!records.length)return "";
+    const {all,filtered}=historyPeriodIdEntries();
+    const availableDays=records.filter(r=>Array.isArray(r.shipments)).length;
+    const missingDays=records.filter(r=>!Array.isArray(r.shipments));
+    const statusNote=missingDays.length?
+      '<p class="aduana-muted">'+missingDays.length+
+      ' dia(s) arquivado(s) sem acesso ou sem dados individuais. '+
+      esc(missingDays[0].idsStatus||"Verifique o histórico individual no Firebase.")+'</p>':"";
+    if(!availableDays)return '<section class="aduana-history-ids"><h4>SHIPMENT IDs DO PERÍODO</h4>'+
+      statusNote+'<p class="aduana-muted">Nenhum Shipment ID individual disponível nesta consulta.</p></section>';
+    const unique=new Set(all.map(row=>String(row.id||""))).size;
+    const pageSize=200;
+    const pages=Math.max(1,Math.ceil(filtered.length/pageSize));
+    historyRangeIdPage=Math.min(Math.max(0,historyRangeIdPage),pages-1);
+    const start=historyRangeIdPage*pageSize;
+    const slice=filtered.slice(start,start+pageSize);
+    const rows=slice.map(row=>{
+      const p=String(row.date||"").split("-");
+      const day=p.length===3?p[2]+"/"+p[1]+"/"+p[0]:row.date;
+      return '<tr><td>'+esc(day)+'</td><td>'+esc(row.id)+'</td><td>'+esc(row.status)+'</td>'+
+        '<td>'+esc(row.route)+'</td><td>'+esc(row.dock)+'</td>'+
+        '<td>'+esc(sideDisplay(row.systemSide))+'</td>'+
+        '<td>'+esc(row.physicalSide?sideDisplay(row.physicalSide):"—")+'</td>'+
+        '<td>'+esc(row.type||"—")+'</td><td>'+esc(row.color||"—")+'</td></tr>';
+    }).join("");
+    return '<section class="aduana-history-ids"><h4>SHIPMENT IDs DO PERÍODO — '+all.length+' OCORRÊNCIAS</h4>'+
+      '<p class="aduana-muted">'+unique+' Shipment ID(s) distinto(s) · '+availableDays+
+      ' dia(s) com IDs individuais. O mesmo ID pode aparecer em datas diferentes.</p>'+statusNote+
+      '<div class="aduana-filters"><select id="aduanaHistoryRangeIdFilter" aria-label="Filtrar situação dos IDs do período">'+
+      [['todos','Todos'],['encontrados','Encontrados'],['faltantes','Não encontrados']].map(([value,label])=>
+        '<option value="'+value+'"'+(historyRangeIdFilter===value?' selected':'')+'>'+label+'</option>').join("")+'</select>'+
+      '<input id="aduanaHistoryRangeIdSearch" type="search" aria-label="Pesquisar IDs do período" '+
+      'placeholder="Buscar Shipment ID, rota, doca ou lado..." value="'+esc(historyRangeIdSearch)+'">'+
+      '<button type="button" class="aduana-btn" id="aduanaHistoryRangeExport">Exportar IDs do período CSV</button></div>'+
+      '<p class="aduana-muted">'+filtered.length+' ocorrência(s) no filtro · mostrando '+(filtered.length?start+1:0)+
+      '–'+Math.min(start+pageSize,filtered.length)+' · página '+(historyRangeIdPage+1)+' de '+pages+'</p>'+
+      '<div class="aduana-history-table"><table class="aduana-table"><thead><tr>'+
+      '<th>Data</th><th>Shipment ID</th><th>Situação</th><th>Rota AM1</th><th>Doca</th>'+
+      '<th>Lado sistema</th><th>Lado físico</th><th>Tipo</th><th>Cor</th></tr></thead>'+
+      '<tbody>'+(rows||'<tr><td colspan="9">Nenhum ID corresponde ao filtro.</td></tr>')+'</tbody></table></div>'+
+      '<div class="aduana-history-actions" style="margin-top:10px">'+
+      '<button type="button" class="aduana-btn" id="aduanaHistoryRangePrev"'+
+      (historyRangeIdPage===0?' disabled':'')+'>Página anterior</button>'+
+      '<button type="button" class="aduana-btn" id="aduanaHistoryRangeNext"'+
+      (historyRangeIdPage>=pages-1?' disabled':'')+'>Próxima página</button></div></section>';
+  }
+  function updateHistoryPeriodIdsOnly() {
+    const wrapper=$("aduanaHistoryPeriodIdsContainer");
+    if(!wrapper)return;
+    const active=document.activeElement;
+    const focused=active?.id==="aduanaHistoryRangeIdSearch";
+    const position=focused?active.selectionStart:null;
+    wrapper.innerHTML=historyPeriodIdsMarkup();
+    bindHistoryPeriodIdEvents();
+    if(focused){
+      const field=$("aduanaHistoryRangeIdSearch");
+      field?.focus();
+      if(field&&position!==null)field.setSelectionRange(position,position);
+    }
+  }
+  function exportHistoryPeriodIdsCsv() {
+    const {filtered}=historyPeriodIdEntries();
+    if(!filtered.length)return;
+    const header=["Data","Shipment ID","Situação","Rota AM1","Doca","Lado Sistema","Lado Físico","Tipo","Cor"];
+    const cell=value=>'"'+String(value??"").replace(/^[=+\\-@\\t\\r]/,"'").replace(/"/g,'""')+'"';
+    const rows=[header,...filtered.map(row=>[
+      row.date,row.id,row.status,row.route,row.dock,row.systemSide,row.physicalSide,row.type,row.color
+    ])].map(row=>row.map(cell).join(";")).join("\\r\\n");
+    const blob=new Blob(["\\uFEFF"+rows],{type:"text/csv;charset=utf-8"});
+    const url=URL.createObjectURL(blob);
+    const link=document.createElement("a");
+    link.href=url;
+    link.download="Historico_Aduana_Ids_AM1_"+(historyPeriod==="semana"?"7dias":"30dias")+".csv";
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.setTimeout(()=>URL.revokeObjectURL(url),1000);
+  }
+  function bindHistoryPeriodIdEvents(){
+    $("aduanaHistoryRangeIdSearch")?.addEventListener("input",event=>{
+      historyRangeIdSearch=event.target.value;
+      historyRangeIdPage=0;
+      updateHistoryPeriodIdsOnly();
+    });
+    $("aduanaHistoryRangeIdFilter")?.addEventListener("change",event=>{
+      historyRangeIdFilter=event.target.value;
+      historyRangeIdPage=0;
+      updateHistoryPeriodIdsOnly();
+    });
+    $("aduanaHistoryRangePrev")?.addEventListener("click",()=>{
+      historyRangeIdPage--;
+      updateHistoryPeriodIdsOnly();
+    });
+    $("aduanaHistoryRangeNext")?.addEventListener("click",()=>{
+      historyRangeIdPage++;
+      updateHistoryPeriodIdsOnly();
+    });
+    $("aduanaHistoryRangeExport")?.addEventListener("click",exportHistoryPeriodIdsCsv);
+  }
   function historyPeriodSummary() {
     const records=historyRecords||[];
     const header=historyPeriod==="semana"?"7 dias até "+historyDate:"Últimos 30 dias";
@@ -491,6 +610,7 @@
       '<span>Encontrados: <b>'+totals.found+'</b></span>'+
       '<span>Não encontrados: <b>'+totals.missing+'</b></span></div>'+
       '<div class="aduana-history-table"><table class="aduana-table"><thead><tr><th>Data</th><th>Sistema</th><th>Encontrados</th><th>Não encontrados</th></tr></thead><tbody>'+byDate+'</tbody></table></div>'+
+      '<div id="aduanaHistoryPeriodIdsContainer">'+historyPeriodIdsMarkup()+'</div>'+
       '<h4>Consolidado por setor</h4>'+
       '<div class="aduana-history-table"><table class="aduana-table"><thead><tr><th>Setor</th><th>Sistema</th><th>Encontrados</th><th>Não encontrados</th></tr></thead><tbody>'+sideRows+'</tbody></table></div>'+
       '<p class="aduana-history-class"><b>Classificações:</b> '+esc(classificationText)+'</p>'+
@@ -561,7 +681,7 @@
   function renderHistoryRecord() {
     const container=$("aduanaHistoryResult");
     if(!container)return;
-    if(historyRecords!==null){container.innerHTML=historyPeriodSummary();return;}
+    if(historyRecords!==null){container.innerHTML=historyPeriodSummary();bindHistoryPeriodIdEvents();return;}
     if(!historyRecord){container.innerHTML='<p class="aduana-muted">Selecione uma data ou período e clique em Consultar.</p>';return;}
     const r=historyRecord;
     const sideRows=(Array.isArray(r.sides)?r.sides:[]).map(item=>
@@ -720,7 +840,7 @@
     $("aduanaHistoryPeriod")?.addEventListener("change",event=>{
       historyPeriod=event.target.value;
       const label=$("aduanaHistoryDateLabel");if(label)label.hidden=historyPeriod==="mes";
-      historyRecord=null;historyRecords=null;
+      historyRecord=null;historyRecords=null;historyRangeIdPage=0;
       renderHistoryRecord();
     });
     $("aduanaHistoryFind")?.addEventListener("click",async()=>{
@@ -739,7 +859,7 @@
           historyRecord=await window.ControleAduana?.onReadHistory?.(day)||null;
           updateHistoryStatus(historyRecord?"Fechamento localizado.":"Não existe fechamento arquivado para esta data.");
         }else{
-          historyRecord=null;
+          historyRecord=null;historyRangeIdPage=0;
           historyRecords=await window.ControleAduana?.onReadHistoryRange?.(historyDate,selected==="semana"?7:30);
           if(!Array.isArray(historyRecords))throw new Error("Consulta por período indisponível.");
           updateHistoryStatus(historyRecords.length+" operação(ões) arquivada(s) encontrada(s) no período.");
