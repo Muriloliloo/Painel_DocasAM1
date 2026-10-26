@@ -12185,7 +12185,7 @@ body.editor-open .global-theme-toggle {
   <script src="firebase-config.js"></script>
   <script src="ondas-dados.js"></script>
   <script src="aduana-xlsx.js?v=20261024-r4"></script>
-  <script src="aduana-conferencia.js?v=20261026-r29"></script>
+  <script src="aduana-conferencia.js?v=20261026-r30"></script>
   <script>
     const storageKey = "ondas-dados";
     const syncMetaKey = `${storageKey}-sync-meta-v1`;
@@ -13864,6 +13864,15 @@ body.editor-open .global-theme-toggle {
       if(found)return "Encontrado";
       return ADUANA_INVENTORY_STATUSES.includes(value)?value:"Pendente";
     }
+    // Valores monetarios em centavos (inteiros): evita erro de arredondamento
+    // na persistencia do historico individual do Firebase.
+    const ADUANA_INVENTORY_MAX_CENTS=99999999999;
+    function normalizedAduanaValueCents(raw){
+      if(raw===null||raw===undefined||raw==="")return null;
+      if(!Number.isSafeInteger(raw)||raw<0||raw>ADUANA_INVENTORY_MAX_CENTS)
+        throw new Error("Valor inválido. Informe um valor em centavos entre 0 e 999.999.999,99.");
+      return raw;
+    }
     async function archiveIndividualAduanaIds(source,snapshot){
       if(!isAdmin()||!cloudState.user)throw new Error("Acesso de administrador obrigatório.");
       const ids=window.ControleAduana?.historyIdsSnapshot?.(source,packageClosureModel(source));
@@ -13878,13 +13887,25 @@ body.editor-open .global-theme-toggle {
         const old=await transaction.get(ref);
         const oldData=old.exists()?old.data():null;
         const previous=new Map((Array.isArray(oldData?.shipments)?oldData.shipments:[])
-          .map(row=>[String(row.id),normalizedAduanaInventory(row.inventoryStatus,row.found)]));
-        const shipments=ids.shipments.map(row=>({
-          ...row,inventoryStatus:normalizedAduanaInventory(previous.get(String(row.id)),row.found)
-        }));
+          .map(row=>[String(row.id),row]));
+        const shipments=ids.shipments.map(row=>{
+          const oldRow=previous.get(String(row.id));
+          const additional={};
+          for(const key of ["inventoryUpdatedAt","inventoryUpdatedBy",
+                            "inventoryValueUpdatedAt","inventoryValueUpdatedBy"]){
+            if(oldRow?.[key]!==undefined&&oldRow?.[key]!==null)
+              additional[key]=oldRow[key];
+          }
+          return {
+            ...row,...additional,
+            inventoryStatus:normalizedAduanaInventory(oldRow?.inventoryStatus,row.found),
+            inventoryValueCents:oldRow?.inventoryValueCents===undefined
+              ? null:normalizedAduanaValueCents(oldRow.inventoryValueCents)
+          };
+        });
         const record={
           kind:"aduana-am1-ids",date:ids.date,operation:"AM1",facility:"SSP15",
-          totals:ids.totals,shipments,version:3,
+          totals:ids.totals,shipments,version:5,
           updatedAt:cloudState.tools.serverTimestamp(),
           updatedBy:cloudState.user.email||"administrador"
         };
@@ -13926,7 +13947,8 @@ body.editor-open .global-theme-toggle {
       }
       return archived.shipments.map(row=>({
         id:String(row.id),
-        inventoryStatus:normalizedAduanaInventory(row.inventoryStatus,row.found)
+        inventoryStatus:normalizedAduanaInventory(row.inventoryStatus,row.found),
+        inventoryValueCents:normalizedAduanaValueCents(row.inventoryValueCents)
       }));
     }
     // Uma transacao por alteracao (individual ou em massa). Para lote, so
@@ -13991,6 +14013,57 @@ body.editor-open .global-theme-toggle {
     }
     async function updateAduanaInventoryBatch(day,ids,status) {
       return writeAduanaInventory(day,ids,status,true);
+    }
+    // So IDs pendentes ou nao encontrados podem ter o valor em reais editado.
+    // A escrita e atomica e tem trilha de auditoria independente do status.
+    async function updateAduanaInventoryValue(day,id,rawCents){
+      if(!cloudState.ready||!cloudState.db||!cloudState.user||!isAdmin())
+        throw new Error("Entre como administrador para editar valores.");
+      checkAduanaHistoryDay(day);
+      const key=String(id??"").trim();
+      if(!key||key.length>90)throw new Error("Shipment ID inválido.");
+      const cents=normalizedAduanaValueCents(rawCents);
+      const ref=aduanaPrivateIdsDoc(day);
+      // Primeiro salvamento cria os IDs do dia quando o fechamento esta carregado.
+      if(aduanaHistorySaving)await aduanaHistorySaving;
+      const first=await cloudState.tools.getDoc(ref);
+      if(!first.exists()){
+        const saved=await saveAduanaHistorySnapshot(data);
+        if(!saved||saved.date!==day)
+          throw new Error("Salve o fechamento da data correta antes de informar valores.");
+      }
+      if(aduanaHistorySaving)await aduanaHistorySaving;
+      await cloudState.tools.runTransaction(cloudState.db,async transaction=>{
+        const doc=await transaction.get(ref);
+        if(!doc.exists())throw new Error("Histórico individual ainda não disponível.");
+        const record=doc.data();
+        if(record?.kind!=="aduana-am1-ids"||record.date!==day||
+           record.operation!=="AM1"||record.facility!=="SSP15"||
+           !Array.isArray(record.shipments))
+          throw new Error("Histórico de inventário inválido.");
+        let matches=0;
+        const shipments=record.shipments.map(row=>{
+          if(String(row.id)!==key)return row;
+          matches++;
+          if(row.found)throw new Error("ID encontrado no físico: valor não editável.");
+          if(!String(row.route||"").toUpperCase().endsWith("_AM1"))
+            throw new Error("Somente Shipment IDs de rotas AM1.");
+          const status=normalizedAduanaInventory(row.inventoryStatus,row.found);
+          if(status!=="Pendente"&&status!=="Não encontrado")
+            throw new Error("ID com status "+status+": valor disponível somente para pendentes e não encontrados.");
+          return {...row,inventoryValueCents:cents,
+            inventoryValueUpdatedAt:new Date().toISOString(),
+            inventoryValueUpdatedBy:cloudState.user.email||"administrador"};
+        });
+        if(matches!==1)throw new Error("Shipment ID não localizado ou duplicado no histórico.");
+        if(serializedByteLength({...record,shipments,updatedAt:null})>780*1024)
+          throw new Error("O histórico da data atingiu o limite de armazenamento.");
+        transaction.update(ref,{
+          shipments,version:5,updatedAt:cloudState.tools.serverTimestamp(),
+          updatedBy:cloudState.user.email||"administrador"
+        });
+      });
+      return {id:key,valueCents:cents};
     }
     async function readIndividualAduanaIds(day){
       if(!cloudState.user||!isAdmin())
@@ -14115,7 +14188,8 @@ body.editor-open .global-theme-toggle {
             found:!!row.found,route:String(row.route||""),dock:String(row.dock||""),
             systemSide:String(row.systemSide||""),physicalSide:String(row.physicalSide||""),
             type:String(row.type||""),color:String(row.color||""),
-            inventoryStatus:normalizedAduanaInventory(row.inventoryStatus,row.found)
+            inventoryStatus:normalizedAduanaInventory(row.inventoryStatus,row.found),
+            inventoryValueCents:normalizedAduanaValueCents(row.inventoryValueCents)
           });
         }
       }
@@ -18953,6 +19027,7 @@ body.editor-open .global-theme-toggle {
       window.ControleAduana.onReadInventory = readAduanaInventory;
       window.ControleAduana.onSetInventory = updateAduanaInventory;
       window.ControleAduana.onSetInventoryBatch = updateAduanaInventoryBatch;
+      window.ControleAduana.onSetInventoryValue = updateAduanaInventoryValue;
       window.ControleAduana.canEditInventory = () => Boolean(cloudState.ready&&cloudState.user&&isAdmin());
       window.ControleAduana.onImportPhysical = async file => {
         if (!requireAdminAction()) throw new Error("Entre com o usuário administrador para importar IDs Físicos.");
