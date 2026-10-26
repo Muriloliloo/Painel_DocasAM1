@@ -13921,6 +13921,16 @@ body.editor-open .global-theme-toggle {
       }
       lastAduanaHistoryCleanup=end;
     }
+    // Limpeza oportunista no plano gratuito: executa no maximo uma vez por dia
+    // quando um administrador salva ou consulta. Nao substitui TTL agendado.
+    let aduanaHistoryCleanupPromise=null;
+    function requestAduanaCleanup() {
+      if(!isAdmin()||aduanaHistoryCleanupPromise)return;
+      aduanaHistoryCleanupPromise=purgeExpiredAduanaHistory()
+        .catch(err=>console.warn("Limpeza do histórico de Aduana:",err))
+        .finally(()=>{aduanaHistoryCleanupPromise=null;});
+    }
+
     async function saveAduanaHistorySnapshot(source=data,options={}) {
       if(!cloudState.ready||!cloudState.db||!cloudState.user||!isAdmin()){
         if(options.automatic)return null;
@@ -13944,7 +13954,7 @@ body.editor-open .global-theme-toggle {
           // ter virado desde a última gravação e documentos antigos expirado.
           try{await archiveIndividualAduanaIds(source,snapshot);}
           catch(err){throw new Error("Indicadores arquivados; Shipment IDs NÃO foram salvos: "+(err?.message||String(err)));}
-          purgeExpiredAduanaHistory().catch(err=>console.warn("Limpeza do histórico de Aduana:",err));
+          requestAduanaCleanup();
           return old.data();
         }
         const archive={
@@ -13956,12 +13966,49 @@ body.editor-open .global-theme-toggle {
         await cloudState.tools.setDoc(ref,archive);
         try{await archiveIndividualAduanaIds(source,snapshot);}
         catch(err){throw new Error("Indicadores arquivados; Shipment IDs NÃO foram salvos: "+(err?.message||String(err)));}
-        purgeExpiredAduanaHistory().catch(err=>console.warn("Limpeza do histórico de Aduana:",err));
+        requestAduanaCleanup();
         return archive;
       })();
       aduanaHistorySaving=task;
       try{return await task;}finally{if(aduanaHistorySaving===task)aduanaHistorySaving=null;}
     }
+    // Pesquisa exata em registros privados dos ultimos 30 dias.
+    // Uma consulta por intervalo no mesmo campo "date" usa indice simples do Firestore.
+    async function findAduanaShipmentHistory(rawId) {
+      const id=String(rawId??"").trim();
+      if(id.length<5||id.length>80)throw new Error("Informe um Shipment ID valido (5 a 80 caracteres).");
+      if(!cloudState.ready||!cloudState.db||!cloudState.user||!isAdmin())
+        throw new Error("Entre como administrador e conecte o Firebase para pesquisar Shipment IDs.");
+      const {start,end}=aduanaHistoryDateBounds();
+      const q=cloudState.tools.query(
+        cloudState.tools.collection(cloudState.db,ADUANA_IDS_COLLECTION),
+        cloudState.tools.where("date",">=",start),
+        cloudState.tools.where("date","<=",end)
+      );
+      const result=await cloudState.tools.getDocs(q);
+      const matches=[];
+      let daysWithRecords=0;
+      for(const doc of result.docs){
+        const archive=doc.data();
+        if(archive?.kind!=="aduana-am1-ids"||archive.date!==doc.id||
+           archive.operation!=="AM1"||!Array.isArray(archive.shipments))continue;
+        daysWithRecords++;
+        for(const row of archive.shipments){
+          if(String(row?.id??"").trim()!==id)continue;
+          if(!String(row.route??"").toUpperCase().endsWith("_AM1"))continue;
+          matches.push({
+            date:archive.date,id:String(row.id),status:String(row.status||""),
+            found:!!row.found,route:String(row.route||""),dock:String(row.dock||""),
+            systemSide:String(row.systemSide||""),physicalSide:String(row.physicalSide||""),
+            type:String(row.type||""),color:String(row.color||"")
+          });
+        }
+      }
+      matches.sort((a,b)=>b.date.localeCompare(a.date));
+      requestAduanaCleanup();
+      return {id,matches,daysWithRecords,start,end};
+    }
+
     async function readAduanaHistorySnapshot(day) {
       checkAduanaHistoryDay(day);
       if(!cloudState.ready||!cloudState.db)throw new Error("Firebase desconectado. Verifique a conexão.");
@@ -13969,6 +14016,7 @@ body.editor-open .global-theme-toggle {
       if(!record.exists()||record.data()?.kind!=="aduana-am1-history")return null;
       const r=record.data();
       const privateIds=await readIndividualAduanaIds(day);
+      requestAduanaCleanup();
       return {...r.summary,savedAt:r.savedAt||"",...privateIds};
     }
     // Consulta limitada aos 30 documentos diários, sem depender de índices compostos
@@ -13993,6 +14041,7 @@ body.editor-open .global-theme-toggle {
         const archive=record.data();
         return {...archive.summary,savedAt:archive.savedAt||""};
       }));
+      requestAduanaCleanup();
       return found.filter(Boolean).sort((a,b)=>String(a.date).localeCompare(String(b.date)));
     }
 
@@ -18746,6 +18795,7 @@ body.editor-open .global-theme-toggle {
       };
       window.ControleAduana.onReadHistory = readAduanaHistorySnapshot;
       window.ControleAduana.onReadHistoryRange = readAduanaHistoryRange;
+      window.ControleAduana.onFindShipmentHistory = findAduanaShipmentHistory;
       window.ControleAduana.onImportPhysical = async file => {
         if (!requireAdminAction()) throw new Error("Entre com o usuário administrador para importar IDs Físicos.");
         const date = finalAuditDateKey(data.data);
