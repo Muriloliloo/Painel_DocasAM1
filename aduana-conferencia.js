@@ -12,7 +12,17 @@
   const $ = id => document.getElementById(id);
   const TYPES = ["", "GM", "Volumoso", "Outro"];
   const COLORS = ["", "Amarelo", "Azul", "Vermelho", "Verde"];
-  const INVENTORY_STATUSES = ["Pendente", "Encontrado", "Não encontrado"];
+  const INVENTORY_EXTRA_STATUSES = ["Devolvido", "Vinculado", "Atrelado", "Em rota"];
+  const INVENTORY_STATUSES = ["Pendente", "Encontrado", "Não encontrado", ...INVENTORY_EXTRA_STATUSES];
+  const inventoryOptions = selected =>
+    '<optgroup label="Conferência física">'+
+      ["Pendente","Encontrado","Não encontrado"].map(value=>
+        '<option value="'+esc(value)+'"'+(value===selected?' selected':'')+'>'+esc(value)+'</option>'
+      ).join("")+'</optgroup>'+
+    '<optgroup label="Outros status (andamento operacional)">'+
+      INVENTORY_EXTRA_STATUSES.map(value=>
+        '<option value="'+esc(value)+'"'+(value===selected?' selected':'')+'>'+esc(value)+'</option>'
+      ).join("")+'</optgroup>';
   let inventoryDay="",inventoryLoaded=false,inventoryLoading=false,inventoryById=Object.create(null);
   let inventoryMessage="",inventorySaving="",inventoryBulkStatus="";
   const inventorySelected=new Set();
@@ -409,6 +419,9 @@
     ".aduana-inventory-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:8px}",
     ".aduana-inventory-actions select{border:1px solid #a9bfd0;border-radius:6px;min-height:31px;padding:5px;background:#fff;color:#163952}",
     ".aduana-inventory-actions button:disabled{opacity:.5;cursor:not-allowed}",
+    ".aduana-inventory-overview{display:flex;flex-wrap:wrap;gap:7px;margin-top:12px;align-items:center}",
+    ".aduana-inventory-summary-item{padding:5px 9px;border:1px solid #cbdbe5;border-radius:7px;background:#f4f8fb;color:#153954;font-size:12px;font-weight:650}",
+    "body.dark-mode .aduana-inventory-summary-item{background:#234257;color:#ecf4fc;border-color:#476478}",
     "body.dark-mode .aduana-inventory-actions select{background:#163246;color:#edf3f8}",
     ".aduana-tag{display:inline-block;padding:4px 8px;border-radius:30px;background:#e3ebf2;color:#324c62;font-weight:800;white-space:nowrap}",
     ".aduana-tag.ok{background:#daf5e8;color:#136946}.aduana-tag.fail{background:#ffe2e5;color:#a52633}.aduana-tag.warn{background:#fff1ce;color:#885816}",
@@ -451,9 +464,7 @@
     return '<div class="aduana-inventory-cell">'+tick+
       '<select aria-label="Inventário do Shipment ID '+esc(id)+'" data-aduana-inventory="'+esc(id)+'"'+
       (editable?'':' disabled')+'>'+
-      INVENTORY_STATUSES.map(value=>
-        '<option value="'+esc(value)+'"'+(value===status?' selected':'')+'>'+esc(value)+'</option>'
-      ).join("")+'</select></div>';
+      inventoryOptions(status)+'</select></div>';
   }
   // Um ID confirmado no inventário é conciliado sem alterar o confronto CSV.
   function resolved(row){return !!row.match||inventoryForId(row.id,!!row.match)==="Encontrado";}
@@ -492,7 +503,7 @@
       .some(value=>norm(value).includes(norm(query)));
   }
   function inventoryCounters(rows) {
-    const counts={"Pendente":0,"Encontrado":0,"Não encontrado":0};
+    const counts=Object.fromEntries(INVENTORY_STATUSES.map(status=>[status,0]));
     for(const row of rows)counts[inventoryForId(row.id,!!row.match)]++;
     return counts;
   }
@@ -522,7 +533,14 @@
       (mode==="faltantes"?" ainda não localizados (físico + inventário)":
        mode==="encontrados"?" localizados (físico + inventário)":"")+
       " · Inventário: "+inventory.Encontrado+" encontrado(s) · "+
-      inventory["Não encontrado"]+" não encontrado(s) · "+inventory.Pendente+" pendente(s)";
+      inventory["Não encontrado"]+" não encontrado(s) · "+inventory.Pendente+" pendente(s)"+
+      INVENTORY_EXTRA_STATUSES.filter(status=>inventory[status]>0)
+        .map(status=>" · "+status+": "+inventory[status]).join("");
+    const summary=$("aduanaInventoryOverview");
+    if(summary)summary.innerHTML=INVENTORY_STATUSES.map(status=>
+      '<span class="aduana-inventory-summary-item">'+esc(status)+': <b>'+
+      Number(inventory[status]||0)+'</b></span>'
+    ).join("");
     const info=$("aduanaInventoryStatus");
     if(info)info.textContent=inventoryMessage||
       (inventoryLoading?"Consultando inventário no Firebase...":
@@ -940,11 +958,12 @@
       '<div class="aduana-inventory-actions"><strong>Inventário dos IDs pendentes:</strong>'+
       '<select id="aduanaInventoryBulkStatus" aria-label="Status para aplicar em massa">'+
       '<option value="">Escolha a situação...</option>'+
-      '<option value="Encontrado">Encontrado no inventário</option>'+
-      '<option value="Não encontrado">Não encontrado no inventário</option></select>'+
+      inventoryOptions("")+'</select>'+
       '<button type="button" class="aduana-btn primary" id="aduanaInventoryBulkApply" disabled>Aplicar aos 0 selecionado(s)</button>'+
       '<span class="aduana-muted">Marque os pendentes na coluna Inventário.</span></div>'+
-      '<p class="aduana-muted" id="aduanaInventoryStatus" role="status"></p></div>'+
+      '<p class="aduana-muted" id="aduanaInventoryStatus" role="status"></p>'+
+      '<div class="aduana-inventory-overview" id="aduanaInventoryOverview" aria-label="Resumo por situação do inventário"></div>'+
+      '<p class="aduana-muted">Devolvido, Vinculado, Atrelado e Em rota são situações operacionais. Somente Encontrado reduz o saldo não localizado.</p></div>'+
       '<div class="aduana-scroll"><table class="aduana-detail"><thead><tr><th>Shipment ID</th><th>Origem</th><th>Lado Sistema</th><th>Lado Físico</th><th>Rota</th><th>Doca</th><th>Conferência</th><th>Tipo</th><th>Cor</th><th>Inventário'+
       '<label class="aduana-inventory-head" title="Selecionar pendentes sem conferência física no filtro atual">'+
       '<input type="checkbox" id="aduanaInventorySelectAll" aria-label="Selecionar todos os pendentes do filtro"> Selecionar pendentes</label></th></tr></thead><tbody id="aduanaDetails"></tbody></table></div>'+
@@ -1064,12 +1083,7 @@
     $("aduanaView").querySelectorAll("[data-aduana-export]").forEach(button=>button.addEventListener("click",()=>exportCsv(button.dataset.aduanaExport)));
     $("aduanaInventorySelectAll")?.addEventListener("change",event=>{
       if(!inventoryLoaded||inventorySaving)return;
-      const eligible=(current?.rows||[]).filter(row=>{
-        if(mode==="encontrados"&&row.origem!=="Físico")return false;
-        if(mode==="faltantes"&&row.origem!=="Sistema")return false;
-        return !query||[row.id,row.rota,row.side,row.ladoFisico,row.origem]
-          .some(value=>norm(value).includes(norm(query)));
-      }).filter(inventoryPending);
+      const eligible=(current?.rows||[]).filter(shown).filter(inventoryPending);
       for(const row of eligible){
         if(event.target.checked)inventorySelected.add(String(row.id));
         else inventorySelected.delete(String(row.id));
@@ -1077,7 +1091,7 @@
       renderRows();
     });
     $("aduanaInventoryBulkStatus")?.addEventListener("change",event=>{
-      inventoryBulkStatus=["Encontrado","Não encontrado"].includes(event.target.value)
+      inventoryBulkStatus=INVENTORY_STATUSES.includes(event.target.value)&&event.target.value!=="Pendente"
         ? event.target.value:"";
       renderRows();
     });
