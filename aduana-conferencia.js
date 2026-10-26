@@ -1217,6 +1217,67 @@
         }
       }
     });
+    async function commitInventoryValue(id){
+      if(inventorySaving||!inventoryLoaded||inventoryValueEditingId!==id)return;
+      const row=current?.systemRows?.find(r=>String(r.id)===id);
+      if(!canEditValue(row)){
+        inventoryMessage="Somente IDs Pendentes ou Não encontrados permitem edição de valor.";
+        inventoryValueEditingId="";renderRows();return;
+      }
+      const input=[...$("aduanaDetails").querySelectorAll("[data-aduana-value-input]")]
+        .find(node=>node.dataset.aduanaValueInput===id);
+      if(!input)return;
+      let cents;
+      try{cents=valueInputCents(input.value);}
+      catch(err){inventoryMessage=err.message;const el=$("aduanaInventoryStatus");if(el)el.textContent=inventoryMessage;input.focus();return;}
+      const day=inventoryDay;
+      inventorySaving=id;
+      inventoryMessage="Salvando valor do ID "+id+" no Firebase...";
+      renderRows();
+      try{
+        if(!window.ControleAduana?.onSetInventoryValue)
+          throw new Error("Integração de valores com Firebase não está disponível. Atualize a página.");
+        await window.ControleAduana.onSetInventoryValue(day,id,cents);
+        if(inventoryDay!==day)return;
+        inventoryValueById[id]=cents;
+        syncInventoryValueHistory(id,cents);
+        inventoryValueEditingId="";
+        inventoryMessage="Valor do ID "+id+" salvo no Firebase: "+formatReaisCents(cents)+".";
+      }catch(err){
+        inventoryMessage="Erro ao salvar valor do ID "+id+": "+(err?.message||String(err));
+      }finally{
+        if(inventoryDay===day){
+          inventorySaving="";
+          renderRows();
+          if(historyOpen)renderHistoryRecord();
+        }
+      }
+    }
+    $("aduanaDetails")?.addEventListener("click",event=>{
+      const button=event.target.closest("button[data-aduana-value-edit],button[data-aduana-value-save],button[data-aduana-value-cancel]");
+      if(!button||inventorySaving)return;
+      if(button.hasAttribute("data-aduana-value-cancel")){
+        inventoryValueEditingId="";renderRows();return;
+      }
+      if(button.hasAttribute("data-aduana-value-save")){
+        commitInventoryValue(button.dataset.aduanaValueSave);return;
+      }
+      const id=button.dataset.aduanaValueEdit;
+      const row=current?.systemRows?.find(r=>String(r.id)===id);
+      if(!inventoryLoaded||!window.ControleAduana?.canEditInventory?.()||!canEditValue(row))return;
+      inventoryValueEditingId=id;
+      renderRows();
+      const input=[...$("aduanaDetails").querySelectorAll("[data-aduana-value-input]")]
+        .find(node=>node.dataset.aduanaValueInput===id);
+      input?.focus();
+      input?.select();
+    });
+    $("aduanaDetails")?.addEventListener("keydown",event=>{
+      const input=event.target.closest("input[data-aduana-value-input]");
+      if(!input)return;
+      if(event.key==="Enter"){event.preventDefault();commitInventoryValue(input.dataset.aduanaValueInput);}
+      if(event.key==="Escape"){event.preventDefault();inventoryValueEditingId="";renderRows();}
+    });
     $("aduanaDetails")?.addEventListener("change",async event=>{
       const check=event.target.closest("input[data-aduana-inventory-check]");
       if(check){
@@ -1244,6 +1305,7 @@
           await window.ControleAduana.onSetInventory(day,id,selected);
           if(inventoryDay!==day)return;
           inventoryById[id]=selected;
+          if(inventoryValueEditingId===id)inventoryValueEditingId="";
           inventorySelected.delete(id);
           inventoryLoaded=true;
           syncInventoryHistory([id],selected);
