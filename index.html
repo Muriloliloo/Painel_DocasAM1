@@ -13885,7 +13885,12 @@ body.editor-open .global-theme-toggle {
       const task=(async()=>{
         const ref=aduanaHistoryDoc(snapshot.date);
         const old=await cloudState.tools.getDoc(ref);
-        if(old.exists()&&JSON.stringify(old.data()?.summary)===JSON.stringify(snapshot))return old.data();
+        if(old.exists()&&JSON.stringify(old.data()?.summary)===JSON.stringify(snapshot)) {
+          // Mesmo sem alteração nas métricas, execute a retenção: o dia pode
+          // ter virado desde a última gravação e documentos antigos expirado.
+          purgeExpiredAduanaHistory().catch(err=>console.warn("Limpeza do histórico de Aduana:",err));
+          return old.data();
+        }
         const archive={
           kind:"aduana-am1-history",date:snapshot.date,summary:snapshot,
           savedAt:new Date().toLocaleString("pt-BR",{timeZone:"America/Sao_Paulo"}),
