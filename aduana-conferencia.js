@@ -431,6 +431,7 @@
   }
   let historyOpen=false,historyRecord=null,historyRecords=null,historyPeriod="dia",historyStatus="",historyDate="";
   let historyIdSearch="",historyIdFilter="todos";
+  let historyGlobalId="",historyGlobalResult=null,historyGlobalStatus="";
   function historyNowIso() {
     const parts=new Intl.DateTimeFormat("en-US",{timeZone:"America/Sao_Paulo",year:"numeric",month:"2-digit",day:"2-digit"}).formatToParts(new Date());
     const p=Object.fromEntries(parts.map(part=>[part.type,part.value]));
@@ -441,6 +442,28 @@
     const d=new Date(day+"T12:00:00Z");
     d.setUTCDate(d.getUTCDate()-29);
     return d.toISOString().slice(0,10);
+  }
+  function historyGlobalMarkup() {
+    if(!historyGlobalResult)return "";
+    const {matches=[],daysWithRecords=0,start="",end="",id=""}=historyGlobalResult;
+    const caption='<p class="aduana-muted">Periodo: '+esc(start)+' a '+esc(end)+
+      ' · Dias com historico individual: '+Number(daysWithRecords)+
+      ' · Ocorrencias do ID '+esc(id)+': <b>'+matches.length+'</b></p>';
+    if(!matches.length)return caption+
+      '<p class="aduana-muted">Nenhuma ocorrencia desse Shipment ID nas datas arquivadas do periodo. Dias sem historico nao podem ser verificados.</p>';
+    const rows=matches.map(row=>{
+      const parts=String(row.date||"").split("-");
+      const dateBR=parts.length===3?parts[2]+"/"+parts[1]+"/"+parts[0]:row.date;
+      return '<tr><td>'+esc(dateBR)+'</td><td>'+esc(row.id)+'</td><td>'+esc(row.status)+'</td>'+
+        '<td>'+esc(row.route)+'</td><td>'+esc(row.dock)+'</td>'+
+        '<td>'+esc(sideDisplay(row.systemSide))+'</td>'+
+        '<td>'+esc(row.physicalSide?sideDisplay(row.physicalSide):"—")+'</td>'+
+        '<td>'+esc(row.type||"—")+'</td><td>'+esc(row.color||"—")+'</td></tr>';
+    }).join("");
+    return caption+'<div class="aduana-history-table"><table class="aduana-table"><thead><tr>'+
+      '<th>Data</th><th>Shipment ID</th><th>Situação</th><th>Rota AM1</th><th>Doca</th>'+
+      '<th>Lado sistema</th><th>Lado físico</th><th>Tipo</th><th>Cor</th></tr></thead>'+
+      '<tbody>'+rows+'</tbody></table></div>';
   }
   function historyPeriodSummary() {
     const records=historyRecords||[];
@@ -592,9 +615,15 @@
       '</select></label>'+
       '<label id="aduanaHistoryDateLabel">Data de referência<input type="date" id="aduanaHistoryDate" min="'+historyMinimumIso()+'" max="'+historyNowIso()+'" value="'+esc(historyDate||historyNowIso())+'"></label>'+
       '<button type="button" class="aduana-btn primary" id="aduanaHistoryFind">Consultar</button></div>'+
+      '<section class="aduana-history-ids"><h4>LOCALIZAR SHIPMENT ID — ÚLTIMOS 30 DIAS</h4>'+
+      '<div class="aduana-filters"><input type="search" inputmode="numeric" maxlength="80" id="aduanaHistoryGlobalId" '+
+      'aria-label="Shipment ID exato para consultar os últimos 30 dias" placeholder="Digite o Shipment ID exato..." value="'+esc(historyGlobalId)+'">'+
+      '<button type="button" class="aduana-btn primary" id="aduanaHistoryGlobalFind">Buscar ID em 30 dias</button></div>'+
+      '<p class="aduana-muted" id="aduanaHistoryGlobalStatus" role="status">'+esc(historyGlobalStatus)+'</p>'+
+      '<div id="aduanaHistoryGlobalResult">'+historyGlobalMarkup()+'</div></section>'+
       '<p class="aduana-muted" id="aduanaHistoryStatus" role="status">'+esc(historyStatus)+'</p>'+
       '<div id="aduanaHistoryResult"></div>'+
-      '<small class="aduana-muted">Últimos 30 dias. Os Shipment IDs individuais são consultados somente por administradores, para uma data específica.</small>'+
+      '<small class="aduana-muted">Consulta por data ou pesquisa exata entre os dias arquivados dos últimos 30 dias. Somente administradores têm acesso aos Shipment IDs.</small>'+
       '</div></section>'+
       '<p class="aduana-note">'+guidance+'</p>'+
       '<div class="aduana-importbar"><label class="aduana-btn" for="aduanaReimportFile">Atualizar planilha IDs Físicos</label>'+
@@ -654,6 +683,39 @@
         updateHistoryStatus("Fechamento arquivado com sucesso no Firebase.");
       } catch(err){updateHistoryStatus("Não foi possível salvar: "+(err?.message||String(err)));}
       finally{if(btn)btn.disabled=false;}
+    });
+    $("aduanaHistoryGlobalId")?.addEventListener("keydown",event=>{
+      if(event.key==="Enter"){event.preventDefault();$("aduanaHistoryGlobalFind")?.click();}
+    });
+    $("aduanaHistoryGlobalFind")?.addEventListener("click",async()=>{
+      const input=$("aduanaHistoryGlobalId");
+      historyGlobalId=String(input?.value||"").trim();
+      historyGlobalResult=null;
+      const result=$("aduanaHistoryGlobalResult");
+      if(result)result.innerHTML="";
+      const btn=$("aduanaHistoryGlobalFind");
+      if(historyGlobalId.length<5||historyGlobalId.length>80){
+        historyGlobalStatus="Informe um Shipment ID válido com 5 a 80 caracteres.";
+        const el=$("aduanaHistoryGlobalStatus");if(el)el.textContent=historyGlobalStatus;
+        input?.focus();
+        return;
+      }
+      if(btn)btn.disabled=true;
+      historyGlobalStatus="Pesquisando nos históricos individuais dos últimos 30 dias...";
+      const status=$("aduanaHistoryGlobalStatus");if(status)status.textContent=historyGlobalStatus;
+      try{
+        if(!window.ControleAduana?.onFindShipmentHistory)
+          throw new Error("Pesquisa histórica indisponível. Atualize a página.");
+        historyGlobalResult=await window.ControleAduana.onFindShipmentHistory(historyGlobalId);
+        historyGlobalStatus=historyGlobalResult.matches.length+
+          " ocorrência(s) encontrada(s) em "+historyGlobalResult.daysWithRecords+" dia(s) arquivado(s).";
+        if(result)result.innerHTML=historyGlobalMarkup();
+      }catch(err){
+        historyGlobalStatus="Erro ao pesquisar: "+(err?.message||String(err));
+      }finally{
+        if(status)status.textContent=historyGlobalStatus;
+        if(btn)btn.disabled=false;
+      }
     });
     $("aduanaHistoryPeriod")?.addEventListener("change",event=>{
       historyPeriod=event.target.value;
