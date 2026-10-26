@@ -549,11 +549,11 @@
     const {filtered}=historyPeriodIdEntries();
     if(!filtered.length)return;
     const header=["Data","Shipment ID","Situação","Rota AM1","Doca","Lado Sistema","Lado Físico","Tipo","Cor"];
-    const cell=value=>'"'+String(value??"").replace(/^[=+\\-@\\t\\r]/,"'").replace(/"/g,'""')+'"';
+    const cell=value=>'"'+String(value??"").replace(/^[=+@-]/,"'").replace(/"/g,'""')+'"';
     const rows=[header,...filtered.map(row=>[
       row.date,row.id,row.status,row.route,row.dock,row.systemSide,row.physicalSide,row.type,row.color
-    ])].map(row=>row.map(cell).join(";")).join("\\r\\n");
-    const blob=new Blob(["\\uFEFF"+rows],{type:"text/csv;charset=utf-8"});
+    ])].map(row=>row.map(cell).join(";")).join("\r\n");
+    const blob=new Blob(["\uFEFF"+rows],{type:"text/csv;charset=utf-8"});
     const url=URL.createObjectURL(blob);
     const link=document.createElement("a");
     link.href=url;
