@@ -14,21 +14,43 @@
   const COLORS = ["", "Amarelo", "Azul", "Vermelho", "Verde"];
   const INVENTORY_STATUSES = ["Pendente", "Encontrado", "Não encontrado"];
   let inventoryDay="",inventoryLoaded=false,inventoryLoading=false,inventoryById=Object.create(null);
-  let inventoryMessage="",inventorySaving="";
-  function inventoryState(value) {
+  let inventoryMessage="",inventorySaving="",inventoryBulkStatus="Encontrado";
+  const inventorySelected=new Set();
+  function inventoryState(value,found=false) {
+    if(found)return "Encontrado";
     return INVENTORY_STATUSES.includes(value)?value:"Pendente";
   }
   function inventoryIso(dateBR) {
     const p=text(dateBR).match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
     return p?p[3]+"-"+p[2]+"-"+p[1]:"";
   }
-  function inventoryForId(id) {
-    return inventoryState(inventoryById[String(id)]);
+  function inventoryForId(id,found=false) {
+    return inventoryState(inventoryById[String(id)],found);
+  }
+  function inventoryPending(row) {
+    return !row.match&&inventoryForId(row.id)==="Pendente";
+  }
+  function syncInventoryHistory(ids,status) {
+    const keys=new Set(ids.map(String));
+    if(historyRecord?.date===inventoryDay&&Array.isArray(historyRecord.shipments)){
+      for(const row of historyRecord.shipments)
+        if(keys.has(String(row.id)))row.inventoryStatus=status;
+    }
+    if(Array.isArray(historyRecords)){
+      for(const day of historyRecords)if(day.date===inventoryDay&&Array.isArray(day.shipments)){
+        for(const row of day.shipments)if(keys.has(String(row.id)))row.inventoryStatus=status;
+      }
+    }
+    if(Array.isArray(historyGlobalResult?.matches)){
+      for(const row of historyGlobalResult.matches)
+        if(row.date===inventoryDay&&keys.has(String(row.id)))row.inventoryStatus=status;
+    }
   }
   function loadInventoryForDay(day) {
     if(inventoryDay!==day){
       inventoryDay=day;inventoryLoaded=false;inventoryLoading=false;
       inventoryById=Object.create(null);inventoryMessage="";inventorySaving="";
+      inventorySelected.clear();
     }
     if(!day||inventoryLoading||inventoryLoaded||!window.ControleAduana?.onReadInventory||
        !window.ControleAduana?.canEditInventory?.())return;
@@ -39,7 +61,7 @@
       if(!Array.isArray(rows))return;
       const next=Object.create(null);
       for(const row of rows){
-        if(row?.id)next[String(row.id)]=inventoryState(row.inventoryStatus);
+        if(row?.id)next[String(row.id)]=inventoryState(row.inventoryStatus,row.found);
       }
       inventoryById=next;inventoryLoaded=true;inventoryMessage="";
       renderRows();
@@ -381,6 +403,13 @@
     ".aduana-detail tr:nth-child(even){background:#f3f7fa}",
     ".aduana-detail td:first-child{font-family:Consolas,monospace;font-weight:800;word-break:break-all}",
     ".aduana-detail select{max-width:125px;width:100%;padding:5px;border:1px solid #b5c5d1;border-radius:5px;background:#fff;color:#152c40}",
+    ".aduana-inventory-cell{display:flex;gap:8px;align-items:center;min-width:145px}",
+    ".aduana-inventory-cell input[type=checkbox],.aduana-inventory-head input[type=checkbox]{width:16px;height:16px;flex:none;accent-color:#096499;cursor:pointer}",
+    ".aduana-inventory-head{display:flex;gap:5px;align-items:center;white-space:nowrap;font-size:10px;font-weight:700}",
+    ".aduana-inventory-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:8px}",
+    ".aduana-inventory-actions select{border:1px solid #a9bfd0;border-radius:6px;min-height:31px;padding:5px;background:#fff;color:#163952}",
+    ".aduana-inventory-actions button:disabled{opacity:.5;cursor:not-allowed}",
+    "body.dark-mode .aduana-inventory-actions select{background:#163246;color:#edf3f8}",
     ".aduana-tag{display:inline-block;padding:4px 8px;border-radius:30px;background:#e3ebf2;color:#324c62;font-weight:800;white-space:nowrap}",
     ".aduana-tag.ok{background:#daf5e8;color:#136946}.aduana-tag.fail{background:#ffe2e5;color:#a52633}.aduana-tag.warn{background:#fff1ce;color:#885816}",
     ".aduana-exports{display:flex;align-items:center;gap:9px;flex-wrap:wrap;padding:13px;border-top:1px solid #dde7ed}",
@@ -406,18 +435,29 @@
     return '<select aria-label="Classificação '+kind+' do ID '+esc(id)+'" data-aduana-kind="'+kind+'" data-aduana-id="'+esc(id)+'">'+
       items.map(item=>'<option value="'+esc(item)+'"'+(item===value?' selected':'')+'>'+esc(item||"—")+'</option>').join("")+'</select>';
   }
-  function inventorySelector(id) {
+  function inventorySelector(row) {
+    const id=String(row.id);
+    if(row.match)
+      return '<span class="aduana-tag ok" title="Encontrado no confronto sistema × físico">✓ Encontrado</span>';
     const status=inventoryForId(id);
-    const editable=inventoryLoaded&&window.ControleAduana?.canEditInventory?.();
-    return '<select aria-label="Inventário do Shipment ID '+esc(id)+'" data-aduana-inventory="'+esc(id)+'"'+
-      (editable&&inventorySaving!==String(id)?'':' disabled')+'>'+
+    const admin=Boolean(window.ControleAduana?.canEditInventory?.());
+    if(!admin)return '<span class="aduana-tag">'+esc(status)+'</span>';
+    const editable=Boolean(inventoryLoaded&&!inventorySaving);
+    const tick=status==="Pendente"
+      ? '<input type="checkbox" data-aduana-inventory-check="'+esc(id)+'" '+
+        'aria-label="Selecionar ID pendente '+esc(id)+'"'+
+        (inventorySelected.has(id)?' checked':'')+(editable?'':' disabled')+'>'
+      : '';
+    return '<div class="aduana-inventory-cell">'+tick+
+      '<select aria-label="Inventário do Shipment ID '+esc(id)+'" data-aduana-inventory="'+esc(id)+'"'+
+      (editable?'':' disabled')+'>'+
       INVENTORY_STATUSES.map(value=>
         '<option value="'+esc(value)+'"'+(value===status?' selected':'')+'>'+esc(value)+'</option>'
-      ).join("")+'</select>';
+      ).join("")+'</select></div>';
   }
   function inventoryCounters(rows) {
     const counts={"Pendente":0,"Encontrado":0,"Não encontrado":0};
-    for(const row of rows)counts[inventoryForId(row.id)]++;
+    for(const row of rows)counts[inventoryForId(row.id,!!row.match)]++;
     return counts;
   }
   function renderRows() {
@@ -429,6 +469,22 @@
       return !query||[row.id,row.rota,row.side,row.ladoFisico,row.origem].some(value=>norm(value).includes(norm(query)));
     });
     const inventory=inventoryCounters(m.rows);
+    const eligible=visible.filter(inventoryPending).map(row=>String(row.id));
+    const eligibleSet=new Set(m.rows.filter(inventoryPending).map(row=>String(row.id)));
+    for(const id of inventorySelected)if(!eligibleSet.has(id))inventorySelected.delete(id);
+    const canSelect=Boolean(inventoryLoaded&&window.ControleAduana?.canEditInventory?.()&&!inventorySaving);
+    const selectAll=$("aduanaInventorySelectAll");
+    if(selectAll){
+      const count=eligible.filter(id=>inventorySelected.has(id)).length;
+      selectAll.checked=Boolean(eligible.length&&count===eligible.length);
+      selectAll.indeterminate=count>0&&count<eligible.length;
+      selectAll.disabled=!canSelect||!eligible.length;
+    }
+    const action=$("aduanaInventoryBulkApply");
+    if(action){action.textContent="Aplicar aos "+inventorySelected.size+" selecionado(s)";
+      action.disabled=!canSelect||!inventorySelected.size;}
+    const bulkOption=$("aduanaInventoryBulkStatus");
+    if(bulkOption){bulkOption.value=inventoryBulkStatus;bulkOption.disabled=!canSelect;}
     $("aduanaRowsCount").textContent=visible.length+" registro(s) do sistema"+
       (mode==="faltantes"?" ainda não localizados por ID":"")+
       " · Inventário: "+inventory.Encontrado+" encontrado(s) · "+
@@ -447,7 +503,7 @@
         '<td><span class="aduana-tag '+tag+'">'+esc(row.situacao)+'</span></td><td>'+
         (editable?selector("tipo",row.id,row.tipo,TYPES):"—")+'</td><td>'+
         (editable?selector("cor",row.id,row.cor,COLORS):"—")+'</td><td>'+
-        inventorySelector(row.id)+'</td></tr>';
+        inventorySelector(row)+'</td></tr>';
     }).join(""):'<tr><td colspan="10" style="padding:24px;text-align:center">Nenhum registro para os filtros selecionados.</td></tr>';
   }
   // Snapshot compacto: não grava Shipment IDs, nomes de motoristas nem linhas brutas
@@ -524,7 +580,7 @@
         '<td>'+esc(sideDisplay(row.systemSide))+'</td>'+
         '<td>'+esc(row.physicalSide?sideDisplay(row.physicalSide):"—")+'</td>'+
         '<td>'+esc(row.type||"—")+'</td><td>'+esc(row.color||"—")+'</td>'+
-        '<td>'+esc(inventoryState(row.inventoryStatus))+'</td></tr>';
+        '<td>'+esc(inventoryState(row.inventoryStatus,row.found))+'</td></tr>';
     }).join("");
     return caption+'<div class="aduana-history-table"><table class="aduana-table"><thead><tr>'+
       '<th>Data</th><th>Shipment ID</th><th>Situação</th><th>Rota AM1</th><th>Doca</th>'+
@@ -574,7 +630,7 @@
         '<td>'+esc(sideDisplay(row.systemSide))+'</td>'+
         '<td>'+esc(row.physicalSide?sideDisplay(row.physicalSide):"—")+'</td>'+
         '<td>'+esc(row.type||"—")+'</td><td>'+esc(row.color||"—")+'</td>'+
-        '<td>'+esc(inventoryState(row.inventoryStatus))+'</td></tr>';
+        '<td>'+esc(inventoryState(row.inventoryStatus,row.found))+'</td></tr>';
     }).join("");
     return '<section class="aduana-history-ids"><h4>SHIPMENT IDs DO PERÍODO — '+all.length+' OCORRÊNCIAS</h4>'+
       '<p class="aduana-muted">'+unique+' Shipment ID(s) distinto(s) · '+availableDays+
@@ -618,7 +674,7 @@
     const cell=value=>'"'+String(value??"").replace(/^[=+@-]/,"'").replace(/"/g,'""')+'"';
     const rows=[header,...filtered.map(row=>[
       row.date,row.id,row.status,row.route,row.dock,row.systemSide,row.physicalSide,row.type,row.color,
-      inventoryState(row.inventoryStatus)
+      inventoryState(row.inventoryStatus,row.found)
     ])].map(row=>row.map(cell).join(";")).join("\r\n");
     const blob=new Blob(["\uFEFF"+rows],{type:"text/csv;charset=utf-8"});
     const url=URL.createObjectURL(blob);
@@ -697,7 +753,7 @@
       '<td>'+esc(row.dock)+'</td><td>'+esc(sideDisplay(row.systemSide))+'</td>'+
       '<td>'+esc(row.physicalSide?sideDisplay(row.physicalSide):"—")+'</td>'+
       '<td>'+esc(row.type||"—")+'</td><td>'+esc(row.color||"—")+'</td>'+
-       '<td>'+esc(inventoryState(row.inventoryStatus))+'</td></tr>').join("");
+       '<td>'+esc(inventoryState(row.inventoryStatus,row.found))+'</td></tr>').join("");
     return '<section class="aduana-history-ids"><h4>SHIPMENT IDs DO DIA — '+valid.length+' REGISTROS</h4>'+
       '<div class="aduana-filters">'+
       '<select id="aduanaHistoryIdFilter" aria-label="Filtrar situação dos Shipment IDs">'+
@@ -715,7 +771,7 @@
     const escapeCsv=value=>'"'+String(value??"").replace(/^[=+\-@\t\r]/,"'").replace(/"/g,'""')+'"';
     const lines=[header,...historyRecord.shipments.map(row=>[
       row.id,row.status,row.route,row.dock,row.systemSide,row.physicalSide,row.type,row.color,
-      inventoryState(row.inventoryStatus)
+      inventoryState(row.inventoryStatus,row.found)
     ])].map(row=>row.map(escapeCsv).join(";")).join("\r\n");
     const url=URL.createObjectURL(new Blob(["\uFEFF"+lines],{type:"text/csv;charset=utf-8"}));
     const link=document.createElement("a");
@@ -842,8 +898,16 @@
         '<button type="button" class="aduana-filter '+(mode===item[0]?'active':'')+'" data-aduana-mode="'+item[0]+'">'+item[1]+'</button>').join("")+
       '<input id="aduanaSearch" aria-label="Buscar Shipment ID, rota ou lado" placeholder="Buscar ID, rota ou lado..." type="search" value="'+esc(query)+'"></div>'+
       '<p class="aduana-muted" id="aduanaRowsCount"></p>'+
+      '<div class="aduana-inventory-actions"><strong>Inventário dos IDs pendentes:</strong>'+
+      '<select id="aduanaInventoryBulkStatus" aria-label="Status para aplicar em massa">'+
+      '<option value="Encontrado">Encontrado no inventário</option>'+
+      '<option value="Não encontrado">Não encontrado no inventário</option></select>'+
+      '<button type="button" class="aduana-btn primary" id="aduanaInventoryBulkApply" disabled>Aplicar aos 0 selecionado(s)</button>'+
+      '<span class="aduana-muted">Marque os pendentes na coluna Inventário.</span></div>'+
       '<p class="aduana-muted" id="aduanaInventoryStatus" role="status"></p></div>'+
-      '<div class="aduana-scroll"><table class="aduana-detail"><thead><tr><th>Shipment ID</th><th>Origem</th><th>Lado Sistema</th><th>Lado Físico</th><th>Rota</th><th>Doca</th><th>Conferência</th><th>Tipo</th><th>Cor</th><th>Inventário</th></tr></thead><tbody id="aduanaDetails"></tbody></table></div>'+
+      '<div class="aduana-scroll"><table class="aduana-detail"><thead><tr><th>Shipment ID</th><th>Origem</th><th>Lado Sistema</th><th>Lado Físico</th><th>Rota</th><th>Doca</th><th>Conferência</th><th>Tipo</th><th>Cor</th><th>Inventário'+
+      '<label class="aduana-inventory-head" title="Selecionar pendentes sem conferência física no filtro atual">'+
+      '<input type="checkbox" id="aduanaInventorySelectAll" aria-label="Selecionar todos os pendentes do filtro"> Selecionar pendentes</label></th></tr></thead><tbody id="aduanaDetails"></tbody></table></div>'+
       '<div class="aduana-exports"><button type="button" class="aduana-btn primary" data-aduana-export="confronto">Baixar confronto CSV</button>'+
       '<button type="button" class="aduana-btn" data-aduana-export="sistema">Baixar CSV Sistema</button>'+
       '<button type="button" class="aduana-btn" data-aduana-export="fisico">Baixar CSV IDs Físicos</button>'+
@@ -1015,7 +1079,7 @@
       data=[["Shipment ID","Origem","Conciliação com sistema por ID","Lado Físico","Tipo","Cor"],...m.physicalRows.map(r=>[r.id,"Físico",r.match?"SIM":"NÃO",r.ladoFisico,r.tipo,r.cor])];
       file="IDs_Fisicos";
     } else {
-      data=[["Shipment ID","Origem","Lado Sistema","Lado Físico","Rota","Doca","Situação por ID","Tipo","Cor","Inventário"],...m.rows.map(r=>[r.id,r.origem,r.side,r.ladoFisico,r.rota,r.doca,r.situacao,r.tipo,r.cor,inventoryForId(r.id)])];
+      data=[["Shipment ID","Origem","Lado Sistema","Lado Físico","Rota","Doca","Situação por ID","Tipo","Cor","Inventário"],...m.rows.map(r=>[r.id,r.origem,r.side,r.ladoFisico,r.rota,r.doca,r.situacao,r.tipo,r.cor,inventoryForId(r.id,r.match)])];
       file="Confronto_Aduana";
     }
     const content="\uFEFF"+data.map(row=>row.map(csvCell).join(";")).join("\r\n");
