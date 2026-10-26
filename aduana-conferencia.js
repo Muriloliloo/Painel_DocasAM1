@@ -455,6 +455,42 @@
         '<option value="'+esc(value)+'"'+(value===status?' selected':'')+'>'+esc(value)+'</option>'
       ).join("")+'</select></div>';
   }
+  // Um ID confirmado no inventário é conciliado sem alterar o confronto CSV.
+  function resolved(row){return !!row.match||inventoryForId(row.id,!!row.match)==="Encontrado";}
+  function liveTotals(m){
+    const sides=new Map();let found=0,manual=0;
+    for(const r of m.systemRows||[]){
+      const item=sides.get(r.side)||{found:0,missing:0};
+      if(resolved(r)){item.found++;found++;if(!r.match)manual++;}
+      else item.missing++;
+      sides.set(r.side,item);
+    }
+    return {found,missing:(m.systemRows||[]).length-found,manual,sides};
+  }
+  function refreshTotals(){
+    if(!current?.systemReady||!current?.physicalReady)return;
+    const m=current,s=liveTotals(m);
+    const put=(id,n)=>{const e=$(id);if(e)e.textContent=String(n);};
+    put("aduanaKpiFound",s.found);put("aduanaKpiMissing",s.missing);
+    put("aduanaSideTotalFound",s.found);put("aduanaSideTotalMissing",s.missing);
+    put("aduanaInventoryManualClassified",s.manual);
+    put("aduanaMissingUnclassified",s.missing);
+    put("aduanaReconcileText","Conciliação: "+m.total+" no sistema = "+s.found+
+      " encontrados ("+m.totalFound+" no físico + "+s.manual+
+      " no inventário) + "+s.missing+" ainda não encontrados.");
+    document.querySelectorAll("[data-aduana-side-found]").forEach(e=>{
+      e.textContent=String(s.sides.get(e.dataset.aduanaSideFound)?.found||0);
+    });
+    document.querySelectorAll("[data-aduana-side-missing]").forEach(e=>{
+      e.textContent=String(s.sides.get(e.dataset.aduanaSideMissing)?.missing||0);
+    });
+  }
+  function shown(row){
+    if(mode==="encontrados"&&!resolved(row))return false;
+    if(mode==="faltantes"&&resolved(row))return false;
+    return !query||[row.id,row.rota,row.side,row.ladoFisico,row.origem]
+      .some(value=>norm(value).includes(norm(query)));
+  }
   function inventoryCounters(rows) {
     const counts={"Pendente":0,"Encontrado":0,"Não encontrado":0};
     for(const row of rows)counts[inventoryForId(row.id,!!row.match)]++;
@@ -463,11 +499,8 @@
   function renderRows() {
     if (!current || !$("aduanaDetails")) return;
     const m=current;
-    const visible=m.rows.filter(row=>{
-      if(mode==="encontrados"&&row.origem!=="Físico")return false;
-      if(mode==="faltantes"&&row.origem!=="Sistema")return false;
-      return !query||[row.id,row.rota,row.side,row.ladoFisico,row.origem].some(value=>norm(value).includes(norm(query)));
-    });
+    refreshTotals();
+    const visible=m.rows.filter(shown);
     const inventory=inventoryCounters(m.rows);
     const eligible=visible.filter(inventoryPending).map(row=>String(row.id));
     const eligibleSet=new Set(m.rows.filter(inventoryPending).map(row=>String(row.id)));
@@ -486,7 +519,8 @@
     const bulkOption=$("aduanaInventoryBulkStatus");
     if(bulkOption){bulkOption.value=inventoryBulkStatus;bulkOption.disabled=!canSelect;}
     $("aduanaRowsCount").textContent=visible.length+" registro(s) do sistema"+
-      (mode==="faltantes"?" ainda não localizados por ID":"")+
+      (mode==="faltantes"?" ainda não localizados (físico + inventário)":
+       mode==="encontrados"?" localizados (físico + inventário)":"")+
       " · Inventário: "+inventory.Encontrado+" encontrado(s) · "+
       inventory["Não encontrado"]+" não encontrado(s) · "+inventory.Pendente+" pendente(s)";
     const info=$("aduanaInventoryStatus");
@@ -500,7 +534,9 @@
       const editable=m.physicalReady&&row.origem==="Físico";
       const tag=row.origem==="Físico"?(row.match?"ok":"warn"):"fail";
       return '<tr><td>'+esc(row.id)+'</td><td>'+esc(row.origem)+'</td><td>'+esc(row.side)+'</td><td>'+esc(row.ladoFisico||"—")+'</td><td>'+esc(row.rota)+'</td><td>'+esc(row.doca)+'</td>'+
-        '<td><span class="aduana-tag '+tag+'">'+esc(row.situacao)+'</span></td><td>'+
+        '<td><span class="aduana-tag '+tag+'">'+esc(row.situacao)+'</span>'+
+        (!row.match&&resolved(row)?' <span class="aduana-tag ok" title="Encontrado no inventário, mas não no CSV físico">✓ Inventário</span>':'')+
+        '</td><td>'+
         (editable?selector("tipo",row.id,row.tipo,TYPES):"—")+'</td><td>'+
         (editable?selector("cor",row.id,row.cor,COLORS):"—")+'</td><td>'+
         inventorySelector(row)+'</td></tr>';
@@ -843,10 +879,13 @@
     const sides = m.sides.filter(row=>row.side!=="Não identificado"||row.system||row.found).map(row=>
       '<tr><td class="sub"><div class="aduana-side-label">'+esc(sideDisplay(row.side))+'</div>'+
       (row.side==="Não identificado" ? '' : '<div class="aduana-side-coordinator"><b>Coordenador:</b> '+esc(coordinatorForSide(data,row.side))+'</div>')+
-      '</td><td>'+formatValue(row.system,m.systemReady)+'</td><td>'+formatValue(row.found,m.systemReady&&m.physicalReady)+'</td><td>'+formatValue(row.missing,m.systemReady&&m.physicalReady)+'</td></tr>').join("");
+      '</td><td>'+formatValue(row.system,m.systemReady)+'</td>'+
+      '<td data-aduana-side-found="'+esc(row.side)+'">'+formatValue(row.found,m.systemReady&&m.physicalReady)+'</td>'+
+      '<td data-aduana-side-missing="'+esc(row.side)+'">'+formatValue(row.missing,m.systemReady&&m.physicalReady)+'</td></tr>').join("");
     const metrics = [["Volumoso",m.countType("Volumoso")],["Amarelo",m.countColor("Amarelo")],["Azul",m.countColor("Azul")],["Vermelho",m.countColor("Vermelho")],["Verde",m.countColor("Verde")],["GM",m.countType("GM")]].map(row=>
       '<tr><td>'+esc(row[0])+'</td><td>'+formatValue(row[1],m.physicalReady&&m.systemReady)+'</td><td title="IDs não localizados não possuem classificação física confirmada">—</td></tr>').join("")+
-      '<tr><td><b>Sem classificação (saldo pendente)</b></td><td>—</td><td>'+formatValue(m.totalMissing,m.systemReady&&m.physicalReady)+'</td></tr>';
+      '<tr><td><b>Encontrado via inventário (sem classificação física)</b></td><td id="aduanaInventoryManualClassified">0</td><td>—</td></tr>'+
+      '<tr><td><b>Sem classificação (ainda não encontrados)</b></td><td>—</td><td id="aduanaMissingUnclassified">'+formatValue(m.totalMissing,m.systemReady&&m.physicalReady)+'</td></tr>';
     $("aduanaView").innerHTML =
       '<div class="aduana-shell"><div class="aduana-top"><button type="button" id="aduanaBack" class="aduana-back">← Voltar à tela inicial</button>'+
       '<span class="aduana-muted">SSP15 · AM1 · '+esc(m.date||"Data não informada")+'</span></div>'+
@@ -880,21 +919,21 @@
         : 'Importe o arquivo físico CSV ou XLSX')+'</span></div>'+
       '<section class="aduana-kpis">'+
       '<article class="aduana-kpi"><span>Quantidade a mais na aduana</span><strong>'+formatValue(m.total,m.systemReady)+'</strong><small>Sistema · Shipment IDs únicos</small></article>'+
-      '<article class="aduana-kpi encontrado"><span>Quantidade encontrada</span><strong>'+formatValue(m.totalFound,m.systemReady&&m.physicalReady)+'</strong><small>IDs únicos presentes no sistema e no físico</small></article>'+
-      '<article class="aduana-kpi nao-encontrado"><span>Quantidade não encontrada</span><strong>'+formatValue(m.totalMissing,m.systemReady&&m.physicalReady)+'</strong><small>IDs do sistema não localizados no arquivo físico</small></article></section>'+
-      '<div class="aduana-columns"><section class="aduana-panel"><h3>CONTROLE POR LADO</h3><table class="aduana-table"><thead><tr><th>Item</th><th>Sistema</th><th>Físico encontrado</th><th>Não encontrado</th></tr></thead><tbody>'+sides+
-      '<tr class="aduana-total"><td><strong>TOTAL</strong></td><td>'+formatValue(m.total,m.systemReady)+'</td><td>'+formatValue(m.totalFound,m.systemReady&&m.physicalReady)+'</td><td>'+formatValue(m.totalMissing,m.systemReady&&m.physicalReady)+'</td></tr></tbody></table>'+
+      '<article class="aduana-kpi encontrado"><span>Quantidade encontrada</span><strong id="aduanaKpiFound">'+formatValue(m.totalFound,m.systemReady&&m.physicalReady)+'</strong><small>Encontrados no físico ou confirmados no inventário</small></article>'+
+      '<article class="aduana-kpi nao-encontrado"><span>Quantidade não encontrada</span><strong id="aduanaKpiMissing">'+formatValue(m.totalMissing,m.systemReady&&m.physicalReady)+'</strong><small>Restantes, incluindo pendentes no inventário</small></article></section>'+
+      '<div class="aduana-columns"><section class="aduana-panel"><h3>CONTROLE POR LADO</h3><table class="aduana-table"><thead><tr><th>Item</th><th>Sistema</th><th>Encontrado (físico + inventário)</th><th>Não encontrado</th></tr></thead><tbody>'+sides+
+      '<tr class="aduana-total"><td><strong>TOTAL</strong></td><td>'+formatValue(m.total,m.systemReady)+'</td><td id="aduanaSideTotalFound">'+formatValue(m.totalFound,m.systemReady&&m.physicalReady)+'</td><td id="aduanaSideTotalMissing">'+formatValue(m.totalMissing,m.systemReady&&m.physicalReady)+'</td></tr></tbody></table>'+
       '<div class="aduana-panel-inner aduana-reconcile">'+(m.systemReady&&m.physicalReady
-        ? '<strong>Conciliação por ID: '+m.total+' no sistema = '+m.totalFound+' encontrados + '+m.totalMissing+' não encontrados.</strong>'
+        ? '<strong id="aduanaReconcileText">Conciliação por ID: '+m.total+' no sistema = '+m.totalFound+' encontrados + '+m.totalMissing+' não encontrados.</strong>'
         : '<span>Importe as bases do sistema e físico para iniciar o confronto por ID.</span>')+
       '<small>Os pacotes físicos fora da lista do sistema são ignorados em todas as contagens. Se um ID válido estiver em outro lado físico, ele será contabilizado no lado atribuído pelo sistema.</small></div></section>'+
       '<section class="aduana-panel"><h3>CLASSIFICAÇÃO DOS PACOTES</h3><table class="aduana-table"><thead><tr><th>Item</th><th>Encontrada</th><th>Não encontrada</th></tr></thead><tbody>'+metrics+'</tbody></table>'+
-      '<div class="aduana-panel-inner aduana-muted">Somente os IDs físicos presentes no sistema são classificados por tipo e cor. Os IDs ignorados não entram nessas quantidades. Pacotes não encontrados ficam sem classificação física.</div></section></div>'+
+      '<div class="aduana-panel-inner aduana-muted">Tipo e cor continuam vindo apenas do físico. Confirmações do inventário atualizam totais sem presumir cor ou tipo.</div></section></div>'+
       '<p class="aduana-note"><b>Critério obrigatório:</b> apenas Shipment IDs presentes no arquivo do sistema são contabilizados. IDs extras bipados no físico são descartados das estatísticas, do detalhamento e dos arquivos exportados.'+
       (m.sideMismatches?' <b>Atenção:</b> '+m.sideMismatches+' ID(s) válido(s) com lado físico diferente do lado do sistema; a contagem foi atribuída ao lado do sistema.':'')+
       (m.crossSides?' <b>Atenção:</b> '+m.crossSides+' ID(s) repetido(s) em lados diferentes na base do sistema; contabilizado(s) uma única vez.':'')+'</p>'+
       '<section class="aduana-panel"><h3>AUDITORIA POR ID — SISTEMA × FÍSICO</h3><div class="aduana-panel-inner"><div class="aduana-filters">'+
-      [['todos','Todos'],['encontrados','Encontrados no sistema'],['faltantes','Não encontrados']].map(item=>
+      [['todos','Todos'],['encontrados','Encontrados'],['faltantes','Não encontrados']].map(item=>
         '<button type="button" class="aduana-filter '+(mode===item[0]?'active':'')+'" data-aduana-mode="'+item[0]+'">'+item[1]+'</button>').join("")+
       '<input id="aduanaSearch" aria-label="Buscar Shipment ID, rota ou lado" placeholder="Buscar ID, rota ou lado..." type="search" value="'+esc(query)+'"></div>'+
       '<p class="aduana-muted" id="aduanaRowsCount"></p>'+
@@ -1134,7 +1173,10 @@
       data=[["Shipment ID","Origem","Conciliação com sistema por ID","Lado Físico","Tipo","Cor"],...m.physicalRows.map(r=>[r.id,"Físico",r.match?"SIM":"NÃO",r.ladoFisico,r.tipo,r.cor])];
       file="IDs_Fisicos";
     } else {
-      data=[["Shipment ID","Origem","Lado Sistema","Lado Físico","Rota","Doca","Situação por ID","Tipo","Cor","Inventário"],...m.rows.map(r=>[r.id,r.origem,r.side,r.ladoFisico,r.rota,r.doca,r.situacao,r.tipo,r.cor,inventoryForId(r.id,r.match)])];
+      data=[["Shipment ID","Origem","Lado Sistema","Lado Físico","Rota","Doca","Situação por ID (CSV)","Tipo","Cor","Inventário","Resultado consolidado","Confirmado por"],...m.rows.map(r=>
+         [r.id,r.origem,r.side,r.ladoFisico,r.rota,r.doca,r.situacao,r.tipo,r.cor,
+          inventoryForId(r.id,r.match),resolved(r)?"Encontrado":"Não encontrado",
+          r.match?"CSV físico":resolved(r)?"Inventário manual":"—"])];
       file="Confronto_Aduana";
     }
     const content="\uFEFF"+data.map(row=>row.map(csvCell).join(";")).join("\r\n");
