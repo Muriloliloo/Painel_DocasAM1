@@ -726,11 +726,12 @@
         '<td>'+esc(sideDisplay(row.systemSide))+'</td>'+
         '<td>'+esc(row.physicalSide?sideDisplay(row.physicalSide):"—")+'</td>'+
         '<td>'+esc(row.type||"—")+'</td><td>'+esc(row.color||"—")+'</td>'+
-        '<td>'+esc(inventoryState(row.inventoryStatus,row.found))+'</td></tr>';
+        '<td>'+esc(inventoryState(row.inventoryStatus,row.found))+'</td>'+
+        '<td>'+esc(formatReaisCents(row.inventoryValueCents))+'</td></tr>';
     }).join("");
     return caption+'<div class="aduana-history-table"><table class="aduana-table"><thead><tr>'+
       '<th>Data</th><th>Shipment ID</th><th>Situação</th><th>Rota AM1</th><th>Doca</th>'+
-      '<th>Lado sistema</th><th>Lado físico</th><th>Tipo</th><th>Cor</th><th>Inventário</th></tr></thead>'+
+      '<th>Lado sistema</th><th>Lado físico</th><th>Tipo</th><th>Cor</th><th>Inventário</th><th>Valor (R$)</th></tr></thead>'+
       '<tbody>'+rows+'</tbody></table></div>';
   }
   // A consulta por periodo recebe resumos e IDs privados apenas em memoria.
@@ -776,7 +777,8 @@
         '<td>'+esc(sideDisplay(row.systemSide))+'</td>'+
         '<td>'+esc(row.physicalSide?sideDisplay(row.physicalSide):"—")+'</td>'+
         '<td>'+esc(row.type||"—")+'</td><td>'+esc(row.color||"—")+'</td>'+
-        '<td>'+esc(inventoryState(row.inventoryStatus,row.found))+'</td></tr>';
+        '<td>'+esc(inventoryState(row.inventoryStatus,row.found))+'</td>'+
+        '<td>'+esc(formatReaisCents(row.inventoryValueCents))+'</td></tr>';
     }).join("");
     return '<section class="aduana-history-ids"><h4>SHIPMENT IDs DO PERÍODO — '+all.length+' OCORRÊNCIAS</h4>'+
       '<p class="aduana-muted">'+unique+' Shipment ID(s) distinto(s) · '+availableDays+
@@ -791,8 +793,8 @@
       '–'+Math.min(start+pageSize,filtered.length)+' · página '+(historyRangeIdPage+1)+' de '+pages+'</p>'+
       '<div class="aduana-history-table"><table class="aduana-table"><thead><tr>'+
       '<th>Data</th><th>Shipment ID</th><th>Situação</th><th>Rota AM1</th><th>Doca</th>'+
-      '<th>Lado sistema</th><th>Lado físico</th><th>Tipo</th><th>Cor</th><th>Inventário</th></tr></thead>'+
-      '<tbody>'+(rows||'<tr><td colspan="10">Nenhum ID corresponde ao filtro.</td></tr>')+'</tbody></table></div>'+
+      '<th>Lado sistema</th><th>Lado físico</th><th>Tipo</th><th>Cor</th><th>Inventário</th><th>Valor (R$)</th></tr></thead>'+
+      '<tbody>'+(rows||'<tr><td colspan="11">Nenhum ID corresponde ao filtro.</td></tr>')+'</tbody></table></div>'+
       '<div class="aduana-history-actions" style="margin-top:10px">'+
       '<button type="button" class="aduana-btn" id="aduanaHistoryRangePrev"'+
       (historyRangeIdPage===0?' disabled':'')+'>Página anterior</button>'+
@@ -816,11 +818,11 @@
   function exportHistoryPeriodIdsCsv() {
     const {filtered}=historyPeriodIdEntries();
     if(!filtered.length)return;
-    const header=["Data","Shipment ID","Situação","Rota AM1","Doca","Lado Sistema","Lado Físico","Tipo","Cor","Inventário"];
+    const header=["Data","Shipment ID","Situação","Rota AM1","Doca","Lado Sistema","Lado Físico","Tipo","Cor","Inventário","Valor (R$)"];
     const cell=value=>'"'+String(value??"").replace(/^[=+@-]/,"'").replace(/"/g,'""')+'"';
     const rows=[header,...filtered.map(row=>[
       row.date,row.id,row.status,row.route,row.dock,row.systemSide,row.physicalSide,row.type,row.color,
-      inventoryState(row.inventoryStatus,row.found)
+      inventoryState(row.inventoryStatus,row.found),formatReaisCents(row.inventoryValueCents)
     ])].map(row=>row.map(cell).join(";")).join("\r\n");
     const blob=new Blob(["\uFEFF"+rows],{type:"text/csv;charset=utf-8"});
     const url=URL.createObjectURL(blob);
@@ -899,7 +901,8 @@
       '<td>'+esc(row.dock)+'</td><td>'+esc(sideDisplay(row.systemSide))+'</td>'+
       '<td>'+esc(row.physicalSide?sideDisplay(row.physicalSide):"—")+'</td>'+
       '<td>'+esc(row.type||"—")+'</td><td>'+esc(row.color||"—")+'</td>'+
-       '<td>'+esc(inventoryState(row.inventoryStatus,row.found))+'</td></tr>').join("");
+       '<td>'+esc(inventoryState(row.inventoryStatus,row.found))+'</td>'+
+        '<td>'+esc(formatReaisCents(row.inventoryValueCents))+'</td></tr>').join("");
     return '<section class="aduana-history-ids"><h4>SHIPMENT IDs DO DIA — '+valid.length+' REGISTROS</h4>'+
       '<div class="aduana-filters">'+
       '<select id="aduanaHistoryIdFilter" aria-label="Filtrar situação dos Shipment IDs">'+
@@ -908,16 +911,16 @@
       '<input id="aduanaHistoryIdSearch" type="search" aria-label="Buscar Shipment ID histórico" placeholder="Buscar ID, rota ou lado..." value="'+esc(historyIdSearch)+'">'+
       '<button type="button" class="aduana-btn" id="aduanaHistoryExportIds">Exportar IDs CSV</button></div>'+
       '<p class="aduana-muted">'+visible.length+' ID(s) no filtro'+(visible.length>250?' · mostrando os primeiros 250; utilize a pesquisa ou exporte o CSV':'')+'</p>'+
-      '<div class="aduana-history-table"><table class="aduana-table"><thead><tr><th>Shipment ID</th><th>Situação</th><th>Rota AM1</th><th>Doca</th><th>Lado sistema</th><th>Lado físico</th><th>Tipo</th><th>Cor</th><th>Inventário</th></tr></thead><tbody>'+
-      (rows||'<tr><td colspan="9">Nenhum ID corresponde ao filtro.</td></tr>')+'</tbody></table></div></section>';
+      '<div class="aduana-history-table"><table class="aduana-table"><thead><tr><th>Shipment ID</th><th>Situação</th><th>Rota AM1</th><th>Doca</th><th>Lado sistema</th><th>Lado físico</th><th>Tipo</th><th>Cor</th><th>Inventário</th><th>Valor (R$)</th></tr></thead><tbody>'+
+      (rows||'<tr><td colspan="10">Nenhum ID corresponde ao filtro.</td></tr>')+'</tbody></table></div></section>';
   }
   function downloadHistoryIdsCsv() {
     if(!historyRecord||!Array.isArray(historyRecord.shipments))return;
-    const header=["Shipment ID","Situação","Rota","Doca","Lado Sistema","Lado Físico","Tipo","Cor","Inventário"];
+    const header=["Shipment ID","Situação","Rota","Doca","Lado Sistema","Lado Físico","Tipo","Cor","Inventário","Valor (R$)"];
     const escapeCsv=value=>'"'+String(value??"").replace(/^[=+\-@\t\r]/,"'").replace(/"/g,'""')+'"';
     const lines=[header,...historyRecord.shipments.map(row=>[
       row.id,row.status,row.route,row.dock,row.systemSide,row.physicalSide,row.type,row.color,
-      inventoryState(row.inventoryStatus,row.found)
+      inventoryState(row.inventoryStatus,row.found),formatReaisCents(row.inventoryValueCents)
     ])].map(row=>row.map(escapeCsv).join(";")).join("\r\n");
     const url=URL.createObjectURL(new Blob(["\uFEFF"+lines],{type:"text/csv;charset=utf-8"}));
     const link=document.createElement("a");
@@ -1342,12 +1345,13 @@
       data=[["Shipment ID","Origem","Conciliação com sistema por ID","Lado Físico","Tipo","Cor"],...m.physicalRows.map(r=>[r.id,"Físico",r.match?"SIM":"NÃO",r.ladoFisico,r.tipo,r.cor])];
       file="IDs_Fisicos";
     } else {
-      data=[["Shipment ID","Origem","Lado Sistema","Lado Físico","Rota","Doca","Situação por ID (CSV)","Tipo","Cor","Inventário","Resultado consolidado","Confirmado por"],...m.rows.map(r=>
+      data=[["Shipment ID","Origem","Lado Sistema","Lado Físico","Rota","Doca","Situação por ID (CSV)","Tipo","Cor","Inventário","Resultado consolidado","Confirmado por","Valor (R$)"],...m.rows.map(r=>
          [r.id,r.origem,r.side,r.ladoFisico,r.rota,r.doca,r.situacao,r.tipo,r.cor,
           inventoryForId(r.id,r.match),
           !resolved(r)?"Não encontrado":r.match||inventoryForId(r.id)==="Encontrado"
             ?"Encontrado":"Tratado: "+inventoryForId(r.id),
-          r.match?"CSV físico":resolved(r)?"Status inventário: "+inventoryForId(r.id):"—"])];
+          r.match?"CSV físico":resolved(r)?"Status inventário: "+inventoryForId(r.id):"—",
+          formatReaisCents(storedValueCents(r.id))])];
       file="Confronto_Aduana";
     }
     const content="\uFEFF"+data.map(row=>row.map(csvCell).join(";")).join("\r\n");
