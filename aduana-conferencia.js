@@ -464,6 +464,13 @@
     ".aduana-inventory-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:8px}",
     ".aduana-inventory-actions select{border:1px solid #a9bfd0;border-radius:6px;min-height:31px;padding:5px;background:#fff;color:#163952}",
     ".aduana-inventory-actions button:disabled{opacity:.5;cursor:not-allowed}",
+    ".aduana-value-cell{display:flex;align-items:center;gap:6px;flex-wrap:wrap;min-width:115px}",
+    ".aduana-value-view{font-size:12px;white-space:nowrap}",
+    ".aduana-value-cell button,.aduana-value-edit button{padding:5px 7px;background:#fff;border:1px solid #9eb9cf;border-radius:5px;color:#063354;font-weight:750;cursor:pointer}",
+    ".aduana-value-cell button:disabled,.aduana-value-edit button:disabled{opacity:.55;cursor:not-allowed}",
+    ".aduana-value-edit{display:flex;align-items:center;gap:4px;flex-wrap:wrap;min-width:185px}",
+    ".aduana-value-edit input{max-width:105px;width:95px;padding:5px 6px;border:1px solid #8eacbf;border-radius:5px;font-size:12px}",
+    "body.dark-mode .aduana-value-cell button,body.dark-mode .aduana-value-edit button{background:#213e56;color:#fff;border-color:#6a889e}",
     ".aduana-inventory-overview{display:flex;flex-wrap:wrap;gap:7px;margin-top:12px;align-items:center}",
     ".aduana-inventory-summary-item{padding:5px 9px;border:1px solid #cbdbe5;border-radius:7px;background:#f4f8fb;color:#153954;font-size:12px;font-weight:650}",
     "body.dark-mode .aduana-inventory-summary-item{background:#234257;color:#ecf4fc;border-color:#476478}",
@@ -510,6 +517,27 @@
       '<select aria-label="Inventário do Shipment ID '+esc(id)+'" data-aduana-inventory="'+esc(id)+'"'+
       (editable?'':' disabled')+'>'+
       inventoryOptions(status)+'</select></div>';
+  }
+  function inventoryValueMarkup(row) {
+    const id=String(row.id),cents=storedValueCents(id);
+    const allowed=canEditValue(row);
+    const editable=allowed&&inventoryLoaded&&!inventorySaving&&
+      Boolean(window.ControleAduana?.canEditInventory?.());
+    if(inventoryValueEditingId===id&&allowed){
+      return '<div class="aduana-value-edit">'+
+        '<span>R$</span><input data-aduana-value-input="'+esc(id)+'" inputmode="decimal" '+
+        'aria-label="Valor do Shipment ID '+esc(id)+' em reais" maxlength="20" '+
+        'placeholder="0,00" value="'+esc(valueInputText(cents))+'">'+
+        '<button type="button" data-aduana-value-save="'+esc(id)+'"'+
+        (editable?'':' disabled')+'>Salvar</button>'+
+        '<button type="button" data-aduana-value-cancel="'+esc(id)+'">Cancelar</button></div>';
+    }
+    const amount='<strong class="aduana-value-view">'+esc(formatReaisCents(cents))+'</strong>';
+    if(!allowed||!window.ControleAduana?.canEditInventory?.())return amount;
+    return '<div class="aduana-value-cell">'+amount+
+      '<button type="button" data-aduana-value-edit="'+esc(id)+'"'+
+      (editable?'':' disabled')+' aria-label="'+(cents===null?'Informar':'Editar')+
+      ' valor do Shipment ID '+esc(id)+'">'+(cents===null?'Informar':'Editar')+'</button></div>';
   }
   // Todo status diferente de Pendente ou Nao encontrado desconta do saldo,
   // sem alterar a informacao de encontro FISICO preservada nos arquivos.
@@ -586,6 +614,13 @@
       inventory["Não encontrado"]+" não encontrado(s) · "+inventory.Pendente+" pendente(s)"+
       INVENTORY_EXTRA_STATUSES.filter(status=>inventory[status]>0)
         .map(status=>" · "+status+": "+inventory[status]).join("");
+    const valueIds=(m.systemRows||[]).filter(row=>canEditValue(row)&&storedValueCents(row.id)!==null);
+    const valueTotal=valueIds.reduce((sum,row)=>sum+storedValueCents(row.id),0);
+    const valueSummary=$("aduanaInventoryValueSummary");
+    if(valueSummary)valueSummary.textContent=inventoryLoaded
+      ?"Valores cadastrados para pendentes/não encontrados: "+valueIds.length+
+        " ID(s) · Total: "+formatReaisCents(valueTotal)
+      :"Consultando valores registrados no Firebase...";
     const summary=$("aduanaInventoryOverview");
     if(summary)summary.innerHTML=INVENTORY_STATUSES.map(status=>
       '<span class="aduana-inventory-summary-item">'+esc(status)+': <b>'+
@@ -614,8 +649,8 @@
         '</td><td>'+
         (editable?selector("tipo",row.id,row.tipo,TYPES):"—")+'</td><td>'+
         (editable?selector("cor",row.id,row.cor,COLORS):"—")+'</td><td>'+
-        inventorySelector(row)+'</td></tr>';
-    }).join(""):'<tr><td colspan="10" style="padding:24px;text-align:center">Nenhum registro para os filtros selecionados.</td></tr>';
+        inventorySelector(row)+'</td><td>'+inventoryValueMarkup(row)+'</td></tr>';
+    }).join(""):'<tr><td colspan="11" style="padding:24px;text-align:center">Nenhum registro para os filtros selecionados.</td></tr>';
   }
   // Snapshot compacto: não grava Shipment IDs, nomes de motoristas nem linhas brutas
   // em documentos históricos potencialmente acessíveis a leitores do painel.
@@ -1020,10 +1055,11 @@
       '<span class="aduana-muted">Marque os pendentes na coluna Inventário.</span></div>'+
       '<p class="aduana-muted" id="aduanaInventoryStatus" role="status"></p>'+
       '<div class="aduana-inventory-overview" id="aduanaInventoryOverview" aria-label="Resumo por situação do inventário"></div>'+
+      '<p class="aduana-muted" id="aduanaInventoryValueSummary"></p>'+
       '<p class="aduana-muted">Encontrado, Devolvido, Vinculado, Atrelado, Em rota e Entregue descontam do saldo não encontrado. Pendente e Não encontrado permanecem no saldo. Isso não altera o confronto original do CSV físico.</p></div>'+
       '<div class="aduana-scroll"><table class="aduana-detail"><thead><tr><th>Shipment ID</th><th>Origem</th><th>Lado Sistema</th><th>Lado Físico</th><th>Rota</th><th>Doca</th><th>Situação atual</th><th>Tipo</th><th>Cor</th><th>Inventário'+
       '<label class="aduana-inventory-head" title="Selecionar pendentes sem conferência física no filtro atual">'+
-      '<input type="checkbox" id="aduanaInventorySelectAll" aria-label="Selecionar todos os pendentes do filtro"> Selecionar pendentes</label></th></tr></thead><tbody id="aduanaDetails"></tbody></table></div>'+
+      '<input type="checkbox" id="aduanaInventorySelectAll" aria-label="Selecionar todos os pendentes do filtro"> Selecionar pendentes</label></th><th>Valor (R$)</th></tr></thead><tbody id="aduanaDetails"></tbody></table></div>'+
       '<div class="aduana-exports"><button type="button" class="aduana-btn primary" data-aduana-export="confronto">Baixar confronto CSV</button>'+
       '<button type="button" class="aduana-btn" data-aduana-export="sistema">Baixar CSV Sistema</button>'+
       '<button type="button" class="aduana-btn" data-aduana-export="fisico">Baixar CSV IDs Físicos</button>'+
