@@ -98,6 +98,12 @@
     }
   }
   function loadInventoryForDay(day) {
+    // Nunca deixar IDs e valores privados em memoria ao perder autenticacao.
+    if(!window.ControleAduana?.canEditInventory?.()){
+      inventoryLoaded=false;inventoryById=Object.create(null);
+      inventoryValueById=Object.create(null);inventoryValueEditingId="";
+      inventorySelected.clear();
+    }
     if(inventoryDay!==day){
       inventoryDay=day;inventoryLoaded=false;inventoryLoading=false;
       inventoryById=Object.create(null);inventoryValueById=Object.create(null);
@@ -109,7 +115,7 @@
     inventoryLoading=true;
     const requested=day;
     Promise.resolve().then(()=>window.ControleAduana.onReadInventory(requested)).then(rows=>{
-      if(inventoryDay!==requested)return;
+      if(inventoryDay!==requested||!window.ControleAduana?.canEditInventory?.())return;
       if(!Array.isArray(rows))return;
       const next=Object.create(null),amounts=Object.create(null);
       for(const row of rows){
@@ -519,6 +525,7 @@
       inventoryOptions(status)+'</select></div>';
   }
   function inventoryValueMarkup(row) {
+    if(!window.ControleAduana?.canEditInventory?.())return "—";
     const id=String(row.id),cents=storedValueCents(id);
     const allowed=canEditValue(row);
     const editable=allowed&&inventoryLoaded&&!inventorySaving&&
@@ -617,7 +624,7 @@
     const valueIds=(m.systemRows||[]).filter(row=>canEditValue(row)&&storedValueCents(row.id)!==null);
     const valueTotal=valueIds.reduce((sum,row)=>sum+storedValueCents(row.id),0);
     const valueSummary=$("aduanaInventoryValueSummary");
-    if(valueSummary)valueSummary.textContent=inventoryLoaded
+    if(valueSummary)valueSummary.textContent=inventoryLoaded&&window.ControleAduana?.canEditInventory?.()
       ?"Valores cadastrados para pendentes/não encontrados: "+valueIds.length+
         " ID(s) · Total: "+formatReaisCents(valueTotal)
       :"Consultando valores registrados no Firebase...";
