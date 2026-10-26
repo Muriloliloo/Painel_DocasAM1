@@ -1021,40 +1021,91 @@
       renderRows();
     }));
     $("aduanaView").querySelectorAll("[data-aduana-export]").forEach(button=>button.addEventListener("click",()=>exportCsv(button.dataset.aduanaExport)));
+    $("aduanaInventorySelectAll")?.addEventListener("change",event=>{
+      if(!inventoryLoaded||inventorySaving)return;
+      const eligible=(current?.rows||[]).filter(row=>{
+        if(mode==="encontrados"&&row.origem!=="Físico")return false;
+        if(mode==="faltantes"&&row.origem!=="Sistema")return false;
+        return !query||[row.id,row.rota,row.side,row.ladoFisico,row.origem]
+          .some(value=>norm(value).includes(norm(query)));
+      }).filter(inventoryPending);
+      for(const row of eligible){
+        if(event.target.checked)inventorySelected.add(String(row.id));
+        else inventorySelected.delete(String(row.id));
+      }
+      renderRows();
+    });
+    $("aduanaInventoryBulkStatus")?.addEventListener("change",event=>{
+      if(["Encontrado","Não encontrado"].includes(event.target.value))
+        inventoryBulkStatus=event.target.value;
+    });
+    $("aduanaInventoryBulkApply")?.addEventListener("click",async()=>{
+      if(inventorySaving||!inventoryLoaded||!inventorySelected.size)return;
+      const ids=[...inventorySelected];
+      const day=inventoryDay;
+      const status=inventoryBulkStatus;
+      inventorySaving="LOTE";
+      inventoryMessage="Gravando "+ids.length+" ID(s) no inventário do Firebase...";
+      renderRows();
+      try{
+        if(!window.ControleAduana?.onSetInventoryBatch)
+          throw new Error("Gravação em massa indisponível.");
+        await window.ControleAduana.onSetInventoryBatch(day,ids,status);
+        if(inventoryDay!==day)return;
+        for(const id of ids)inventoryById[id]=status;
+        syncInventoryHistory(ids,status);
+        inventorySelected.clear();
+        inventoryMessage=ids.length+" ID(s) atualizados em massa para "+status+".";
+      }catch(err){
+        inventoryMessage="Falha no lote: "+(err?.message||String(err))+
+          ". Nenhum ID foi alterado nesta transação.";
+      }finally{
+        if(inventoryDay===day){
+          inventorySaving="";
+          renderRows();
+          if(historyOpen)renderHistoryRecord();
+        }
+      }
+    });
     $("aduanaDetails")?.addEventListener("change",async event=>{
+      const check=event.target.closest("input[data-aduana-inventory-check]");
+      if(check){
+        if(check.checked)inventorySelected.add(check.dataset.aduanaInventoryCheck);
+        else inventorySelected.delete(check.dataset.aduanaInventoryCheck);
+        renderRows();
+        return;
+      }
       const inventory=event.target.closest("select[data-aduana-inventory]");
       if(inventory){
+        if(inventorySaving)return;
         const id=inventory.dataset.aduanaInventory;
+        const day=inventoryDay;
+        const row=current?.rows.find(row=>String(row.id)===String(id));
+        if(!row||row.match){renderRows();return;}
         const previous=inventoryForId(id);
         const selected=inventory.value;
         if(previous===selected)return;
         inventorySaving=id;
         inventoryMessage="Salvando verificação do ID "+id+" no Firebase...";
-        inventory.disabled=true;
-        const message=$("aduanaInventoryStatus");
-        if(message)message.textContent=inventoryMessage;
+        renderRows();
         try{
           if(!window.ControleAduana?.onSetInventory)
             throw new Error("Integração com Firebase indisponível.");
-          await window.ControleAduana.onSetInventory(inventoryDay,id,selected);
+          await window.ControleAduana.onSetInventory(day,id,selected);
+          if(inventoryDay!==day)return;
           inventoryById[id]=selected;
+          inventorySelected.delete(id);
           inventoryLoaded=true;
+          syncInventoryHistory([id],selected);
           inventoryMessage="Inventário do Shipment ID "+id+" registrado: "+selected+".";
-          // Mantenha também as consultas abertas consistentes com a edição.
-          if(historyRecord?.date===inventoryDay&&Array.isArray(historyRecord.shipments)){
-            for(const row of historyRecord.shipments)if(String(row.id)===id)row.inventoryStatus=selected;
-          }
-          if(Array.isArray(historyRecords)){
-            for(const day of historyRecords)if(day.date===inventoryDay&&Array.isArray(day.shipments)){
-              for(const row of day.shipments)if(String(row.id)===id)row.inventoryStatus=selected;
-            }
-          }
         }catch(err){
           inventoryMessage="Não foi possível salvar o inventário do ID "+id+": "+(err?.message||String(err));
         }finally{
-          inventorySaving="";
-          renderRows();
-          if(historyOpen)renderHistoryRecord();
+          if(inventoryDay===day){
+            inventorySaving="";
+            renderRows();
+            if(historyOpen)renderHistoryRecord();
+          }
         }
         return;
       }
