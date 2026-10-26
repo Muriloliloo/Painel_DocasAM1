@@ -12185,7 +12185,7 @@ body.editor-open .global-theme-toggle {
   <script src="firebase-config.js"></script>
   <script src="ondas-dados.js"></script>
   <script src="aduana-xlsx.js?v=20261024-r4"></script>
-  <script src="aduana-conferencia.js?v=20261024-r15"></script>
+  <script src="aduana-conferencia.js?v=20261026-r16"></script>
   <script>
     const storageKey = "ondas-dados";
     const syncMetaKey = `${storageKey}-sync-meta-v1`;
@@ -13828,6 +13828,86 @@ body.editor-open .global-theme-toggle {
       }, delay);
     }
 
+    // Histórico de Aduana em documentos diários independentes (até 30 dias).
+    // Caminho: paineis/aduana-am1-AAAA-MM-DD. Sem IDs ou planilhas brutas.
+    let aduanaHistorySaving=null;
+    let lastAduanaHistoryCleanup="";
+    function aduanaHistoryDateBounds() {
+      const br=finalAuditDateKey(currentSaoPauloDate());
+      const parts=br.split("/");
+      const end=parts[2]+"-"+parts[1]+"-"+parts[0];
+      const first=new Date(end+"T12:00:00Z");
+      first.setUTCDate(first.getUTCDate()-29);
+      return {start:first.toISOString().slice(0,10),end};
+    }
+    function checkAduanaHistoryDay(day) {
+      const {start,end}=aduanaHistoryDateBounds();
+      if(!/^\d{4}-\d{2}-\d{2}$/.test(day)||day<start||day>end) {
+        throw new Error("A consulta de Aduana está limitada aos últimos 30 dias.");
+      }
+      return day;
+    }
+    function aduanaHistoryDoc(day) {
+      return cloudState.tools.doc(cloudState.db,"paineis","aduana-am1-"+day);
+    }
+    async function purgeExpiredAduanaHistory() {
+      if(!isAdmin()||!cloudState.tools.getDocs||!cloudState.tools.deleteDoc)return;
+      const {start,end}=aduanaHistoryDateBounds();
+      if(lastAduanaHistoryCleanup===end)return;
+      const q=cloudState.tools.query(
+        cloudState.tools.collection(cloudState.db,"paineis"),
+        cloudState.tools.where("kind","==","aduana-am1-history")
+      );
+      const records=await cloudState.tools.getDocs(q);
+      for(const record of records.docs){
+        const day=String(record.data()?.date||"");
+        if(/^\d{4}-\d{2}-\d{2}$/.test(day)&&day<start&&record.id==="aduana-am1-"+day){
+          await cloudState.tools.deleteDoc(record.ref);
+        }
+      }
+      lastAduanaHistoryCleanup=end;
+    }
+    async function saveAduanaHistorySnapshot(source=data,options={}) {
+      if(!cloudState.ready||!cloudState.db||!cloudState.user||!isAdmin()){
+        if(options.automatic)return null;
+        throw new Error("Entre como administrador e conecte o Firebase para salvar o histórico.");
+      }
+      const snapshot=window.ControleAduana?.historySnapshot?.(source,packageClosureModel(source));
+      if(!snapshot){
+        if(options.automatic)return null;
+        throw new Error("Carregue e aplique os arquivos do sistema e do físico para a mesma data.");
+      }
+      if(options.automatic){
+        const bounds=aduanaHistoryDateBounds();
+        if(snapshot.date<bounds.start||snapshot.date>bounds.end)return null;
+      } else checkAduanaHistoryDay(snapshot.date);
+      if(aduanaHistorySaving)await aduanaHistorySaving.catch(()=>{});
+      const task=(async()=>{
+        const ref=aduanaHistoryDoc(snapshot.date);
+        const old=await cloudState.tools.getDoc(ref);
+        if(old.exists()&&JSON.stringify(old.data()?.summary)===JSON.stringify(snapshot))return old.data();
+        const archive={
+          kind:"aduana-am1-history",date:snapshot.date,summary:snapshot,
+          savedAt:new Date().toLocaleString("pt-BR",{timeZone:"America/Sao_Paulo"}),
+          updatedAt:cloudState.tools.serverTimestamp(),
+          updatedBy:cloudState.user?.email||"administrador"
+        };
+        await cloudState.tools.setDoc(ref,archive);
+        purgeExpiredAduanaHistory().catch(err=>console.warn("Limpeza do histórico de Aduana:",err));
+        return archive;
+      })();
+      aduanaHistorySaving=task;
+      try{return await task;}finally{if(aduanaHistorySaving===task)aduanaHistorySaving=null;}
+    }
+    async function readAduanaHistorySnapshot(day) {
+      checkAduanaHistoryDay(day);
+      if(!cloudState.ready||!cloudState.db)throw new Error("Firebase desconectado. Verifique a conexão.");
+      const record=await cloudState.tools.getDoc(aduanaHistoryDoc(day));
+      if(!record.exists()||record.data()?.kind!=="aduana-am1-history")return null;
+      const r=record.data();
+      return {...r.summary,savedAt:r.savedAt||""};
+    }
+
     async function saveDataToCloud() {
       if (!cloudState.ready || !cloudState.docRef || !isAdmin() || cloudState.applyingRemote) {
         if (isAdmin() && !cloudState.applyingRemote) {
@@ -13900,6 +13980,10 @@ body.editor-open .global-theme-toggle {
           syncMeta.lastAckAt = Date.now();
           persistSyncMeta();
           syncSucceeded = true;
+          // Arquivamento assíncrono apenas após confirmação da gravação principal.
+          saveAduanaHistorySnapshot(localPayload,{automatic:true}).catch(error=>
+            console.warn("Histórico da Aduana não gravado automaticamente:",error)
+          );
           setRefreshSyncState("success", "Alterações salvas e confirmadas no Firebase.");
           resetRefreshSyncState();
           console.info("Firebase sincronizado com sucesso.", {
@@ -18363,7 +18447,12 @@ body.editor-open .global-theme-toggle {
           setDoc: firestoreModule.setDoc,
           runTransaction: firestoreModule.runTransaction,
           onSnapshot: firestoreModule.onSnapshot,
-          serverTimestamp: firestoreModule.serverTimestamp
+          serverTimestamp: firestoreModule.serverTimestamp,
+          collection: firestoreModule.collection,
+          query: firestoreModule.query,
+          where: firestoreModule.where,
+          getDocs: firestoreModule.getDocs,
+          deleteDoc: firestoreModule.deleteDoc
         };
         const panel = window.FIREBASE_PANEL_DOC || {};
         cloudState.docRef = cloudState.tools.doc(cloudState.db, panel.collection || "paineis", panel.document || "docas-am1");
@@ -18562,6 +18651,11 @@ body.editor-open .global-theme-toggle {
     document.getElementById("aduanaRailBtn")?.addEventListener("click", () => { currentView = "aduana"; renderViews(); });
     if (window.ControleAduana) {
       window.ControleAduana.onBack = () => { currentView = "docas"; dockDisplayMode = "overview"; renderViews(); document.getElementById("overviewRailBtn")?.focus(); };
+      window.ControleAduana.onSaveHistory = async () => {
+        const archive=await saveAduanaHistorySnapshot(data);
+        return archive ? {...archive.summary,savedAt:archive.savedAt||""} : null;
+      };
+      window.ControleAduana.onReadHistory = readAduanaHistorySnapshot;
       window.ControleAduana.onImportPhysical = async file => {
         if (!requireAdminAction()) throw new Error("Entre com o usuário administrador para importar IDs Físicos.");
         const date = finalAuditDateKey(data.data);
