@@ -27,7 +27,31 @@
         '<option value="'+esc(value)+'"'+(value===selected?' selected':'')+'>'+esc(value)+'</option>'
       ).join("")+'</optgroup>';
   let inventoryDay="",inventoryLoaded=false,inventoryLoading=false,inventoryById=Object.create(null);
+  let inventoryValueById=Object.create(null),inventoryValueEditingId="";
   let inventoryMessage="",inventorySaving="",inventoryBulkStatus="";
+  const formatReaisCents=cents=>cents===null||cents===undefined
+    ?"—":new Intl.NumberFormat("pt-BR",{style:"currency",currency:"BRL"}).format(cents/100);
+  function storedValueCents(id){
+    const value=inventoryValueById[String(id)];
+    return Number.isSafeInteger(value)&&value>=0?value:null;
+  }
+  function valueInputCents(raw){
+    let value=text(raw).replace(/\s/g,"").replace(/^R\$/i,"");
+    if(!value)return null;
+    if(/^\d{1,3}(?:\.\d{3})+(?:,\d{1,2})?$/.test(value))
+      value=value.replace(/\./g,"").replace(",",".");
+    else if(/^\d+(?:[,.]\d{1,2})?$/.test(value))
+      value=value.replace(",",".");
+    else throw new Error("Informe um valor em R$ válido. Exemplo: 125,90.");
+    const [reais,centavos=""]=value.split(".");
+    const cents=Number(reais)*100+Number(centavos.padEnd(2,"0"));
+    if(!Number.isSafeInteger(cents)||cents<0||cents>99999999999)
+      throw new Error("O valor deve estar entre R$ 0,00 e R$ 999.999.999,99.");
+    return cents;
+  }
+  function valueInputText(cents) {
+    return cents===null?"":(cents/100).toFixed(2).replace(".",",");
+  }
   const inventorySelected=new Set();
   function inventoryState(value,found=false) {
     if(found)return "Encontrado";
@@ -42,6 +66,20 @@
   }
   function inventoryPending(row) {
     return !row.match&&inventoryForId(row.id)==="Pendente";
+  }
+  function canEditValue(row) {
+    return !!row&&!row.match&&["Pendente","Não encontrado"].includes(inventoryForId(row.id));
+  }
+  function syncInventoryValueHistory(id,cents) {
+    const matches=row=>String(row.id)===String(id);
+    if(historyRecord?.date===inventoryDay&&Array.isArray(historyRecord.shipments))
+      for(const row of historyRecord.shipments)if(matches(row))row.inventoryValueCents=cents;
+    if(Array.isArray(historyRecords))
+      for(const day of historyRecords)if(day.date===inventoryDay&&Array.isArray(day.shipments))
+        for(const row of day.shipments)if(matches(row))row.inventoryValueCents=cents;
+    if(Array.isArray(historyGlobalResult?.matches))
+      for(const row of historyGlobalResult.matches)
+        if(row.date===inventoryDay&&matches(row))row.inventoryValueCents=cents;
   }
   function syncInventoryHistory(ids,status) {
     const keys=new Set(ids.map(String));
@@ -62,7 +100,8 @@
   function loadInventoryForDay(day) {
     if(inventoryDay!==day){
       inventoryDay=day;inventoryLoaded=false;inventoryLoading=false;
-      inventoryById=Object.create(null);inventoryMessage="";inventorySaving="";
+      inventoryById=Object.create(null);inventoryValueById=Object.create(null);
+      inventoryMessage="";inventorySaving="";inventoryValueEditingId="";
       inventorySelected.clear();
     }
     if(!day||inventoryLoading||inventoryLoaded||!window.ControleAduana?.onReadInventory||
@@ -72,11 +111,14 @@
     Promise.resolve().then(()=>window.ControleAduana.onReadInventory(requested)).then(rows=>{
       if(inventoryDay!==requested)return;
       if(!Array.isArray(rows))return;
-      const next=Object.create(null);
+      const next=Object.create(null),amounts=Object.create(null);
       for(const row of rows){
-        if(row?.id)next[String(row.id)]=inventoryState(row.inventoryStatus,row.found);
+        if(!row?.id)continue;
+        next[String(row.id)]=inventoryState(row.inventoryStatus,row.found);
+        const cents=row.inventoryValueCents;
+        amounts[String(row.id)]=Number.isSafeInteger(cents)&&cents>=0?cents:null;
       }
-      inventoryById=next;inventoryLoaded=true;inventoryMessage="";
+      inventoryById=next;inventoryValueById=amounts;inventoryLoaded=true;inventoryMessage="";
       renderRows();
     }).catch(err=>{
       if(inventoryDay!==requested)return;
