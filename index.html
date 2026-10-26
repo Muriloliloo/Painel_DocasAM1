@@ -12185,7 +12185,7 @@ body.editor-open .global-theme-toggle {
   <script src="firebase-config.js"></script>
   <script src="ondas-dados.js"></script>
   <script src="aduana-xlsx.js?v=20261024-r4"></script>
-  <script src="aduana-conferencia.js?v=20261026-r16"></script>
+  <script src="aduana-conferencia.js?v=20261026-r17"></script>
   <script>
     const storageKey = "ondas-dados";
     const syncMetaKey = `${storageKey}-sync-meta-v1`;
@@ -13911,6 +13911,30 @@ body.editor-open .global-theme-toggle {
       if(!record.exists()||record.data()?.kind!=="aduana-am1-history")return null;
       const r=record.data();
       return {...r.summary,savedAt:r.savedAt||""};
+    }
+    // Consulta limitada aos 30 documentos diários, sem depender de índices compostos
+    // do Firestore ou de armazenar grandes históricos no documento operacional.
+    async function readAduanaHistoryRange(endingDay,numberOfDays) {
+      checkAduanaHistoryDay(endingDay);
+      const count=Number(numberOfDays);
+      if(count!==7&&count!==30)throw new Error("Período inválido: selecione 7 ou 30 dias.");
+      if(!cloudState.ready||!cloudState.db)throw new Error("Firebase desconectado. Verifique a conexão.");
+      const days=[];
+      const earliest=aduanaHistoryDateBounds().start;
+      const day=new Date(endingDay+"T12:00:00Z");
+      for(let i=0;i<count;i++){
+        const iso=day.toISOString().slice(0,10);
+        if(iso<earliest)break;
+        days.push(iso);
+        day.setUTCDate(day.getUTCDate()-1);
+      }
+      const found=await Promise.all(days.map(async iso=>{
+        const record=await cloudState.tools.getDoc(aduanaHistoryDoc(iso));
+        if(!record.exists()||record.data()?.kind!=="aduana-am1-history")return null;
+        const archive=record.data();
+        return {...archive.summary,savedAt:archive.savedAt||""};
+      }));
+      return found.filter(Boolean).sort((a,b)=>String(a.date).localeCompare(String(b.date)));
     }
 
     async function saveDataToCloud() {
@@ -18661,6 +18685,7 @@ body.editor-open .global-theme-toggle {
         return archive ? {...archive.summary,savedAt:archive.savedAt||""} : null;
       };
       window.ControleAduana.onReadHistory = readAduanaHistorySnapshot;
+      window.ControleAduana.onReadHistoryRange = readAduanaHistoryRange;
       window.ControleAduana.onImportPhysical = async file => {
         if (!requireAdminAction()) throw new Error("Entre com o usuário administrador para importar IDs Físicos.");
         const date = finalAuditDateKey(data.data);
