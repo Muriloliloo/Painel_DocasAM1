@@ -12,6 +12,44 @@
   const $ = id => document.getElementById(id);
   const TYPES = ["", "GM", "Volumoso", "Outro"];
   const COLORS = ["", "Amarelo", "Azul", "Vermelho", "Verde"];
+  const INVENTORY_STATUSES = ["Pendente", "Encontrado", "Não encontrado"];
+  let inventoryDay="",inventoryLoaded=false,inventoryLoading=false,inventoryById=Object.create(null);
+  let inventoryMessage="",inventorySaving="";
+  function inventoryState(value) {
+    return INVENTORY_STATUSES.includes(value)?value:"Pendente";
+  }
+  function inventoryIso(dateBR) {
+    const p=text(dateBR).match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+    return p?p[3]+"-"+p[2]+"-"+p[1]:"";
+  }
+  function inventoryForId(id) {
+    return inventoryState(inventoryById[String(id)]);
+  }
+  function loadInventoryForDay(day) {
+    if(inventoryDay!==day){
+      inventoryDay=day;inventoryLoaded=false;inventoryLoading=false;
+      inventoryById=Object.create(null);inventoryMessage="";inventorySaving="";
+    }
+    if(!day||inventoryLoading||inventoryLoaded||!window.ControleAduana?.onReadInventory||
+       !window.ControleAduana?.canEditInventory?.())return;
+    inventoryLoading=true;
+    const requested=day;
+    Promise.resolve().then(()=>window.ControleAduana.onReadInventory(requested)).then(rows=>{
+      if(inventoryDay!==requested)return;
+      if(!Array.isArray(rows))return;
+      const next=Object.create(null);
+      for(const row of rows){
+        if(row?.id)next[String(row.id)]=inventoryState(row.inventoryStatus);
+      }
+      inventoryById=next;inventoryLoaded=true;inventoryMessage="";
+      renderRows();
+    }).catch(err=>{
+      if(inventoryDay!==requested)return;
+      inventoryMessage="Falha ao carregar inventário: "+(err?.message||String(err));
+      renderRows();
+    }).finally(()=>{if(inventoryDay===requested)inventoryLoading=false;});
+  }
+
   let mode = "todos", query = "", current = null;
   const modelDate = value => {
     const v = text(value);
@@ -368,6 +406,20 @@
     return '<select aria-label="Classificação '+kind+' do ID '+esc(id)+'" data-aduana-kind="'+kind+'" data-aduana-id="'+esc(id)+'">'+
       items.map(item=>'<option value="'+esc(item)+'"'+(item===value?' selected':'')+'>'+esc(item||"—")+'</option>').join("")+'</select>';
   }
+  function inventorySelector(id) {
+    const status=inventoryForId(id);
+    const editable=inventoryLoaded&&window.ControleAduana?.canEditInventory?.();
+    return '<select aria-label="Inventário do Shipment ID '+esc(id)+'" data-aduana-inventory="'+esc(id)+'"'+
+      (editable&&inventorySaving!==String(id)?'':' disabled')+'>'+
+      INVENTORY_STATUSES.map(value=>
+        '<option value="'+esc(value)+'"'+(value===status?' selected':'')+'>'+esc(value)+'</option>'
+      ).join("")+'</select>';
+  }
+  function inventoryCounters(rows) {
+    const counts={"Pendente":0,"Encontrado":0,"Não encontrado":0};
+    for(const row of rows)counts[inventoryForId(row.id)]++;
+    return counts;
+  }
   function renderRows() {
     if (!current || !$("aduanaDetails")) return;
     const m=current;
@@ -376,15 +428,27 @@
       if(mode==="faltantes"&&row.origem!=="Sistema")return false;
       return !query||[row.id,row.rota,row.side,row.ladoFisico,row.origem].some(value=>norm(value).includes(norm(query)));
     });
-    $("aduanaRowsCount").textContent=visible.length+" registro(s) do sistema"+(mode==="faltantes"?" ainda não localizados por ID":"");
+    const inventory=inventoryCounters(m.rows);
+    $("aduanaRowsCount").textContent=visible.length+" registro(s) do sistema"+
+      (mode==="faltantes"?" ainda não localizados por ID":"")+
+      " · Inventário: "+inventory.Encontrado+" encontrado(s) · "+
+      inventory["Não encontrado"]+" não encontrado(s) · "+inventory.Pendente+" pendente(s)";
+    const info=$("aduanaInventoryStatus");
+    if(info)info.textContent=inventoryMessage||
+      (inventoryLoading?"Consultando inventário no Firebase...":
+       !window.ControleAduana?.canEditInventory?.()?
+         "Entre como administrador para verificar o inventário.":
+       !inventoryLoaded?"Carregando situação do inventário...":
+       "Alterações do inventário são salvas no histórico privado do Firebase.");
     $("aduanaDetails").innerHTML=visible.length?visible.map(row=>{
       const editable=m.physicalReady&&row.origem==="Físico";
       const tag=row.origem==="Físico"?(row.match?"ok":"warn"):"fail";
       return '<tr><td>'+esc(row.id)+'</td><td>'+esc(row.origem)+'</td><td>'+esc(row.side)+'</td><td>'+esc(row.ladoFisico||"—")+'</td><td>'+esc(row.rota)+'</td><td>'+esc(row.doca)+'</td>'+
         '<td><span class="aduana-tag '+tag+'">'+esc(row.situacao)+'</span></td><td>'+
         (editable?selector("tipo",row.id,row.tipo,TYPES):"—")+'</td><td>'+
-        (editable?selector("cor",row.id,row.cor,COLORS):"—")+'</td></tr>';
-    }).join(""):'<tr><td colspan="9" style="padding:24px;text-align:center">Nenhum registro para os filtros selecionados.</td></tr>';
+        (editable?selector("cor",row.id,row.cor,COLORS):"—")+'</td><td>'+
+        inventorySelector(row.id)+'</td></tr>';
+    }).join(""):'<tr><td colspan="10" style="padding:24px;text-align:center">Nenhum registro para os filtros selecionados.</td></tr>';
   }
   // Snapshot compacto: não grava Shipment IDs, nomes de motoristas nem linhas brutas
   // em documentos históricos potencialmente acessíveis a leitores do painel.
@@ -709,6 +773,7 @@
     if (!$("aduanaView")) return;
     installStyles();
     const m = current = calculate(data,packageModel);
+    loadInventoryForDay(inventoryIso(m.date));
     const guidance = !m.systemReady
       ? "Importe e aplique o CSV ou XLSX <b>audited_shipments</b> do sistema. Sem essa base, nenhuma bipagem física será contabilizada."
       : !m.physicalReady
@@ -771,8 +836,9 @@
       [['todos','Todos'],['encontrados','Encontrados no sistema'],['faltantes','Não encontrados']].map(item=>
         '<button type="button" class="aduana-filter '+(mode===item[0]?'active':'')+'" data-aduana-mode="'+item[0]+'">'+item[1]+'</button>').join("")+
       '<input id="aduanaSearch" aria-label="Buscar Shipment ID, rota ou lado" placeholder="Buscar ID, rota ou lado..." type="search" value="'+esc(query)+'"></div>'+
-      '<p class="aduana-muted" id="aduanaRowsCount"></p></div>'+
-      '<div class="aduana-scroll"><table class="aduana-detail"><thead><tr><th>Shipment ID</th><th>Origem</th><th>Lado Sistema</th><th>Lado Físico</th><th>Rota</th><th>Doca</th><th>Conferência</th><th>Tipo</th><th>Cor</th></tr></thead><tbody id="aduanaDetails"></tbody></table></div>'+
+      '<p class="aduana-muted" id="aduanaRowsCount"></p>'+
+      '<p class="aduana-muted" id="aduanaInventoryStatus" role="status"></p></div>'+
+      '<div class="aduana-scroll"><table class="aduana-detail"><thead><tr><th>Shipment ID</th><th>Origem</th><th>Lado Sistema</th><th>Lado Físico</th><th>Rota</th><th>Doca</th><th>Conferência</th><th>Tipo</th><th>Cor</th><th>Inventário</th></tr></thead><tbody id="aduanaDetails"></tbody></table></div>'+
       '<div class="aduana-exports"><button type="button" class="aduana-btn primary" data-aduana-export="confronto">Baixar confronto CSV</button>'+
       '<button type="button" class="aduana-btn" data-aduana-export="sistema">Baixar CSV Sistema</button>'+
       '<button type="button" class="aduana-btn" data-aduana-export="fisico">Baixar CSV IDs Físicos</button>'+
@@ -886,9 +952,45 @@
       renderRows();
     }));
     $("aduanaView").querySelectorAll("[data-aduana-export]").forEach(button=>button.addEventListener("click",()=>exportCsv(button.dataset.aduanaExport)));
-    $("aduanaDetails")?.addEventListener("change",event=>{
+    $("aduanaDetails")?.addEventListener("change",async event=>{
+      const inventory=event.target.closest("select[data-aduana-inventory]");
+      if(inventory){
+        const id=inventory.dataset.aduanaInventory;
+        const previous=inventoryForId(id);
+        const selected=inventory.value;
+        if(previous===selected)return;
+        inventorySaving=id;
+        inventoryMessage="Salvando verificação do ID "+id+" no Firebase...";
+        inventory.disabled=true;
+        const message=$("aduanaInventoryStatus");
+        if(message)message.textContent=inventoryMessage;
+        try{
+          if(!window.ControleAduana?.onSetInventory)
+            throw new Error("Integração com Firebase indisponível.");
+          await window.ControleAduana.onSetInventory(inventoryDay,id,selected);
+          inventoryById[id]=selected;
+          inventoryLoaded=true;
+          inventoryMessage="Inventário do Shipment ID "+id+" registrado: "+selected+".";
+          // Mantenha também as consultas abertas consistentes com a edição.
+          if(historyRecord?.date===inventoryDay&&Array.isArray(historyRecord.shipments)){
+            for(const row of historyRecord.shipments)if(String(row.id)===id)row.inventoryStatus=selected;
+          }
+          if(Array.isArray(historyRecords)){
+            for(const day of historyRecords)if(day.date===inventoryDay&&Array.isArray(day.shipments)){
+              for(const row of day.shipments)if(String(row.id)===id)row.inventoryStatus=selected;
+            }
+          }
+        }catch(err){
+          inventoryMessage="Não foi possível salvar o inventário do ID "+id+": "+(err?.message||String(err));
+        }finally{
+          inventorySaving="";
+          renderRows();
+          if(historyOpen)renderHistoryRecord();
+        }
+        return;
+      }
       const select=event.target.closest("select[data-aduana-kind]");
-      if (select) window.ControleAduana?.onClassify?.(select.dataset.aduanaId,select.dataset.aduanaKind,select.value);
+      if(select)window.ControleAduana?.onClassify?.(select.dataset.aduanaId,select.dataset.aduanaKind,select.value);
     });
     renderRows();
   }
