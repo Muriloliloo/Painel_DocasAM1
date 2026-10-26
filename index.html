@@ -12185,7 +12185,7 @@ body.editor-open .global-theme-toggle {
   <script src="firebase-config.js"></script>
   <script src="ondas-dados.js"></script>
   <script src="aduana-xlsx.js?v=20261024-r4"></script>
-  <script src="aduana-conferencia.js?v=20261026-r25"></script>
+  <script src="aduana-conferencia.js?v=20261026-r26"></script>
   <script>
     const storageKey = "ondas-dados";
     const syncMetaKey = `${storageKey}-sync-meta-v1`;
@@ -13859,7 +13859,7 @@ body.editor-open .global-theme-toggle {
     }
     // Inventario e independente da conciliacao sistema x fisico.
     // Historicos legados que ainda nao possuem inventario ficam Pendentes.
-    const ADUANA_INVENTORY_STATUSES=["Pendente","Encontrado","Não encontrado"];
+    const ADUANA_INVENTORY_STATUSES=["Pendente","Encontrado","Não encontrado","Devolvido","Vinculado","Atrelado","Em rota"];
     function normalizedAduanaInventory(value,found=false) {
       if(found)return "Encontrado";
       return ADUANA_INVENTORY_STATUSES.includes(value)?value:"Pendente";
