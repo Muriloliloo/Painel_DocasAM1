@@ -320,7 +320,7 @@
     ".aduana-history-panel[hidden]{display:none!important}",
     ".aduana-history-search{display:flex;flex-wrap:wrap;gap:10px;align-items:end}",
     ".aduana-history-search label{font-size:12px;font-weight:850;display:grid;gap:5px}",
-    ".aduana-history-search input{border:1px solid #a9bfd0;border-radius:6px;min-height:37px;padding:6px 9px}",
+    ".aduana-history-search input,.aduana-history-search select{border:1px solid #a9bfd0;border-radius:6px;min-height:37px;padding:6px 9px;background:#fff;color:#153751}",
     ".aduana-history-summary{display:flex;flex-wrap:wrap;gap:12px;margin:12px 0;padding:12px;background:#fff2c2;border-radius:7px;align-items:center}",
     ".aduana-history-summary strong{font-size:15px}",
     ".aduana-history-table{overflow:auto}",
@@ -403,7 +403,7 @@
       sides,classifications,ignoredPhysical:m.ignoredPhysicalIds.length,
       validPhysicalCount:m.totalFound,version:1};
   }
-  let historyOpen=false,historyRecord=null,historyStatus="",historyDate="";
+  let historyOpen=false,historyRecord=null,historyRecords=null,historyPeriod="dia",historyStatus="",historyDate="";
   function historyNowIso() {
     const parts=new Intl.DateTimeFormat("en-US",{timeZone:"America/Sao_Paulo",year:"numeric",month:"2-digit",day:"2-digit"}).formatToParts(new Date());
     const p=Object.fromEntries(parts.map(part=>[part.type,part.value]));
@@ -415,10 +415,42 @@
     d.setUTCDate(d.getUTCDate()-29);
     return d.toISOString().slice(0,10);
   }
+  function historyPeriodSummary() {
+    const records=historyRecords||[];
+    const header=historyPeriod==="semana"?"7 dias até "+historyDate:"Últimos 30 dias";
+    if(!records.length)return '<p class="aduana-muted">Nenhum fechamento salvo encontrado no período. Dias sem registro não foram contabilizados.</p>';
+    const totals={system:0,found:0,missing:0};
+    const sides=new Map(),cls={};
+    const byDate=records.map(r=>{
+      for(const field of ["system","found","missing"])totals[field]+=Number(r.totals?.[field]||0);
+      for(const side of r.sides||[]){
+        const old=sides.get(side.side)||{label:side.label||side.side,system:0,found:0,missing:0};
+        for(const field of ["system","found","missing"])old[field]+=Number(side[field]||0);
+        sides.set(side.side,old);
+      }
+      for(const [name,val] of Object.entries(r.classifications||{}))cls[name]=(cls[name]||0)+Number(val||0);
+      return '<tr><td>'+esc(r.dateBR||r.date)+'</td><td>'+Number(r.totals?.system||0)+'</td>'+
+        '<td>'+Number(r.totals?.found||0)+'</td><td>'+Number(r.totals?.missing||0)+'</td></tr>';
+    }).join("");
+    const classificationText=[["Volumoso","volumoso"],["GM","gm"],["Amarelo","amarelo"],["Azul","azul"],["Vermelho","vermelho"],["Verde","verde"]]
+      .map(([name,key])=>name+": "+(cls[key]||0)).join(" · ");
+    const sideRows=[...sides.values()].map(r=>'<tr><td>'+esc(r.label)+'</td><td>'+r.system+'</td><td>'+r.found+'</td><td>'+r.missing+'</td></tr>').join("");
+    return '<div class="aduana-history-summary"><strong>'+esc(header)+'</strong>'+
+      '<span>Operações arquivadas: <b>'+records.length+'</b></span>'+
+      '<span>Sistema: <b>'+totals.system+'</b></span>'+
+      '<span>Encontrados: <b>'+totals.found+'</b></span>'+
+      '<span>Não encontrados: <b>'+totals.missing+'</b></span></div>'+
+      '<div class="aduana-history-table"><table class="aduana-table"><thead><tr><th>Data</th><th>Sistema</th><th>Encontrados</th><th>Não encontrados</th></tr></thead><tbody>'+byDate+'</tbody></table></div>'+
+      '<h4>Consolidado por setor</h4>'+
+      '<div class="aduana-history-table"><table class="aduana-table"><thead><tr><th>Setor</th><th>Sistema</th><th>Encontrados</th><th>Não encontrados</th></tr></thead><tbody>'+sideRows+'</tbody></table></div>'+
+      '<p class="aduana-history-class"><b>Classificações:</b> '+esc(classificationText)+'</p>'+
+      '<p class="aduana-muted">Somatório das operações com histórico disponível, não de IDs únicos entre datas. Dias sem registro não entram no somatório.</p>';
+  }
   function renderHistoryRecord() {
     const container=$("aduanaHistoryResult");
     if(!container)return;
-    if(!historyRecord){container.innerHTML='<p class="aduana-muted">Escolha uma data e clique em Consultar para recuperar o fechamento salvo.</p>';return;}
+    if(historyRecords!==null){container.innerHTML=historyPeriodSummary();return;}
+    if(!historyRecord){container.innerHTML='<p class="aduana-muted">Selecione uma data ou período e clique em Consultar.</p>';return;}
     const r=historyRecord;
     const sideRows=(Array.isArray(r.sides)?r.sides:[]).map(item=>
       '<tr><td>'+esc(item.label||item.side)+'</td><td>'+esc(item.coordinator||"Não informado")+'</td>'+
@@ -463,7 +495,11 @@
       '<button type="button" class="aduana-btn primary" id="aduanaHistorySave">Salvar fechamento no histórico</button>'+
       '<button type="button" class="aduana-btn" id="aduanaHistoryToggle" aria-expanded="'+(historyOpen?'true':'false')+'">'+(historyOpen?'Ocultar histórico':'Consultar histórico · 30 dias')+'</button>'+
       '</div><div class="aduana-history-panel" id="aduanaHistoryPanel"'+(historyOpen?'':' hidden')+'>'+
-      '<div class="aduana-history-search"><label>Data da expedição<input type="date" id="aduanaHistoryDate" min="'+historyMinimumIso()+'" max="'+historyNowIso()+'" value="'+esc(historyDate||historyNowIso())+'"></label>'+
+      '<div class="aduana-history-search"><label>Período<select id="aduanaHistoryPeriod">'+
+      [['dia','Dia específico'],['semana','7 dias até a data escolhida'],['mes','Últimos 30 dias']].map(([value,label])=>
+        '<option value="'+value+'"'+(historyPeriod===value?' selected':'')+'>'+label+'</option>').join("")+
+      '</select></label>'+
+      '<label id="aduanaHistoryDateLabel">Data de referência<input type="date" id="aduanaHistoryDate" min="'+historyMinimumIso()+'" max="'+historyNowIso()+'" value="'+esc(historyDate||historyNowIso())+'"></label>'+
       '<button type="button" class="aduana-btn primary" id="aduanaHistoryFind">Consultar</button></div>'+
       '<p class="aduana-muted" id="aduanaHistoryStatus" role="status">'+esc(historyStatus)+'</p>'+
       '<div id="aduanaHistoryResult"></div>'+
@@ -516,29 +552,50 @@
       try {
         const saved=await window.ControleAduana?.onSaveHistory?.();
         if(!saved)throw new Error("Firebase indisponível ou sem permissão de gravação.");
-        historyRecord=saved;historyDate=saved.date;historyOpen=true;
+        historyRecord=saved;historyRecords=null;historyPeriod="dia";historyDate=saved.date;historyOpen=true;
         const panel=$("aduanaHistoryPanel");if(panel)panel.hidden=false;
         const toggle=$("aduanaHistoryToggle");
         if(toggle){toggle.textContent="Ocultar histórico";toggle.setAttribute("aria-expanded","true");}
         const input=$("aduanaHistoryDate");if(input)input.value=historyDate;
+        const period=$("aduanaHistoryPeriod");if(period)period.value="dia";
+        const label=$("aduanaHistoryDateLabel");if(label)label.hidden=false;
         renderHistoryRecord();
         updateHistoryStatus("Fechamento arquivado com sucesso no Firebase.");
       } catch(err){updateHistoryStatus("Não foi possível salvar: "+(err?.message||String(err)));}
       finally{if(btn)btn.disabled=false;}
     });
+    $("aduanaHistoryPeriod")?.addEventListener("change",event=>{
+      historyPeriod=event.target.value;
+      const label=$("aduanaHistoryDateLabel");if(label)label.hidden=historyPeriod==="mes";
+      historyRecord=null;historyRecords=null;
+      renderHistoryRecord();
+    });
     $("aduanaHistoryFind")?.addEventListener("click",async()=>{
-      const input=$("aduanaHistoryDate"),day=input?.value||"";
-      if(!day||day<historyMinimumIso()||day>historyNowIso()){updateHistoryStatus("Selecione uma data dentro dos últimos 30 dias.");return;}
-      historyDate=day;
+      const selected=$("aduanaHistoryPeriod")?.value||"dia";
+      const day=$("aduanaHistoryDate")?.value||"";
+      if(selected!=="mes"&&(!day||day<historyMinimumIso()||day>historyNowIso())){
+        updateHistoryStatus("Selecione uma data dentro dos últimos 30 dias.");return;
+      }
+      historyDate=selected==="mes"?historyNowIso():day;
+      historyPeriod=selected;
       const btn=$("aduanaHistoryFind");if(btn)btn.disabled=true;
       updateHistoryStatus("Consultando histórico no Firebase...");
       try {
-        historyRecord=await window.ControleAduana?.onReadHistory?.(day)||null;
+        if(selected==="dia"){
+          historyRecords=null;
+          historyRecord=await window.ControleAduana?.onReadHistory?.(day)||null;
+          updateHistoryStatus(historyRecord?"Fechamento localizado.":"Não existe fechamento arquivado para esta data.");
+        }else{
+          historyRecord=null;
+          historyRecords=await window.ControleAduana?.onReadHistoryRange?.(historyDate,selected==="semana"?7:30);
+          if(!Array.isArray(historyRecords))throw new Error("Consulta por período indisponível.");
+          updateHistoryStatus(historyRecords.length+" operação(ões) arquivada(s) encontrada(s) no período.");
+        }
         renderHistoryRecord();
-        updateHistoryStatus(historyRecord?"Fechamento localizado.":"Não existe fechamento arquivado para esta data.");
-      }catch(err){historyRecord=null;renderHistoryRecord();updateHistoryStatus("Falha na consulta: "+(err?.message||String(err)));}
+      }catch(err){historyRecord=null;historyRecords=null;renderHistoryRecord();updateHistoryStatus("Falha na consulta: "+(err?.message||String(err)));}
       finally{if(btn)btn.disabled=false;}
     });
+    const dateLabel=$("aduanaHistoryDateLabel");if(dateLabel)dateLabel.hidden=historyPeriod==="mes";
     if(historyOpen)renderHistoryRecord();
     $("aduanaReimportFile")?.addEventListener("change",async event=>{
       const file=event.target.files?.[0];
@@ -589,5 +646,5 @@
     window.setTimeout(()=>URL.revokeObjectURL(url),1000);
   }
   window.ControleAduana = { parsePhysicalCsv, parsePhysicalFile, render, historySnapshot,
-    onBack:null, onClassify:null, onImportPhysical:null, onSaveHistory:null, onReadHistory:null };
+    onBack:null, onClassify:null, onImportPhysical:null, onSaveHistory:null, onReadHistory:null, onReadHistoryRange:null };
 })();
