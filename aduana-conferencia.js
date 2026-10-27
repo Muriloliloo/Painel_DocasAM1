@@ -217,7 +217,7 @@
       if(!row.tipo)unclassified++;
     }
     if(sideCol<0)throw new Error("O arquivo contém IDs, mas não a coluna Lados. Confira o cabeçalho da planilha física.");
-    if(unknownSides===ids.size)throw new Error("Nenhum dos lados da planilha foi reconhecido. Aceitos: LADO CENTRAL B, LADO CENTRAL C, LADO PAREDE e LINE HALL.");
+    if(unknownSides===ids.size)throw new Error("Nenhum dos lados da planilha foi reconhecido. Aceitos: LADO CENTRAL B, LADO CENTRAL C, LADO CENTRAL D, LADO PAREDE e LINE HALL.");
     return {
       ids:[...ids],details,duplicates,invalid,blank,
       sideCounts,colorCounts,unknownSides,unclassified,
@@ -256,7 +256,7 @@
     if (/\b(?:line hall|linha hall|lh|lado e|setor e)\b/.test(side) || side==="e") return "Lado E";
     if (/\b(?:central b|lado b|setor b)\b/.test(side) || side==="b") return "Lado B";
     if (/\b(?:central c|lado c|setor c)\b/.test(side) || side==="c") return "Lado C";
-    if (/\b(?:parede|lado d|setor d)\b/.test(side) || side==="d") return "Lado D";
+    if (/\b(?:central d|parede|lado d|setor d)\b/.test(side) || side==="d") return "Lado D";
     if (/\b(?:heineken|lado a|setor a)\b/.test(side) || side==="a") return "Lado A";
     return "Não identificado";
   }
