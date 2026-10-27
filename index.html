@@ -12185,7 +12185,7 @@ body.editor-open .global-theme-toggle {
   <script src="firebase-config.js"></script>
   <script src="ondas-dados.js"></script>
   <script src="aduana-xlsx.js?v=20261024-r4"></script>
-  <script src="aduana-conferencia.js?v=20261026-r30"></script>
+  <script src="aduana-conferencia.js?v=20261027-r31"></script>
   <script>
     const storageKey = "ondas-dados";
     const syncMetaKey = `${storageKey}-sync-meta-v1`;
@@ -17423,7 +17423,7 @@ body.editor-open .global-theme-toggle {
       node.textContent = `${pendingPhysicalAudit.fileName || "IDs Físicos"} • ${ids.length} IDs únicos • ` +
         (detailCount === ids.length
           ? `Lados reconhecidos: A ${counts["Lado A"] ?? 0}, B ${counts["Lado B"] ?? "—"}, C ${counts["Lado C"] ?? "—"}, D ${counts["Lado D"] ?? "—"}, E/LH ${counts["Lado E"] ?? counts.LH ?? "—"}.`
-          : `ATENÇÃO: somente ${detailCount}/${ids.length} IDs têm lado salvo; reimporte o XLSX completo.`) +
+          : `ATENÇÃO: ${ids.length-detailCount} ID(s) sem lado físico reconhecido; todos os IDs serão conciliados pelo lado do sistema. Confira a coluna Lados, se necessário.`) +
         ` • ${Number(pendingPhysicalAudit.duplicates || 0)} duplicados ignorados.`;
     }
 
@@ -19040,10 +19040,9 @@ body.editor-open .global-theme-toggle {
           const side = parsed.details?.[id]?.ladoFisico;
           return side && side !== "Não identificado";
         }).length;
-        if (recognized !== parsed.ids.length) throw new Error(
-          "Importação cancelada para não perder classificações: " +
-          recognized + "/" + parsed.ids.length +
-          " IDs têm lado reconhecido. Confira a coluna Lados do arquivo original."
+        if (recognized !== parsed.ids.length) console.warn(
+          "IDs físicos com lado não identificado:", parsed.ids.length-recognized,
+          "Todos os IDs válidos serão comparados com o CSV do sistema, mantendo o lado do sistema nas contagens."
         );
         // Substitui a leitura física por uma cópia completa (ID, Lado, Cor e Tipo).
         // Não altera o relatório aduanaFechamentoFinal do sistema.
@@ -19305,10 +19304,11 @@ body.editor-open .global-theme-toggle {
       if (!requireAdminAction()) return;
       const editorDate = confirmEditorDateBeforeApply();
       if (!editorDate) return;
+      // Um lado físico desconhecido gera aviso, mas não deve impedir salvar
+      // IDs que serão conciliados pelo lado atribuído no relatório do sistema.
       if (pendingPhysicalAudit?.schemaVersion >= 3 && Number(pendingPhysicalAudit.unknownSides || 0) > 0) {
-        alert("A planilha de IDs Físicos contém " + pendingPhysicalAudit.unknownSides +
-          " pacote(s) sem lado válido. Revise a coluna Lados para preservar a distribuição correta.");
-        return;
+        console.warn("IDs físicos sem lado reconhecido:", pendingPhysicalAudit.unknownSides,
+          "A conciliação será por Shipment ID e os totais por lado seguem a base do sistema.");
       }
       const applyButton = document.getElementById("applyBtn");
       const pasteStatus = document.getElementById("pasteClearStatus");
