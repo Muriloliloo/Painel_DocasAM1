@@ -11,7 +11,28 @@
   const idKey = value => { const raw=text(value).replace(/^\uFEFF/, "").replace(/^'/, ""); return /^[+]?[0-9]+(?:\.[0-9]+)?e[+]?[0-9]+$/i.test(raw) && Number.isSafeInteger(Number(raw)) ? String(Number(raw)) : raw.toUpperCase(); };
   const $ = id => document.getElementById(id);
   const TYPES = ["", "GM", "Volumoso", "Outro"];
-  const COLORS = ["", "Amarelo", "Azul", "Vermelho", "Verde"];
+  // Aceita qualquer cor presente no arquivo físico, sem lista fechada.
+  // Padroniza maiúsculas/espaços para evitar linhas duplicadas ("LARANJA"/"laranja").
+  const BASE_COLORS = ["Amarelo", "Azul", "Vermelho", "Verde"];
+  function physicalColor(value) {
+    const raw=text(value).replace(/\s+/g," ").trim().slice(0,60);
+    if(!raw||/^(?:-|—|n\/a|na|sem cor|não informado|nao informado)$/i.test(raw))return "";
+    return raw.toLocaleLowerCase("pt-BR")
+      .replace(/(^|[\s/-])([a-zà-ÿ])/g,(_all,b,c)=>b+c.toLocaleUpperCase("pt-BR"));
+  }
+  function sortedColors(colors) {
+    return [...new Set([...BASE_COLORS,...colors].map(physicalColor).filter(Boolean))]
+      .sort((a,b)=>a.localeCompare(b,"pt-BR",{sensitivity:"base"}));
+  }
+  function historicColorEntries(classifications) {
+    const colorMap=classifications?.cores;
+    if(colorMap&&typeof colorMap==="object"&&!Array.isArray(colorMap)) {
+      return Object.entries(colorMap).filter(([name])=>physicalColor(name))
+        .map(([name,value])=>[physicalColor(name),Number(value)||0]);
+    }
+    // Compatibilidade com resumos salvos antes da classificação dinâmica.
+    return BASE_COLORS.map(name=>[name,Number(classifications?.[norm(name)]||0)]);
+  }
   const INVENTORY_EXTRA_STATUSES = ["Devolvido", "Vinculado", "Atrelado", "Em rota", "Entregue", "Envio cancelado", "Avaria", "Solução de problemas"];
   const INVENTORY_STATUSES = ["Pendente", "Encontrado", "Não encontrado", ...INVENTORY_EXTRA_STATUSES];
   // Somente Pendente e Nao encontrado continuam no saldo nao localizado.
@@ -199,21 +220,20 @@
       const tipoVol=volumosoCol>=0&&["volumoso","sim","x","1","true"].includes(norm(row[volumosoCol]));
       const tipoGm=gmCol>=0&&["gm","sim","x","1","true"].includes(norm(row[gmCol]));
       const tipo=tipoVol?"Volumoso":tipoGm?"GM":tipoRaw.includes("volum")?"Volumoso":tipoRaw==="gm"?"GM":tipoRaw?"Outro":"";
-      const corRaw=norm(colorCol>=0?row[colorCol]:"");
-      const cor=COLORS.find(value=>value&&norm(value)===corRaw)||"";
+      const cor=physicalColor(colorCol>=0?row[colorCol]:"");
       const ladoFisico=sideCol>=0?sideFromPhysical(row[sideCol]):"";
       // Sempre preserve objeto completo por ID, inclusive os campos ausentes.
       details[id]={tipo,cor,ladoFisico};
     }
     if(!ids.size)throw new Error("Nenhum Shipment ID válido foi encontrado no arquivo físico.");
     const sideCounts={"Lado A":0,"Lado B":0,"Lado C":0,"Lado D":0,"Lado E":0};
-    const colorCounts={"Amarelo":0,"Azul":0,"Vermelho":0,"Verde":0};
+    const colorCounts=Object.create(null);
     let unknownSides=0,unclassified=0;
     for(const id of ids) {
       const row=details[id];
       if(Object.prototype.hasOwnProperty.call(sideCounts,row.ladoFisico))sideCounts[row.ladoFisico]++;
       else unknownSides++;
-      if(row.cor&&Object.prototype.hasOwnProperty.call(colorCounts,row.cor))colorCounts[row.cor]++;
+      if(row.cor)colorCounts[row.cor]=(colorCounts[row.cor]||0)+1;
       if(!row.tipo)unclassified++;
     }
     if(sideCol<0)throw new Error("O arquivo contém IDs, mas não a coluna Lados. Confira o cabeçalho da planilha física.");
@@ -338,7 +358,7 @@
       matchedPhysical.push({
         id,origem:"Físico",side:match.side,
         ladoFisico:sideFromPhysical(d.ladoFisico||d.lados||d.Lados||d.lado||d.side)||"Não identificado",
-        rota:match.rota,doca:match.doca,tipo:text(d.tipo),cor:text(d.cor),
+        rota:match.rota,doca:match.doca,tipo:text(d.tipo),cor:physicalColor(d.cor),
         situacao:"Encontrado",match:true
       });
     }
@@ -348,7 +368,7 @@
       const match=matchedIds.has(row.id);
       return {
         ...row,ladoFisico:match?sideFromPhysical(d.ladoFisico||d.lados||d.Lados||d.lado||d.side):"",
-        tipo:match?text(d.tipo):"",cor:match?text(d.cor):"",
+        tipo:match?text(d.tipo):"",cor:match?physicalColor(d.cor):"",
         situacao:match?"Encontrado":physicalReady?"Não encontrado":"Aguardando físico",
         match
       };
@@ -359,6 +379,9 @@
     const sideNames=[...SIDE_ZONES.map(zone=>zone.side),"Não identificado"];
     const total=systemIds.size;
     const totalFound=matchedPhysical.length;
+    const colors=sortedColors(matchedPhysical.map(row=>row.cor));
+    const colorCounts=Object.fromEntries(colors.map(color=>
+      [color,matchedPhysical.filter(row=>row.cor===color).length]));
     const totalMissing=physicalReady&&systemReady?total-totalFound:0;
     const physicalUnmapped=matchedPhysical.filter(row=>!sideNames.includes(row.ladoFisico)||row.ladoFisico==="Não identificado").length;
     // Falta de lado no CSV não impede confronto por ID: apenas sinaliza.
@@ -375,6 +398,7 @@
     return {
       date,systemReady,physicalReady,rows,physicalRows:matchedPhysical,systemRows,sides,
       physical,final,total,totalFound,totalMissing,totalPhysical:totalFound,
+      colors,colorCounts,
       matchedCount:totalFound,
       unmatchedPhysical:0,unmatchedSystem:systemUnmatched.length,
       crossSides:crossSides.size,
@@ -384,7 +408,7 @@
       onlyPhysical:0,
       sideMismatches:matchedPhysical.filter(row=>row.ladoFisico!=="Não identificado"&&row.ladoFisico!==row.side).length,
       countType:tipo=>matchedPhysical.filter(row=>row.tipo===tipo).length,
-      countColor:cor=>matchedPhysical.filter(row=>row.cor===cor).length
+      countColor:cor=>colorCounts[physicalColor(cor)]||0
     };
   }
   const styles = [
@@ -463,7 +487,7 @@
     ".aduana-detail td{border-bottom:1px solid #e1e8ee;padding:8px 9px}",
     ".aduana-detail tr:nth-child(even){background:#f3f7fa}",
     ".aduana-detail td:first-child{font-family:Consolas,monospace;font-weight:800;word-break:break-all}",
-    ".aduana-detail select{max-width:125px;width:100%;padding:5px;border:1px solid #b5c5d1;border-radius:5px;background:#fff;color:#152c40}",
+    ".aduana-detail select,.aduana-detail input[data-aduana-kind=cor]{max-width:145px;width:100%;padding:5px;border:1px solid #b5c5d1;border-radius:5px;background:#fff;color:#152c40}",
     ".aduana-inventory-cell{display:flex;gap:8px;align-items:center;min-width:145px}",
     ".aduana-inventory-cell input[type=checkbox],.aduana-inventory-head input[type=checkbox]{width:16px;height:16px;flex:none;accent-color:#096499;cursor:pointer}",
     ".aduana-inventory-head{display:flex;gap:5px;align-items:center;white-space:nowrap;font-size:10px;font-weight:700}",
@@ -505,6 +529,12 @@
   function selector(kind,id,value,items) {
     return '<select aria-label="Classificação '+kind+' do ID '+esc(id)+'" data-aduana-kind="'+kind+'" data-aduana-id="'+esc(id)+'">'+
       items.map(item=>'<option value="'+esc(item)+'"'+(item===value?' selected':'')+'>'+esc(item||"—")+'</option>').join("")+'</select>';
+  }
+  function colorInput(row) {
+    return '<input type="text" list="aduanaColorSuggestions" maxlength="60" '+
+      'aria-label="Cor do Shipment ID '+esc(row.id)+'" '+
+      'placeholder="Informe a cor" data-aduana-kind="cor" data-aduana-id="'+esc(row.id)+
+      '" value="'+esc(row.cor)+'">';
   }
   function inventorySelector(row) {
     const id=String(row.id);
@@ -655,7 +685,7 @@
         (!row.match?' <span class="aduana-muted" title="Resultado original do confronto CSV">Sem registro no físico</span>':'')+
         '</td><td>'+
         (editable?selector("tipo",row.id,row.tipo,TYPES):"—")+'</td><td>'+
-        (editable?selector("cor",row.id,row.cor,COLORS):"—")+'</td><td>'+
+        (editable?colorInput(row):"—")+'</td><td>'+
         inventorySelector(row)+'</td><td>'+inventoryValueMarkup(row)+'</td></tr>';
     }).join(""):'<tr><td colspan="11" style="padding:24px;text-align:center">Nenhum registro para os filtros selecionados.</td></tr>';
   }
@@ -674,7 +704,8 @@
     const classifications={
       volumoso:m.countType("Volumoso"),gm:m.countType("GM"),
       amarelo:m.countColor("Amarelo"),azul:m.countColor("Azul"),
-      vermelho:m.countColor("Vermelho"),verde:m.countColor("Verde")
+      vermelho:m.countColor("Vermelho"),verde:m.countColor("Verde"),
+      cores:{...m.colorCounts}
     };
     return {date:iso,dateBR:m.date,facility:"SSP15",operation:"AM1",
       totals:{system:m.total,found:m.totalFound,missing:m.totalMissing},
@@ -1002,7 +1033,9 @@
       '</td><td>'+formatValue(row.system,m.systemReady)+'</td>'+
       '<td data-aduana-side-found="'+esc(row.side)+'">'+formatValue(row.found,m.systemReady&&m.physicalReady)+'</td>'+
       '<td data-aduana-side-missing="'+esc(row.side)+'">'+formatValue(row.missing,m.systemReady&&m.physicalReady)+'</td></tr>').join("");
-    const metrics = [["Volumoso",m.countType("Volumoso")],["Amarelo",m.countColor("Amarelo")],["Azul",m.countColor("Azul")],["Vermelho",m.countColor("Vermelho")],["Verde",m.countColor("Verde")],["GM",m.countType("GM")]].map(row=>
+    const metrics = [["Volumoso",m.countType("Volumoso")],
+      ...m.colors.map(color=>[color,m.countColor(color)]),
+      ["GM",m.countType("GM")]].map(row=>
       '<tr><td>'+esc(row[0])+'</td><td>'+formatValue(row[1],m.physicalReady&&m.systemReady)+'</td><td title="IDs não localizados não possuem classificação física confirmada">—</td></tr>').join("")+
       '<tr><td><b>Tratado via inventário (sem classificação física)</b></td><td id="aduanaInventoryManualClassified">0</td><td>—</td></tr>'+
       '<tr><td><b>Sem classificação (pendentes / não encontrados)</b></td><td>—</td><td id="aduanaMissingUnclassified">'+formatValue(m.totalMissing,m.systemReady&&m.physicalReady)+'</td></tr>';
@@ -1067,6 +1100,8 @@
       '<div class="aduana-inventory-overview" id="aduanaInventoryOverview" aria-label="Resumo por situação do inventário"></div>'+
       '<p class="aduana-muted" id="aduanaInventoryValueSummary"></p>'+
       '<p class="aduana-muted">Encontrado, Devolvido, Vinculado, Atrelado, Em rota, Entregue, Envio cancelado, Avaria e Solução de problemas descontam do saldo não encontrado. Pendente e Não encontrado permanecem no saldo. Isso não altera o confronto original do CSV físico.</p></div>'+
+      '<datalist id="aduanaColorSuggestions">'+m.colors.map(color=>
+        '<option value="'+esc(color)+'"></option>').join("")+'</datalist>'+
       '<div class="aduana-scroll"><table class="aduana-detail"><thead><tr><th>Shipment ID</th><th>Origem</th><th>Lado Sistema</th><th>Lado Físico</th><th>Rota</th><th>Doca</th><th>Situação atual</th><th>Tipo</th><th>Cor</th><th>Inventário'+
       '<label class="aduana-inventory-head" title="Selecionar pendentes sem conferência física no filtro atual">'+
       '<input type="checkbox" id="aduanaInventorySelectAll" aria-label="Selecionar todos os pendentes do filtro"> Selecionar pendentes</label></th><th>Valor (R$)</th></tr></thead><tbody id="aduanaDetails"></tbody></table></div>'+
@@ -1331,8 +1366,11 @@
         }
         return;
       }
-      const select=event.target.closest("select[data-aduana-kind]");
-      if(select)window.ControleAduana?.onClassify?.(select.dataset.aduanaId,select.dataset.aduanaKind,select.value);
+      const select=event.target.closest("[data-aduana-kind]");
+      if(select)window.ControleAduana?.onClassify?.(
+        select.dataset.aduanaId,select.dataset.aduanaKind,
+        select.dataset.aduanaKind==="cor"?physicalColor(select.value):select.value
+      );
     });
     renderRows();
   }
