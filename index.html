@@ -12185,7 +12185,7 @@ body.editor-open .global-theme-toggle {
   <script src="firebase-config.js"></script>
   <script src="ondas-dados.js"></script>
   <script src="aduana-xlsx.js?v=20261024-r4"></script>
-  <script src="aduana-conferencia.js?v=20261028-r33"></script>
+  <script src="aduana-conferencia.js?v=20261028-r34"></script>
   <script>
     const storageKey = "ondas-dados";
     const syncMetaKey = `${storageKey}-sync-meta-v1`;
@@ -19060,7 +19060,10 @@ body.editor-open .global-theme-toggle {
         if (!data.aduanaFisica.ids.some(item => String(item).trim().toUpperCase() === id)) return;
         data.aduanaFisica.details ||= {};
         data.aduanaFisica.details[id] ||= {};
-        data.aduanaFisica.details[id][kind] = value;
+        // Cores não têm catálogo fixo: mantém qualquer descrição informada
+        // e aplica o mesmo limite utilizado pelo editor físico.
+        data.aduanaFisica.details[id][kind] =
+          kind === "cor" ? String(value ?? "").replace(/\s+/g," ").trim().slice(0,60) : value;
         saveData();
         renderViews();
       };
