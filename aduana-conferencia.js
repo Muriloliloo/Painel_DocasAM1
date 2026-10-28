@@ -12,7 +12,7 @@
   const $ = id => document.getElementById(id);
   const TYPES = ["", "GM", "Volumoso", "Outro"];
   const COLORS = ["", "Amarelo", "Azul", "Vermelho", "Verde"];
-  const INVENTORY_EXTRA_STATUSES = ["Devolvido", "Vinculado", "Atrelado", "Em rota", "Entregue"];
+  const INVENTORY_EXTRA_STATUSES = ["Devolvido", "Vinculado", "Atrelado", "Em rota", "Entregue", "Envio cancelado", "Avaria"];
   const INVENTORY_STATUSES = ["Pendente", "Encontrado", "Não encontrado", ...INVENTORY_EXTRA_STATUSES];
   // Somente Pendente e Nao encontrado continuam no saldo nao localizado.
   // Outros status resolvem o saldo OPERACIONAL, mas nao comprovam bipagem no CSV fisico.
@@ -1039,7 +1039,7 @@
         : 'Importe o arquivo físico CSV ou XLSX')+'</span></div>'+
       '<section class="aduana-kpis">'+
       '<article class="aduana-kpi"><span>Quantidade a mais na aduana</span><strong>'+formatValue(m.total,m.systemReady)+'</strong><small>Sistema · Shipment IDs únicos</small></article>'+
-      '<article class="aduana-kpi encontrado"><span>Quantidade encontrada / tratada</span><strong id="aduanaKpiFound">'+formatValue(m.totalFound,m.systemReady&&m.physicalReady)+'</strong><small>Físico + Encontrado, Devolvido, Vinculado, Atrelado, Em rota ou Entregue</small></article>'+
+      '<article class="aduana-kpi encontrado"><span>Quantidade encontrada / tratada</span><strong id="aduanaKpiFound">'+formatValue(m.totalFound,m.systemReady&&m.physicalReady)+'</strong><small>Físico + status tratados do inventário (incluindo Entregue, Envio cancelado e Avaria)</small></article>'+
       '<article class="aduana-kpi nao-encontrado"><span>Pendentes / não encontrados</span><strong id="aduanaKpiMissing">'+formatValue(m.totalMissing,m.systemReady&&m.physicalReady)+'</strong><small id="aduanaKpiMissingDetail">Aguardando carregamento dos status</small></article></section>'+
       '<div class="aduana-columns"><section class="aduana-panel"><h3>CONTROLE POR LADO</h3><table class="aduana-table"><thead><tr><th>Item</th><th>Sistema</th><th>Encontrado / tratado</th><th>Pendente / não encontrado</th></tr></thead><tbody>'+sides+
       '<tr class="aduana-total"><td><strong>TOTAL</strong></td><td>'+formatValue(m.total,m.systemReady)+'</td><td id="aduanaSideTotalFound">'+formatValue(m.totalFound,m.systemReady&&m.physicalReady)+'</td><td id="aduanaSideTotalMissing">'+formatValue(m.totalMissing,m.systemReady&&m.physicalReady)+'</td></tr></tbody></table>'+
@@ -1066,7 +1066,7 @@
       '<p class="aduana-muted" id="aduanaInventoryStatus" role="status"></p>'+
       '<div class="aduana-inventory-overview" id="aduanaInventoryOverview" aria-label="Resumo por situação do inventário"></div>'+
       '<p class="aduana-muted" id="aduanaInventoryValueSummary"></p>'+
-      '<p class="aduana-muted">Encontrado, Devolvido, Vinculado, Atrelado, Em rota e Entregue descontam do saldo não encontrado. Pendente e Não encontrado permanecem no saldo. Isso não altera o confronto original do CSV físico.</p></div>'+
+      '<p class="aduana-muted">Encontrado, Devolvido, Vinculado, Atrelado, Em rota, Entregue, Envio cancelado e Avaria descontam do saldo não encontrado. Pendente e Não encontrado permanecem no saldo. Isso não altera o confronto original do CSV físico.</p></div>'+
       '<div class="aduana-scroll"><table class="aduana-detail"><thead><tr><th>Shipment ID</th><th>Origem</th><th>Lado Sistema</th><th>Lado Físico</th><th>Rota</th><th>Doca</th><th>Situação atual</th><th>Tipo</th><th>Cor</th><th>Inventário'+
       '<label class="aduana-inventory-head" title="Selecionar pendentes sem conferência física no filtro atual">'+
       '<input type="checkbox" id="aduanaInventorySelectAll" aria-label="Selecionar todos os pendentes do filtro"> Selecionar pendentes</label></th><th>Valor (R$)</th></tr></thead><tbody id="aduanaDetails"></tbody></table></div>'+
