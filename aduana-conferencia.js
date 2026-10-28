@@ -898,7 +898,7 @@
     const header=historyPeriod==="semana"?"7 dias até "+historyDate:"Últimos 30 dias";
     if(!records.length)return '<p class="aduana-muted">Nenhum fechamento salvo encontrado no período. Dias sem registro não foram contabilizados.</p>';
     const totals={system:0,found:0,missing:0};
-    const sides=new Map(),cls={};
+    const sides=new Map(),cls={},colorTotals=new Map();
     const byDate=records.map(r=>{
       for(const field of ["system","found","missing"])totals[field]+=Number(r.totals?.[field]||0);
       for(const side of r.sides||[]){
@@ -906,12 +906,20 @@
         for(const field of ["system","found","missing"])old[field]+=Number(side[field]||0);
         sides.set(side.side,old);
       }
-      for(const [name,val] of Object.entries(r.classifications||{}))cls[name]=(cls[name]||0)+Number(val||0);
+      for(const [name,val] of Object.entries(r.classifications||{})){
+        if(name==="cores")continue;
+        const count=Number(val)||0;
+        cls[name]=(cls[name]||0)+count;
+      }
+      for(const [color,count] of historicColorEntries(r.classifications||{}))
+        colorTotals.set(color,(colorTotals.get(color)||0)+count);
       return '<tr><td>'+esc(r.dateBR||r.date)+'</td><td>'+Number(r.totals?.system||0)+'</td>'+
         '<td>'+Number(r.totals?.found||0)+'</td><td>'+Number(r.totals?.missing||0)+'</td></tr>';
     }).join("");
-    const classificationText=[["Volumoso","volumoso"],["GM","gm"],["Amarelo","amarelo"],["Azul","azul"],["Vermelho","vermelho"],["Verde","verde"]]
-      .map(([name,key])=>name+": "+(cls[key]||0)).join(" · ");
+    const classificationText=[
+      ["Volumoso",cls.volumoso||0],["GM",cls.gm||0],
+      ...[...colorTotals.entries()].sort((a,b)=>a[0].localeCompare(b[0],"pt-BR"))
+    ].map(([name,count])=>name+": "+count).join(" · ");
     const sideRows=[...sides.values()].map(r=>'<tr><td>'+esc(r.label)+'</td><td>'+r.system+'</td><td>'+r.found+'</td><td>'+r.missing+'</td></tr>').join("");
     return '<div class="aduana-history-summary"><strong>'+esc(header)+'</strong>'+
       '<span>Operações arquivadas: <b>'+records.length+'</b></span>'+
@@ -1000,7 +1008,10 @@
       '<tr><td>'+esc(item.label||item.side)+'</td><td>'+esc(item.coordinator||"Não informado")+'</td>'+
       '<td>'+Number(item.system||0)+'</td><td>'+Number(item.found||0)+'</td><td>'+Number(item.missing||0)+'</td></tr>').join("");
     const cls=r.classifications||{};
-    const clstext=[["Volumoso",cls.volumoso],["GM",cls.gm],["Amarelo",cls.amarelo],["Azul",cls.azul],["Vermelho",cls.vermelho],["Verde",cls.verde]].map(([label,value])=>label+": "+Number(value||0)).join(" · ");
+    const clstext=[
+      ["Volumoso",cls.volumoso||0],["GM",cls.gm||0],
+      ...historicColorEntries(cls).sort((a,b)=>a[0].localeCompare(b[0],"pt-BR"))
+    ].map(([label,count])=>label+": "+Number(count||0)).join(" · ");
     container.innerHTML='<div class="aduana-history-summary"><strong>'+esc(r.dateBR||r.date||"")+'</strong>'+
       '<span>Sistema: <b>'+Number(r.totals?.system||0)+'</b></span>'+
       '<span>Encontrados: <b>'+Number(r.totals?.found||0)+'</b></span>'+
