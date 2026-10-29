@@ -645,3 +645,31 @@ body:not(.dark-mode) .app.faltantes-mode #faltantesView .falt-note {
   border-color:#cfd5dd;
   color:#202329;
 }
+
+
+/* Ajuste de legibilidade por lado: porcentagem + Sistema/Físico/Tratados */
+body:not(.dark-mode) .app.faltantes-mode #faltantesView .falt-side .falt-count small {
+  color:#123d65;
+  font-size:15px;
+  font-weight:900;
+  line-height:1.35;
+  letter-spacing:0;
+}
+body:not(.dark-mode) .app.faltantes-mode #faltantesView .falt-side .falt-extra,
+body:not(.dark-mode) .app.faltantes-mode #faltantesView .falt-side .falt-extra b {
+  color:#123d65;
+  font-size:14px;
+  font-weight:900;
+  line-height:1.45;
+  letter-spacing:0;
+}
+body:not(.dark-mode) .app.faltantes-mode #faltantesView .falt-side .falt-extra {
+  padding:11px 7px;
+  min-height:41px;
+  overflow-wrap:normal;
+}
+@media(max-width:1300px) {
+  body:not(.dark-mode) .app.faltantes-mode #faltantesView .falt-side .falt-count small { font-size:14px; }
+  body:not(.dark-mode) .app.faltantes-mode #faltantesView .falt-side .falt-extra,
+  body:not(.dark-mode) .app.faltantes-mode #faltantesView .falt-side .falt-extra b { font-size:13px; }
+}
