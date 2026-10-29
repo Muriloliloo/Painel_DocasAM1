@@ -126,53 +126,63 @@ function render(payload){
     }
     side.pendentes=Math.max(0,side.faltantes-side.encontrados);
   }
-  const falt=state.sides.reduce((a,g)=>a+g.faltantes,0);
+  const totalSistema=state.sides.reduce((a,g)=>a+g.faltantes,0);
+  const encontrados=state.sides.reduce((a,g)=>a+g.encontrados,0);
+  const pendentes=state.sides.reduce((a,g)=>a+g.pendentes,0);
   const extra=state.sides.reduce((a,g)=>a+g.aMais,0);
-  const routes=new Set(state.items.map(r=>r.rota)).size;
+  const routes=new Set(state.items.filter(r=>!r.found).map(r=>r.rota)).size;
   el("faltantesStatus").innerHTML=
     '<span><i class="bi bi-calendar3"></i> Data: <b>'+esc(state.date||"Não informada")+'</b></span>'+
-    '<span><i class="bi bi-database-check"></i> '+(state.final?"CSV/XLSX final aplicado no Editor":"Contagens ao vivo da Base Aduana")+'</span>'+
-    '<span><i class="bi bi-funnel-fill"></i> Somente <b>_AM1</b></span>';
+    '<span><i class="bi bi-database-check"></i> '+(state.final?"Sistema aplicado: "+fmt(totalSistema)+" FALTANTES AM1":"Contagens ao vivo da Base Aduana")+'</span>'+
+    '<span><i class="bi bi-box-seam"></i> '+(state.physicalReady?"IDs Físicos: "+esc(state.physicalFile):"IDs Físicos: aguardando importação da mesma data")+'</span>'+
+    '<span><i class="bi bi-funnel-fill"></i> Somente <b>_AM1</b> · '+fmt(routes)+' rotas com pendência</span>';
   el("faltantesKpis").innerHTML=[
-    '<article class="falt-kpi missing"><span>Pacotes faltantes AM1</span><strong>'+fmt(falt)+'</strong><small>Estado FALTANTE na Aduana</small></article>',
-    '<article class="falt-kpi extra"><span>Pacotes a mais AM1</span><strong>'+fmt(extra)+'</strong><small>Mesmo arquivo; indicador separado</small></article>',
-    '<article class="falt-kpi"><span>Rotas AM1 com faltantes</span><strong>'+fmt(routes)+'</strong><small>Rotas terminadas em _AM1</small></article>',
-    '<article class="falt-kpi"><span>Lados monitorados</span><strong>'+fmt(zones.length)+'</strong><small>Responsáveis do Editor de Dados</small></article>'
+    '<article class="falt-kpi missing"><span>Faltantes pendentes AM1</span><strong>'+fmt(pendentes)+'</strong><small>Saldo atualizado após a conciliação física</small></article>',
+    '<article class="falt-kpi found"><span>Faltantes encontrados no físico</span><strong>'+fmt(encontrados)+'</strong><small>Abatidos dos pendentes por Shipment ID</small></article>',
+    '<article class="falt-kpi"><span>Faltantes no sistema AM1</span><strong>'+fmt(totalSistema)+'</strong><small>Total original da auditoria, sem alterações</small></article>',
+    '<article class="falt-kpi extra"><span>Pacotes a mais AM1</span><strong>'+fmt(extra)+'</strong><small>Indicador independente e preservado</small></article>'
   ].join("");
   el("faltantesSideCards").innerHTML=state.sides.map(side=>{
-    const percent=falt?side.faltantes/falt*100:0;
+    const percent=pendentes?side.pendentes/pendentes*100:0;
     return '<article class="falt-side"><h4>'+esc(side.title)+'</h4>'+
       '<div class="falt-staff"><span><b>Coordenador:</b> '+esc(side.staff.coordenador||"Não informado")+'</span>'+
       '<span><b>PS:</b> '+esc(side.staff.ps||"Não informado")+'</span></div>'+
-      '<div class="falt-count"><strong>'+fmt(side.faltantes)+'</strong><small>'+percent.toFixed(1).replace(".",",")+'% dos faltantes</small></div>'+
+      '<div class="falt-count"><strong>'+fmt(side.pendentes)+'</strong><small>'+percent.toFixed(1).replace(".",",")+'% dos pendentes</small></div>'+
       '<span class="falt-meter"><i style="width:'+Math.min(100,percent).toFixed(2)+'%"></i></span>'+
-      '<small class="falt-extra">A mais neste lado: '+fmt(side.aMais)+'</small></article>';
+      '<small class="falt-extra">Sistema: '+fmt(side.faltantes)+' · Encontrados: '+fmt(side.encontrados)+' · A mais: '+fmt(side.aMais)+'</small></article>';
   }).join("");
+  // Apenas Coordenadores. Não duplicar cards de PS.
   const people=new Map();
   state.sides.forEach(side=>{
     const name=String(side.staff.coordenador||"").trim();
     if(!name)return;
     const key=norm(name);
-    if(!people.has(key))people.set(key,{name,qty:0});
-    people.get(key).qty+=side.faltantes;
+    if(!people.has(key))people.set(key,{name,qty:0,found:0});
+    people.get(key).qty+=side.pendentes;
+    people.get(key).found+=side.encontrados;
   });
   el("faltantesPeople").innerHTML=people.size?[...people.values()].sort((a,b)=>b.qty-a.qty).map(p=>
-    '<article class="falt-person"><span>Coordenador</span><b>'+esc(p.name)+'</b><strong>'+fmt(p.qty)+'</strong></article>'
-  ).join(""):'<p>Cadastre os Coordenadores no Editor de Dados para exibir o consolidado.</p>';
+    '<article class="falt-person"><span>Coordenador</span><b>'+esc(p.name)+'</b><strong>'+fmt(p.qty)+'</strong>'+
+    '<small>'+fmt(p.found)+' encontrado(s) no físico</small></article>'
+  ).join(""):'<p>Cadastre os Coordenadores no Editor de Dados para exibir o saldo.</p>';
   const options=['<option value="">Todos os lados</option>'].concat(state.sides.map(s=>
     '<option value="'+esc(s.label)+'">'+esc(s.title)+'</option>'));
   el("faltantesSideFilter").innerHTML=options.join("");
   if(!state.sides.some(s=>s.label===state.side))state.side="";
   el("faltantesSideFilter").value=state.side;
   el("faltantesSearch").value=state.search;
+  el("faltantesStatusFilter").value=state.statusFilter;
   el("faltantesTableSub").textContent=state.final?
-    "IDs FALTANTES do arquivo audited_shipments final (somente AM1).":
-    "Contagens por rota da Base Aduana; IDs individuais aparecem depois do CSV/XLSX final.";
-  el("faltantesNote").textContent=(state.final?
-    "Fonte: CSV/XLSX final importado no Editor de Dados. O mesmo Shipment ID pode aparecer em rotas diferentes, conforme a auditoria. ":
-    "Fonte: Base Aduana do Editor de Dados. Nenhum Shipment ID é inventado antes do CSV/XLSX final. ")+
-    "AM0, AMDE, PM e SD são excluídos. Não confundir FALTANTE da Aduana com Não Encontrado na conferência física."+
-    (model.final&&!model.useFinal?" ATENÇÃO: o CSV final armazenado é de outra data.":"");
+    "Visualize os pendentes, os IDs encontrados no físico ou todas as ocorrências de FALTANTE da AM1.":
+    "Ainda sem CSV final desta data: contagens por rota, sem Shipment IDs individuais.";
+  const notice=state.final
+    ? state.physicalReady
+      ? "Conciliação ativa com "+state.physicalFile+". Todo Shipment ID físico que também esteja como FALTANTE na AM1 é abatido do saldo pendente, inclusive quando bipado em outro lado. Os lados e Coordenadores seguem a rota do SISTEMA."
+      : "Aguardando a importação/aplicação da planilha IDs Físicos da mesma data no Editor de Dados. Até lá, todos os faltantes do sistema permanecem pendentes."
+    : "Fonte: Base Aduana do Editor de Dados. O abatimento individual por Shipment ID começa depois que o CSV/XLSX final do sistema e a planilha IDs Físicos da mesma data forem aplicados.";
+  el("faltantesNote").textContent=notice+
+    " Total original = encontrados + pendentes (por ocorrência de rota). IDs repetidos no físico não geram abatimento extra; IDs fora dos FALTANTES da AM1 e operações CHP, AM0, AMDE, PM e SD são ignorados. Pacotes A Mais são tratados separadamente."+
+    (model.final&&!model.useFinal?" ATENÇÃO: o CSV do sistema salvo é de outra data.":"");
   renderTable();
 }
 function csvCell(v){
@@ -181,8 +191,8 @@ function csvCell(v){
   return '"'+s.replace(/"/g,'""')+'"';
 }
 function exportCsv(){
-  const lines=[["Data","Lado","Rota AM1","Doca","Coordenador","PS","Shipment ID","Quantidade","Situação"]];
-  selectedRows().forEach(r=>lines.push([state.date,r.titulo,r.rota,r.doca,r.coord,r.ps,r.id,r.qty,"FALTANTE"]));
+  const lines=[["Data","Lado Sistema","Rota AM1","Doca","Coordenador","PS","Shipment ID","Lado Físico","Quantidade","Estado no Sistema","Situação Física"]];
+  selectedRows().forEach(r=>lines.push([state.date,r.titulo,r.rota,r.doca,r.coord,r.ps,r.id,r.ladoFisico,r.qty,"FALTANTE",r.found?"Encontrado no físico":(state.physicalReady?"Pendente":"Aguardando físico")]));
   const blob=new Blob(["\uFEFF"+lines.map(row=>row.map(csvCell).join(";")).join("\r\n")],{type:"text/csv;charset=utf-8"});
   const url=URL.createObjectURL(blob),link=document.createElement("a");
   link.href=url;link.download="faltantes_AM1_"+String(state.date||"sem-data").replace(/\W+/g,"-")+".csv";
