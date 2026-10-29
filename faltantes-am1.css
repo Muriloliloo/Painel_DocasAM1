@@ -75,3 +75,12 @@ body.dark-mode .falt-table td{color:#e5eff8;border-color:#385e72}
 body.dark-mode .falt-table tbody tr:nth-child(even){background:#21475c}
 body.dark-mode .falt-note{background:#1f435b;color:#d6e5ef;border-color:#476980}
 body.dark-mode .falt-filters input,body.dark-mode .falt-filters select{background:#163b53;color:#fff;border-color:#52718a}
+
+/* Conciliação dos Faltantes AM1 com o arquivo IDs Físicos */
+.falt-kpi.found{background:#ecfbf4;border-color:#b9e5cc}
+.falt-kpi.found strong{color:#138655}
+.falt-tag.found{background:#d7f5e5;color:#087346}
+.falt-person small{color:#237952;font-size:11px;font-weight:800}
+body.dark-mode .falt-kpi.found{background:#173f37;border-color:#3b725d}
+body.dark-mode .falt-kpi.found strong,body.dark-mode .falt-person small{color:#71e6a9}
+body.dark-mode .falt-tag.found{background:#195440;color:#a5ffcb}
