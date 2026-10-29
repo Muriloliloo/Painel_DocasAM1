@@ -458,3 +458,190 @@ body.dark-mode .falt-filters input,
 body.dark-mode .falt-filters select,
 body.dark-mode .falt-inventory-actions select{background:#17364c;color:#eef7fb;border-color:#536f87}
 body.dark-mode .falt-note{background:#1c4059;color:#cde1ee;border-color:#52718a}
+
+
+/* ================================================================
+   REPAGINAÇÃO CINZA + TIPOGRAFIA PRETA | 29/10/2026
+   Referência: segunda imagem aprovada.
+   Somente modo claro da aba Faltantes AM1. Conserva azul e ouro
+   em detalhes e preserva contraste no cabeçalho azul e na tabela.
+   ================================================================ */
+body:not(.dark-mode) .app.docas-mode.faltantes-mode {
+  background:#e3e6ea;
+}
+body:not(.dark-mode) .app.faltantes-mode #faltantesView {
+  background:
+    linear-gradient(180deg,#e5e8ec 0%,#e0e4e9 100%);
+  color:#15191f;
+}
+body:not(.dark-mode) .app.faltantes-mode #faltantesView .falt-shell {
+  color:#15191f;
+}
+/* Cabeçalho mantém branco sobre azul para legibilidade; detalhes em ouro. */
+body:not(.dark-mode) .app.faltantes-mode #faltantesView .falt-hero {
+  border-color:#7899b1;
+  border-bottom-color:#d5ab58;
+  background:linear-gradient(113deg,#315d7c,#24506f 64%,#264a6b);
+}
+body:not(.dark-mode) .app.faltantes-mode #faltantesView .falt-hero h2,
+body:not(.dark-mode) .app.faltantes-mode #faltantesView .falt-hero p {
+  color:#fff;
+}
+body:not(.dark-mode) .app.faltantes-mode #faltantesView .falt-hero .falt-title-accent {
+  color:#f1d291;
+}
+/* Etiquetas de dados e campos. */
+body:not(.dark-mode) .app.faltantes-mode #faltantesView .falt-status span {
+  color:#16191e;
+  border-color:#c9ced4;
+  background:#f7f8fa;
+  box-shadow:0 3px 9px rgba(40,54,68,.07);
+}
+body:not(.dark-mode) .app.faltantes-mode #faltantesView .falt-status span b {
+  color:#101216;
+}
+body:not(.dark-mode) .app.faltantes-mode #faltantesView .falt-status span i {
+  color:#a77b32;
+}
+/* Resumo principal: superfícies cinza suave e números todos pretos. */
+body:not(.dark-mode) .app.faltantes-mode #faltantesView .falt-kpi,
+body:not(.dark-mode) .app.faltantes-mode #faltantesView .falt-kpi.missing,
+body:not(.dark-mode) .app.faltantes-mode #faltantesView .falt-kpi.found,
+body:not(.dark-mode) .app.faltantes-mode #faltantesView .falt-kpi.treated,
+body:not(.dark-mode) .app.faltantes-mode #faltantesView .falt-kpi.system {
+  background:linear-gradient(135deg,#fafbfc 0%,#eff1f4 100%);
+  border:1px solid #c8cdd4;
+  box-shadow:0 5px 16px rgba(42,48,55,.10);
+}
+body:not(.dark-mode) .app.faltantes-mode #faltantesView .falt-kpi .falt-kpi-copy > span,
+body:not(.dark-mode) .app.faltantes-mode #faltantesView .falt-kpi .falt-kpi-copy > strong,
+body:not(.dark-mode) .app.faltantes-mode #faltantesView .falt-kpi .falt-kpi-copy > small,
+body:not(.dark-mode) .app.faltantes-mode #faltantesView .falt-kpi.missing .falt-kpi-copy > strong,
+body:not(.dark-mode) .app.faltantes-mode #faltantesView .falt-kpi.found .falt-kpi-copy > strong,
+body:not(.dark-mode) .app.faltantes-mode #faltantesView .falt-kpi.treated .falt-kpi-copy > strong,
+body:not(.dark-mode) .app.faltantes-mode #faltantesView .falt-kpi.system .falt-kpi-copy > strong {
+  color:#101114;
+}
+body:not(.dark-mode) .app.faltantes-mode #faltantesView .falt-kpi .falt-kpi-copy > strong {
+  font-size:clamp(36px,3.1vw,49px);
+  font-weight:950;
+}
+body:not(.dark-mode) .app.faltantes-mode #faltantesView .falt-kpi .falt-kpi-icon {
+  color:#254e6c;
+  background:linear-gradient(145deg,#e0e6ec,#b7ccdc);
+}
+body:not(.dark-mode) .app.faltantes-mode #faltantesView .falt-kpi.found .falt-kpi-icon {
+  color:#146e51;
+  background:linear-gradient(145deg,#d9f3e8,#a6dbc7);
+}
+body:not(.dark-mode) .app.faltantes-mode #faltantesView .falt-kpi.treated .falt-kpi-icon {
+  color:#94641a;
+  background:linear-gradient(145deg,#fff0cc,#e8c57d);
+}
+/* Seções neutras e cabeçalhos com escrita preta. */
+body:not(.dark-mode) .app.faltantes-mode #faltantesView .falt-panel {
+  background:#f2f3f5;
+  border-color:#d0d5dc;
+  box-shadow:0 5px 17px rgba(35,47,58,.09);
+}
+body:not(.dark-mode) .app.faltantes-mode #faltantesView .falt-panel-header {
+  background:linear-gradient(180deg,#f9fafb,#f0f2f4);
+  border-color:#d6dbe1;
+}
+body:not(.dark-mode) .app.faltantes-mode #faltantesView .falt-panel-header h3,
+body:not(.dark-mode) .app.faltantes-mode #faltantesView .falt-panel-header p {
+  color:#111316;
+}
+body:not(.dark-mode) .app.faltantes-mode #faltantesView .falt-panel-header h3 {
+  font-weight:950;
+}
+body:not(.dark-mode) .app.faltantes-mode #faltantesView .falt-panel-header h3 > i {
+  color:#b18437;
+}
+/* Lados A–E: fundo cinza claro; letras e números pretos. */
+body:not(.dark-mode) .app.faltantes-mode #faltantesView .falt-side,
+body:not(.dark-mode) .app.faltantes-mode #faltantesView .falt-side:nth-child(n) {
+  background:linear-gradient(150deg,#fafafa,#f0f2f4);
+  border-color:#c4cbd3;
+  box-shadow:0 3px 11px rgba(31,46,61,.07);
+}
+body:not(.dark-mode) .app.faltantes-mode #faltantesView .falt-side h4,
+body:not(.dark-mode) .app.faltantes-mode #faltantesView .falt-side .falt-staff,
+body:not(.dark-mode) .app.faltantes-mode #faltantesView .falt-side .falt-staff b,
+body:not(.dark-mode) .app.faltantes-mode #faltantesView .falt-side .falt-count strong,
+body:not(.dark-mode) .app.faltantes-mode #faltantesView .falt-side .falt-count small,
+body:not(.dark-mode) .app.faltantes-mode #faltantesView .falt-side .falt-extra,
+body:not(.dark-mode) .app.faltantes-mode #faltantesView .falt-side .falt-extra b {
+  color:#101113;
+}
+body:not(.dark-mode) .app.faltantes-mode #faltantesView .falt-side .falt-count strong {
+  font-size:clamp(31px,2.6vw,41px);
+  font-weight:950;
+}
+body:not(.dark-mode) .app.faltantes-mode #faltantesView .falt-side .falt-extra {
+  background:#e6e7ea;
+  border:1px solid #d7d9dd;
+  border-radius:12px;
+  font-size:11px;
+}
+body:not(.dark-mode) .app.faltantes-mode #faltantesView .falt-side-icon {
+  color:#111418;
+  background:linear-gradient(135deg,#f4f5f6,#dde2e7);
+  border-color:#bbc3cc;
+}
+body:not(.dark-mode) .app.faltantes-mode #faltantesView .falt-side .falt-meter {
+  background:#dce0e5;
+}
+body:not(.dark-mode) .app.faltantes-mode #faltantesView .falt-side .falt-meter i {
+  background:linear-gradient(90deg,#b88a35,#e2bd74);
+}
+/* Coordenadores: visual cinza com texto e totais pretos. */
+body:not(.dark-mode) .app.faltantes-mode #faltantesView .falt-person,
+body:not(.dark-mode) .app.faltantes-mode #faltantesView .falt-person:nth-child(n) {
+  background:linear-gradient(145deg,#fafbfc,#eceff2);
+  border-color:#c6cdd5;
+}
+body:not(.dark-mode) .app.faltantes-mode #faltantesView .falt-person-copy > span,
+body:not(.dark-mode) .app.faltantes-mode #faltantesView .falt-person-copy > b,
+body:not(.dark-mode) .app.faltantes-mode #faltantesView .falt-person-copy > small,
+body:not(.dark-mode) .app.faltantes-mode #faltantesView .falt-person > strong {
+  color:#101113;
+}
+body:not(.dark-mode) .app.faltantes-mode #faltantesView .falt-person > strong {
+  font-size:30px;
+  font-weight:950;
+}
+body:not(.dark-mode) .app.faltantes-mode #faltantesView .falt-person .falt-person-icon {
+  color:#293a49;
+  background:#d9e0e6;
+}
+/* Tabela de inventário: cabeçalho escuro fica com branco para contraste. */
+body:not(.dark-mode) .app.faltantes-mode #faltantesView .falt-filters input,
+body:not(.dark-mode) .app.faltantes-mode #faltantesView .falt-filters select,
+body:not(.dark-mode) .app.faltantes-mode #faltantesView .falt-inventory-actions select {
+  color:#111316;
+  background:#fff;
+  border-color:#c5cbd3;
+}
+body:not(.dark-mode) .app.faltantes-mode #faltantesView .falt-inventory-actions > strong,
+body:not(.dark-mode) .app.faltantes-mode #faltantesView .falt-inventory-actions small,
+body:not(.dark-mode) .app.faltantes-mode #faltantesView .falt-inventory-feedback,
+body:not(.dark-mode) .app.faltantes-mode #faltantesView .falt-money,
+body:not(.dark-mode) .app.faltantes-mode #faltantesView .falt-table td {
+  color:#111316;
+}
+body:not(.dark-mode) .app.faltantes-mode #faltantesView .falt-table th {
+  background:#334d63;
+  color:#fff;
+}
+body:not(.dark-mode) .app.faltantes-mode #faltantesView .falt-table tbody tr:nth-child(even) {
+  background:#eceff2;
+}
+body:not(.dark-mode) .app.faltantes-mode #faltantesView .falt-table tbody tr:hover {
+  background:#e1e6eb;
+}
+body:not(.dark-mode) .app.faltantes-mode #faltantesView .falt-note {
+  background:#f3f4f6;
+  border-color:#cfd5dd;
+  color:#202329;
+}
