@@ -1,0 +1,77 @@
+/* Aba Faltantes — exclusivamente ocorrências de rotas _AM1 */
+.faltantes-view{display:none}
+.app.docas-mode.faltantes-mode{width:100vw;max-width:none;min-width:0;min-height:0;height:100vh;height:100dvh;border-radius:0;background:#eaf1f8}
+body.faltantes-mode-active{width:100%;min-width:0;display:block;overflow:hidden}
+.app.faltantes-mode > :is(.topbar,.toolbar,.stats,.legend,.wave-title,.dock-grid,.simple-docks-view,.routes-mode-view,.dashboard-view,.dados1-view,.aduana-view,.footer-strip,.final-countdown-alert,.panel-view,.print-table-wrap){display:none!important}
+.app.faltantes-mode .side-rail{top:0;bottom:0;z-index:120;overflow-y:auto;overflow-x:hidden;gap:clamp(5px,.7vw,12px);padding-top:clamp(10px,1.3vw,20px);scrollbar-width:none}
+.app.faltantes-mode .side-rail::-webkit-scrollbar{display:none}
+.app.faltantes-mode #faltantesView{position:absolute;inset:0 0 0 var(--docas-rail-w);z-index:100;display:block;overflow:auto;background:#eaf1f8;color:#072b45;padding:clamp(14px,1.7vw,28px);font:600 14px/1.45 "Segoe UI",Arial,sans-serif}
+.falt-shell{max-width:1920px;margin:auto;display:grid;gap:17px}
+.falt-hero{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:14px;border:1px solid #e9b4bd;border-radius:13px;background:linear-gradient(110deg,#fff0f1,#fff8fa);padding:17px 20px}
+.falt-hero h2{margin:0;color:#842131;font:900 clamp(23px,2.1vw,34px)/1.1 "Segoe UI",Arial,sans-serif}
+.falt-hero p{margin:4px 0 0;color:#694553}
+.falt-head-left{display:flex;align-items:center;gap:14px}
+.falt-head-icon{display:grid;place-items:center;min-width:52px;min-height:52px;border-radius:12px;background:#ffdce1;color:#c72742;font-size:26px}
+.falt-head-actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.falt-action{border:1px solid #bdd2e4;border-radius:8px;background:#fff;color:#063653;font:800 13px "Segoe UI",Arial,sans-serif;padding:10px 13px;cursor:pointer}
+.falt-action:hover,.falt-action:focus-visible{background:#dceefa;border-color:#377da8}
+.falt-action.primary{background:#0b4b77;color:#fff;border-color:#0b4b77}
+.falt-action.primary:hover{background:#0a3859}
+.falt-status{display:flex;flex-wrap:wrap;gap:10px;color:#195579;font-size:12px;font-weight:800}
+.falt-status span{border:1px solid #c7dae7;background:#fff;padding:8px 12px;border-radius:8px}
+.falt-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.falt-kpi{display:grid;gap:7px;padding:18px;border-radius:12px;border:1px solid #c7d9e7;background:#fff;box-shadow:0 3px 12px #00365509}
+.falt-kpi span{color:#496b83;font-weight:800;font-size:13px}
+.falt-kpi strong{color:#0b3758;font-size:clamp(28px,3vw,44px);line-height:1;font-weight:900}
+.falt-kpi small{color:#5a7488}
+.falt-kpi.missing{background:#fff1f2;border-color:#f3ccd3}.falt-kpi.missing strong{color:#d22b42}
+.falt-kpi.extra{background:#fff8e8;border-color:#f4dfad}.falt-kpi.extra strong{color:#ab7300}
+.falt-panel{background:#fff;border:1px solid #c8d9e7;border-radius:12px;overflow:hidden}
+.falt-panel-header{display:flex;justify-content:space-between;align-items:start;flex-wrap:wrap;gap:10px;padding:14px 17px;border-bottom:1px solid #e2eaf0;background:#f8fbff}
+.falt-panel-header h3{color:#103b5c;font-size:18px;font-weight:900;margin:0}
+.falt-panel-header p{color:#5a7386;margin:3px 0 0;font-size:12px}
+.falt-panel-content{padding:13px}
+.falt-side-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:11px}
+.falt-side{min-width:0;border:1px solid #c9ddeb;border-radius:10px;background:linear-gradient(160deg,#f5faff,#fff);padding:13px}
+.falt-side h4{color:#073757;font-size:14px;font-weight:900;margin:0 0 10px}
+.falt-side h4 small{display:block;color:#57738a;font-size:11px;margin-top:2px}
+.falt-side .falt-staff{display:grid;gap:3px;min-height:54px;font-size:12px;color:#49637a}
+.falt-side .falt-staff b{color:#0b3f60}
+.falt-side .falt-count{display:flex;align-items:baseline;justify-content:space-between;margin:11px 0 8px}
+.falt-side .falt-count strong{font-size:31px;color:#cf293d;line-height:1}
+.falt-side .falt-count small{font-size:12px;color:#456780;font-weight:800}
+.falt-meter{display:block;width:100%;height:8px;overflow:hidden;background:#e5edf4;border-radius:12px}
+.falt-meter i{display:block;height:100%;background:#e43e50;border-radius:12px}
+.falt-side .falt-extra{display:block;margin-top:9px;color:#93680c;font-size:11px;font-weight:800}
+.falt-responsaveis{display:flex;gap:10px;flex-wrap:wrap}
+.falt-person{display:grid;gap:2px;min-width:155px;flex:1 1 160px;background:#f0f6fb;border:1px solid #d4e2ed;border-radius:9px;padding:11px 13px}
+.falt-person span{font-size:11px;color:#506a7c;font-weight:800}
+.falt-person b{font-size:13px;color:#0b3756}
+.falt-person strong{font-size:25px;color:#ca2a41}
+.falt-filters{display:flex;gap:9px;align-items:center;flex-wrap:wrap}
+.falt-filters input,.falt-filters select{min-height:39px;min-width:155px;border:1px solid #bfd2e1;border-radius:8px;background:#fff;color:#153b59;font:700 13px "Segoe UI",Arial,sans-serif;padding:8px 10px}
+.falt-filters input{flex:1 1 220px}
+.falt-table-wrap{width:100%;overflow:auto;max-height:600px}
+.falt-table{border-collapse:collapse;text-align:left;width:100%;min-width:890px}
+.falt-table th{position:sticky;top:0;background:#083b5e;color:#fff;font-size:11px;padding:12px;white-space:nowrap}
+.falt-table td{padding:11px 12px;border-bottom:1px solid #e0e8f0;color:#21445f;font-size:12px;vertical-align:middle}
+.falt-table tbody tr:nth-child(even){background:#f5f9fd}
+.falt-table .falt-empty{text-align:center;padding:28px;color:#6d8190}
+.falt-tag{display:inline-block;background:#ffe0e5;color:#b5243d;border-radius:20px;padding:5px 9px;font-size:11px;font-weight:900;white-space:nowrap}
+.falt-note{font-size:12px;color:#4d687e;background:#edf5fc;border:1px solid #cbdde9;border-radius:8px;padding:10px 13px}
+#faltantesRailBtn .rail-icon{color:#ff5c67}
+@media(max-width:1400px){.falt-side-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:1000px){.falt-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.falt-side-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:620px){.app.faltantes-mode{--docas-rail-w:58px}.app.faltantes-mode #faltantesView{padding:10px}.falt-kpis,.falt-side-grid{grid-template-columns:1fr}}
+body.dark-mode .app.faltantes-mode #faltantesView{background:#102a3b;color:#d4e7f1}
+body.dark-mode .falt-hero{background:#422332;border-color:#825363}
+body.dark-mode .falt-hero h2{color:#fff}
+body.dark-mode .falt-hero p{color:#eccbd5}
+body.dark-mode .falt-kpi,body.dark-mode .falt-panel,body.dark-mode .falt-side,body.dark-mode .falt-person,body.dark-mode .falt-status span{background:#163b53;border-color:#46667c;color:#e4f0fa}
+body.dark-mode .falt-panel-header{background:#16435c;border-color:#45677c}
+body.dark-mode .falt-panel-header h3,body.dark-mode .falt-side h4,body.dark-mode .falt-side .falt-staff b,body.dark-mode .falt-person b,body.dark-mode .falt-kpi strong{color:#f1f8fd}
+body.dark-mode .falt-panel-header p,body.dark-mode .falt-side h4 small,body.dark-mode .falt-side .falt-staff,body.dark-mode .falt-kpi span,body.dark-mode .falt-kpi small{color:#c1d6e2}
+body.dark-mode .falt-table td{color:#e5eff8;border-color:#385e72}
+body.dark-mode .falt-table tbody tr:nth-child(even){background:#21475c}
+body.dark-mode .falt-note{background:#1f435b;color:#d6e5ef;border-color:#476980}
+body.dark-mode .falt-filters input,body.dark-mode .falt-filters select{background:#163b53;color:#fff;border-color:#52718a}
