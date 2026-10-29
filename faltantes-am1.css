@@ -19,7 +19,7 @@ body.faltantes-mode-active{width:100%;min-width:0;display:block;overflow:hidden}
 .falt-action.primary:hover{background:#0a3859}
 .falt-status{display:flex;flex-wrap:wrap;gap:10px;color:#195579;font-size:12px;font-weight:800}
 .falt-status span{border:1px solid #c7dae7;background:#fff;padding:8px 12px;border-radius:8px}
-.falt-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.falt-kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
 .falt-kpi{display:grid;gap:7px;padding:18px;border-radius:12px;border:1px solid #c7d9e7;background:#fff;box-shadow:0 3px 12px #00365509}
 .falt-kpi span{color:#496b83;font-weight:800;font-size:13px}
 .falt-kpi strong{color:#0b3758;font-size:clamp(28px,3vw,44px);line-height:1;font-weight:900}
