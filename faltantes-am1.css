@@ -787,3 +787,25 @@ body:not(.dark-mode) .app.faltantes-mode #faltantesView .falt-responsaveis .falt
     font-size:36px;
   }
 }
+
+
+/* Faltantes AM1 — os quatro KPIs com o mesmo fundo cinza neutro.
+   Mantêm a ordem definida no JS: Sistema, Físico, Inventário, Pendentes.
+   Ícones preservam distinção; não há mais manchas coloridas de fundo. */
+body:not(.dark-mode) .app.faltantes-mode #faltantesView .falt-kpis .falt-kpi,
+body:not(.dark-mode) .app.faltantes-mode #faltantesView .falt-kpis .falt-kpi.missing,
+body:not(.dark-mode) .app.faltantes-mode #faltantesView .falt-kpis .falt-kpi.found,
+body:not(.dark-mode) .app.faltantes-mode #faltantesView .falt-kpis .falt-kpi.treated,
+body:not(.dark-mode) .app.faltantes-mode #faltantesView .falt-kpis .falt-kpi.system {
+  background:linear-gradient(150deg,#f7f8fa 0%,#eef0f3 100%);
+  border-color:#c7cdd4;
+  box-shadow:0 3px 12px rgba(38,48,59,.08);
+}
+body:not(.dark-mode) .app.faltantes-mode #faltantesView .falt-kpis .falt-kpi::before,
+body:not(.dark-mode) .app.faltantes-mode #faltantesView .falt-kpis .falt-kpi.missing::before,
+body:not(.dark-mode) .app.faltantes-mode #faltantesView .falt-kpis .falt-kpi.found::before,
+body:not(.dark-mode) .app.faltantes-mode #faltantesView .falt-kpis .falt-kpi.treated::before,
+body:not(.dark-mode) .app.faltantes-mode #faltantesView .falt-kpis .falt-kpi.system::before {
+  display:none;
+  content:none;
+}
