@@ -93,19 +93,18 @@ function render(payload){
   const physicalIds=new Set(state.physicalReady?physical.ids.map(idKey).filter(Boolean):[]);
   const physicalDetails=state.physicalReady?(physical.details||{}):{};
   state.items=[];
-  state.sides=zones.map(z=>({label:z.label,title:z.displayLabel||z.label,staff:z.staff||{},faltantes:0,aMais:0,encontrados:0,pendentes:0}));
+  state.sides=zones.map(z=>({label:z.label,title:z.displayLabel||z.label,staff:z.staff||{},faltantes:0,encontrados:0,pendentes:0}));
   const unknown=groups.get("Sem lado identificado");
-  if(unknown&&(unknown.rows||[]).some(r=>isAM1(r)&&(num(r.faltantes)||num(r.aMais))))
-    state.sides.push({label:"Sem lado identificado",title:"Sem lado identificado",staff:{},faltantes:0,aMais:0,encontrados:0,pendentes:0});
+  if(unknown&&(unknown.rows||[]).some(r=>isAM1(r)&&num(r.faltantes)))
+    state.sides.push({label:"Sem lado identificado",title:"Sem lado identificado",staff:{},faltantes:0,encontrados:0,pendentes:0});
   for(const side of state.sides){
     for(const row of groups.get(side.label)?.rows||[]){
       // Registros de CHP, AM0, AMDE, PM e SD não afetam os indicadores.
       if(!isAM1(row))continue;
       const events=Array.isArray(row.ocorrencias)?row.ocorrencias:null;
       const missing=events?events.filter(i=>i.estado==="faltantes"):null;
-      const aMais=events?events.filter(i=>i.estado==="aMais").length:num(row.aMais);
       const total=missing?missing.length:num(row.faltantes);
-      side.faltantes+=total;side.aMais+=aMais;
+      side.faltantes+=total;
       if(!total)continue;
       const common={lado:side.label,titulo:side.title,rota:row.rota||"",doca:row.doca||"",
         coord:side.staff.coordenador||"Não informado",ps:side.staff.ps||"Não informado"};
@@ -129,7 +128,6 @@ function render(payload){
   const totalSistema=state.sides.reduce((a,g)=>a+g.faltantes,0);
   const encontrados=state.sides.reduce((a,g)=>a+g.encontrados,0);
   const pendentes=state.sides.reduce((a,g)=>a+g.pendentes,0);
-  const extra=state.sides.reduce((a,g)=>a+g.aMais,0);
   const routes=new Set(state.items.filter(r=>!r.found).map(r=>r.rota)).size;
   el("faltantesStatus").innerHTML=
     '<span><i class="bi bi-calendar3"></i> Data: <b>'+esc(state.date||"Não informada")+'</b></span>'+
@@ -140,7 +138,6 @@ function render(payload){
     '<article class="falt-kpi missing"><span>Faltantes pendentes AM1</span><strong>'+fmt(pendentes)+'</strong><small>Saldo atualizado após a conciliação física</small></article>',
     '<article class="falt-kpi found"><span>Faltantes encontrados no físico</span><strong>'+fmt(encontrados)+'</strong><small>Abatidos dos pendentes por Shipment ID</small></article>',
     '<article class="falt-kpi"><span>Faltantes no sistema AM1</span><strong>'+fmt(totalSistema)+'</strong><small>Total original da auditoria, sem alterações</small></article>',
-    '<article class="falt-kpi extra"><span>Pacotes a mais AM1</span><strong>'+fmt(extra)+'</strong><small>Indicador independente e preservado</small></article>'
   ].join("");
   el("faltantesSideCards").innerHTML=state.sides.map(side=>{
     const percent=pendentes?side.pendentes/pendentes*100:0;
@@ -149,7 +146,7 @@ function render(payload){
       '<span><b>PS:</b> '+esc(side.staff.ps||"Não informado")+'</span></div>'+
       '<div class="falt-count"><strong>'+fmt(side.pendentes)+'</strong><small>'+percent.toFixed(1).replace(".",",")+'% dos pendentes</small></div>'+
       '<span class="falt-meter"><i style="width:'+Math.min(100,percent).toFixed(2)+'%"></i></span>'+
-      '<small class="falt-extra">Sistema: '+fmt(side.faltantes)+' · Encontrados: '+fmt(side.encontrados)+' · A mais: '+fmt(side.aMais)+'</small></article>';
+      '<small class="falt-extra">Faltantes no sistema: '+fmt(side.faltantes)+' · Encontrados no físico: '+fmt(side.encontrados)+'</small></article>';
   }).join("");
   // Apenas Coordenadores. Não duplicar cards de PS.
   const people=new Map();
@@ -181,7 +178,7 @@ function render(payload){
       : "Aguardando a importação/aplicação da planilha IDs Físicos da mesma data no Editor de Dados. Até lá, todos os faltantes do sistema permanecem pendentes."
     : "Fonte: Base Aduana do Editor de Dados. O abatimento individual por Shipment ID começa depois que o CSV/XLSX final do sistema e a planilha IDs Físicos da mesma data forem aplicados.";
   el("faltantesNote").textContent=notice+
-    " Total original = encontrados + pendentes (por ocorrência de rota). IDs repetidos no físico não geram abatimento extra; IDs fora dos FALTANTES da AM1 e operações CHP, AM0, AMDE, PM e SD são ignorados. Pacotes A Mais são tratados separadamente."+
+    " Total original = encontrados + pendentes (por ocorrência de rota). IDs repetidos no físico não geram abatimento extra; somente ocorrências FALTANTES da AM1 são consideradas. CHP, AM0, AMDE, PM e SD são ignorados."+
     (model.final&&!model.useFinal?" ATENÇÃO: o CSV do sistema salvo é de outra data.":"");
   renderTable();
 }
