@@ -328,10 +328,10 @@ function render(payload){
   const notice=state.final
     ? state.physicalReady
       ? "Conciliação ativa com "+state.physicalFile+". Todo Shipment ID físico que também esteja como FALTANTE na AM1 é abatido do saldo pendente, inclusive quando bipado em outro lado. Os lados e Coordenadores seguem a rota do SISTEMA."
-      : "Aguardando a importação/aplicação da planilha IDs Físicos da mesma data no Editor de Dados. Até lá, todos os faltantes do sistema permanecem pendentes."
+      : "Aguardando a importação/aplicação da planilha IDs Físicos da mesma data no Editor de Dados. Os status tratados no inventário continuam separados da localização física."
     : "Fonte: Base Aduana do Editor de Dados. O abatimento individual por Shipment ID começa depois que o CSV/XLSX final do sistema e a planilha IDs Físicos da mesma data forem aplicados.";
   el("faltantesNote").textContent=notice+
-    " Total original = encontrados + pendentes (por ocorrência de rota). IDs repetidos no físico não geram abatimento extra; somente ocorrências FALTANTES da AM1 são consideradas. CHP, AM0, AMDE, PM e SD são ignorados."+
+    " Total original = encontrados no físico + tratados no inventário + pendentes (por ocorrência da rota). IDs repetidos no físico não geram abatimento extra; somente ocorrências FALTANTES da AM1 são consideradas. CHP, AM0, AMDE, PM e SD são ignorados."+
     (model.final&&!model.useFinal?" ATENÇÃO: o CSV do sistema salvo é de outra data.":"");
   renderTable();
 }
@@ -425,8 +425,14 @@ function csvCell(v){
   return '"'+s.replace(/"/g,'""')+'"';
 }
 function exportCsv(){
-  const lines=[["Data","Lado Sistema","Rota AM1","Doca","Coordenador","PS","Shipment ID","Lado Físico","Quantidade","Estado no Sistema","Situação Física"]];
-  selectedRows().forEach(r=>lines.push([state.date,r.titulo,r.rota,r.doca,r.coord,r.ps,r.id,r.ladoFisico,r.qty,"FALTANTE",r.found?"Encontrado no físico":(state.physicalReady?"Pendente":"Aguardando físico")]));
+  const lines=[["Data","Lado Sistema","Rota AM1","Doca","Coordenador","PS","Shipment ID","Lado Físico","Quantidade","Estado no Sistema","Situação Física","Inventário","Valor (R$)"]];
+  selectedRows().forEach(r=>{
+    const inventory=canAdmin()?itemStatus(r):r.found?"Encontrado":"Acesso restrito";
+    const value=canAdmin()?real(itemInventory(r).inventoryValueCents):"—";
+    const situacao=r.found?"Encontrado no físico":manualResolved(r)?"Tratado no inventário":state.physicalReady?"Pendente":"Aguardando físico";
+    lines.push([state.date,r.titulo,r.rota,r.doca,r.coord,r.ps,r.id,r.ladoFisico,r.qty,
+      "FALTANTE",situacao,inventory,value]);
+  });
   const blob=new Blob(["\uFEFF"+lines.map(row=>row.map(csvCell).join(";")).join("\r\n")],{type:"text/csv;charset=utf-8"});
   const url=URL.createObjectURL(blob),link=document.createElement("a");
   link.href=url;link.download="faltantes_AM1_"+String(state.date||"sem-data").replace(/\W+/g,"-")+".csv";
