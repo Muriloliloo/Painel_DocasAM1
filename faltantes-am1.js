@@ -286,19 +286,20 @@ function render(payload){
     '<span><i class="bi bi-box-seam"></i> '+(state.physicalReady?"IDs Físicos: "+esc(state.physicalFile):"IDs Físicos: aguardando importação da mesma data")+'</span>'+
     '<span><i class="bi bi-funnel-fill"></i> Somente <b>_AM1</b> · '+fmt(routes)+' rotas com pendência</span>';
   el("faltantesKpis").innerHTML=[
-    '<article class="falt-kpi missing"><span>Faltantes pendentes AM1</span><strong>'+fmt(pendentes)+'</strong><small>Saldo atualizado após a conciliação física</small></article>',
-    '<article class="falt-kpi found"><span>Faltantes encontrados no físico</span><strong>'+fmt(encontrados)+'</strong><small>Conciliados pela planilha de IDs Físicos</small></article>',
-    '<article class="falt-kpi treated"><span>Tratados no inventário</span><strong>'+fmt(tratados)+'</strong><small>Status resolvido manualmente no Firebase</small></article>',
-    '<article class="falt-kpi"><span>Faltantes no sistema AM1</span><strong>'+fmt(totalSistema)+'</strong><small>Total original da auditoria, sem alterações</small></article>',
+    '<article class="falt-kpi missing"><span class="falt-kpi-icon"><i class="bi bi-box-seam-fill" aria-hidden="true"></i></span><div class="falt-kpi-copy"><span>Faltantes pendentes AM1</span><strong>'+fmt(pendentes)+'</strong><small>Saldo atualizado após a conciliação física</small></div></article>',
+    '<article class="falt-kpi found"><span class="falt-kpi-icon"><i class="bi bi-check-circle-fill" aria-hidden="true"></i></span><div class="falt-kpi-copy"><span>Faltantes encontrados no físico</span><strong>'+fmt(encontrados)+'</strong><small>Conciliados pela planilha de IDs Físicos</small></div></article>',
+    '<article class="falt-kpi treated"><span class="falt-kpi-icon"><i class="bi bi-clipboard2-check-fill" aria-hidden="true"></i></span><div class="falt-kpi-copy"><span>Tratados no inventário</span><strong>'+fmt(tratados)+'</strong><small>Status resolvido manualmente no Firebase</small></div></article>',
+    '<article class="falt-kpi system"><span class="falt-kpi-icon"><i class="bi bi-database-fill" aria-hidden="true"></i></span><div class="falt-kpi-copy"><span>Faltantes no sistema AM1</span><strong>'+fmt(totalSistema)+'</strong><small>Total original da auditoria, sem alterações</small></div></article>',
   ].join("");
-  el("faltantesSideCards").innerHTML=state.sides.map(side=>{
+  el("faltantesSideCards").innerHTML=state.sides.map((side,index)=>{
     const percent=pendentes?side.pendentes/pendentes*100:0;
-    return '<article class="falt-side"><h4>'+esc(side.title)+'</h4>'+
+    const letter=side.label==="Sem lado identificado"?"?":String.fromCharCode(65+index);
+    return '<article class="falt-side"><div class="falt-side-heading"><span class="falt-side-icon" aria-hidden="true">'+letter+'</span><h4>'+esc(side.title)+'</h4></div>'+
       '<div class="falt-staff"><span><b>Coordenador:</b> '+esc(side.staff.coordenador||"Não informado")+'</span>'+
       '<span><b>PS:</b> '+esc(side.staff.ps||"Não informado")+'</span></div>'+
       '<div class="falt-count"><strong>'+fmt(side.pendentes)+'</strong><small>'+percent.toFixed(1).replace(".",",")+'% dos pendentes</small></div>'+
       '<span class="falt-meter"><i style="width:'+Math.min(100,percent).toFixed(2)+'%"></i></span>'+
-      '<small class="falt-extra">Sistema: '+fmt(side.faltantes)+' · Físico: '+fmt(side.encontrados)+' · Tratados: '+fmt(side.tratados)+'</small></article>';
+      '<small class="falt-extra">Sistema: <b>'+fmt(side.faltantes)+'</b> · Físico: <b>'+fmt(side.encontrados)+'</b> · Tratados: <b>'+fmt(side.tratados)+'</b></small></article>';
   }).join("");
   // Apenas Coordenadores. Não duplicar cards de PS.
   const people=new Map();
@@ -312,8 +313,8 @@ function render(payload){
     people.get(key).treated+=side.tratados;
   });
   el("faltantesPeople").innerHTML=people.size?[...people.values()].sort((a,b)=>b.qty-a.qty).map(p=>
-    '<article class="falt-person"><span>Coordenador</span><b>'+esc(p.name)+'</b><strong>'+fmt(p.qty)+'</strong>'+
-    '<small>'+fmt(p.found)+' no físico · '+fmt(p.treated)+' tratado(s) no inventário</small></article>'
+    '<article class="falt-person"><span class="falt-person-icon" aria-hidden="true"><i class="bi bi-person-fill"></i></span><div class="falt-person-copy"><span>Coordenador</span><b>'+esc(p.name)+'</b>'+
+    '<small>'+fmt(p.found)+' no físico · '+fmt(p.treated)+' tratado(s) no inventário</small></div><strong>'+fmt(p.qty)+'</strong></article>'
   ).join(""):'<p>Cadastre os Coordenadores no Editor de Dados para exibir o saldo.</p>';
   const options=['<option value="">Todos os lados</option>'].concat(state.sides.map(s=>
     '<option value="'+esc(s.label)+'">'+esc(s.title)+'</option>'));
