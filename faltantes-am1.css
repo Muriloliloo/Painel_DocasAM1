@@ -673,3 +673,56 @@ body:not(.dark-mode) .app.faltantes-mode #faltantesView .falt-side .falt-extra {
   body:not(.dark-mode) .app.faltantes-mode #faltantesView .falt-side .falt-extra,
   body:not(.dark-mode) .app.faltantes-mode #faltantesView .falt-side .falt-extra b { font-size:13px; }
 }
+
+
+/* Restaurar visual anterior SOMENTE de Faltantes por Coordenador:
+   azul-claro, dourado-claro, verde-claro e azul-claro, sem interferir
+   nos cards A–E (cinza + texto preto) e nas funções de inventário. */
+body:not(.dark-mode) .app.faltantes-mode #faltantesView .falt-responsaveis .falt-person {
+  background:linear-gradient(135deg,#fbfdff,#eaf3fd);
+  border:1px solid #c8dcef;
+  color:#254e74;
+  box-shadow:0 3px 12px rgba(33,74,106,.09);
+}
+body:not(.dark-mode) .app.faltantes-mode #faltantesView .falt-responsaveis .falt-person:nth-child(2) {
+  background:linear-gradient(135deg,#fffefa,#f9f0de);
+  border-color:#e8d2a4;
+}
+body:not(.dark-mode) .app.faltantes-mode #faltantesView .falt-responsaveis .falt-person:nth-child(3) {
+  background:linear-gradient(135deg,#fafffd,#eaf8f1);
+  border-color:#b8dfd0;
+}
+body:not(.dark-mode) .app.faltantes-mode #faltantesView .falt-responsaveis .falt-person:nth-child(4) {
+  background:linear-gradient(135deg,#fafcff,#eaf2fb);
+  border-color:#c3d8ee;
+}
+body:not(.dark-mode) .app.faltantes-mode #faltantesView .falt-responsaveis .falt-person .falt-person-icon {
+  background:#d4e5f5;
+  color:#326b9c;
+}
+body:not(.dark-mode) .app.faltantes-mode #faltantesView .falt-responsaveis .falt-person:nth-child(2) .falt-person-icon {
+  background:#f7e1b7;
+  color:#a8782e;
+}
+body:not(.dark-mode) .app.faltantes-mode #faltantesView .falt-responsaveis .falt-person:nth-child(3) .falt-person-icon {
+  background:#d4f0e4;
+  color:#188364;
+}
+body:not(.dark-mode) .app.faltantes-mode #faltantesView .falt-responsaveis .falt-person:nth-child(4) .falt-person-icon {
+  background:#d9e7f7;
+  color:#386f9e;
+}
+body:not(.dark-mode) .app.faltantes-mode #faltantesView .falt-responsaveis .falt-person-copy > span {
+  color:#58758e;
+}
+body:not(.dark-mode) .app.faltantes-mode #faltantesView .falt-responsaveis .falt-person-copy > b {
+  color:#254e74;
+}
+body:not(.dark-mode) .app.faltantes-mode #faltantesView .falt-responsaveis .falt-person-copy > small {
+  color:#5b7891;
+}
+body:not(.dark-mode) .app.faltantes-mode #faltantesView .falt-responsaveis .falt-person > strong {
+  color:#a77724;
+  font-size:26px;
+  font-weight:950;
+}
