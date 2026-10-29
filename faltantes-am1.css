@@ -116,3 +116,382 @@ body.dark-mode .falt-inventory-feedback,body.dark-mode .falt-inventory-actions s
 body.dark-mode .falt-inventory-actions select,body.dark-mode .falt-inventory-cell select,body.dark-mode .falt-value-edit input{background:#173e55;color:#f5fbff;border-color:#567b94}
 body.dark-mode .falt-value-cell button,body.dark-mode .falt-value-edit button{background:#15496a;color:#ebf7ff;border-color:#567b94}
 body.dark-mode .falt-tag.treated{background:#694824;color:#ffe3b2}
+
+
+/* ===============================================================
+   REPAGINAÇÃO VISUAL FALTANTES AM1 — 29/10/2026
+   Exclusiva desta aba: não altera Aduana ou qualquer outra tela.
+   =============================================================== */
+.app.docas-mode.faltantes-mode,
+.app.faltantes-mode #faltantesView{
+  background:#edf5ff;
+}
+.app.faltantes-mode #faltantesView{
+  background:
+    radial-gradient(ellipse 48% 34% at 93% 0%,rgba(161,205,255,.31),transparent 72%),
+    radial-gradient(ellipse 40% 36% at 2% 66%,rgba(205,225,255,.32),transparent 75%),
+    #edf5ff;
+  padding:clamp(12px,1.55vw,26px);
+  color:#0a3468;
+  font-family:Inter,"Segoe UI",system-ui,Arial,sans-serif;
+}
+.falt-shell{max-width:1900px;gap:19px}
+.falt-hero{
+  min-height:100px;
+  padding:19px 26px;
+  gap:20px;
+  border-radius:17px;
+  border:1px solid #ffbdd2;
+  background:
+    radial-gradient(ellipse 75% 135% at 98% 102%,rgba(250,135,193,.21) 0%,transparent 62%),
+    linear-gradient(108deg,#fff5f7 0%,#fff8fb 54%,#ffe6f1 100%);
+  box-shadow:0 10px 29px rgba(196,71,121,.10),inset 0 1px 0 rgba(255,255,255,.94);
+}
+.falt-head-left{gap:18px;min-width:0}
+.falt-head-icon{
+  flex:0 0 auto;
+  width:64px;height:64px;
+  border:1px solid #ffc1d1;border-radius:17px;
+  background:linear-gradient(145deg,#ffedf2,#ffb9cf);
+  color:#e10b46;
+  box-shadow:inset 0 2px 4px #ffffffc9,0 6px 13px #ca275324;
+  font-size:32px;
+}
+.falt-hero h2{
+  font:900 clamp(24px,2.45vw,39px)/1.06 Inter,"Segoe UI",system-ui,sans-serif;
+  letter-spacing:-.7px;
+  color:#8c1238;
+}
+.falt-hero p{font-size:13px;line-height:1.6;color:#475b76;margin-top:7px}
+.falt-head-actions{gap:10px}
+.falt-action{
+  min-height:42px;
+  padding:10px 16px;
+  border-color:#bad9fe;
+  border-radius:10px;
+  background:linear-gradient(180deg,#fff,#f5faff);
+  color:#0754a5;
+  font-size:12px;font-weight:900;
+  box-shadow:0 3px 10px #0b418512;
+  transition:transform .18s ease,box-shadow .18s ease,background .18s ease;
+}
+.falt-action:hover,.falt-action:focus-visible{
+  transform:translateY(-1px);
+  border-color:#398ff5;
+  background:#e9f5ff;
+  box-shadow:0 5px 15px #1266b32d;
+}
+.falt-action.primary{
+  background:linear-gradient(135deg,#1671ed,#064bb5);
+  color:#fff;border-color:#0753b9;
+  box-shadow:0 5px 15px #0864c232;
+}
+.falt-action.primary:hover{background:linear-gradient(135deg,#2387ff,#0951bf)}
+.falt-status{gap:9px}
+.falt-status span{
+  display:inline-flex;align-items:center;gap:7px;
+  min-height:36px;
+  padding:8px 13px;
+  background:linear-gradient(180deg,#fff,#edf7ff);
+  border:1px solid #c3ddfc;
+  color:#0b57ab;
+  border-radius:12px;
+  box-shadow:0 3px 8px #2469a012;
+  font-size:11px;
+}
+.falt-status span i{font-size:14px;color:#087aff}
+.falt-kpis{grid-template-columns:repeat(4,minmax(0,1fr));gap:15px}
+.falt-kpi{
+  position:relative;isolation:isolate;
+  display:grid;
+  grid-template-columns:58px minmax(0,1fr);
+  align-items:center;
+  gap:15px;
+  min-height:145px;
+  padding:20px 19px;
+  overflow:hidden;
+  border-radius:16px;
+  border:1px solid #bddcff;
+  background:linear-gradient(135deg,#f8fcff,#e8f4ff);
+  box-shadow:0 8px 25px #195aa214;
+  transition:transform .18s ease,box-shadow .18s ease;
+}
+.falt-kpi::after{
+  content:"";position:absolute;z-index:-1;
+  width:200px;height:150px;
+  right:-72px;bottom:-100px;
+  background:rgba(66,150,250,.10);
+  transform:rotate(-29deg);
+  border-radius:65px;
+}
+.falt-kpi:hover{
+  transform:translateY(-3px);
+  box-shadow:0 12px 28px #235ba329;
+}
+.falt-kpi-copy{display:grid;align-content:center;gap:7px;min-width:0}
+.falt-kpi .falt-kpi-copy > span{
+  color:#073c81;font-size:clamp(11px,.85vw,14px);font-weight:900;
+}
+.falt-kpi .falt-kpi-copy > strong{
+  color:#073e86;font-size:clamp(34px,3.2vw,52px);line-height:.95;
+  font-weight:950;letter-spacing:-1.4px;
+}
+.falt-kpi .falt-kpi-copy > small{
+  color:#4a688d;font-size:11px;line-height:1.45;
+}
+.falt-kpi .falt-kpi-icon{
+  display:grid;place-items:center;
+  width:57px;height:57px;
+  border-radius:50%;
+  border:1px solid rgba(255,255,255,.8);
+  box-shadow:inset 0 2px 4px #ffffffb0,0 5px 12px #0d448c18;
+  color:#0066d4;
+  background:linear-gradient(145deg,#e2f4ff,#91caff);
+  font-size:28px;
+}
+.falt-kpi.missing{
+  background:linear-gradient(135deg,#fffafa 0%,#ffe8f0 100%);
+  border-color:#ffcbdb;
+}
+.falt-kpi.missing::after{background:#fb6e9d1a}
+.falt-kpi.missing .falt-kpi-icon{background:linear-gradient(145deg,#ffdce9,#ffa8c5);color:#e40d44}
+.falt-kpi.missing .falt-kpi-copy > strong{color:#dc1043}
+.falt-kpi.found{
+  background:linear-gradient(135deg,#f4fff9,#dffdf0);
+  border-color:#a6eccd;
+}
+.falt-kpi.found::after{background:#20d79717}
+.falt-kpi.found .falt-kpi-icon{background:linear-gradient(145deg,#bcffdf,#72e5ba);color:#008e57}
+.falt-kpi.found .falt-kpi-copy > strong{color:#079968}
+.falt-kpi.treated{
+  background:linear-gradient(135deg,#fffdf8,#fff0ce);
+  border-color:#ffdda2;
+}
+.falt-kpi.treated::after{background:#ffa92714}
+.falt-kpi.treated .falt-kpi-icon{background:linear-gradient(145deg,#fff0bc,#ffca68);color:#b77407}
+.falt-kpi.treated .falt-kpi-copy > strong{color:#b66b06}
+.falt-panel{
+  background:#fff;
+  border:1px solid #d0e4fc;
+  border-radius:17px;
+  box-shadow:0 8px 27px #1e70b914;
+}
+.falt-panel-header{
+  background:linear-gradient(110deg,#ffffff,#f6fbff);
+  border-color:#e1effd;
+  padding:17px 20px;
+}
+.falt-panel-header h3{
+  font-size:19px;
+  letter-spacing:-.25px;
+  color:#083d83;
+  display:flex;align-items:center;gap:8px;
+}
+.falt-panel-header h3 > i{color:#1277f7;font-size:19px}
+.falt-panel-header p{color:#5d78a0;font-size:12px;line-height:1.45}
+.falt-panel-content{padding:17px}
+.falt-side-grid{gap:14px;grid-template-columns:repeat(5,minmax(0,1fr))}
+.falt-side{
+  --zone:#0879ef;
+  --zone-rgb:8,121,239;
+  position:relative;
+  min-width:0;
+  padding:15px 13px;
+  border-radius:15px;
+  border:1px solid rgba(var(--zone-rgb),.22);
+  background:linear-gradient(156deg,#fff,rgba(var(--zone-rgb),.055));
+  box-shadow:0 4px 13px rgba(var(--zone-rgb),.10);
+  transition:transform .18s ease,box-shadow .18s ease;
+}
+.falt-side:hover{transform:translateY(-2px);box-shadow:0 9px 22px rgba(var(--zone-rgb),.20)}
+.falt-side:nth-child(1){--zone:#0879ef;--zone-rgb:8,121,239}
+.falt-side:nth-child(2){--zone:#f11e55;--zone-rgb:241,30,85}
+.falt-side:nth-child(3){--zone:#f5a500;--zone-rgb:245,165,0}
+.falt-side:nth-child(4){--zone:#7138ef;--zone-rgb:113,56,239}
+.falt-side:nth-child(5){--zone:#05af7b;--zone-rgb:5,175,123}
+.falt-side:nth-child(n+6){--zone:#6577aa;--zone-rgb:101,119,170}
+.falt-side-heading{display:flex;align-items:center;gap:9px;margin-bottom:12px}
+.falt-side-icon{
+  display:grid;place-items:center;flex:0 0 auto;
+  width:41px;height:41px;
+  border-radius:50%;
+  background:rgba(var(--zone-rgb),.15);
+  border:1px solid rgba(var(--zone-rgb),.2);
+  color:var(--zone);
+  font-size:23px;font-weight:950;
+}
+.falt-side h4{color:#0b3a7d;margin:0;font-size:clamp(12px,.88vw,15px);line-height:1.35}
+.falt-side .falt-staff{min-height:58px;gap:5px;color:#325987}
+.falt-side .falt-staff b{color:#153f77}
+.falt-side .falt-count{margin:13px 0 9px;align-items:end}
+.falt-side .falt-count strong{color:#d81443;font-size:clamp(29px,2.3vw,39px);font-weight:950;letter-spacing:-.5px}
+.falt-side .falt-count small{color:#274f86;font-size:11px}
+.falt-meter{height:10px;background:#e3edf8;border-radius:30px}
+.falt-meter i{
+  background:linear-gradient(90deg,var(--zone),var(--zone));
+  border-radius:30px;box-shadow:0 0 9px rgba(var(--zone-rgb),.27)
+}
+.falt-side .falt-extra{
+  display:block;
+  border-radius:30px;
+  padding:9px 8px;
+  margin-top:13px;
+  background:#fff3df;
+  color:#7a4e17;
+  font-size:10px;
+  text-align:center;
+  line-height:1.5;
+}
+.falt-responsaveis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.falt-person{
+  position:relative;
+  display:grid;
+  grid-template-columns:42px minmax(0,1fr) auto;
+  gap:12px;
+  align-items:center;
+  min-width:0;min-height:91px;
+  padding:13px;
+  border-radius:14px;
+  border:1px solid #cae0fc;
+  background:linear-gradient(145deg,#fff,#edf6ff);
+  box-shadow:0 4px 13px #0e65bf10;
+}
+.falt-person:nth-child(2){background:linear-gradient(145deg,#fff,#fff7e6);border-color:#f8dcb0}
+.falt-person:nth-child(3){background:linear-gradient(145deg,#fff,#e9fff5);border-color:#b3ebd3}
+.falt-person:nth-child(4){background:linear-gradient(145deg,#fff,#f3edff);border-color:#d8c8fc}
+.falt-person-icon{
+  display:grid;place-items:center;
+  width:43px;height:43px;border-radius:50%;
+  background:linear-gradient(145deg,#ddf3ff,#9ed6ff);
+  color:#047ddd;font-size:23px;
+}
+.falt-person:nth-child(2) .falt-person-icon{background:#ffe8bc;color:#e69300}
+.falt-person:nth-child(3) .falt-person-icon{background:#befce3;color:#049c60}
+.falt-person:nth-child(4) .falt-person-icon{background:#e4d5ff;color:#7134e7}
+.falt-person-copy{display:grid;min-width:0;gap:3px}
+.falt-person-copy > span{color:#5779a2;font-size:10px;font-weight:800}
+.falt-person-copy > b{color:#093c83;font-size:12px;overflow-wrap:anywhere}
+.falt-person-copy > small{font-size:10px;line-height:1.4;color:#557699;font-weight:700}
+.falt-person > strong{color:#d41043;font-size:27px;font-weight:950}
+.falt-filters{gap:10px}
+.falt-filters input,.falt-filters select,
+.falt-inventory-actions select{
+  min-height:42px;border-radius:10px;
+  border:1px solid #c8ddf5;
+  background:#fafdff;
+  color:#123e77;
+}
+.falt-filters input:focus,.falt-filters select:focus,
+.falt-inventory-actions select:focus{
+  outline:2px solid #63afff;outline-offset:1px;
+}
+.falt-inventory-actions{gap:11px;padding-top:17px}
+.falt-inventory-actions > strong{color:#154a87}
+.falt-inventory-feedback{color:#285f96}
+.falt-table-wrap{
+  border-top:1px solid #dfedfe;
+  scrollbar-color:#9dc5e9 #eef6ff;
+}
+.falt-table th{
+  background:#063d77;
+  color:#fff;
+  padding:14px 12px;
+  font-size:11px;
+}
+.falt-table td{padding:13px 12px;font-weight:650}
+.falt-table tbody tr:nth-child(even){background:#f1f7ff}
+.falt-table tbody tr:hover{background:#e6f2ff}
+.falt-tag{padding:6px 10px}
+.falt-tag.found{background:#ceffe6;color:#046b43}
+.falt-tag.treated{background:#ffefce;color:#855309}
+.falt-value-cell button,.falt-value-edit button{
+  background:#e7f3ff;color:#0c62a6;border-color:#9bc5ef;
+  border-radius:7px;
+}
+.falt-value-cell button:hover,.falt-value-edit button:hover{background:#cceaff}
+.falt-note{
+  border-radius:12px;
+  padding:14px 16px;
+  color:#346592;
+  background:#f6fbff;
+  border:1px solid #d3e7fc;
+}
+@media(max-width:1500px){
+  .falt-kpi{grid-template-columns:47px minmax(0,1fr);gap:12px;padding:16px}
+  .falt-kpi .falt-kpi-icon{width:47px;height:47px;font-size:24px}
+  .falt-side-grid{gap:10px}
+  .falt-side{padding:12px 10px}
+  .falt-person{grid-template-columns:38px minmax(0,1fr) auto;gap:9px}
+}
+@media(max-width:1200px){
+  .falt-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .falt-side-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .falt-responsaveis{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:780px){
+  .falt-kpis,.falt-side-grid,.falt-responsaveis{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .falt-head-actions{width:100%}
+  .falt-hero{padding:16px}
+}
+@media(max-width:580px){
+  .app.faltantes-mode #faltantesView{padding:11px 8px}
+  .falt-kpis,.falt-side-grid,.falt-responsaveis{grid-template-columns:1fr}
+  .falt-hero h2{font-size:25px}
+  .falt-head-icon{width:50px;height:50px;min-width:50px;min-height:50px}
+}
+@media(prefers-reduced-motion:reduce){
+  .falt-kpi,.falt-side,.falt-action{transition:none!important;transform:none!important}
+}
+/* Modo noturno: manter a vivacidade sem perder contraste. */
+body.dark-mode .app.faltantes-mode #faltantesView{
+  background:radial-gradient(ellipse at 90% 0%,#233c68 0%,transparent 50%),#0e2538;
+  color:#eaf5ff;
+}
+body.dark-mode .falt-hero{
+  background:linear-gradient(115deg,#4d243a,#35263e,#382744);
+  border-color:#894e6e;
+}
+body.dark-mode .falt-hero h2{color:#ffe5ef}
+body.dark-mode .falt-head-icon{background:#743b56;border-color:#af6987;color:#ffc0d5}
+body.dark-mode .falt-hero p{color:#f0d3dd}
+body.dark-mode .falt-status span{background:#163d5a;color:#bde6ff;border-color:#436d8c}
+body.dark-mode .falt-kpi,
+body.dark-mode .falt-kpi.missing,
+body.dark-mode .falt-kpi.found,
+body.dark-mode .falt-kpi.treated{
+  background:linear-gradient(145deg,#1d3a56,#163147);
+  border-color:#456c86;
+}
+body.dark-mode .falt-kpi .falt-kpi-copy > span{color:#e0efff}
+body.dark-mode .falt-kpi .falt-kpi-copy > small{color:#b9d2eb}
+body.dark-mode .falt-kpi .falt-kpi-copy > strong{color:#91caff}
+body.dark-mode .falt-kpi.missing .falt-kpi-copy > strong{color:#ff749c}
+body.dark-mode .falt-kpi.found .falt-kpi-copy > strong{color:#66e8b2}
+body.dark-mode .falt-kpi.treated .falt-kpi-copy > strong{color:#ffd17c}
+body.dark-mode .falt-panel{background:#15344d;border-color:#456983}
+body.dark-mode .falt-panel-header{background:linear-gradient(110deg,#1d4058,#19374e);border-color:#45637d}
+body.dark-mode .falt-panel-header h3{color:#e2f3ff}
+body.dark-mode .falt-panel-header p{color:#b3cfe7}
+body.dark-mode .falt-side{
+  background:linear-gradient(155deg,#173b55,#1e3b56);
+  border-color:rgba(var(--zone-rgb),.6);
+}
+body.dark-mode .falt-side h4,body.dark-mode .falt-side .falt-staff b,
+body.dark-mode .falt-side .falt-count small{color:#e1f4ff}
+body.dark-mode .falt-side .falt-staff{color:#bad7eb}
+body.dark-mode .falt-side .falt-count strong{color:#ff668e}
+body.dark-mode .falt-side .falt-extra{background:#443921;color:#ffe0a6}
+body.dark-mode .falt-person,
+body.dark-mode .falt-person:nth-child(n){
+  background:linear-gradient(150deg,#1b3e57,#17364d);
+  border-color:#446d88;
+}
+body.dark-mode .falt-person-copy > span{color:#b8d2e9}
+body.dark-mode .falt-person-copy > b{color:#e9f5ff}
+body.dark-mode .falt-person-copy > small{color:#add2ea}
+body.dark-mode .falt-person > strong{color:#ff749c}
+body.dark-mode .falt-filters input,body.dark-mode .falt-filters select,
+body.dark-mode .falt-inventory-actions select{background:#123b56;color:#f0faff;border-color:#496e89}
+body.dark-mode .falt-table th{background:#0b253f}
+body.dark-mode .falt-table tbody tr:hover{background:#285370}
+body.dark-mode .falt-note{background:#183952;color:#c4dcf2;border-color:#3a637d}
