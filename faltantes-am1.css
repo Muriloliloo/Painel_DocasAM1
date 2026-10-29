@@ -19,7 +19,7 @@ body.faltantes-mode-active{width:100%;min-width:0;display:block;overflow:hidden}
 .falt-action.primary:hover{background:#0a3859}
 .falt-status{display:flex;flex-wrap:wrap;gap:10px;color:#195579;font-size:12px;font-weight:800}
 .falt-status span{border:1px solid #c7dae7;background:#fff;padding:8px 12px;border-radius:8px}
-.falt-kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.falt-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
 .falt-kpi{display:grid;gap:7px;padding:18px;border-radius:12px;border:1px solid #c7d9e7;background:#fff;box-shadow:0 3px 12px #00365509}
 .falt-kpi span{color:#496b83;font-weight:800;font-size:13px}
 .falt-kpi strong{color:#0b3758;font-size:clamp(28px,3vw,44px);line-height:1;font-weight:900}
@@ -84,3 +84,35 @@ body.dark-mode .falt-filters input,body.dark-mode .falt-filters select{backgroun
 body.dark-mode .falt-kpi.found{background:#173f37;border-color:#3b725d}
 body.dark-mode .falt-kpi.found strong,body.dark-mode .falt-person small{color:#71e6a9}
 body.dark-mode .falt-tag.found{background:#195440;color:#a5ffcb}
+
+/* Inventário privado de Faltantes AM1 — mesmo padrão da aba Aduana */
+.falt-kpi.treated{background:#fff4e5;border-color:#ffce8c}
+.falt-kpi.treated strong{color:#b66b06}
+.falt-tag.treated{background:#fff1d8;color:#8c5609}
+.falt-table{min-width:1290px}
+.falt-table th{z-index:1}
+.falt-inventory-actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center;padding:13px 0 3px}
+.falt-inventory-actions strong{color:#153c5d;font-size:12px;font-weight:900}
+.falt-inventory-actions select{min-width:210px;max-width:100%;min-height:36px;padding:7px 9px;border-radius:7px;border:1px solid #aec9dc;background:#fff;color:#123756;font:700 12px "Segoe UI",Arial,sans-serif}
+.falt-inventory-actions small{font-size:11px;color:#486a82}
+.falt-inventory-feedback{min-height:18px;margin:8px 0 0;color:#2f678b;font:750 12px "Segoe UI",Arial,sans-serif}
+.falt-th-check{display:block;margin-top:6px;font-size:10px;line-height:1.2;white-space:nowrap;cursor:pointer}
+.falt-th-check input{vertical-align:middle;accent-color:#f7c21a}
+.falt-inventory-cell{display:flex;align-items:center;gap:5px}
+.falt-inventory-cell input[type=checkbox]{accent-color:#1477b5}
+.falt-inventory-cell select{min-width:136px;max-width:190px;padding:6px;border:1px solid #afc4d3;border-radius:6px;background:white;color:#12395a;font-size:11px;font-weight:750}
+.falt-inventory-cell select:disabled{opacity:.58}
+.falt-value-cell,.falt-value-edit{display:flex;gap:7px;align-items:center;white-space:nowrap}
+.falt-money{font-weight:900;font-size:12px;color:#0d3d61}
+.falt-value-cell button,.falt-value-edit button{cursor:pointer;border:1px solid #aecbde;border-radius:5px;padding:5px 7px;background:#eff7ff;color:#09395d;font-size:11px;font-weight:850}
+.falt-value-cell button:hover,.falt-value-edit button:hover{background:#d7eeff;border-color:#4595ce}
+.falt-value-cell button:disabled,.falt-value-edit button:disabled{cursor:not-allowed;opacity:.5}
+.falt-value-edit input{width:85px;min-height:30px;padding:5px;border-radius:5px;border:1px solid #9fbfd2;color:#12395a;background:#fff}
+.falt-muted{font-size:11px;color:#72889b}
+body.dark-mode .falt-kpi.treated{background:#493821;border-color:#876338}
+body.dark-mode .falt-kpi.treated strong{color:#ffbe67}
+body.dark-mode .falt-inventory-actions strong,body.dark-mode .falt-money{color:#e7f4ff}
+body.dark-mode .falt-inventory-feedback,body.dark-mode .falt-inventory-actions small{color:#bcdaeb}
+body.dark-mode .falt-inventory-actions select,body.dark-mode .falt-inventory-cell select,body.dark-mode .falt-value-edit input{background:#173e55;color:#f5fbff;border-color:#567b94}
+body.dark-mode .falt-value-cell button,body.dark-mode .falt-value-edit button{background:#15496a;color:#ebf7ff;border-color:#567b94}
+body.dark-mode .falt-tag.treated{background:#694824;color:#ffe3b2}
