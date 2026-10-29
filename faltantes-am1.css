@@ -359,7 +359,7 @@ body.dark-mode .falt-tag.treated{background:#694824;color:#ffe3b2}
 .falt-person:nth-child(2){background:linear-gradient(145deg,#fff,#fff7e6);border-color:#f8dcb0}
 .falt-person:nth-child(3){background:linear-gradient(145deg,#fff,#e9fff5);border-color:#b3ebd3}
 .falt-person:nth-child(4){background:linear-gradient(145deg,#fff,#f3edff);border-color:#d8c8fc}
-.falt-person-icon{
+.falt-person .falt-person-icon{
   display:grid;place-items:center;
   width:43px;height:43px;border-radius:50%;
   background:linear-gradient(145deg,#ddf3ff,#9ed6ff);
