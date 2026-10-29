@@ -764,3 +764,26 @@ body:not(.dark-mode) .app.faltantes-mode #faltantesView .falt-responsaveis .falt
   body:not(.dark-mode) .app.faltantes-mode #faltantesView .falt-responsaveis .falt-person-copy > b {font-size:15px;}
   body:not(.dark-mode) .app.faltantes-mode #faltantesView .falt-responsaveis .falt-person-copy > small {font-size:12px;}
 }
+
+
+/* Coordenadores AM1: remover fundos coloridos e ampliar os totais em preto.
+   Mantém os nomes e informações em azul-escuro e preserva os outros cards. */
+body:not(.dark-mode) .app.faltantes-mode #faltantesView .falt-responsaveis .falt-person,
+body:not(.dark-mode) .app.faltantes-mode #faltantesView .falt-responsaveis .falt-person:nth-child(n) {
+  background:linear-gradient(150deg,#f7f8fa,#eef0f3);
+  border:1px solid #c7cdd4;
+  box-shadow:0 3px 12px rgba(38,48,59,.08);
+}
+body:not(.dark-mode) .app.faltantes-mode #faltantesView .falt-responsaveis .falt-person > strong {
+  color:#101113;
+  font-size:clamp(36px,2.8vw,44px);
+  font-weight:950;
+  line-height:1;
+  letter-spacing:-.8px;
+  font-variant-numeric:tabular-nums;
+}
+@media(max-width:1420px) {
+  body:not(.dark-mode) .app.faltantes-mode #faltantesView .falt-responsaveis .falt-person > strong {
+    font-size:36px;
+  }
+}
