@@ -19044,7 +19044,7 @@ body.editor-open .global-theme-toggle {
     }
     function validFaltantesIds(day){
       const source=data.aduanaFechamentoFinal;
-      if(!source||finalAuditDateKey(source.date)!==day||finalAuditDateKey(data.data)!==day)
+      if(!source||finalAuditDateKey(source.date)!==finalAuditDateKey(day)||finalAuditDateKey(data.data)!==finalAuditDateKey(day))
         throw new Error("Importe e aplique o CSV final de Faltantes AM1 para a data selecionada.");
       const ids=new Set();
       for(const route of source.rows||[]){
@@ -19059,7 +19059,7 @@ body.editor-open .global-theme-toggle {
     }
     function faltanteEstaNoFisico(day,id){
       const physical=data.aduanaFisica;
-      return Boolean(physical&&finalAuditDateKey(physical.date)===day&&
+      return Boolean(physical&&finalAuditDateKey(physical.date)===finalAuditDateKey(day)&&
         Array.isArray(physical.ids)&&physical.ids.some(raw=>faltantesInventoryKey(raw)===id));
     }
     function verifyFaltantesInventoryAccess(day){
