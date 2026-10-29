@@ -1,7 +1,7 @@
 /* Faltantes AM1 — somente leitura, reutilizando as informações do Editor de Dados. */
 (function () {
 "use strict";
-const state = { date:"", final:false, physicalReady:false, physicalFile:"", items:[], sides:[], side:"", statusFilter:"pendentes", search:"", initialized:false };
+const state = { date:"", final:false, physicalReady:false, physicalFile:"", items:[], sides:[], side:"", statusFilter:"todos", search:"", initialized:false };
 const el = id => document.getElementById(id);
 const esc = value => String(value == null ? "" : value).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const norm = value => String(value == null ? "" : value).normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().trim();
@@ -43,7 +43,7 @@ function initialize(){
         '<div class="falt-panel-content"><div class="falt-filters">',
         '<input id="faltantesSearch" type="search" placeholder="Buscar rota, doca, Shipment ID ou responsável" aria-label="Buscar nos faltantes">',
         '<select id="faltantesSideFilter" aria-label="Filtrar por lado"><option value="">Todos os lados</option></select>',
-        '<select id="faltantesStatusFilter" aria-label="Filtrar situação"><option value="pendentes">Pendentes</option><option value="encontrados">Encontrados no físico</option><option value="todos">Todos</option></select>',
+        '<select id="faltantesStatusFilter" aria-label="Filtrar situação"><option value="todos">Todos (pendentes + encontrados)</option><option value="pendentes">Pendentes</option><option value="encontrados">Encontrados no físico</option></select>',
         '</div></div><div class="falt-table-wrap"><table class="falt-table">',
         '<thead><tr><th>Lado</th><th>Rota AM1</th><th>Doca</th><th>Coordenador</th><th>PS</th><th>Shipment ID</th><th>Lado Físico</th><th>Quantidade</th><th>Situação</th></tr></thead>',
         '<tbody id="faltantesRows"></tbody></table></div></section>',
@@ -170,7 +170,7 @@ function render(payload){
   el("faltantesSearch").value=state.search;
   el("faltantesStatusFilter").value=state.statusFilter;
   el("faltantesTableSub").textContent=state.final?
-    "Visualize os pendentes, os IDs encontrados no físico ou todas as ocorrências de FALTANTE da AM1.":
+    "Exibição completa: pendentes e encontrados juntos na mesma lista. Use o filtro para consultar cada situação separadamente.":
     "Ainda sem CSV final desta data: contagens por rota, sem Shipment IDs individuais.";
   const notice=state.final
     ? state.physicalReady
