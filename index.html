@@ -19030,6 +19030,112 @@ body.editor-open .global-theme-toggle {
       currentView = "docas"; dockDisplayMode = "overview"; renderViews();
       document.getElementById("overviewRailBtn")?.focus();
     });
+    // Inventário de Faltantes: documento privado separado da Aduana A Mais.
+    // Não persistir Shipment IDs, status ou valores na coleção pública /paineis.
+    const FALTANTES_INVENTORY_KIND="faltantes-am1-inventory";
+    const FALTANTES_INVENTORY_RESOLVED=new Set(["Encontrado","Devolvido","Vinculado","Atrelado","Em rota","Entregue","Envio cancelado","Avaria","Solução de problemas"]);
+    function faltantesInventoryRef(day){
+      return cloudState.tools.doc(cloudState.db,ADUANA_IDS_COLLECTION,"faltantes-"+day);
+    }
+    function faltantesInventoryKey(raw){
+      const id=String(raw??"").trim().replace(/^\uFEFF/,"").replace(/^'/,"");
+      return /^[+]?[0-9]+(?:\.[0-9]+)?e[+]?[0-9]+$/i.test(id)&&Number.isSafeInteger(Number(id))
+        ? String(Number(id)):id.toUpperCase();
+    }
+    function validFaltantesIds(day){
+      const source=data.aduanaFechamentoFinal;
+      if(!source||finalAuditDateKey(source.date)!==day||finalAuditDateKey(data.data)!==day)
+        throw new Error("Importe e aplique o CSV final de Faltantes AM1 para a data selecionada.");
+      const ids=new Set();
+      for(const route of source.rows||[]){
+        if(!String(route.rota||"").toUpperCase().endsWith("_AM1"))continue;
+        for(const event of route.ocorrencias||[]){
+          if(event.estado!=="faltantes")continue;
+          const id=faltantesInventoryKey(event.shipmentId);
+          if(id)ids.add(id);
+        }
+      }
+      return ids;
+    }
+    function faltanteEstaNoFisico(day,id){
+      const physical=data.aduanaFisica;
+      return Boolean(physical&&finalAuditDateKey(physical.date)===day&&
+        Array.isArray(physical.ids)&&physical.ids.some(raw=>faltantesInventoryKey(raw)===id));
+    }
+    function verifyFaltantesInventoryAccess(day){
+      if(!cloudState.ready||!cloudState.db||!cloudState.user||!isAdmin())
+        throw new Error("Entre como administrador no Firebase para alterar o inventário.");
+      checkAduanaHistoryDay(day);
+      return validFaltantesIds(day);
+    }
+    async function readFaltantesInventory(day){
+      const ids=verifyFaltantesInventoryAccess(day);
+      const snap=await cloudState.tools.getDoc(faltantesInventoryRef(day));
+      if(!snap.exists())return [];
+      const record=snap.data();
+      if(record.kind!==FALTANTES_INVENTORY_KIND||record.date!==day||
+        record.operation!=="AM1"||record.facility!=="SSP15"||
+        !record.entries||typeof record.entries!=="object"||Array.isArray(record.entries))
+        throw new Error("Registro privado de Faltantes inválido.");
+      return Object.entries(record.entries).filter(([id])=>ids.has(id)).map(([id,entry])=>({
+        id,inventoryStatus:ADUANA_INVENTORY_STATUSES.includes(entry?.status)?entry.status:"Pendente",
+        inventoryValueCents:normalizedAduanaValueCents(entry?.valueCents)
+      }));
+    }
+    async function writeFaltantesInventory(day,ids,option,kind,bulk=false){
+      const allowed=verifyFaltantesInventoryAccess(day);
+      if(!Array.isArray(ids)||!ids.length||ids.length>2000)
+        throw new Error("Selecione entre 1 e 2.000 Shipment IDs.");
+      const keys=ids.map(faltantesInventoryKey);
+      if(keys.some(id=>!id||id.length>90||!allowed.has(id))||
+        new Set(keys).size!==keys.length)
+        throw new Error("IDs inválidos, duplicados ou ausentes dos FALTANTES AM1 no sistema.");
+      if(keys.some(id=>faltanteEstaNoFisico(day,id)))
+        throw new Error("ID encontrado no arquivo físico: inventário bloqueado.");
+      if(kind==="status"&&(!ADUANA_INVENTORY_STATUSES.includes(option)||
+        (bulk&&option==="Pendente")))throw new Error("Situação de inventário inválida.");
+      const value=kind==="valor"?normalizedAduanaValueCents(option):null;
+      const ref=faltantesInventoryRef(day);
+      await cloudState.tools.runTransaction(cloudState.db,async transaction=>{
+        const doc=await transaction.get(ref);
+        const previous=doc.exists()?doc.data():null;
+        if(previous&&(previous.kind!==FALTANTES_INVENTORY_KIND||previous.date!==day||
+          previous.operation!=="AM1"||previous.facility!=="SSP15"||
+          !previous.entries||typeof previous.entries!=="object"||Array.isArray(previous.entries)))
+          throw new Error("Registro do inventário de Faltantes inconsistente.");
+        const entries={...(previous?.entries||{})};
+        const dateStamp=new Date().toISOString();
+        for(const id of keys){
+          const old=entries[id]||{};
+          const status=ADUANA_INVENTORY_STATUSES.includes(old.status)?old.status:"Pendente";
+          if(kind==="status"){
+            if(bulk&&status!=="Pendente")throw new Error("ID "+id+" já não está pendente. Atualize e repita.");
+            entries[id]={...old,status:option,updatedAt:dateStamp,updatedBy:cloudState.user.email||"administrador"};
+          }else{
+            if(!["Pendente","Não encontrado"].includes(status))
+              throw new Error("Valor permitido apenas para Pendente ou Não encontrado: "+id+".");
+            entries[id]={...old,status,valueCents:value,valueUpdatedAt:dateStamp,
+              valueUpdatedBy:cloudState.user.email||"administrador"};
+          }
+        }
+        const record={
+          kind:FALTANTES_INVENTORY_KIND,date:day,operation:"AM1",facility:"SSP15",version:1,entries,
+          updatedAt:cloudState.tools.serverTimestamp(),updatedBy:cloudState.user.email||"administrador"
+        };
+        if(serializedByteLength({...record,updatedAt:null})>780*1024)
+          throw new Error("Limite de 780 KB do inventário diário atingido.");
+        transaction.set(ref,record);
+      });
+      return kind==="valor"?{count:keys.length,valueCents:value}:{count:keys.length,status:option};
+    }
+    if(window.FaltantesAm1){
+      window.FaltantesAm1.canEditInventory=()=>Boolean(cloudState.ready&&cloudState.user&&isAdmin());
+      window.FaltantesAm1.onReadInventory=readFaltantesInventory;
+      window.FaltantesAm1.onSetInventory=(day,id,status)=>writeFaltantesInventory(day,[id],status,"status");
+      window.FaltantesAm1.onSetInventoryBatch=(day,ids,status)=>writeFaltantesInventory(day,ids,status,"status",true);
+      window.FaltantesAm1.onSetInventoryValue=(day,id,cents)=>writeFaltantesInventory(day,[id],cents,"valor");
+    }
+
     if (window.ControleAduana) {
       window.ControleAduana.onBack = () => { currentView = "docas"; dockDisplayMode = "overview"; renderViews(); document.getElementById("overviewRailBtn")?.focus(); };
       window.ControleAduana.onSaveHistory = async () => {
