@@ -81,11 +81,50 @@ function initialize(){
     if(e.target.id==="faltantesSearch"){state.search=e.target.value;renderTable();}
   });
   root.addEventListener("change",e=>{
-    if(e.target.id==="faltantesSideFilter"){state.side=e.target.value;renderTable();}
-    if(e.target.id==="faltantesStatusFilter"){state.statusFilter=e.target.value;renderTable();}
+    if(e.target.id==="faltantesSideFilter"){state.side=e.target.value;renderTable();return;}
+    if(e.target.id==="faltantesStatusFilter"){state.statusFilter=e.target.value;renderTable();return;}
+    if(e.target.id==="faltBulkStatus"){state.bulkStatus=e.target.value;renderTable();return;}
+    if(e.target.id==="faltSelectAll"){
+      for(const row of selectedRows()){
+        if(!row.id||row.found||itemStatus(row)!=="Pendente")continue;
+        if(e.target.checked)state.selected.add(idKey(row.id));
+        else state.selected.delete(idKey(row.id));
+      }
+      renderTable();return;
+    }
+    const check=e.target.closest("[data-falt-check]");
+    if(check){
+      const id=idKey(check.dataset.faltCheck);
+      if(check.checked)state.selected.add(id);
+      else state.selected.delete(id);
+      renderTable();return;
+    }
+    const select=e.target.closest("[data-falt-inventory]");
+    if(select){saveInventoryStatus(select.dataset.faltInventory,select.value);return;}
   });
   root.addEventListener("click",e=>{
-    if(e.target.closest("#faltantesExportBtn"))exportCsv();
+    if(e.target.closest("#faltantesExportBtn")){exportCsv();return;}
+    if(e.target.closest("#faltBulkApply")){saveBulkInventory();return;}
+    const save=e.target.closest("[data-falt-value-save]");
+    if(save){saveInventoryValue(save.dataset.faltValueSave);return;}
+    const cancel=e.target.closest("[data-falt-value-cancel]");
+    if(cancel){state.editingValue="";renderTable();return;}
+    const edit=e.target.closest("[data-falt-value-edit]");
+    if(edit){
+      const id=idKey(edit.dataset.faltValueEdit);
+      const row=state.items.find(row=>idKey(row.id)===id);
+      if(!canAdmin()||!state.inventoryLoaded||!row||!canEditValue(row))return;
+      state.editingValue=id;renderTable();
+      const input=[...el("faltantesRows").querySelectorAll("[data-falt-value-input]")]
+        .find(input=>idKey(input.dataset.faltValueInput)===id);
+      input?.focus();input?.select();
+    }
+  });
+  root.addEventListener("keydown",e=>{
+    const input=e.target.closest("[data-falt-value-input]");
+    if(!input)return;
+    if(e.key==="Enter"){e.preventDefault();saveInventoryValue(input.dataset.faltValueInput);}
+    if(e.key==="Escape"){e.preventDefault();state.editingValue="";renderTable();}
   });
   state.initialized=true;return true;
 }
@@ -296,6 +335,90 @@ function render(payload){
     (model.final&&!model.useFinal?" ATENÇÃO: o CSV do sistema salvo é de outra data.":"");
   renderTable();
 }
+function redraw(){
+  const root=el("faltantesView");
+  const top=root?.scrollTop||0;
+  const table=root?.querySelector?.(".falt-table-wrap");
+  const tableTop=table?.scrollTop||0;
+  if(state.payload)render(state.payload);
+  if(root)root.scrollTop=top;
+  const newTable=root?.querySelector?.(".falt-table-wrap");
+  if(newTable)newTable.scrollTop=tableTop;
+}
+function canChange(row){
+  return Boolean(row&&row.id&&!row.found&&canAdmin()&&state.final&&
+    state.inventoryLoaded&&!state.inventorySaving);
+}
+async function saveInventoryStatus(rawId,status){
+  const id=idKey(rawId);
+  const row=state.items.find(r=>idKey(r.id)===id);
+  if(!canChange(row)||!INVENTORY_OPTIONS.includes(status)){renderTable();return;}
+  if(status===itemStatus(row))return;
+  const day=state.inventoryDay;
+  state.inventorySaving=true;state.inventoryError="Gravando status do ID "+id+" no Firebase...";
+  renderTable();
+  try{
+    if(!window.FaltantesAm1?.onSetInventory)throw Error("Serviço do inventário indisponível.");
+    await window.FaltantesAm1.onSetInventory(day,id,status);
+    if(state.inventoryDay!==day)return;
+    state.inventoryMap[id]={...itemInventory(row),inventoryStatus:status};
+    state.editingValue="";state.selected.delete(id);
+    state.inventoryError="Inventário do Shipment ID "+id+" salvo: "+status+".";
+  }catch(error){
+    state.inventoryError="Falha ao salvar ID "+id+": "+(error?.message||String(error));
+  }finally{
+    if(state.inventoryDay===day){state.inventorySaving=false;redraw();}
+  }
+}
+async function saveBulkInventory(){
+  if(!canAdmin()||!state.final||!state.inventoryLoaded||state.inventorySaving||
+     !state.selected.size||!state.bulkStatus||state.bulkStatus==="Pendente")return;
+  const ids=[...state.selected],day=state.inventoryDay,status=state.bulkStatus;
+  state.inventorySaving=true;state.inventoryError="Gravando "+ids.length+" ID(s) no Firebase...";
+  renderTable();
+  try{
+    if(!window.FaltantesAm1?.onSetInventoryBatch)throw Error("Atualização em massa indisponível.");
+    await window.FaltantesAm1.onSetInventoryBatch(day,ids,status);
+    if(state.inventoryDay!==day)return;
+    for(const id of ids)state.inventoryMap[id]={...(state.inventoryMap[id]||{}),inventoryStatus:status};
+    state.selected.clear();state.bulkStatus="";
+    state.inventoryError=ids.length+" ID(s) atualizados em massa para "+status+".";
+  }catch(error){
+    state.inventoryError="Falha na atualização em massa: "+(error?.message||String(error));
+  }finally{
+    if(state.inventoryDay===day){state.inventorySaving=false;redraw();}
+  }
+}
+async function saveInventoryValue(rawId){
+  const id=idKey(rawId);
+  const row=state.items.find(r=>idKey(r.id)===id);
+  if(!canChange(row)||!canEditValue(row)||state.editingValue!==id)return;
+  const input=[...el("faltantesRows").querySelectorAll("[data-falt-value-input]")]
+    .find(input=>idKey(input.dataset.faltValueInput)===id);
+  if(!input)return;
+  let cents;
+  try{cents=parseReais(input.value);}
+  catch(error){
+    state.inventoryError=error.message;el("faltInventoryFeedback").textContent=state.inventoryError;
+    input.focus();return;
+  }
+  const day=state.inventoryDay;
+  state.inventorySaving=true;state.inventoryError="Salvando valor de "+id+" no Firebase...";
+  renderTable();
+  try{
+    if(!window.FaltantesAm1?.onSetInventoryValue)throw Error("Serviço de valores indisponível.");
+    await window.FaltantesAm1.onSetInventoryValue(day,id,cents);
+    if(state.inventoryDay!==day)return;
+    state.inventoryMap[id]={...itemInventory(row),inventoryValueCents:cents};
+    state.editingValue="";
+    state.inventoryError="Valor do ID "+id+" salvo: "+real(cents)+".";
+  }catch(error){
+    state.inventoryError="Falha ao salvar valor do ID "+id+": "+(error?.message||String(error));
+  }finally{
+    if(state.inventoryDay===day){state.inventorySaving=false;redraw();}
+  }
+}
+
 function csvCell(v){
   let s=String(v==null?"":v);
   if(/^\s*[=+\-@\t\r]/.test(s))s="'"+s;
