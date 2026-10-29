@@ -11457,7 +11457,7 @@ body.editor-open .global-theme-toggle {
       }
     }
   </style>
-  <link rel="stylesheet" href="faltantes-am1.css?v=20261029-apenas-faltantes">
+  <link rel="stylesheet" href="faltantes-am1.css?v=20261029-inventario-valores">
 </head>
 <body>
   <main class="app">
@@ -12189,7 +12189,7 @@ body.editor-open .global-theme-toggle {
   <script src="ondas-dados.js"></script>
   <script src="aduana-xlsx.js?v=20261024-r4"></script>
   <script src="aduana-conferencia.js?v=20261028-r34"></script>
-  <script src="faltantes-am1.js?v=20261029-todos-encontrados"></script>
+  <script src="faltantes-am1.js?v=20261029-inventario-valores"></script>
   <script>
     const storageKey = "ondas-dados";
     const syncMetaKey = `${storageKey}-sync-meta-v1`;
@@ -14108,6 +14108,17 @@ body.editor-open .global-theme-toggle {
       for(const entry of individualDocs.docs){
         const day=String(entry.data()?.date||"");
         if(/^\d{4}-\d{2}-\d{2}$/.test(day)&&day<start&&entry.id===day)
+          await cloudState.tools.deleteDoc(entry.ref);
+      }
+      // Mesma retenção de 30 dias para os inventários privados de FALTANTES.
+      const fq=cloudState.tools.query(
+        cloudState.tools.collection(cloudState.db,ADUANA_IDS_COLLECTION),
+        cloudState.tools.where("kind","==","faltantes-am1-inventory")
+      );
+      const missingDocs=await cloudState.tools.getDocs(fq);
+      for(const entry of missingDocs.docs){
+        const day=String(entry.data()?.date||"");
+        if(/^\d{4}-\d{2}-\d{2}$/.test(day)&&day<start&&entry.id==="faltantes-"+day)
           await cloudState.tools.deleteDoc(entry.ref);
       }
       lastAduanaHistoryCleanup=end;
@@ -19126,6 +19137,7 @@ body.editor-open .global-theme-toggle {
           throw new Error("Limite de 780 KB do inventário diário atingido.");
         transaction.set(ref,record);
       });
+      requestAduanaCleanup();
       return kind==="valor"?{count:keys.length,valueCents:value}:{count:keys.length,status:option};
     }
     if(window.FaltantesAm1){
