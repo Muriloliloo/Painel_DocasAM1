@@ -1,7 +1,7 @@
 /* Faltantes AM1 — somente leitura, reutilizando as informações do Editor de Dados. */
 (function () {
 "use strict";
-const state = { date:"", final:false, physicalReady:false, physicalFile:"", items:[], sides:[], side:"", statusFilter:"todos", search:"", initialized:false };
+const state = { date:"", final:false, physicalReady:false, physicalFile:"", items:[], sides:[], side:"", statusFilter:"todos", search:"", initialized:false, inventoryDay:"", inventoryAdmin:false, inventoryLoaded:false, inventoryLoading:false, inventorySaving:false, inventoryError:"", inventoryMap:Object.create(null), selected:new Set(), bulkStatus:"", editingValue:"", payload:null };
 const el = id => document.getElementById(id);
 const esc = value => String(value == null ? "" : value).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const norm = value => String(value == null ? "" : value).normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().trim();
@@ -20,6 +20,33 @@ const dateKey = value => {
   const iso=raw.match(/^(\d{4})-(\d{2})-(\d{2})$/);
   return iso?iso[1]+"-"+iso[2]+"-"+iso[3]:"";
 };
+const INVENTORY_OPTIONS=["Pendente","Encontrado","Não encontrado","Devolvido","Vinculado","Atrelado","Em rota","Entregue","Envio cancelado","Avaria","Solução de problemas"];
+const RESOLVED=new Set(["Encontrado","Devolvido","Vinculado","Atrelado","Em rota","Entregue","Envio cancelado","Avaria","Solução de problemas"]);
+const canAdmin=()=>Boolean(window.FaltantesAm1?.canEditInventory?.());
+const itemInventory=row=>state.inventoryMap[idKey(row.id)]||{};
+const itemStatus=row=>row.found?"Encontrado":(INVENTORY_OPTIONS.includes(itemInventory(row).inventoryStatus)?itemInventory(row).inventoryStatus:"Pendente");
+const manualResolved=row=>!row.found&&RESOLVED.has(itemStatus(row));
+const pending=row=>!row.found&&!manualResolved(row);
+const canEditValue=row=>Boolean(row.id&&!row.found&&["Pendente","Não encontrado"].includes(itemStatus(row)));
+const real=cents=>Number.isSafeInteger(cents)&&cents>=0
+  ? new Intl.NumberFormat("pt-BR",{style:"currency",currency:"BRL"}).format(cents/100):"—";
+const inputValue=cents=>Number.isSafeInteger(cents)&&cents>=0?(cents/100).toFixed(2).replace(".",","):"";
+function parseReais(raw){
+  let value=String(raw||"").trim().replace(/\s/g,"").replace(/^R\$/i,"");
+  if(!value)return null;
+  if(/^\d{1,3}(?:\.\d{3})+(?:,\d{1,2})?$/.test(value))value=value.replace(/\./g,"").replace(",",".");
+  else if(/^\d+(?:[,.]\d{1,2})?$/.test(value))value=value.replace(",",".");
+  else throw new Error("Informe um valor válido em reais. Exemplo: 125,90.");
+  const [integer,decimals=""]=value.split(".");
+  const cents=Number(integer)*100+Number(decimals.padEnd(2,"0"));
+  if(!Number.isSafeInteger(cents)||cents<0||cents>99999999999)
+    throw new Error("O valor deve ficar entre R$ 0,00 e R$ 999.999.999,99.");
+  return cents;
+}
+function inventoryOptionHtml(selected){
+  return INVENTORY_OPTIONS.map(status=>'<option value="'+esc(status)+'"'+(selected===status?' selected':'')+'>'+esc(status)+'</option>').join("");
+}
+function inventoryIso(date){return dateKey(date);}
 const isAM1 = row => (String(row.rota || "").toUpperCase().match(/\b[A-Z]{1,5}\d{0,3}_[A-Z0-9]+\b/g)||[]).some(route=>route.endsWith("_AM1"));
 function initialize(){
   const root=el("faltantesView");if(!root)return false;
@@ -43,9 +70,9 @@ function initialize(){
         '<div class="falt-panel-content"><div class="falt-filters">',
         '<input id="faltantesSearch" type="search" placeholder="Buscar rota, doca, Shipment ID ou responsável" aria-label="Buscar nos faltantes">',
         '<select id="faltantesSideFilter" aria-label="Filtrar por lado"><option value="">Todos os lados</option></select>',
-        '<select id="faltantesStatusFilter" aria-label="Filtrar situação"><option value="todos">Todos (pendentes + encontrados)</option><option value="pendentes">Pendentes</option><option value="encontrados">Encontrados no físico</option></select>',
-        '</div></div><div class="falt-table-wrap"><table class="falt-table">',
-        '<thead><tr><th>Lado</th><th>Rota AM1</th><th>Doca</th><th>Coordenador</th><th>PS</th><th>Shipment ID</th><th>Lado Físico</th><th>Quantidade</th><th>Situação</th></tr></thead>',
+        '<select id="faltantesStatusFilter" aria-label="Filtrar situação"><option value="todos">Todos os faltantes</option><option value="pendentes">Pendentes</option><option value="encontrados">Encontrados no físico</option><option value="tratados">Tratados no inventário</option></select>',
+        '</div><div class="falt-inventory-actions"><strong>Inventário dos faltantes:</strong><select id="faltBulkStatus" aria-label="Status para atualização em massa"><option value="">Escolha o status...</option>'+inventoryOptionHtml("")+'</select><button type="button" id="faltBulkApply" class="falt-action primary" disabled>Aplicar aos 0 selecionado(s)</button><small>Selecione somente IDs pendentes.</small></div><p class="falt-inventory-feedback" id="faltInventoryFeedback" role="status"></p></div><div class="falt-table-wrap"><table class="falt-table">',
+        '<thead><tr><th>Lado</th><th>Rota AM1</th><th>Doca</th><th>Coordenador</th><th>PS</th><th>Shipment ID</th><th>Lado Físico</th><th>Quantidade</th><th>Situação</th><th>Inventário <label class="falt-th-check"><input id="faltSelectAll" type="checkbox" aria-label="Selecionar pendentes visíveis"> Selecionar pendentes</label></th><th>Valor (R$)</th></tr></thead>',
         '<tbody id="faltantesRows"></tbody></table></div></section>',
       '<p class="falt-note" id="faltantesNote"></p>',
     '</div>'
@@ -65,19 +92,69 @@ function initialize(){
 function selectedRows(){
   return state.items.filter(row=>
     (!state.side||row.lado===state.side)&&
-    (state.statusFilter==="todos"||(state.statusFilter==="encontrados"?row.found:!row.found))&&
+    (state.statusFilter==="todos"||
+      (state.statusFilter==="encontrados"?row.found:
+        state.statusFilter==="tratados"?manualResolved(row):pending(row)))&&
     (!state.search||norm([row.lado,row.titulo,row.rota,row.doca,row.coord,row.ps,row.id,row.ladoFisico].join(" ")).includes(norm(state.search))));
 }
+function inventoryCell(row){
+  if(row.found)return '<span class="falt-tag found" title="Conferido no arquivo físico">✓ Encontrado</span>';
+  if(!row.id)return "—";
+  const status=itemStatus(row);
+  if(!canAdmin())return '<span class="falt-muted">Acesso restrito</span>';
+  const disabled=state.inventorySaving||!state.inventoryLoaded;
+  const checked=state.selected.has(idKey(row.id));
+  const checkbox=status==="Pendente"?
+    '<input type="checkbox" data-falt-check="'+esc(row.id)+'" aria-label="Selecionar pendente '+esc(row.id)+'"'+
+    (checked?' checked':'')+(disabled?' disabled':'')+'>':"";
+  return '<div class="falt-inventory-cell">'+checkbox+
+    '<select data-falt-inventory="'+esc(row.id)+'" aria-label="Inventário do Shipment ID '+esc(row.id)+'"'+
+    (disabled?' disabled':'')+'>'+inventoryOptionHtml(status)+'</select></div>';
+}
+function valueCell(row){
+  if(!row.id||!canAdmin())return "—";
+  const cents=itemInventory(row).inventoryValueCents;
+  const amount='<strong class="falt-money">'+esc(real(cents))+'</strong>';
+  if(!canEditValue(row))return amount;
+  const busy=state.inventorySaving||!state.inventoryLoaded;
+  if(state.editingValue===idKey(row.id))
+    return '<div class="falt-value-edit"><span>R$</span><input data-falt-value-input="'+esc(row.id)+'" inputmode="decimal" maxlength="20" aria-label="Valor em reais para '+esc(row.id)+'" value="'+esc(inputValue(cents))+'">'+
+      '<button data-falt-value-save="'+esc(row.id)+'" type="button"'+(busy?' disabled':'')+'>Salvar</button>'+
+      '<button data-falt-value-cancel="'+esc(row.id)+'" type="button">Cancelar</button></div>';
+  return '<div class="falt-value-cell">'+amount+
+    '<button data-falt-value-edit="'+esc(row.id)+'" type="button"'+(busy?' disabled':'')+'>'+(cents==null?'Informar':'Editar')+'</button></div>';
+}
 function renderTable(){
-  const rows=selectedRows();
+  if(!el("faltantesRows"))return;
+  const rows=selectedRows(),editable=canAdmin()&&state.inventoryLoaded&&!state.inventorySaving;
   el("faltantesRowCount").textContent="("+fmt(rows.reduce((a,r)=>a+r.qty,0))+" pacotes)";
   el("faltantesRows").innerHTML=rows.length?rows.map(r=>{
-    const situacao=r.found?"Encontrado no físico":(state.physicalReady?"Pendente":"Aguardando físico");
+    const situacao=r.found?"Encontrado no físico":manualResolved(r)?"Tratado: "+itemStatus(r):state.physicalReady?"Pendente":"Aguardando físico";
     return '<tr><td>'+esc(r.titulo)+'</td><td><b>'+esc(r.rota)+'</b></td><td>'+esc(r.doca||"—")+
       '</td><td>'+esc(r.coord)+'</td><td>'+esc(r.ps)+'</td><td>'+esc(r.id||"—")+'</td>'+
       '<td>'+esc(r.ladoFisico||"—")+'</td><td><b>'+fmt(r.qty)+'</b></td>'+
-      '<td><span class="falt-tag'+(r.found?' found':'')+'">'+esc(situacao)+'</span></td></tr>';
-  }).join(""):'<tr><td colspan="9" class="falt-empty">Nenhum faltante AM1 corresponde aos filtros selecionados.</td></tr>';
+      '<td><span class="falt-tag'+(r.found?' found':manualResolved(r)?' treated':'')+'">'+esc(situacao)+'</span></td>'+
+      '<td>'+inventoryCell(r)+'</td><td>'+valueCell(r)+'</td></tr>';
+  }).join(""):'<tr><td colspan="11" class="falt-empty">Nenhum faltante AM1 corresponde aos filtros selecionados.</td></tr>';
+  const eligible=new Set(rows.filter(r=>r.id&&itemStatus(r)==="Pendente"&&!r.found).map(r=>idKey(r.id)));
+  const allEligible=new Set(state.items.filter(r=>r.id&&itemStatus(r)==="Pendente"&&!r.found).map(r=>idKey(r.id)));
+  for(const id of state.selected)if(!allEligible.has(id))state.selected.delete(id);
+  const count=[...eligible].filter(id=>state.selected.has(id)).length;
+  const check=el("faltSelectAll");
+  if(check){check.checked=eligible.size>0&&count===eligible.size;
+    check.indeterminate=count>0&&count<eligible.size;check.disabled=!editable||eligible.size===0;}
+  const apply=el("faltBulkApply");
+  if(apply){apply.disabled=!editable||!state.selected.size||!state.bulkStatus||state.bulkStatus==="Pendente";
+    apply.textContent="Aplicar aos "+state.selected.size+" selecionado(s)";}
+  const bulk=el("faltBulkStatus");
+  if(bulk){bulk.value=state.bulkStatus;bulk.disabled=!editable;}
+  const info=el("faltInventoryFeedback");
+  if(info)info.textContent=state.inventoryError||
+    (state.inventoryLoading?"Consultando inventário privado no Firebase...":
+    !canAdmin()?"Entre como administrador no Firebase para visualizar e editar Inventário e Valores.":
+    !state.final?"Aplique o CSV final da AM1 para editar os dados do inventário.":
+    !state.inventoryLoaded?"Carregando inventário do dia...":
+    "Inventário e valores salvos no Firebase privado, separados da aba Aduana A Mais.");
 }
 function render(payload){
   if(!initialize())return;
