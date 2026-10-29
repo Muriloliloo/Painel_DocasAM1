@@ -286,10 +286,10 @@ function render(payload){
     '<span><i class="bi bi-box-seam"></i> '+(state.physicalReady?"IDs Físicos: "+esc(state.physicalFile):"IDs Físicos: aguardando importação da mesma data")+'</span>'+
     '<span><i class="bi bi-funnel-fill"></i> Somente <b>_AM1</b> · '+fmt(routes)+' rotas com pendência</span>';
   el("faltantesKpis").innerHTML=[
-    '<article class="falt-kpi missing"><span class="falt-kpi-icon"><i class="bi bi-box-seam-fill" aria-hidden="true"></i></span><div class="falt-kpi-copy"><span>Faltantes pendentes AM1</span><strong>'+fmt(pendentes)+'</strong><small>Saldo atualizado após a conciliação física</small></div></article>',
+    '<article class="falt-kpi system"><span class="falt-kpi-icon"><i class="bi bi-database-fill" aria-hidden="true"></i></span><div class="falt-kpi-copy"><span>Faltantes no sistema AM1</span><strong>'+fmt(totalSistema)+'</strong><small>Total original da auditoria, sem alterações</small></div></article>',
     '<article class="falt-kpi found"><span class="falt-kpi-icon"><i class="bi bi-check-circle-fill" aria-hidden="true"></i></span><div class="falt-kpi-copy"><span>Faltantes encontrados no físico</span><strong>'+fmt(encontrados)+'</strong><small>Conciliados pela planilha de IDs Físicos</small></div></article>',
     '<article class="falt-kpi treated"><span class="falt-kpi-icon"><i class="bi bi-clipboard2-check-fill" aria-hidden="true"></i></span><div class="falt-kpi-copy"><span>Tratados no inventário</span><strong>'+fmt(tratados)+'</strong><small>Status resolvido manualmente no Firebase</small></div></article>',
-    '<article class="falt-kpi system"><span class="falt-kpi-icon"><i class="bi bi-database-fill" aria-hidden="true"></i></span><div class="falt-kpi-copy"><span>Faltantes no sistema AM1</span><strong>'+fmt(totalSistema)+'</strong><small>Total original da auditoria, sem alterações</small></div></article>',
+    '<article class="falt-kpi missing"><span class="falt-kpi-icon"><i class="bi bi-box-seam-fill" aria-hidden="true"></i></span><div class="falt-kpi-copy"><span>Faltantes pendentes AM1</span><strong>'+fmt(pendentes)+'</strong><small>Saldo atualizado após a conciliação física</small></div></article>',
   ].join("");
   el("faltantesSideCards").innerHTML=state.sides.map((side,index)=>{
     const percent=pendentes?side.pendentes/pendentes*100:0;
