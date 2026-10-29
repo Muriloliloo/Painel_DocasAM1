@@ -1,12 +1,25 @@
 /* Faltantes AM1 — somente leitura, reutilizando as informações do Editor de Dados. */
 (function () {
 "use strict";
-const state = { date:"", final:false, items:[], sides:[], side:"", search:"", initialized:false };
+const state = { date:"", final:false, physicalReady:false, physicalFile:"", items:[], sides:[], side:"", statusFilter:"pendentes", search:"", initialized:false };
 const el = id => document.getElementById(id);
 const esc = value => String(value == null ? "" : value).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const norm = value => String(value == null ? "" : value).normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().trim();
 const num = v => Math.max(0, Number(v)||0);
 const fmt = v => new Intl.NumberFormat("pt-BR").format(Number(v)||0);
+// Compartilha o formato de ID com a conferência física da Aduana.
+const idKey = value => {
+  const raw=String(value==null?"":value).trim().replace(/^\uFEFF/,"").replace(/^'/,"");
+  return /^[+]?[0-9]+(?:\.[0-9]+)?e[+]?[0-9]+$/i.test(raw)&&Number.isSafeInteger(Number(raw))
+    ? String(Number(raw)):raw.toUpperCase();
+};
+const dateKey = value => {
+  const raw=String(value||"").trim();
+  const br=raw.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+  if(br)return br[3]+"-"+br[2]+"-"+br[1];
+  const iso=raw.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  return iso?iso[1]+"-"+iso[2]+"-"+iso[3]:"";
+};
 const isAM1 = row => (String(row.rota || "").toUpperCase().match(/\b[A-Z]{1,5}\d{0,3}_[A-Z0-9]+\b/g)||[]).some(route=>route.endsWith("_AM1"));
 function initialize(){
   const root=el("faltantesView");if(!root)return false;
@@ -14,24 +27,25 @@ function initialize(){
   root.innerHTML=[
     '<div class="falt-shell">',
       '<header class="falt-hero"><div class="falt-head-left"><span class="falt-head-icon"><i class="bi bi-exclamation-triangle-fill"></i></span>',
-        '<div><h2>Faltantes — AM1</h2><p>Pacotes classificados como <b>FALTANTE</b> na Aduana. Exclusivamente rotas AM1.</p></div></div>',
+        '<div><h2>Faltantes — AM1</h2><p>Conciliação dos pacotes FALTANTES da AM1 com os Shipment IDs encontrados na planilha física.</p></div></div>',
         '<div class="falt-head-actions"><button type="button" id="faltantesHomeBtn" class="falt-action"><i class="bi bi-arrow-left"></i> Voltar ao painel</button>',
         '<button type="button" id="faltantesExportBtn" class="falt-action primary"><i class="bi bi-download"></i> Exportar CSV</button></div></header>',
       '<div class="falt-status" id="faltantesStatus"></div>',
       '<div class="falt-kpis" id="faltantesKpis"></div>',
       '<section class="falt-panel"><header class="falt-panel-header"><div><h3><i class="bi bi-bar-chart-fill"></i> Faltantes por lado</h3>',
-        '<p>Grupos A, B, C, D e E — docas e responsáveis do Editor de Dados.</p></div></header>',
+        '<p>Saldo pendente por grupo A–E. IDs encontrados são abatidos no lado original do sistema.</p></div></header>',
         '<div class="falt-panel-content"><div id="faltantesSideCards" class="falt-side-grid"></div></div></section>',
       '<section class="falt-panel"><header class="falt-panel-header"><div><h3><i class="bi bi-people-fill"></i> Faltantes por Coordenador</h3>',
-        '<p>Somente Coordenadores cadastrados no Editor de Dados, com total consolidado por responsável.</p></div></header>',
+        '<p>Somente Coordenadores do Editor de Dados, com saldo dos faltantes ainda pendentes.</p></div></header>',
         '<div class="falt-panel-content"><div class="falt-responsaveis" id="faltantesPeople"></div></div></section>',
       '<section class="falt-panel"><header class="falt-panel-header"><div><h3><i class="bi bi-table"></i> Detalhamento dos Faltantes <span id="faltantesRowCount"></span></h3>',
         '<p id="faltantesTableSub"></p></div></header>',
         '<div class="falt-panel-content"><div class="falt-filters">',
         '<input id="faltantesSearch" type="search" placeholder="Buscar rota, doca, Shipment ID ou responsável" aria-label="Buscar nos faltantes">',
         '<select id="faltantesSideFilter" aria-label="Filtrar por lado"><option value="">Todos os lados</option></select>',
+        '<select id="faltantesStatusFilter" aria-label="Filtrar situação"><option value="pendentes">Pendentes</option><option value="encontrados">Encontrados no físico</option><option value="todos">Todos</option></select>',
         '</div></div><div class="falt-table-wrap"><table class="falt-table">',
-        '<thead><tr><th>Lado</th><th>Rota AM1</th><th>Doca</th><th>Coordenador</th><th>PS</th><th>Shipment ID</th><th>Quantidade</th><th>Situação</th></tr></thead>',
+        '<thead><tr><th>Lado</th><th>Rota AM1</th><th>Doca</th><th>Coordenador</th><th>PS</th><th>Shipment ID</th><th>Lado Físico</th><th>Quantidade</th><th>Situação</th></tr></thead>',
         '<tbody id="faltantesRows"></tbody></table></div></section>',
       '<p class="falt-note" id="faltantesNote"></p>',
     '</div>'
@@ -41,6 +55,7 @@ function initialize(){
   });
   root.addEventListener("change",e=>{
     if(e.target.id==="faltantesSideFilter"){state.side=e.target.value;renderTable();}
+    if(e.target.id==="faltantesStatusFilter"){state.statusFilter=e.target.value;renderTable();}
   });
   root.addEventListener("click",e=>{
     if(e.target.closest("#faltantesExportBtn"))exportCsv();
