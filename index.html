@@ -11457,7 +11457,7 @@ body.editor-open .global-theme-toggle {
       }
     }
   </style>
-  <link rel="stylesheet" href="faltantes-am1.css?v=20261029-am1">
+  <link rel="stylesheet" href="faltantes-am1.css?v=20261029-conciliacao-fisica">
 </head>
 <body>
   <main class="app">
@@ -12189,7 +12189,7 @@ body.editor-open .global-theme-toggle {
   <script src="ondas-dados.js"></script>
   <script src="aduana-xlsx.js?v=20261024-r4"></script>
   <script src="aduana-conferencia.js?v=20261028-r34"></script>
-  <script src="faltantes-am1.js?v=20261029-coordenadores"></script>
+  <script src="faltantes-am1.js?v=20261029-conciliacao-fisica"></script>
   <script>
     const storageKey = "ondas-dados";
     const syncMetaKey = `${storageKey}-sync-meta-v1`;
@@ -18397,7 +18397,7 @@ body.editor-open .global-theme-toggle {
       if (dashboardMode) renderDashboard();
       if (dados1Mode) renderDados1();
       if (aduanaMode) window.ControleAduana?.render(data, packageClosureModel());
-      if (faltantesMode) window.FaltantesAm1?.render({ model: packageClosureModel(), date: data.data, zones: dockZoneLabels.flat().map(zone => ({ label: zone.label, displayLabel: zone.displayLabel, staff: staffForZone(zone.label) })) });
+      if (faltantesMode) window.FaltantesAm1?.render({ model: packageClosureModel(), date: data.data, physical: data.aduanaFisica, zones: dockZoneLabels.flat().map(zone => ({ label: zone.label, displayLabel: zone.displayLabel, staff: staffForZone(zone.label) })) });
       updateDockRailState();
       renderJustifications();
       renderSummary();
