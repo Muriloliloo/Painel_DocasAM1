@@ -54,7 +54,7 @@ function initialize(){
   root.innerHTML=[
     '<div class="falt-shell">',
       '<header class="falt-hero"><div class="falt-head-left"><span class="falt-head-icon"><i class="bi bi-exclamation-triangle-fill"></i></span>',
-        '<div><h2>Faltantes — AM1</h2><p>Conciliação dos pacotes FALTANTES da AM1 com os Shipment IDs encontrados na planilha física.</p></div></div>',
+        '<div><h2>Faltantes <span class="falt-title-accent">— AM1</span></h2><p>Conciliação dos pacotes FALTANTES da AM1 com os Shipment IDs encontrados na planilha física.</p></div></div>',
         '<div class="falt-head-actions"><button type="button" id="faltantesHomeBtn" class="falt-action"><i class="bi bi-arrow-left"></i> Voltar ao painel</button>',
         '<button type="button" id="faltantesExportBtn" class="falt-action primary"><i class="bi bi-download"></i> Exportar CSV</button></div></header>',
       '<div class="falt-status" id="faltantesStatus"></div>',
