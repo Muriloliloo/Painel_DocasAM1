@@ -65,16 +65,19 @@ function initialize(){
 function selectedRows(){
   return state.items.filter(row=>
     (!state.side||row.lado===state.side)&&
-    (!state.search||norm([row.lado,row.titulo,row.rota,row.doca,row.coord,row.ps,row.id].join(" ")).includes(norm(state.search))));
+    (state.statusFilter==="todos"||(state.statusFilter==="encontrados"?row.found:!row.found))&&
+    (!state.search||norm([row.lado,row.titulo,row.rota,row.doca,row.coord,row.ps,row.id,row.ladoFisico].join(" ")).includes(norm(state.search))));
 }
 function renderTable(){
   const rows=selectedRows();
   el("faltantesRowCount").textContent="("+fmt(rows.reduce((a,r)=>a+r.qty,0))+" pacotes)";
-  el("faltantesRows").innerHTML=rows.length?rows.map(r=>
-    '<tr><td>'+esc(r.titulo)+'</td><td><b>'+esc(r.rota)+'</b></td><td>'+esc(r.doca||"—")+
-    '</td><td>'+esc(r.coord)+'</td><td>'+esc(r.ps)+'</td><td>'+esc(r.id||"—")+
-    '</td><td><b>'+fmt(r.qty)+'</b></td><td><span class="falt-tag">FALTANTE</span></td></tr>'
-  ).join(""):'<tr><td colspan="8" class="falt-empty">Sem pacotes FALTANTES da AM1 para os filtros selecionados.</td></tr>';
+  el("faltantesRows").innerHTML=rows.length?rows.map(r=>{
+    const situacao=r.found?"Encontrado no físico":(state.physicalReady?"Pendente":"Aguardando físico");
+    return '<tr><td>'+esc(r.titulo)+'</td><td><b>'+esc(r.rota)+'</b></td><td>'+esc(r.doca||"—")+
+      '</td><td>'+esc(r.coord)+'</td><td>'+esc(r.ps)+'</td><td>'+esc(r.id||"—")+'</td>'+
+      '<td>'+esc(r.ladoFisico||"—")+'</td><td><b>'+fmt(r.qty)+'</b></td>'+
+      '<td><span class="falt-tag'+(r.found?' found':'')+'">'+esc(situacao)+'</span></td></tr>';
+  }).join(""):'<tr><td colspan="9" class="falt-empty">Nenhum faltante AM1 corresponde aos filtros selecionados.</td></tr>';
 }
 function render(payload){
   if(!initialize())return;
@@ -83,14 +86,20 @@ function render(payload){
   const zones=Array.isArray(payload.zones)?payload.zones:[];
   state.date=payload.date||"";
   state.final=Boolean(model.useFinal);
+  const physical=payload.physical||{};
+  // Nunca conciliar entre dias diferentes nem sem CSV final do sistema.
+  state.physicalReady=Boolean(state.final&&dateKey(state.date)&&dateKey(physical.date)===dateKey(state.date)&&Array.isArray(physical.ids));
+  state.physicalFile=state.physicalReady?String(physical.fileName||"IDs Físicos"):"";
+  const physicalIds=new Set(state.physicalReady?physical.ids.map(idKey).filter(Boolean):[]);
+  const physicalDetails=state.physicalReady?(physical.details||{}):{};
   state.items=[];
-  state.sides=zones.map(z=>({ label:z.label, title:z.displayLabel||z.label, staff:z.staff||{}, faltantes:0, aMais:0 }));
+  state.sides=zones.map(z=>({label:z.label,title:z.displayLabel||z.label,staff:z.staff||{},faltantes:0,aMais:0,encontrados:0,pendentes:0}));
   const unknown=groups.get("Sem lado identificado");
   if(unknown&&(unknown.rows||[]).some(r=>isAM1(r)&&(num(r.faltantes)||num(r.aMais))))
-    state.sides.push({label:"Sem lado identificado",title:"Sem lado identificado",staff:{},faltantes:0,aMais:0});
+    state.sides.push({label:"Sem lado identificado",title:"Sem lado identificado",staff:{},faltantes:0,aMais:0,encontrados:0,pendentes:0});
   for(const side of state.sides){
     for(const row of groups.get(side.label)?.rows||[]){
-      // Filtragem obrigatória da operação; uma linha PM, SD, AM0 ou AMDE nunca entra.
+      // Registros de CHP, AM0, AMDE, PM e SD não afetam os indicadores.
       if(!isAM1(row))continue;
       const events=Array.isArray(row.ocorrencias)?row.ocorrencias:null;
       const missing=events?events.filter(i=>i.estado==="faltantes"):null;
@@ -101,12 +110,21 @@ function render(payload){
       const common={lado:side.label,titulo:side.title,rota:row.rota||"",doca:row.doca||"",
         coord:side.staff.coordenador||"Não informado",ps:side.staff.ps||"Não informado"};
       if(missing&&missing.length){
-        missing.forEach(item=>state.items.push({...common,id:item.shipmentId||"",qty:1}));
+        for(const item of missing){
+          const id=idKey(item.shipmentId);
+          // A conferência é feita pelo ID, independentemente do lado onde foi bipado.
+          // Um mesmo ID físico importado duas vezes continua valendo apenas como ID único.
+          const found=Boolean(id&&physicalIds.has(id));
+          const details=found?(physicalDetails[id]||{}):{};
+          if(found)side.encontrados++;
+          state.items.push({...common,id:item.shipmentId||"",qty:1,found,ladoFisico:found?(details.ladoFisico||""):""});
+        }
       }else{
-        // Antes do CSV final não existem IDs disponíveis. Mostrar apenas a quantidade.
-        state.items.push({...common,id:"",qty:total});
+        // Base ao vivo ou arquivos antigos sem IDs: não é seguro abater por quantidade.
+        state.items.push({...common,id:"",qty:total,found:false,ladoFisico:""});
       }
     }
+    side.pendentes=Math.max(0,side.faltantes-side.encontrados);
   }
   const falt=state.sides.reduce((a,g)=>a+g.faltantes,0);
   const extra=state.sides.reduce((a,g)=>a+g.aMais,0);
