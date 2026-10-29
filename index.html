@@ -11457,6 +11457,7 @@ body.editor-open .global-theme-toggle {
       }
     }
   </style>
+  <link rel="stylesheet" href="faltantes-am1.css?v=20261029-am1">
 </head>
 <body>
   <main class="app">
@@ -11510,6 +11511,7 @@ body.editor-open .global-theme-toggle {
       <button id="dashboardRailBtn" type="button" title="Abrir Dashboard operacional"><span class="rail-icon"><i class="bi bi-speedometer2" aria-hidden="true"></i></span><span>Dashboard</span></button>
       <button id="dados1RailBtn" type="button" title="Controle de Subida de Rotas - AM1"><span class="rail-icon"><i class="bi bi-qr-code-scan" aria-hidden="true"></i></span><span>Dados 1</span></button>
       <button id="aduanaRailBtn" type="button" title="Controle de Aduana — Sistema × IDs Físicos"><span class="rail-icon"><i class="bi bi-box-seam-fill" aria-hidden="true"></i></span><span>Aduana</span></button>
+      <button id="faltantesRailBtn" type="button" title="Pacotes Faltantes — somente rotas AM1"><span class="rail-icon"><i class="bi bi-exclamation-triangle-fill" aria-hidden="true"></i></span><span>Faltantes</span></button>
       <button type="button"><span class="rail-icon">⚙</span><span>Config.</span></button>
       <button type="button"><span class="rail-icon">?</span><span>Ajuda</span></button>
     </aside>
@@ -11727,6 +11729,7 @@ body.editor-open .global-theme-toggle {
 
 
     <section class="aduana-view" id="aduanaView" aria-label="Controle de Aduana — Sistema e IDs Físicos" aria-hidden="true"></section>
+    <section class="faltantes-view" id="faltantesView" aria-label="Pacotes faltantes somente AM1" aria-hidden="true"></section>
 
     <section class="dados1-view" id="dados1View" aria-labelledby="dados1Title" aria-hidden="true">
       <div class="dados1-shell">
@@ -12186,6 +12189,7 @@ body.editor-open .global-theme-toggle {
   <script src="ondas-dados.js"></script>
   <script src="aduana-xlsx.js?v=20261024-r4"></script>
   <script src="aduana-conferencia.js?v=20261028-r34"></script>
+  <script src="faltantes-am1.js?v=20261029-am1"></script>
   <script>
     const storageKey = "ondas-dados";
     const syncMetaKey = `${storageKey}-sync-meta-v1`;
@@ -15384,6 +15388,7 @@ body.editor-open .global-theme-toggle {
       document.getElementById("dashboardRailBtn")?.classList.toggle("active", !alertsOpen && currentView === "dashboard");
       document.getElementById("dados1RailBtn")?.classList.toggle("active", !alertsOpen && currentView === "dados1");
       document.getElementById("aduanaRailBtn")?.classList.toggle("active", !alertsOpen && currentView === "aduana");
+      document.getElementById("faltantesRailBtn")?.classList.toggle("active", !alertsOpen && currentView === "faltantes");
     }
 
     function formatHistoryDate(value) {
@@ -18360,18 +18365,21 @@ body.editor-open .global-theme-toggle {
       const dashboardMode = currentView === "dashboard";
       const dados1Mode = currentView === "dados1";
       const aduanaMode = currentView === "aduana";
-      app?.classList.toggle("docas-mode", currentView === "docas" || routesMode || dashboardMode || dados1Mode || aduanaMode);
-      app?.classList.toggle("report-mode", currentView !== "docas" && !routesMode && !dashboardMode && !dados1Mode && !aduanaMode);
+      const faltantesMode = currentView === "faltantes";
+      app?.classList.toggle("docas-mode", currentView === "docas" || routesMode || dashboardMode || dados1Mode || aduanaMode || faltantesMode);
+      app?.classList.toggle("report-mode", currentView !== "docas" && !routesMode && !dashboardMode && !dados1Mode && !aduanaMode && !faltantesMode);
       app?.classList.toggle("simple-docks-mode", simpleMode);
       app?.classList.toggle("routes-mode", routesMode);
       app?.classList.toggle("dashboard-mode", dashboardMode);
       app?.classList.toggle("dados1-mode", dados1Mode);
       app?.classList.toggle("aduana-mode", aduanaMode);
+      app?.classList.toggle("faltantes-mode", faltantesMode);
       document.body.classList.toggle("simple-docks-active", simpleMode);
       document.body.classList.toggle("routes-mode-active", routesMode);
       document.body.classList.toggle("dashboard-mode-active", dashboardMode);
       document.body.classList.toggle("dados1-mode-active", dados1Mode);
       document.body.classList.toggle("aduana-mode-active", aduanaMode);
+      document.body.classList.toggle("faltantes-mode-active", faltantesMode);
       document.querySelectorAll("[data-view]").forEach(button => button.classList.toggle("active", button.dataset.view === currentView));
       document.getElementById("dockGrid").style.display = currentView === "docas" && !simpleMode ? "flex" : "none";
       document.getElementById("simpleDocksView")?.setAttribute("aria-hidden", simpleMode ? "false" : "true");
@@ -18379,6 +18387,7 @@ body.editor-open .global-theme-toggle {
       document.getElementById("dashboardView")?.setAttribute("aria-hidden", dashboardMode ? "false" : "true");
       document.getElementById("dados1View")?.setAttribute("aria-hidden", dados1Mode ? "false" : "true");
       document.getElementById("aduanaView")?.setAttribute("aria-hidden", aduanaMode ? "false" : "true");
+      document.getElementById("faltantesView")?.setAttribute("aria-hidden", faltantesMode ? "false" : "true");
       document.querySelector(".legend")?.classList.toggle("active", currentView === "docas" && !simpleMode);
       document.getElementById("justificativasView").classList.toggle("active", currentView === "justificativas");
       document.getElementById("fechamentoView").classList.toggle("active", currentView === "fechamento");
@@ -18388,6 +18397,7 @@ body.editor-open .global-theme-toggle {
       if (dashboardMode) renderDashboard();
       if (dados1Mode) renderDados1();
       if (aduanaMode) window.ControleAduana?.render(data, packageClosureModel());
+      if (faltantesMode) window.FaltantesAm1?.render({ model: packageClosureModel(), date: data.data, zones: dockZoneLabels.flat().map(zone => ({ label: zone.label, displayLabel: zone.displayLabel, staff: staffForZone(zone.label) })) });
       updateDockRailState();
       renderJustifications();
       renderSummary();
@@ -19014,6 +19024,12 @@ body.editor-open .global-theme-toggle {
     });
     document.getElementById("dados1RailBtn")?.addEventListener("click", () => { currentView = "dados1"; renderViews(); });
     document.getElementById("aduanaRailBtn")?.addEventListener("click", () => { currentView = "aduana"; renderViews(); });
+    document.getElementById("faltantesRailBtn")?.addEventListener("click", () => { currentView = "faltantes"; renderViews(); });
+    document.getElementById("faltantesView")?.addEventListener("click", event => {
+      if (!event.target.closest("#faltantesHomeBtn")) return;
+      currentView = "docas"; dockDisplayMode = "overview"; renderViews();
+      document.getElementById("overviewRailBtn")?.focus();
+    });
     if (window.ControleAduana) {
       window.ControleAduana.onBack = () => { currentView = "docas"; dockDisplayMode = "overview"; renderViews(); document.getElementById("overviewRailBtn")?.focus(); };
       window.ControleAduana.onSaveHistory = async () => {
