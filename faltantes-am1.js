@@ -22,8 +22,8 @@ function initialize(){
       '<section class="falt-panel"><header class="falt-panel-header"><div><h3><i class="bi bi-bar-chart-fill"></i> Faltantes por lado</h3>',
         '<p>Grupos A, B, C, D e E — docas e responsáveis do Editor de Dados.</p></div></header>',
         '<div class="falt-panel-content"><div id="faltantesSideCards" class="falt-side-grid"></div></div></section>',
-      '<section class="falt-panel"><header class="falt-panel-header"><div><h3><i class="bi bi-people-fill"></i> Faltantes por Coordenador / PS</h3>',
-        '<p>Responsáveis cadastrados no Editor de Dados, consolidados sem dupla contagem dentro de cada função.</p></div></header>',
+      '<section class="falt-panel"><header class="falt-panel-header"><div><h3><i class="bi bi-people-fill"></i> Faltantes por Coordenador</h3>',
+        '<p>Somente Coordenadores cadastrados no Editor de Dados, com total consolidado por responsável.</p></div></header>',
         '<div class="falt-panel-content"><div class="falt-responsaveis" id="faltantesPeople"></div></div></section>',
       '<section class="falt-panel"><header class="falt-panel-header"><div><h3><i class="bi bi-table"></i> Detalhamento dos Faltantes <span id="faltantesRowCount"></span></h3>',
         '<p id="faltantesTableSub"></p></div></header>',
@@ -117,16 +117,15 @@ function render(payload){
   }).join("");
   const people=new Map();
   state.sides.forEach(side=>{
-    [["Coordenador",side.staff.coordenador],["PS",side.staff.ps]].forEach(([role,name])=>{
-      if(!String(name||"").trim())return;
-      const key=role+"|"+norm(name);
-      if(!people.has(key))people.set(key,{role,name,qty:0});
-      people.get(key).qty+=side.faltantes;
-    });
+    const name=String(side.staff.coordenador||"").trim();
+    if(!name)return;
+    const key=norm(name);
+    if(!people.has(key))people.set(key,{name,qty:0});
+    people.get(key).qty+=side.faltantes;
   });
   el("faltantesPeople").innerHTML=people.size?[...people.values()].sort((a,b)=>b.qty-a.qty).map(p=>
-    '<article class="falt-person"><span>'+esc(p.role)+'</span><b>'+esc(p.name)+'</b><strong>'+fmt(p.qty)+'</strong></article>'
-  ).join(""):'<p>Cadastre os Coordenadores e PS no Editor de Dados para exibir o consolidado.</p>';
+    '<article class="falt-person"><span>Coordenador</span><b>'+esc(p.name)+'</b><strong>'+fmt(p.qty)+'</strong></article>'
+  ).join(""):'<p>Cadastre os Coordenadores no Editor de Dados para exibir o consolidado.</p>';
   const options=['<option value="">Todos os lados</option>'].concat(state.sides.map(s=>
     '<option value="'+esc(s.label)+'">'+esc(s.title)+'</option>'));
   el("faltantesSideFilter").innerHTML=options.join("");
