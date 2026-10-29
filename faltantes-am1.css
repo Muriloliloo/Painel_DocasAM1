@@ -726,3 +726,41 @@ body:not(.dark-mode) .app.faltantes-mode #faltantesView .falt-responsaveis .falt
   font-size:26px;
   font-weight:950;
 }
+
+
+/* Leitura ampliada: rótulo, nomes e informação sob o nome do Coordenador */
+body:not(.dark-mode) .app.faltantes-mode #faltantesView .falt-responsaveis .falt-person {
+  min-height:106px;
+  padding:14px 15px;
+  column-gap:12px;
+}
+body:not(.dark-mode) .app.faltantes-mode #faltantesView .falt-responsaveis .falt-person-copy {
+  gap:5px;
+}
+body:not(.dark-mode) .app.faltantes-mode #faltantesView .falt-responsaveis .falt-person-copy > span {
+  color:#244c71;
+  font-size:12px;
+  font-weight:850;
+  line-height:1.35;
+}
+body:not(.dark-mode) .app.faltantes-mode #faltantesView .falt-responsaveis .falt-person-copy > b {
+  color:#132f4a;
+  font-size:16px;
+  font-weight:900;
+  line-height:1.3;
+  overflow-wrap:anywhere;
+}
+body:not(.dark-mode) .app.faltantes-mode #faltantesView .falt-responsaveis .falt-person-copy > small {
+  color:#123d65;
+  font-size:13px;
+  font-weight:850;
+  line-height:1.45;
+}
+@media(max-width:1420px){
+  body:not(.dark-mode) .app.faltantes-mode #faltantesView .falt-responsaveis .falt-person {
+    padding:13px 11px;
+    gap:9px;
+  }
+  body:not(.dark-mode) .app.faltantes-mode #faltantesView .falt-responsaveis .falt-person-copy > b {font-size:15px;}
+  body:not(.dark-mode) .app.faltantes-mode #faltantesView .falt-responsaveis .falt-person-copy > small {font-size:12px;}
+}
