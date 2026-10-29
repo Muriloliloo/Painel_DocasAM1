@@ -156,6 +156,37 @@ function renderTable(){
     !state.inventoryLoaded?"Carregando inventário do dia...":
     "Inventário e valores salvos no Firebase privado, separados da aba Aduana A Mais.");
 }
+
+function resetInventory(day,admin){
+  state.inventoryDay=day;state.inventoryAdmin=admin;state.inventoryLoaded=false;
+  state.inventoryLoading=false;state.inventoryMap=Object.create(null);state.inventoryError="";
+  state.selected.clear();state.editingValue="";state.bulkStatus="";
+}
+function loadInventoryForDay(){
+  const day=state.final?inventoryIso(state.date):"";
+  const admin=canAdmin();
+  if(day!==state.inventoryDay||admin!==state.inventoryAdmin)resetInventory(day,admin);
+  if(!admin||!day||state.inventoryLoaded||state.inventoryLoading||!window.FaltantesAm1?.onReadInventory)return;
+  state.inventoryLoading=true;
+  const requested=day;
+  Promise.resolve().then(()=>window.FaltantesAm1.onReadInventory(requested)).then(rows=>{
+    if(state.inventoryDay!==requested||!canAdmin())return;
+    if(!Array.isArray(rows))throw Error("Resposta do inventário inválida.");
+    const next=Object.create(null);
+    for(const row of rows){
+      const id=idKey(row?.id);
+      if(id)next[id]={inventoryStatus:INVENTORY_OPTIONS.includes(row.inventoryStatus)?row.inventoryStatus:"Pendente",
+        inventoryValueCents:Number.isSafeInteger(row.inventoryValueCents)&&row.inventoryValueCents>=0?row.inventoryValueCents:null};
+    }
+    state.inventoryMap=next;state.inventoryLoaded=true;state.inventoryError="";
+    if(state.payload)render(state.payload);
+  }).catch(error=>{
+    if(state.inventoryDay!==requested)return;
+    state.inventoryError="Falha ao ler o inventário: "+(error?.message||String(error));
+    if(state.payload)render(state.payload);
+  }).finally(()=>{if(state.inventoryDay===requested){state.inventoryLoading=false;renderTable();}});
+}
+
 function render(payload){
   if(!initialize())return;
   const model=payload.model||{};
@@ -163,6 +194,8 @@ function render(payload){
   const zones=Array.isArray(payload.zones)?payload.zones:[];
   state.date=payload.date||"";
   state.final=Boolean(model.useFinal);
+  state.payload=payload;
+  loadInventoryForDay();
   const physical=payload.physical||{};
   // Nunca conciliar entre dias diferentes nem sem CSV final do sistema.
   state.physicalReady=Boolean(state.final&&dateKey(state.date)&&dateKey(physical.date)===dateKey(state.date)&&Array.isArray(physical.ids));
@@ -170,10 +203,10 @@ function render(payload){
   const physicalIds=new Set(state.physicalReady?physical.ids.map(idKey).filter(Boolean):[]);
   const physicalDetails=state.physicalReady?(physical.details||{}):{};
   state.items=[];
-  state.sides=zones.map(z=>({label:z.label,title:z.displayLabel||z.label,staff:z.staff||{},faltantes:0,encontrados:0,pendentes:0}));
+  state.sides=zones.map(z=>({label:z.label,title:z.displayLabel||z.label,staff:z.staff||{},faltantes:0,encontrados:0,tratados:0,pendentes:0}));
   const unknown=groups.get("Sem lado identificado");
   if(unknown&&(unknown.rows||[]).some(r=>isAM1(r)&&num(r.faltantes)))
-    state.sides.push({label:"Sem lado identificado",title:"Sem lado identificado",staff:{},faltantes:0,encontrados:0,pendentes:0});
+    state.sides.push({label:"Sem lado identificado",title:"Sem lado identificado",staff:{},faltantes:0,encontrados:0,tratados:0,pendentes:0});
   for(const side of state.sides){
     for(const row of groups.get(side.label)?.rows||[]){
       // Registros de CHP, AM0, AMDE, PM e SD não afetam os indicadores.
@@ -200,12 +233,14 @@ function render(payload){
         state.items.push({...common,id:"",qty:total,found:false,ladoFisico:""});
       }
     }
-    side.pendentes=Math.max(0,side.faltantes-side.encontrados);
+    side.tratados=state.items.filter(item=>item.lado===side.label&&manualResolved(item)).reduce((sum,item)=>sum+item.qty,0);
+    side.pendentes=Math.max(0,side.faltantes-side.encontrados-side.tratados);
   }
   const totalSistema=state.sides.reduce((a,g)=>a+g.faltantes,0);
   const encontrados=state.sides.reduce((a,g)=>a+g.encontrados,0);
+  const tratados=state.sides.reduce((a,g)=>a+g.tratados,0);
   const pendentes=state.sides.reduce((a,g)=>a+g.pendentes,0);
-  const routes=new Set(state.items.filter(r=>!r.found).map(r=>r.rota)).size;
+  const routes=new Set(state.items.filter(pending).map(r=>r.rota)).size;
   el("faltantesStatus").innerHTML=
     '<span><i class="bi bi-calendar3"></i> Data: <b>'+esc(state.date||"Não informada")+'</b></span>'+
     '<span><i class="bi bi-database-check"></i> '+(state.final?"Sistema aplicado: "+fmt(totalSistema)+" FALTANTES AM1":"Contagens ao vivo da Base Aduana")+'</span>'+
@@ -213,7 +248,8 @@ function render(payload){
     '<span><i class="bi bi-funnel-fill"></i> Somente <b>_AM1</b> · '+fmt(routes)+' rotas com pendência</span>';
   el("faltantesKpis").innerHTML=[
     '<article class="falt-kpi missing"><span>Faltantes pendentes AM1</span><strong>'+fmt(pendentes)+'</strong><small>Saldo atualizado após a conciliação física</small></article>',
-    '<article class="falt-kpi found"><span>Faltantes encontrados no físico</span><strong>'+fmt(encontrados)+'</strong><small>Abatidos dos pendentes por Shipment ID</small></article>',
+    '<article class="falt-kpi found"><span>Faltantes encontrados no físico</span><strong>'+fmt(encontrados)+'</strong><small>Conciliados pela planilha de IDs Físicos</small></article>',
+    '<article class="falt-kpi treated"><span>Tratados no inventário</span><strong>'+fmt(tratados)+'</strong><small>Status resolvido manualmente no Firebase</small></article>',
     '<article class="falt-kpi"><span>Faltantes no sistema AM1</span><strong>'+fmt(totalSistema)+'</strong><small>Total original da auditoria, sem alterações</small></article>',
   ].join("");
   el("faltantesSideCards").innerHTML=state.sides.map(side=>{
@@ -223,7 +259,7 @@ function render(payload){
       '<span><b>PS:</b> '+esc(side.staff.ps||"Não informado")+'</span></div>'+
       '<div class="falt-count"><strong>'+fmt(side.pendentes)+'</strong><small>'+percent.toFixed(1).replace(".",",")+'% dos pendentes</small></div>'+
       '<span class="falt-meter"><i style="width:'+Math.min(100,percent).toFixed(2)+'%"></i></span>'+
-      '<small class="falt-extra">Faltantes no sistema: '+fmt(side.faltantes)+' · Encontrados no físico: '+fmt(side.encontrados)+'</small></article>';
+      '<small class="falt-extra">Sistema: '+fmt(side.faltantes)+' · Físico: '+fmt(side.encontrados)+' · Tratados: '+fmt(side.tratados)+'</small></article>';
   }).join("");
   // Apenas Coordenadores. Não duplicar cards de PS.
   const people=new Map();
@@ -231,13 +267,14 @@ function render(payload){
     const name=String(side.staff.coordenador||"").trim();
     if(!name)return;
     const key=norm(name);
-    if(!people.has(key))people.set(key,{name,qty:0,found:0});
+    if(!people.has(key))people.set(key,{name,qty:0,found:0,treated:0});
     people.get(key).qty+=side.pendentes;
     people.get(key).found+=side.encontrados;
+    people.get(key).treated+=side.tratados;
   });
   el("faltantesPeople").innerHTML=people.size?[...people.values()].sort((a,b)=>b.qty-a.qty).map(p=>
     '<article class="falt-person"><span>Coordenador</span><b>'+esc(p.name)+'</b><strong>'+fmt(p.qty)+'</strong>'+
-    '<small>'+fmt(p.found)+' encontrado(s) no físico</small></article>'
+    '<small>'+fmt(p.found)+' no físico · '+fmt(p.treated)+' tratado(s) no inventário</small></article>'
   ).join(""):'<p>Cadastre os Coordenadores no Editor de Dados para exibir o saldo.</p>';
   const options=['<option value="">Todos os lados</option>'].concat(state.sides.map(s=>
     '<option value="'+esc(s.label)+'">'+esc(s.title)+'</option>'));
@@ -247,7 +284,7 @@ function render(payload){
   el("faltantesSearch").value=state.search;
   el("faltantesStatusFilter").value=state.statusFilter;
   el("faltantesTableSub").textContent=state.final?
-    "Exibição completa: pendentes e encontrados juntos na mesma lista. Use o filtro para consultar cada situação separadamente.":
+    "Pendentes, encontrados no físico e tratados no inventário juntos. Situação e valores registrados por Shipment ID.":
     "Ainda sem CSV final desta data: contagens por rota, sem Shipment IDs individuais.";
   const notice=state.final
     ? state.physicalReady
