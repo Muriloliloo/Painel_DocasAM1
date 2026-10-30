@@ -592,6 +592,33 @@
     "body.dark-mode .app.aduana-mode .aduana-side-table tbody td.aduana-side-grand-total{background:#244c68!important;color:#ecf7ff;border-color:#52718b}",
     "body.dark-mode .app.aduana-mode .aduana-side-table .aduana-side-grand-head{background:#173c58!important;color:#f5faff}",
     "body.dark-mode .app.aduana-mode .aduana-side-panel .aduana-reconcile{background:#1d374d;border-color:#42647b}",
+    "/* Tabela transposta: lados à esquerda, indicadores agrupados horizontalmente no topo. */",
+    ".app.aduana-mode .aduana-side-table{width:max-content;min-width:100%;table-layout:auto}",
+    ".app.aduana-mode .aduana-side-table thead th{width:auto;min-width:128px;max-width:195px;padding:11px 12px;font-size:13px;line-height:1.3;white-space:normal;overflow-wrap:anywhere}",
+    ".app.aduana-mode .aduana-side-table thead th.aduana-side-row-head{width:240px;min-width:240px;max-width:240px;position:sticky;left:0;z-index:5}",
+    ".app.aduana-mode .aduana-side-table thead tr.aduana-side-groups th{background:#20496a;color:#fff;font-size:13px;font-weight:950;letter-spacing:.025em}",
+    ".app.aduana-mode .aduana-side-table thead tr.aduana-side-labels th{background:#2c5a7b;color:#fff;font-size:12px;font-weight:900}",
+    ".app.aduana-mode .aduana-side-table tbody th.aduana-side-zone{position:sticky;left:0;z-index:3;min-width:240px;width:240px;max-width:240px;text-align:left!important;white-space:normal;padding:12px 13px;font-size:15px;line-height:1.35}",
+    ".app.aduana-mode .aduana-side-table tbody .aduana-side-title{font-size:15px;font-weight:950;display:block}",
+    ".app.aduana-mode .aduana-side-table tbody .aduana-side-coordinator{font-size:12px;display:block;line-height:1.4;margin-top:4px;color:#355a75}",
+    ".app.aduana-mode .aduana-side-table tbody .aduana-side-coordinator b{color:#21435d}",
+    ".app.aduana-mode .aduana-side-table tbody td{min-width:128px;padding:14px 12px;font-size:18px;font-weight:950;text-align:center}",
+    ".app.aduana-mode .aduana-side-table tbody tr:not(.aduana-side-total-row)>td.aduana-side-found{color:#127657}",
+    ".app.aduana-mode .aduana-side-table tbody tr:not(.aduana-side-total-row)>td.aduana-side-missing{color:#b12e3b}",
+    ".app.aduana-mode .aduana-side-table tbody tr:not(.aduana-side-total-row)>td.aduana-side-physical{color:#145f85}",
+    ".app.aduana-mode .aduana-side-table tbody tr:not(.aduana-side-total-row)>td.aduana-side-inventory{color:#375da0}",
+    ".app.aduana-mode .aduana-side-table tbody tr>td.aduana-side-audit-total{background:#d8e9f7!important;color:#123c60;font-weight:950}",
+    ".app.aduana-mode .aduana-side-table tbody tr.aduana-side-total-row>th,.app.aduana-mode .aduana-side-table tbody tr.aduana-side-total-row>td{background:#cfe4f5!important;color:#123c60;font-weight:950;border-top:2px solid #aac6da}",
+    ".app.aduana-mode .aduana-side-table tbody tr.aduana-side-total-row>th{z-index:4}",
+    "body.dark-mode .app.aduana-mode .aduana-side-table thead tr.aduana-side-groups th{background:#173c58;color:#fff}",
+    "body.dark-mode .app.aduana-mode .aduana-side-table thead tr.aduana-side-labels th{background:#24516e;color:#fff}",
+    "body.dark-mode .app.aduana-mode .aduana-side-table tbody .aduana-side-coordinator,body.dark-mode .app.aduana-mode .aduana-side-table tbody .aduana-side-coordinator b{color:#e0effa}",
+    "body.dark-mode .app.aduana-mode .aduana-side-table tbody tr:not(.aduana-side-total-row)>td.aduana-side-found{color:#80ddb3}",
+    "body.dark-mode .app.aduana-mode .aduana-side-table tbody tr:not(.aduana-side-total-row)>td.aduana-side-missing{color:#ff9fa7}",
+    "body.dark-mode .app.aduana-mode .aduana-side-table tbody tr:not(.aduana-side-total-row)>td.aduana-side-physical{color:#8cd5f5}",
+    "body.dark-mode .app.aduana-mode .aduana-side-table tbody tr:not(.aduana-side-total-row)>td.aduana-side-inventory{color:#accdff}",
+    "body.dark-mode .app.aduana-mode .aduana-side-table tbody tr>td.aduana-side-audit-total{background:#285371!important;color:#f2faff}",
+    "body.dark-mode .app.aduana-mode .aduana-side-table tbody tr.aduana-side-total-row>th,body.dark-mode .app.aduana-mode .aduana-side-table tbody tr.aduana-side-total-row>td{background:#244c68!important;color:#ecf7ff;border-top-color:#4b728e}",
     "@media(max-width:950px){.aduana-side-table{min-width:940px}}",
     "@media(max-width:550px){.aduana-kpis{grid-template-columns:1fr}.app.aduana-mode .aduana-view{padding:9px}.aduana-detail td,.aduana-detail th{padding:6px 5px}}"
   ].join("\n");
@@ -1118,39 +1145,60 @@
       : !m.physicalReady
       ? "Base do sistema carregada. Importe o CSV ou XLSX de <b>IDs Físicos</b> para identificar os pacotes localizados."
       : "<b>Conferência por ID:</b> somente IDs existentes no relatório do sistema entram nas contagens. IDs físicos que não pertencem ao sistema são desconsiderados, sem afetar lados, cores, tipos ou exportações. O lado do sistema determina a distribuição do fechamento.";
-    // Colunas verticais por lado e indicadores na primeira coluna, de cima para baixo.
-    // A classificacao de tipo/cor utiliza exclusivamente IDs encontrados no fisico e presentes no sistema.
+    // Matriz transposta: indicadores nas colunas, lados/coordenadores nas linhas.
+    // As classificações consideram apenas os IDs físicos que também constam no sistema.
     const ready = m.systemReady && m.physicalReady;
     const zones = m.sides.filter(r=>r.side!=="Não identificado"||r.system||r.found);
     const sidePhysical = side=>(m.physicalRows||[]).filter(r=>r.side===side);
     const physicalVolumosos=m.countType("Volumoso");
     const physicalGM=m.countType("GM");
     const physicalOtherType=Math.max(0,m.totalFound-physicalVolumosos-physicalGM);
-    const sideMetricRow=(label,perSide,total,available,cssClass="",liveKey="",totalId="")=>
-      '<tr'+(cssClass?' class="'+cssClass+'"':'')+'><th scope="row">'+esc(label)+'</th>'+
-      zones.map(z=>'<td'+(liveKey?' data-aduana-side-'+liveKey+'="'+esc(z.side)+'"':'')+'>'+
-        formatValue(perSide(z),available)+'</td>').join("")+
-      '<td class="aduana-side-grand-total"'+(totalId?' id="'+totalId+'"':'')+'>'+
-        formatValue(total,available)+'</td></tr>';
-    const sectionRow=label=>'<tr class="aduana-side-section"><th colspan="'+(zones.length+2)+'">'+esc(label)+'</th></tr>';
-    const metrics =
-      sideMetricRow("Sistema",z=>z.system,m.total,m.systemReady,"aduana-side-system")+
-      sideMetricRow("Encontrado / tratado",z=>z.found,m.totalFound,ready,"aduana-side-found","found","aduanaSideTotalFound")+
-      sideMetricRow("Pendente / não encontrado",z=>z.missing,m.totalMissing,ready,"aduana-side-missing","missing","aduanaSideTotalMissing")+
-      sideMetricRow("Encontrado no físico",z=>z.found,m.totalFound,ready,"aduana-side-physical")+
-      sideMetricRow("Tratado no inventário",()=>0,0,ready,"aduana-side-inventory","manual","aduanaSideTotalManual")+
-      sectionRow("CORES — CLASSIFICAÇÃO DO FÍSICO")+
-      (m.colors.length
-        ? m.colors.map(color=>sideMetricRow(color,z=>sidePhysical(z.side).filter(r=>r.cor===color).length,m.countColor(color),ready,"aduana-side-color")).join("")
-        : sideMetricRow("Nenhuma cor informada",()=>0,0,ready,"aduana-side-no-colors"))+
-      sectionRow("TIPO — CLASSIFICAÇÃO DO FÍSICO")+
-      sideMetricRow("Volumoso",z=>sidePhysical(z.side).filter(r=>r.tipo==="Volumoso").length,m.countType("Volumoso"),ready)+
-      sideMetricRow("GM",z=>sidePhysical(z.side).filter(r=>r.tipo==="GM").length,physicalGM,ready)+
-      (physicalOtherType>0 ? sideMetricRow("Outros / sem tipo no físico",z=>sidePhysical(z.side).filter(r=>r.tipo!=="GM"&&r.tipo!=="Volumoso").length,physicalOtherType,ready) : "")+
-      sideMetricRow("TOTAL ENCONTRADO NO FÍSICO (POR TIPO)",z=>z.found,m.totalFound,ready,"aduana-side-audit-total");
-    const headings=zones.map(z=>'<th scope="col"><span class="aduana-side-title">'+esc(sideDisplay(z.side))+'</span>'+
-      (z.side==="Não identificado"?'':'<span class="aduana-side-coordinator"><b>Coordenador:</b> '+esc(coordinatorForSide(data,z.side))+'</span>')+
-      '</th>').join("");
+    const statusColumns=[
+      {label:"Sistema",value:z=>z.system,total:m.total,enabled:m.systemReady,cssClass:"aduana-side-system"},
+      {label:"Encontrado / tratado",value:z=>z.found,total:m.totalFound,enabled:ready,cssClass:"aduana-side-found",liveKey:"found",totalId:"aduanaSideTotalFound"},
+      {label:"Pendente / não encontrado",value:z=>z.missing,total:m.totalMissing,enabled:ready,cssClass:"aduana-side-missing",liveKey:"missing",totalId:"aduanaSideTotalMissing"},
+      {label:"Encontrado no físico",value:z=>z.found,total:m.totalFound,enabled:ready,cssClass:"aduana-side-physical"},
+      {label:"Tratado no inventário",value:()=>0,total:0,enabled:ready,cssClass:"aduana-side-inventory",liveKey:"manual",totalId:"aduanaSideTotalManual"}
+    ];
+    const colorColumns=m.colors.length
+      ?m.colors.map(color=>({
+        label:color,value:z=>sidePhysical(z.side).filter(r=>r.cor===color).length,
+        total:m.countColor(color),enabled:ready,cssClass:"aduana-side-color"
+      }))
+      :[{label:"Nenhuma cor informada",value:()=>0,total:0,enabled:ready,cssClass:"aduana-side-no-colors"}];
+    const typeColumns=[
+      {label:"Volumoso",value:z=>sidePhysical(z.side).filter(r=>r.tipo==="Volumoso").length,total:physicalVolumosos,enabled:ready,cssClass:"aduana-side-type"},
+      {label:"GM",value:z=>sidePhysical(z.side).filter(r=>r.tipo==="GM").length,total:physicalGM,enabled:ready,cssClass:"aduana-side-type"},
+      ...(physicalOtherType>0?[{
+        label:"Outros / sem tipo no físico",
+        value:z=>sidePhysical(z.side).filter(r=>r.tipo!=="GM"&&r.tipo!=="Volumoso").length,
+        total:physicalOtherType,enabled:ready,cssClass:"aduana-side-type"
+      }]:[]),
+      {label:"TOTAL ENCONTRADO NO FÍSICO (POR TIPO)",value:z=>z.found,total:m.totalFound,enabled:ready,cssClass:"aduana-side-audit-total"}
+    ];
+    const metricColumns=[...statusColumns,...colorColumns,...typeColumns];
+    const columnHeading=column=>'<th scope="col" class="'+column.cssClass+'">'+esc(column.label)+'</th>';
+    const tableCell=(column,zone,isTotal=false)=>{
+      const live=column.liveKey&&!isTotal?' data-aduana-side-'+column.liveKey+'="'+esc(zone.side)+'"':'';
+      const id=column.totalId&&isTotal?' id="'+column.totalId+'"':'';
+      const value=isTotal?column.total:column.value(zone);
+      return '<td class="'+column.cssClass+(isTotal?' aduana-side-grand-total':'')+'"'+live+id+'>'+
+        formatValue(value,column.enabled)+'</td>';
+    };
+    const sideRows=zones.map(zone=>
+      '<tr><th scope="row" class="aduana-side-zone">'+
+      '<span class="aduana-side-title">'+esc(sideDisplay(zone.side))+'</span>'+
+      (zone.side==="Não identificado"?'':'<span class="aduana-side-coordinator"><b>Coordenador:</b> '+esc(coordinatorForSide(data,zone.side))+'</span>')+
+      '</th>'+metricColumns.map(column=>tableCell(column,zone)).join("")+'</tr>'
+    ).join("");
+    const totalRow='<tr class="aduana-side-total-row"><th scope="row" class="aduana-side-zone">TOTAL</th>'+
+      metricColumns.map(column=>tableCell(column,null,true)).join("")+'</tr>';
+    const matrixHeader=
+      '<tr class="aduana-side-groups"><th rowspan="2" scope="col" class="aduana-side-row-head">LADO / COORDENADOR</th>'+
+      '<th colspan="'+statusColumns.length+'" scope="colgroup">SISTEMA E CONCILIAÇÃO</th>'+
+      '<th colspan="'+colorColumns.length+'" scope="colgroup">CORES — CLASSIFICAÇÃO DO FÍSICO</th>'+
+      '<th colspan="'+typeColumns.length+'" scope="colgroup">TIPO — CLASSIFICAÇÃO DO FÍSICO</th></tr>'+
+      '<tr class="aduana-side-labels">'+metricColumns.map(columnHeading).join("")+'</tr>';
     $("aduanaView").innerHTML =
       '<div class="aduana-shell"><div class="aduana-top"><button type="button" id="aduanaBack" class="aduana-back">← Voltar à tela inicial</button>'+
       '<span class="aduana-muted">SSP15 · AM1 · '+esc(m.date||"Data não informada")+'</span></div>'+
@@ -1189,15 +1237,14 @@
         : 'Aguardando confronto entre sistema, físico e inventário')+'</small></article>'+
       '<article class="aduana-kpi nao-encontrado"><span>Pendentes / não encontrados</span><strong id="aduanaKpiMissing">'+formatValue(m.totalMissing,m.systemReady&&m.physicalReady)+'</strong><small id="aduanaKpiMissingDetail">Aguardando carregamento dos status</small></article></section>'+
       '<section class="aduana-panel aduana-side-panel"><h3>CONTROLE POR LADO · CLASSIFICAÇÃO DOS PACOTES</h3>'+
-      '<div class="aduana-side-table-wrap"><table class="aduana-table aduana-side-table">'+
-      '<thead><tr><th scope="col">INDICADOR</th>'+headings+
-      '<th scope="col" class="aduana-side-grand-head">TOTAL</th></tr></thead><tbody>'+metrics+
+      '<div class="aduana-side-table-wrap"><table class="aduana-table aduana-side-table" aria-label="Conferência por lado, indicadores em colunas">'+
+      '<thead>'+matrixHeader+'</thead><tbody>'+sideRows+totalRow+
       '</tbody></table></div>'+
       '<div class="aduana-panel-inner aduana-reconcile">'+(ready
         ? '<strong id="aduanaReconcileText">Conciliação por ID: '+m.total+' no sistema = '+m.totalFound+' encontrados + '+m.totalMissing+' não encontrados.</strong>'
         : '<span>Importe as bases do sistema e físico para iniciar o confronto por ID.</span>')+
       '<small id="aduanaTypeCheckText"><b>Conferência dos tipos físicos:</b> '+physicalVolumosos+' volumosos + '+physicalGM+' GM + '+physicalOtherType+' outros/sem tipo = '+m.totalFound+' IDs encontrados no físico. Os tratados no inventário não entram nessa classificação.</small>'+
-      '<small>Cada coluna corresponde a um lado; cada linha apresenta um indicador. Apenas IDs válidos do sistema entram na comparação. Cores são atributos independentes dos tipos e podem não estar preenchidas para todos os pacotes.</small></div></section>'+
+      '<small>Cada linha corresponde a um lado ou ao total; os indicadores aparecem nas colunas. Apenas IDs válidos do sistema entram na comparação. Cores são atributos independentes dos tipos e podem não estar preenchidas para todos os pacotes.</small></div></section>'+
       '<p class="aduana-note"><b>Critério obrigatório:</b> apenas Shipment IDs presentes no arquivo do sistema são contabilizados. IDs extras bipados no físico são descartados das estatísticas, do detalhamento e dos arquivos exportados.'+
       (m.sideMismatches?' <b>Atenção:</b> '+m.sideMismatches+' ID(s) válido(s) com lado físico diferente do lado do sistema; a contagem foi atribuída ao lado do sistema.':'')+
       (m.crossSides?' <b>Atenção:</b> '+m.crossSides+' ID(s) repetido(s) em lados diferentes na base do sistema; contabilizado(s) uma única vez.':'')+'</p>'+
