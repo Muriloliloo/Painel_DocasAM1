@@ -433,27 +433,28 @@
     ".aduana-kpi span{font-weight:850}",
     ".aduana-kpi.encontrado{border-top-color:#19956d}.aduana-kpi.encontrado strong{color:#13805b}",
     ".aduana-kpi.nao-encontrado{border-top-color:#ce3b41}.aduana-kpi.nao-encontrado strong{color:#b92c36}",
-    ".aduana-side-panel{margin:0 0 15px}",
-    ".aduana-side-table-wrap{width:100%;overflow-x:auto}",
-    ".aduana-side-table{min-width:640px}",
-    ".aduana-side-main td{background:#f1f3f5;font-weight:850}",
-    ".aduana-side-detail-row td{padding:0!important;text-align:left!important;font-weight:500!important;background:#fff!important}",
-    ".aduana-side-breakdown{padding:10px 16px 13px;border-bottom:2px solid #dce6ee;display:grid;gap:6px}",
-    ".aduana-side-breakdown-line{display:flex;align-items:center;flex-wrap:wrap;gap:6px}",
-    ".aduana-side-group-label{font-size:11px;text-transform:uppercase;letter-spacing:.04em;font-weight:900;color:#4b6c84;min-width:76px}",
-    ".aduana-side-chip{display:inline-flex;align-items:center;gap:7px;padding:4px 9px;border:1px solid #d4e0e9;border-radius:6px;background:#f0f6fa;color:#1b405b;font-size:12px;font-weight:750}",
-    ".aduana-side-chip strong{font-weight:950;color:#073453;font-size:13px}",
-    ".aduana-side-chip-found{background:#e9f6ee;border-color:#c6e8d2}",
-    ".aduana-side-chip-inventory{background:#eaf1fd;border-color:#cbdcf6}",
-    ".aduana-side-chip-pending{background:#fff0ed;border-color:#f1d2ca}",
-    ".aduana-side-chip-pending strong{color:#ac2831}",
-    "body.dark-mode .aduana-side-main td{background:#27445a;color:#eaf3fa}",
-    "body.dark-mode .aduana-side-detail-row td{background:#1d374d!important;color:#ecf4fb}",
-    "body.dark-mode .aduana-side-breakdown{border-color:#405c72}",
-    "body.dark-mode .aduana-side-group-label{color:#b4cede}",
-    "body.dark-mode .aduana-side-chip{background:#294a61;color:#eaf2fa;border-color:#46677c}",
-    "body.dark-mode .aduana-side-chip strong{color:#ffe17a}",
-    "body.dark-mode .aduana-side-chip-pending strong{color:#ffa7a7}",
+    ".aduana-side-panel{margin-bottom:15px}",
+    ".aduana-side-table-wrap{width:100%;overflow-x:auto;scrollbar-width:thin}",
+    ".aduana-side-table{width:100%;min-width:1360px;font-variant-numeric:tabular-nums}",
+    ".aduana-side-table th{font-size:10px;padding:9px 7px;white-space:normal}",
+    ".aduana-side-table td{padding:13px 7px;font-size:13px;white-space:nowrap}",
+    ".aduana-side-table .aduana-side-head th:first-child,.aduana-side-table tbody td:first-child{position:sticky;left:0;z-index:2;min-width:195px;width:195px;white-space:normal;box-shadow:2px 0 3px #142c4614}",
+    ".aduana-side-table .aduana-side-head th:first-child{z-index:4}",
+    ".aduana-side-table thead .aduana-side-group th{background:#fff0ae;color:#163a56;font-size:11px;font-weight:950;letter-spacing:.04em;border-bottom:1px solid #d8c98e}",
+    ".aduana-side-table thead .aduana-side-head th{background:#fff7d6}",
+    ".aduana-side-table tbody tr:nth-child(odd) td{background:#f1f3f5}",
+    ".aduana-side-table tbody tr:nth-child(even) td{background:#fff}",
+    ".aduana-side-table tbody tr.aduana-total td{background:#ffe17a;font-weight:950}",
+    ".aduana-side-table .aduana-side-missing{color:#ac2d37;font-weight:900}",
+    ".aduana-side-table .aduana-side-found{color:#147756;font-weight:900}",
+    ".aduana-side-table .aduana-side-physical{color:#155c83}",
+    ".aduana-side-table .aduana-side-inventory{color:#395b97}",
+    ".aduana-side-table .aduana-side-classification{border-left:1px solid #cddbe7}",
+    "body.dark-mode .aduana-side-table tbody tr:nth-child(odd) td{background:#27445a;color:#eaf3fa}",
+    "body.dark-mode .aduana-side-table tbody tr:nth-child(even) td{background:#1d374d;color:#eaf3fa}",
+    "body.dark-mode .aduana-side-table thead .aduana-side-group th{background:#655428;color:#fff5d2}",
+    "body.dark-mode .aduana-side-table thead .aduana-side-head th{background:#344a5a;color:#f8f3dc}",
+    "body.dark-mode .aduana-side-table tbody tr.aduana-total td{background:#e2b739;color:#14293c}",
     ".aduana-panel{background:#fff;border:1px solid #ccd7e1;border-radius:12px;overflow:hidden;min-width:0}",
     ".aduana-panel h3{margin:0;padding:12px 15px;background:#ffe585;color:#152b42;font-size:16px;font-weight:950;text-align:center}",
     ".aduana-table{width:100%;border-collapse:collapse}.aduana-table th{text-align:center;background:#fff4c7;font-size:12px;text-transform:uppercase;line-height:1.3;vertical-align:middle}",
@@ -535,7 +536,7 @@
     "body.dark-mode .aduana-panel,body.dark-mode .aduana-kpi,body.dark-mode .aduana-note{background:#1d374d;border-color:#3b5a74;color:#ebf2f8}",
     "body.dark-mode .aduana-table tbody tr:nth-child(odd),body.dark-mode .aduana-detail tr:nth-child(even){background:#27445a}",
     "body.dark-mode .aduana-kpi strong{color:#ffda00}",
-    "@media(max-width:950px){.aduana-side-breakdown{padding:9px 12px}.aduana-side-group-label{min-width:65px}}",
+    "@media(max-width:950px){.aduana-side-table{min-width:1260px}}",
     "@media(max-width:550px){.aduana-kpis{grid-template-columns:1fr}.app.aduana-mode .aduana-view{padding:9px}.aduana-detail td,.aduana-detail th{padding:6px 5px}}"
   ].join("\n");
   function installStyles() {
@@ -617,7 +618,7 @@
     const put=(id,n)=>{const e=$(id);if(e)e.textContent=String(n);};
     put("aduanaKpiFound",s.found);put("aduanaKpiMissing",s.missing);
     put("aduanaKpiMissingDetail",s.pending+" pendente(s) · "+s.notFound+" não encontrado(s)");
-    put("aduanaSideTotalFound",s.found);put("aduanaSideTotalMissing",s.missing);
+    put("aduanaSideTotalFound",s.found);put("aduanaSideTotalMissing",s.missing);put("aduanaSideTotalManual",s.manual);
     put("aduanaReconcileText","Conciliação: "+m.total+" no sistema = "+s.found+
       " encontrados/tratados ("+m.totalFound+" no físico + "+s.manual+
       " tratados pelo inventário) + "+s.pending+" pendentes + "+s.notFound+
@@ -630,9 +631,6 @@
     });
     document.querySelectorAll("[data-aduana-side-manual]").forEach(e=>{
       e.textContent=String(s.sides.get(e.dataset.aduanaSideManual)?.manual||0);
-    });
-    document.querySelectorAll("[data-aduana-side-pending]").forEach(e=>{
-      e.textContent=String(s.sides.get(e.dataset.aduanaSidePending)?.missing||0);
     });
   }
   function shown(row){
@@ -1062,37 +1060,28 @@
       : !m.physicalReady
       ? "Base do sistema carregada. Importe o CSV ou XLSX de <b>IDs Físicos</b> para identificar os pacotes localizados."
       : "<b>Conferência por ID:</b> somente IDs existentes no relatório do sistema entram nas contagens. IDs físicos que não pertencem ao sistema são desconsiderados, sem afetar lados, cores, tipos ou exportações. O lado do sistema determina a distribuição do fechamento.";
-    // Classificação por lado: somente IDs localizados no físico, vinculados ao lado do sistema.
-    // Os status tratados no inventário não herdam tipo/cor nem simulam presença física.
+    // Colunas por lado; classificacao somente de IDs validos localizados no fisico.
     const ready = m.systemReady && m.physicalReady;
-    const sides = m.sides.filter(row=>row.side!=="Não identificado"||row.system||row.found).map(row=>{
-      const sidePhysical = m.physicalRows.filter(item=>item.side===row.side);
-      const sideCountType = kind=>sidePhysical.filter(item=>item.tipo===kind).length;
-      const sideCountColor = color=>sidePhysical.filter(item=>item.cor===color).length;
-      const chip = (label,value,extra="")=>
-        '<span class="aduana-side-chip '+extra+'">'+esc(label)+
-        ' <strong>'+formatValue(value,ready)+'</strong></span>';
-      const breakdown = (heading,chips)=>
-        '<div class="aduana-side-breakdown-line"><span class="aduana-side-group-label">'+heading+'</span>'+
-        chips.join("")+'</div>';
-      return '<tr class="aduana-side-main"><td class="sub"><div class="aduana-side-label">'+esc(sideDisplay(row.side))+'</div>'+
-        (row.side==="Não identificado" ? '' : '<div class="aduana-side-coordinator"><b>Coordenador:</b> '+esc(coordinatorForSide(data,row.side))+'</div>')+
-        '</td><td>'+formatValue(row.system,m.systemReady)+'</td>'+
-        '<td data-aduana-side-found="'+esc(row.side)+'">'+formatValue(row.found,ready)+'</td>'+
-        '<td data-aduana-side-missing="'+esc(row.side)+'">'+formatValue(row.missing,ready)+'</td></tr>'+
-        '<tr class="aduana-side-detail-row"><td colspan="4"><div class="aduana-side-breakdown">'+
-        breakdown("Resultado",[
-          chip("No físico",row.found,"aduana-side-chip-found"),
-          '<span class="aduana-side-chip aduana-side-chip-inventory">Tratados no inventário <strong data-aduana-side-manual="'+esc(row.side)+'">'+(ready?"0":"—")+'</strong></span>',
-          '<span class="aduana-side-chip aduana-side-chip-pending">Pendentes / não encontrados <strong data-aduana-side-pending="'+esc(row.side)+'">'+formatValue(row.missing,ready)+'</strong></span>'
-        ])+
-        breakdown("Tipo",[
-          chip("Volumoso",sideCountType("Volumoso")),
-          chip("GM",sideCountType("GM"))
-        ])+
-        breakdown("Cores",m.colors.map(color=>chip(color,sideCountColor(color))))+
-        '</div></td></tr>';
-    }).join("");
+    const countSideType = (side,kind)=>(m.physicalRows||[]).filter(r=>r.side===side&&r.tipo===kind).length;
+    const countSideColor = (side,color)=>(m.physicalRows||[]).filter(r=>r.side===side&&r.cor===color).length;
+    const numberCell = (n,valid,klass="")=>'<td'+(klass?' class="'+klass+'"':'')+'>'+formatValue(n,valid)+'</td>';
+    const sides = m.sides.filter(r=>r.side!=="Não identificado"||r.system||r.found).map(r=>
+      '<tr><td class="sub"><div class="aduana-side-label">'+esc(sideDisplay(r.side))+'</div>'+
+      (r.side==="Não identificado"?'':'<div class="aduana-side-coordinator"><b>Coordenador:</b> '+esc(coordinatorForSide(data,r.side))+'</div>')+'</td>'+
+      numberCell(r.system,m.systemReady)+
+      '<td class="aduana-side-found" data-aduana-side-found="'+esc(r.side)+'">'+formatValue(r.found,ready)+'</td>'+
+      '<td class="aduana-side-missing" data-aduana-side-missing="'+esc(r.side)+'">'+formatValue(r.missing,ready)+'</td>'+
+      numberCell(r.found,ready,"aduana-side-physical")+
+      '<td class="aduana-side-inventory" data-aduana-side-manual="'+esc(r.side)+'">'+(ready?"0":"—")+'</td>'+
+      numberCell(countSideType(r.side,"Volumoso"),ready,"aduana-side-classification")+
+      numberCell(countSideType(r.side,"GM"),ready)+
+      m.colors.map(color=>numberCell(countSideColor(r.side,color),ready)).join("")+'</tr>'
+    ).join("");
+    const totalClassifications = [
+      numberCell(m.countType("Volumoso"),ready,"aduana-side-classification"),
+      numberCell(m.countType("GM"),ready),
+      ...m.colors.map(c=>numberCell(m.countColor(c),ready))
+    ].join("");
     $("aduanaView").innerHTML =
       '<div class="aduana-shell"><div class="aduana-top"><button type="button" id="aduanaBack" class="aduana-back">← Voltar à tela inicial</button>'+
       '<span class="aduana-muted">SSP15 · AM1 · '+esc(m.date||"Data não informada")+'</span></div>'+
@@ -1129,12 +1118,19 @@
       '<article class="aduana-kpi encontrado"><span>Quantidade encontrada / tratada</span><strong id="aduanaKpiFound">'+formatValue(m.totalFound,m.systemReady&&m.physicalReady)+'</strong><small>Físico + status tratados do inventário (incluindo Envio cancelado, Avaria e Solução de problemas)</small></article>'+
       '<article class="aduana-kpi nao-encontrado"><span>Pendentes / não encontrados</span><strong id="aduanaKpiMissing">'+formatValue(m.totalMissing,m.systemReady&&m.physicalReady)+'</strong><small id="aduanaKpiMissingDetail">Aguardando carregamento dos status</small></article></section>'+
       '<section class="aduana-panel aduana-side-panel"><h3>CONTROLE POR LADO · CLASSIFICAÇÃO DOS PACOTES</h3>'+
-      '<div class="aduana-side-table-wrap"><table class="aduana-table aduana-side-table"><thead><tr><th>Item / lado</th><th>Sistema</th><th>Encontrado / tratado</th><th>Pendente / não encontrado</th></tr></thead><tbody>'+sides+
-      '<tr class="aduana-total"><td><strong>TOTAL</strong></td><td>'+formatValue(m.total,m.systemReady)+'</td><td id="aduanaSideTotalFound">'+formatValue(m.totalFound,ready)+'</td><td id="aduanaSideTotalMissing">'+formatValue(m.totalMissing,ready)+'</td></tr></tbody></table></div>'+
+      '<div class="aduana-side-table-wrap"><table class="aduana-table aduana-side-table">'+
+      '<thead><tr class="aduana-side-group"><th colspan="6">CONFERÊNCIA POR LADO</th><th colspan="'+(m.colors.length+2)+'">CLASSIFICAÇÃO FÍSICA DOS PACOTES</th></tr>'+
+      '<tr class="aduana-side-head"><th>Lado / responsável</th><th>Sistema</th><th>Encontrado / tratado</th><th>Pendente / não encontrado</th><th>No físico</th><th>Tratado no inventário</th><th>Volumoso</th><th>GM</th>'+
+      m.colors.map(c=>'<th>'+esc(c)+'</th>').join("")+'</tr></thead><tbody>'+sides+
+      '<tr class="aduana-total"><td><strong>TOTAL</strong></td>'+numberCell(m.total,m.systemReady)+
+      '<td id="aduanaSideTotalFound">'+formatValue(m.totalFound,ready)+'</td>'+
+      '<td id="aduanaSideTotalMissing">'+formatValue(m.totalMissing,ready)+'</td>'+
+      numberCell(m.totalFound,ready)+
+      '<td id="aduanaSideTotalManual">'+(ready?"0":"—")+'</td>'+totalClassifications+'</tr></tbody></table></div>'+
       '<div class="aduana-panel-inner aduana-reconcile">'+(ready
         ? '<strong id="aduanaReconcileText">Conciliação por ID: '+m.total+' no sistema = '+m.totalFound+' encontrados + '+m.totalMissing+' não encontrados.</strong>'
         : '<span>Importe as bases do sistema e físico para iniciar o confronto por ID.</span>')+
-      '<small>Tipos e cores são classificados apenas por IDs do físico que constam no sistema. Um ID encontrado em outro lado é atribuído ao lado do sistema. Status tratados somente no inventário são mostrados à parte, sem tipo ou cor presumidos.</small></div></section>'+
+      '<small>Tipo e cor vêm somente do físico e podem representar o mesmo pacote. Tratados só no inventário são apresentados separadamente, sem presumir tipo/cor. Role horizontalmente quando houver mais cores.</small></div></section>'+
       '<p class="aduana-note"><b>Critério obrigatório:</b> apenas Shipment IDs presentes no arquivo do sistema são contabilizados. IDs extras bipados no físico são descartados das estatísticas, do detalhamento e dos arquivos exportados.'+
       (m.sideMismatches?' <b>Atenção:</b> '+m.sideMismatches+' ID(s) válido(s) com lado físico diferente do lado do sistema; a contagem foi atribuída ao lado do sistema.':'')+
       (m.crossSides?' <b>Atenção:</b> '+m.crossSides+' ID(s) repetido(s) em lados diferentes na base do sistema; contabilizado(s) uma única vez.':'')+'</p>'+
