@@ -809,3 +809,9 @@ body:not(.dark-mode) .app.faltantes-mode #faltantesView .falt-kpis .falt-kpi.sys
   display:none;
   content:none;
 }
+
+
+/* Faltantes pendentes AM1: manter o valor em vermelho nos temas claro e escuro. */
+body .app.faltantes-mode #faltantesView .falt-kpis .falt-kpi.missing .falt-kpi-copy > strong {
+  color:#dc2626;
+}
