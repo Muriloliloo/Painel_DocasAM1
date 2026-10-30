@@ -620,6 +620,17 @@
     "body.dark-mode .app.aduana-mode .aduana-side-table tbody tr:not(.aduana-side-total-row)>td.aduana-side-inventory{color:#accdff}",
     "body.dark-mode .app.aduana-mode .aduana-side-table tbody tr>td.aduana-side-audit-total{background:#285371!important;color:#f2faff}",
     "body.dark-mode .app.aduana-mode .aduana-side-table tbody tr.aduana-side-total-row>th,body.dark-mode .app.aduana-mode .aduana-side-table tbody tr.aduana-side-total-row>td{background:#244c68!important;color:#ecf7ff;border-top-color:#4b728e}",
+    "/* Matriz Aduana: colunas proporcionais, números próximos e cabeçalhos legíveis. */",
+    ".app.aduana-mode .aduana-side-table{width:100%;table-layout:fixed}",
+    ".app.aduana-mode .aduana-side-table thead tr.aduana-side-groups th{font-size:16px;font-weight:950;padding:11px 7px;line-height:1.3;min-width:0;max-width:none}",
+    ".app.aduana-mode .aduana-side-table thead tr.aduana-side-labels th{font-size:15px;font-weight:950;line-height:1.25;padding:12px 6px;min-width:0;max-width:none;white-space:normal;overflow-wrap:anywhere}",
+    ".app.aduana-mode .aduana-side-table thead th.aduana-side-row-head{width:210px;min-width:210px;max-width:210px;font-size:16px;padding:12px 10px}",
+    ".app.aduana-mode .aduana-side-table tbody th.aduana-side-zone{width:210px;min-width:210px;max-width:210px;padding:10px 11px;font-size:17px;line-height:1.3}",
+    ".app.aduana-mode .aduana-side-table tbody .aduana-side-title{font-size:17px;font-weight:950;line-height:1.3}",
+    ".app.aduana-mode .aduana-side-table tbody .aduana-side-coordinator{font-size:13px;font-weight:800;line-height:1.35;margin-top:4px}",
+    ".app.aduana-mode .aduana-side-table tbody td{min-width:0;padding:11px 5px;font-size:clamp(21px,1.5vw,24px);font-weight:950;line-height:1.2}",
+    "body.dark-mode .app.aduana-mode .aduana-side-table thead tr.aduana-side-groups th{background:#173c58;color:#fff}",
+    "body.dark-mode .app.aduana-mode .aduana-side-table thead tr.aduana-side-labels th{background:#24516e;color:#fff}",
     "@media(max-width:950px){.aduana-side-table{min-width:940px}}",
     "@media(max-width:550px){.aduana-kpis{grid-template-columns:1fr}.app.aduana-mode .aduana-view{padding:9px}.aduana-detail td,.aduana-detail th{padding:6px 5px}}"
   ].join("\n");
@@ -1238,7 +1249,7 @@
         : 'Aguardando confronto entre sistema, físico e inventário')+'</small></article>'+
       '<article class="aduana-kpi nao-encontrado"><span>Pendentes / não encontrados</span><strong id="aduanaKpiMissing">'+formatValue(m.totalMissing,m.systemReady&&m.physicalReady)+'</strong><small id="aduanaKpiMissingDetail">Aguardando carregamento dos status</small></article></section>'+
       '<section class="aduana-panel aduana-side-panel"><h3>CONTROLE POR LADO · CLASSIFICAÇÃO DOS PACOTES</h3>'+
-      '<div class="aduana-side-table-wrap"><table class="aduana-table aduana-side-table" aria-label="Conferência por lado, indicadores em colunas">'+
+      '<div class="aduana-side-table-wrap"><table class="aduana-table aduana-side-table" style="min-width:'+(210+metricColumns.length*106)+'px" aria-label="Conferência por lado, indicadores em colunas">'+
       '<thead>'+matrixHeader+'</thead><tbody>'+sideRows+totalRow+
       '</tbody></table></div>'+
       '<div class="aduana-panel-inner aduana-reconcile">'+(ready
