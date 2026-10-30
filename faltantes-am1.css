@@ -815,3 +815,8 @@ body:not(.dark-mode) .app.faltantes-mode #faltantesView .falt-kpis .falt-kpi.sys
 body .app.faltantes-mode #faltantesView .falt-kpis .falt-kpi.missing .falt-kpi-copy > strong {
   color:#dc2626;
 }
+
+/* Faltantes encontrados no físico: valor fixo em verde-escuro. */
+body .app.faltantes-mode #faltantesView .falt-kpis .falt-kpi.found .falt-kpi-copy > strong {
+  color:#166534;
+}
