@@ -820,3 +820,15 @@ body .app.faltantes-mode #faltantesView .falt-kpis .falt-kpi.missing .falt-kpi-c
 body .app.faltantes-mode #faltantesView .falt-kpis .falt-kpi.found .falt-kpi-copy > strong {
   color:#166534;
 }
+
+/* Aba Faltantes: aumentar a identificação do Coordenador e PS nos cards por lado. */
+.app.faltantes-mode #faltantesView .falt-side .falt-staff {
+  font-size:14px;
+  line-height:1.4;
+  min-height:72px;
+  gap:5px;
+  overflow-wrap:anywhere;
+}
+.app.faltantes-mode #faltantesView .falt-side .falt-staff b {
+  font-weight:900;
+}
