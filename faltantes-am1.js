@@ -62,7 +62,7 @@ function initialize(){
       '<section class="falt-panel"><header class="falt-panel-header"><div><h3><i class="bi bi-bar-chart-fill"></i> Faltantes por lado</h3>',
         '<p>Saldo pendente por grupo A–E. IDs encontrados são abatidos no lado original do sistema.</p></div></header>',
         '<div class="falt-panel-content"><div id="faltantesSideCards" class="falt-side-grid"></div></div></section>',
-      '<section class="falt-panel"><header class="falt-panel-header"><div><h3><i class="bi bi-people-fill"></i> Faltantes por Coordenador</h3>',
+      '<section class="falt-panel"><header class="falt-panel-header"><div><h3><i class="bi bi-people-fill"></i> Pendentes por Coordenador</h3>',
         '<p>Somente Coordenadores do Editor de Dados, com saldo dos faltantes ainda pendentes.</p></div></header>',
         '<div class="falt-panel-content"><div class="falt-responsaveis" id="faltantesPeople"></div></div></section>',
       '<section class="falt-panel"><header class="falt-panel-header"><div><h3><i class="bi bi-table"></i> Detalhamento dos Faltantes <span id="faltantesRowCount"></span></h3>',
