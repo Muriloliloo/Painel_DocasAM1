@@ -566,6 +566,10 @@
     ".app.aduana-mode .aduana-side-table tbody .aduana-side-section>th{font-size:clamp(13px,.86vw,16px);padding:11px 15px}",
     ".app.aduana-mode .aduana-side-panel .aduana-reconcile strong{font-size:15px}",
     ".app.aduana-mode .aduana-side-panel .aduana-reconcile small{font-size:13px;line-height:1.5}",
+    ".app.aduana-mode .aduana-kpi.encontrado #aduanaKpiFoundDetail{font-size:13px;font-weight:850;color:#15664c}",
+    ".app.aduana-mode .aduana-side-table tbody tr.aduana-side-audit-total>th,.app.aduana-mode .aduana-side-table tbody tr.aduana-side-audit-total>td{background:#cfe4f5!important;color:#123c60;font-weight:950}",
+    "body.dark-mode .app.aduana-mode .aduana-side-table tbody tr.aduana-side-audit-total>th,body.dark-mode .app.aduana-mode .aduana-side-table tbody tr.aduana-side-audit-total>td{background:#285371!important;color:#f2faff}",
+    "body.dark-mode .app.aduana-mode .aduana-kpi.encontrado #aduanaKpiFoundDetail{color:#8ee3be}",
     "body.dark-mode .app.aduana-mode .aduana-side-panel{background:#17364b;border-color:#486a80}",
     "body.dark-mode .app.aduana-mode .aduana-side-panel>h3{background:linear-gradient(125deg,#204a6c,#173955);color:#fff;border-bottom-color:#d7ae62}",
     "body.dark-mode .app.aduana-mode .aduana-side-table thead th{background:#24516e;color:#f5fbff;border-color:#50758c}",
@@ -657,6 +661,8 @@
     const m=current,s=liveTotals(m);
     const put=(id,n)=>{const e=$(id);if(e)e.textContent=String(n);};
     put("aduanaKpiFound",s.found);put("aduanaKpiMissing",s.missing);
+    const kpiSource=$("aduanaKpiFoundDetail");
+    if(kpiSource)kpiSource.textContent=m.totalFound+" encontrados no físico + "+s.manual+" tratados no inventário";
     put("aduanaKpiMissingDetail",s.pending+" pendente(s) · "+s.notFound+" não encontrado(s)");
     put("aduanaSideTotalFound",s.found);put("aduanaSideTotalMissing",s.missing);put("aduanaSideTotalManual",s.manual);
     put("aduanaReconcileText","Conciliação: "+m.total+" no sistema = "+s.found+
@@ -1105,6 +1111,9 @@
     const ready = m.systemReady && m.physicalReady;
     const zones = m.sides.filter(r=>r.side!=="Não identificado"||r.system||r.found);
     const sidePhysical = side=>(m.physicalRows||[]).filter(r=>r.side===side);
+    const physicalVolumosos=m.countType("Volumoso");
+    const physicalGM=m.countType("GM");
+    const physicalOtherType=Math.max(0,m.totalFound-physicalVolumosos-physicalGM);
     const sideMetricRow=(label,perSide,total,available,cssClass="",liveKey="",totalId="")=>
       '<tr'+(cssClass?' class="'+cssClass+'"':'')+'><th scope="row">'+esc(label)+'</th>'+
       zones.map(z=>'<td'+(liveKey?' data-aduana-side-'+liveKey+'="'+esc(z.side)+'"':'')+'>'+
@@ -1122,7 +1131,9 @@
       m.colors.map(color=>sideMetricRow(color,z=>sidePhysical(z.side).filter(r=>r.cor===color).length,m.countColor(color),ready)).join("")+
       sectionRow("TIPO — CLASSIFICAÇÃO DO FÍSICO")+
       sideMetricRow("Volumoso",z=>sidePhysical(z.side).filter(r=>r.tipo==="Volumoso").length,m.countType("Volumoso"),ready)+
-      sideMetricRow("GM",z=>sidePhysical(z.side).filter(r=>r.tipo==="GM").length,m.countType("GM"),ready);
+      sideMetricRow("GM",z=>sidePhysical(z.side).filter(r=>r.tipo==="GM").length,physicalGM,ready)+
+      sideMetricRow("Outros / sem tipo no físico",z=>sidePhysical(z.side).filter(r=>r.tipo!=="GM"&&r.tipo!=="Volumoso").length,physicalOtherType,ready)+
+      sideMetricRow("TOTAL ENCONTRADO NO FÍSICO (POR TIPO)",z=>z.found,m.totalFound,ready,"aduana-side-audit-total");
     const headings=zones.map(z=>'<th scope="col"><span class="aduana-side-title">'+esc(sideDisplay(z.side))+'</span>'+
       (z.side==="Não identificado"?'':'<span class="aduana-side-coordinator"><b>Coordenador:</b> '+esc(coordinatorForSide(data,z.side))+'</span>')+
       '</th>').join("");
@@ -1159,7 +1170,9 @@
       '<header class="aduana-head"><h2>CONTROLE DE ADUANA</h2><p>Confronto entre Sistema e IDs Físicos</p></header>'+
       '<section class="aduana-kpis">'+
       '<article class="aduana-kpi"><span>Quantidade a mais na aduana</span><strong>'+formatValue(m.total,m.systemReady)+'</strong><small>Sistema · Shipment IDs únicos</small></article>'+
-      '<article class="aduana-kpi encontrado"><span>Quantidade encontrada / tratada</span><strong id="aduanaKpiFound">'+formatValue(m.totalFound,m.systemReady&&m.physicalReady)+'</strong><small>Físico + status tratados do inventário (incluindo Envio cancelado, Avaria e Solução de problemas)</small></article>'+
+      '<article class="aduana-kpi encontrado"><span>Quantidade encontrada / tratada</span><strong id="aduanaKpiFound">'+formatValue(m.totalFound,m.systemReady&&m.physicalReady)+'</strong><small id="aduanaKpiFoundDetail">'+(ready
+        ? m.totalFound+' encontrados no físico + 0 tratados no inventário'
+        : 'Aguardando confronto entre sistema, físico e inventário')+'</small></article>'+
       '<article class="aduana-kpi nao-encontrado"><span>Pendentes / não encontrados</span><strong id="aduanaKpiMissing">'+formatValue(m.totalMissing,m.systemReady&&m.physicalReady)+'</strong><small id="aduanaKpiMissingDetail">Aguardando carregamento dos status</small></article></section>'+
       '<section class="aduana-panel aduana-side-panel"><h3>CONTROLE POR LADO · CLASSIFICAÇÃO DOS PACOTES</h3>'+
       '<div class="aduana-side-table-wrap"><table class="aduana-table aduana-side-table">'+
@@ -1169,7 +1182,8 @@
       '<div class="aduana-panel-inner aduana-reconcile">'+(ready
         ? '<strong id="aduanaReconcileText">Conciliação por ID: '+m.total+' no sistema = '+m.totalFound+' encontrados + '+m.totalMissing+' não encontrados.</strong>'
         : '<span>Importe as bases do sistema e físico para iniciar o confronto por ID.</span>')+
-      '<small>Cada coluna corresponde a um lado; cada linha apresenta um indicador. Tipos e cores provêm somente de IDs encontrados no físico e existentes no sistema. Tratados apenas no inventário ficam separados, sem atribuição de cor ou tipo.</small></div></section>'+
+      '<small id="aduanaTypeCheckText"><b>Conferência dos tipos físicos:</b> '+physicalVolumosos+' volumosos + '+physicalGM+' GM + '+physicalOtherType+' outros/sem tipo = '+m.totalFound+' IDs encontrados no físico. Os tratados no inventário não entram nessa classificação.</small>'+
+      '<small>Cada coluna corresponde a um lado; cada linha apresenta um indicador. Apenas IDs válidos do sistema entram na comparação. Cores são atributos independentes dos tipos e podem não estar preenchidas para todos os pacotes.</small></div></section>'+
       '<p class="aduana-note"><b>Critério obrigatório:</b> apenas Shipment IDs presentes no arquivo do sistema são contabilizados. IDs extras bipados no físico são descartados das estatísticas, do detalhamento e dos arquivos exportados.'+
       (m.sideMismatches?' <b>Atenção:</b> '+m.sideMismatches+' ID(s) válido(s) com lado físico diferente do lado do sistema; a contagem foi atribuída ao lado do sistema.':'')+
       (m.crossSides?' <b>Atenção:</b> '+m.crossSides+' ID(s) repetido(s) em lados diferentes na base do sistema; contabilizado(s) uma única vez.':'')+'</p>'+
