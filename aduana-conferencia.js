@@ -1146,7 +1146,7 @@
       sectionRow("TIPO — CLASSIFICAÇÃO DO FÍSICO")+
       sideMetricRow("Volumoso",z=>sidePhysical(z.side).filter(r=>r.tipo==="Volumoso").length,m.countType("Volumoso"),ready)+
       sideMetricRow("GM",z=>sidePhysical(z.side).filter(r=>r.tipo==="GM").length,physicalGM,ready)+
-      sideMetricRow("Outros / sem tipo no físico",z=>sidePhysical(z.side).filter(r=>r.tipo!=="GM"&&r.tipo!=="Volumoso").length,physicalOtherType,ready)+
+      (physicalOtherType>0 ? sideMetricRow("Outros / sem tipo no físico",z=>sidePhysical(z.side).filter(r=>r.tipo!=="GM"&&r.tipo!=="Volumoso").length,physicalOtherType,ready) : "")+
       sideMetricRow("TOTAL ENCONTRADO NO FÍSICO (POR TIPO)",z=>z.found,m.totalFound,ready,"aduana-side-audit-total");
     const headings=zones.map(z=>'<th scope="col"><span class="aduana-side-title">'+esc(sideDisplay(z.side))+'</span>'+
       (z.side==="Não identificado"?'':'<span class="aduana-side-coordinator"><b>Coordenador:</b> '+esc(coordinatorForSide(data,z.side))+'</span>')+
