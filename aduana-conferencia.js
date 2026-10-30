@@ -631,6 +631,12 @@
     ".app.aduana-mode .aduana-side-table tbody td{min-width:0;padding:11px 5px;font-size:clamp(21px,1.5vw,24px);font-weight:950;line-height:1.2}",
     "body.dark-mode .app.aduana-mode .aduana-side-table thead tr.aduana-side-groups th{background:#173c58;color:#fff}",
     "body.dark-mode .app.aduana-mode .aduana-side-table thead tr.aduana-side-labels th{background:#24516e;color:#fff}",
+    "/* Cabeçalhos da matriz com fonte grande e rótulos distribuídos em linhas. */",
+    ".app.aduana-mode .aduana-side-table thead tr.aduana-side-labels th{font-size:18px;font-weight:950;line-height:1.18;padding:16px 7px;vertical-align:middle;letter-spacing:.005em;overflow-wrap:normal;word-break:normal;hyphens:none}",
+    ".app.aduana-mode .aduana-side-table thead .aduana-side-header-line{display:block;line-height:1.2;white-space:normal;overflow-wrap:normal}",
+    ".app.aduana-mode .aduana-side-table thead tr.aduana-side-groups th{font-size:17px;line-height:1.3;padding:13px 8px}",
+    ".app.aduana-mode .aduana-side-table thead th.aduana-side-row-head{width:220px;min-width:220px;max-width:220px;font-size:18px}",
+    ".app.aduana-mode .aduana-side-table tbody th.aduana-side-zone{width:220px;min-width:220px;max-width:220px}",
     "@media(max-width:950px){.aduana-side-table{min-width:940px}}",
     "@media(max-width:550px){.aduana-kpis{grid-template-columns:1fr}.app.aduana-mode .aduana-view{padding:9px}.aduana-detail td,.aduana-detail th{padding:6px 5px}}"
   ].join("\n");
@@ -1189,7 +1195,21 @@
       {label:"TOTAL ENCONTRADO NO FÍSICO (POR TIPO)",value:z=>z.found,total:m.totalFound,enabled:ready,cssClass:"aduana-side-audit-total"}
     ];
     const metricColumns=[...statusColumns,...colorColumns,...typeColumns];
-    const columnHeading=column=>'<th scope="col" class="'+column.cssClass+'">'+esc(column.label)+'</th>';
+    const columnHeading=column=>{
+      // Quebra controlada para manter os cabeçalhos legíveis mesmo com muitas colunas.
+      const stackedLabels={
+        "Encontrado / tratado":["ENCONTRADO /","TRATADO"],
+        "Pendente / não encontrado":["PENDENTE /","NÃO ENCONTRADO"],
+        "Encontrado no físico":["ENCONTRADO","NO FÍSICO"],
+        "Tratado no inventário":["TRATADO NO","INVENTÁRIO"],
+        "Outros / sem tipo no físico":["OUTROS / SEM TIPO","NO FÍSICO"],
+        "Nenhuma cor informada":["NENHUMA COR","INFORMADA"],
+        "TOTAL ENCONTRADO NO FÍSICO (POR TIPO)":["TOTAL ENCONTRADO","NO FÍSICO","(POR TIPO)"]
+      };
+      const pieces=stackedLabels[column.label]||[column.label];
+      return '<th scope="col" class="'+column.cssClass+'" title="'+esc(column.label)+'">'+
+        pieces.map(piece=>'<span class="aduana-side-header-line">'+esc(piece)+'</span>').join("")+'</th>';
+    };
     const tableCell=(column,zone,isTotal=false)=>{
       const live=column.liveKey&&!isTotal?' data-aduana-side-'+column.liveKey+'="'+esc(zone.side)+'"':'';
       const id=column.totalId&&isTotal?' id="'+column.totalId+'"':'';
@@ -1249,7 +1269,7 @@
         : 'Aguardando confronto entre sistema, físico e inventário')+'</small></article>'+
       '<article class="aduana-kpi nao-encontrado"><span>Pendentes / não encontrados</span><strong id="aduanaKpiMissing">'+formatValue(m.totalMissing,m.systemReady&&m.physicalReady)+'</strong><small id="aduanaKpiMissingDetail">Aguardando carregamento dos status</small></article></section>'+
       '<section class="aduana-panel aduana-side-panel"><h3>CONTROLE POR LADO · CLASSIFICAÇÃO DOS PACOTES</h3>'+
-      '<div class="aduana-side-table-wrap"><table class="aduana-table aduana-side-table" style="min-width:'+(210+metricColumns.length*106)+'px" aria-label="Conferência por lado, indicadores em colunas">'+
+      '<div class="aduana-side-table-wrap"><table class="aduana-table aduana-side-table" style="min-width:'+(220+metricColumns.length*132)+'px" aria-label="Conferência por lado, indicadores em colunas">'+
       '<thead>'+matrixHeader+'</thead><tbody>'+sideRows+totalRow+
       '</tbody></table></div>'+
       '<div class="aduana-panel-inner aduana-reconcile">'+(ready
