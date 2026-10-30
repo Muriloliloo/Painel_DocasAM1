@@ -16,12 +16,12 @@
   const BASE_COLORS = ["Amarelo", "Azul", "Vermelho", "Verde"];
   function physicalColor(value) {
     const raw=text(value).replace(/\s+/g," ").trim().slice(0,60);
-    if(!raw||/^(?:-|—|n\/a|na|sem cor|não informado|nao informado)$/i.test(raw))return "";
+    if(!raw||/^(?:-|—|0|n\/a|na|nenhuma|sem cor|sem cor informada|não informado|nao informado|não identificada|nao identificada)$/i.test(raw))return "";
     return raw.toLocaleLowerCase("pt-BR")
       .replace(/(^|[\s/-])([a-zà-ÿ])/g,(_all,b,c)=>b+c.toLocaleUpperCase("pt-BR"));
   }
   function sortedColors(colors) {
-    return [...new Set([...BASE_COLORS,...colors].map(physicalColor).filter(Boolean))]
+    return [...new Set(colors.map(physicalColor).filter(Boolean))]
       .sort((a,b)=>a.localeCompare(b,"pt-BR",{sensitivity:"base"}));
   }
   function historicColorEntries(classifications) {
@@ -566,6 +566,18 @@
     ".app.aduana-mode .aduana-side-table tbody .aduana-side-section>th{font-size:clamp(13px,.86vw,16px);padding:11px 15px}",
     ".app.aduana-mode .aduana-side-panel .aduana-reconcile strong{font-size:15px}",
     ".app.aduana-mode .aduana-side-panel .aduana-reconcile small{font-size:13px;line-height:1.5}",
+    ".app.aduana-mode .aduana-side-panel>h3{font-size:clamp(26px,1.65vw,32px);padding:20px 24px}",
+    ".app.aduana-mode .aduana-side-table{min-width:1320px}",
+    ".app.aduana-mode .aduana-side-table thead th{font-size:clamp(16px,1vw,19px);padding:18px 12px}",
+    ".app.aduana-mode .aduana-side-table thead .aduana-side-title{font-size:clamp(17px,1.1vw,21px)}",
+    ".app.aduana-mode .aduana-side-table thead .aduana-side-coordinator,.app.aduana-mode .aduana-side-table thead .aduana-side-coordinator b{font-size:clamp(14px,.85vw,17px);line-height:1.45}",
+    ".app.aduana-mode .aduana-side-table tbody th{font-size:clamp(17px,1.05vw,21px);padding:15px 13px}",
+    ".app.aduana-mode .aduana-side-table tbody td{font-size:clamp(19px,1.15vw,23px);padding:15px 13px}",
+    ".app.aduana-mode .aduana-side-table tbody .aduana-side-section>th{font-size:clamp(16px,1vw,19px);padding:13px 16px}",
+    ".app.aduana-mode .aduana-side-table tbody tr.aduana-side-no-colors>th{color:#506c83;font-style:italic}",
+    "body.dark-mode .app.aduana-mode .aduana-side-table tbody tr.aduana-side-no-colors>th{color:#cbdde9}",
+    ".app.aduana-mode .aduana-side-panel .aduana-reconcile strong{font-size:17px}",
+    ".app.aduana-mode .aduana-side-panel .aduana-reconcile small{font-size:14px;line-height:1.6}",
     ".app.aduana-mode .aduana-kpi.encontrado #aduanaKpiFoundDetail{font-size:13px;font-weight:850;color:#15664c}",
     ".app.aduana-mode .aduana-side-table tbody tr.aduana-side-audit-total>th,.app.aduana-mode .aduana-side-table tbody tr.aduana-side-audit-total>td{background:#cfe4f5!important;color:#123c60;font-weight:950}",
     "body.dark-mode .app.aduana-mode .aduana-side-table tbody tr.aduana-side-audit-total>th,body.dark-mode .app.aduana-mode .aduana-side-table tbody tr.aduana-side-audit-total>td{background:#285371!important;color:#f2faff}",
@@ -1128,7 +1140,9 @@
       sideMetricRow("Encontrado no físico",z=>z.found,m.totalFound,ready,"aduana-side-physical")+
       sideMetricRow("Tratado no inventário",()=>0,0,ready,"aduana-side-inventory","manual","aduanaSideTotalManual")+
       sectionRow("CORES — CLASSIFICAÇÃO DO FÍSICO")+
-      m.colors.map(color=>sideMetricRow(color,z=>sidePhysical(z.side).filter(r=>r.cor===color).length,m.countColor(color),ready)).join("")+
+      (m.colors.length
+        ? m.colors.map(color=>sideMetricRow(color,z=>sidePhysical(z.side).filter(r=>r.cor===color).length,m.countColor(color),ready,"aduana-side-color")).join("")
+        : sideMetricRow("Nenhuma cor informada",()=>0,0,ready,"aduana-side-no-colors"))+
       sectionRow("TIPO — CLASSIFICAÇÃO DO FÍSICO")+
       sideMetricRow("Volumoso",z=>sidePhysical(z.side).filter(r=>r.tipo==="Volumoso").length,m.countType("Volumoso"),ready)+
       sideMetricRow("GM",z=>sidePhysical(z.side).filter(r=>r.tipo==="GM").length,physicalGM,ready)+
