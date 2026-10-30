@@ -1073,7 +1073,6 @@
       '<div id="aduanaHistoryResult"></div>'+
       '<small class="aduana-muted">Consulta por data ou pesquisa exata entre os dias arquivados dos últimos 30 dias. Somente administradores têm acesso aos Shipment IDs.</small>'+
       '</div></section>'+
-      '<header class="aduana-head"><h2>CONTROLE DE ADUANA</h2><p>Confronto entre Sistema e IDs Físicos</p></header>'+
       '<p class="aduana-note">'+guidance+'</p>'+
       '<div class="aduana-importbar"><label class="aduana-btn" for="aduanaReimportFile">Atualizar planilha IDs Físicos</label>'+
       '<input id="aduanaReimportFile" type="file" accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" aria-label="Atualizar IDs físicos por CSV ou Excel">'+
@@ -1081,6 +1080,7 @@
         ? esc(m.physical.fileName||"Arquivo físico importado")+' · '+formatValue(m.totalFound,m.systemReady)+' ID(s) válidos (presentes no sistema)'+
           (m.systemReady ? ' · A '+m.sides.find(x=>x.side==="Lado A").found+' · B '+m.sides.find(x=>x.side==="Lado B").found+' · C '+m.sides.find(x=>x.side==="Lado C").found+' · D '+m.sides.find(x=>x.side==="Lado D").found+' · E/LH '+m.sides.find(x=>x.side==="Lado E").found : '')
         : 'Importe o arquivo físico CSV ou XLSX')+'</span></div>'+
+      '<header class="aduana-head"><h2>CONTROLE DE ADUANA</h2><p>Confronto entre Sistema e IDs Físicos</p></header>'+
       '<section class="aduana-kpis">'+
       '<article class="aduana-kpi"><span>Quantidade a mais na aduana</span><strong>'+formatValue(m.total,m.systemReady)+'</strong><small>Sistema · Shipment IDs únicos</small></article>'+
       '<article class="aduana-kpi encontrado"><span>Quantidade encontrada / tratada</span><strong id="aduanaKpiFound">'+formatValue(m.totalFound,m.systemReady&&m.physicalReady)+'</strong><small>Físico + status tratados do inventário (incluindo Envio cancelado, Avaria e Solução de problemas)</small></article>'+
