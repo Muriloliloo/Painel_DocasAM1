@@ -1053,7 +1053,6 @@
     $("aduanaView").innerHTML =
       '<div class="aduana-shell"><div class="aduana-top"><button type="button" id="aduanaBack" class="aduana-back">← Voltar à tela inicial</button>'+
       '<span class="aduana-muted">SSP15 · AM1 · '+esc(m.date||"Data não informada")+'</span></div>'+
-      '<header class="aduana-head"><h2>CONTROLE DE ADUANA</h2><p>Confronto entre Sistema e IDs Físicos</p></header>'+
       '<section class="aduana-history-tools"><div class="aduana-history-actions">'+
       '<button type="button" class="aduana-btn primary" id="aduanaHistorySave">Salvar fechamento no histórico</button>'+
       '<button type="button" class="aduana-btn" id="aduanaHistoryToggle" aria-expanded="'+(historyOpen?'true':'false')+'">'+(historyOpen?'Ocultar histórico':'Consultar histórico · 30 dias')+'</button>'+
@@ -1074,6 +1073,7 @@
       '<div id="aduanaHistoryResult"></div>'+
       '<small class="aduana-muted">Consulta por data ou pesquisa exata entre os dias arquivados dos últimos 30 dias. Somente administradores têm acesso aos Shipment IDs.</small>'+
       '</div></section>'+
+      '<header class="aduana-head"><h2>CONTROLE DE ADUANA</h2><p>Confronto entre Sistema e IDs Físicos</p></header>'+
       '<p class="aduana-note">'+guidance+'</p>'+
       '<div class="aduana-importbar"><label class="aduana-btn" for="aduanaReimportFile">Atualizar planilha IDs Físicos</label>'+
       '<input id="aduanaReimportFile" type="file" accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" aria-label="Atualizar IDs físicos por CSV ou Excel">'+
