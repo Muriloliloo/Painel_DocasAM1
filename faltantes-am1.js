@@ -314,7 +314,7 @@ function render(payload){
   });
   el("faltantesPeople").innerHTML=people.size?[...people.values()].sort((a,b)=>b.qty-a.qty).map(p=>
     '<article class="falt-person"><span class="falt-person-icon" aria-hidden="true"><i class="bi bi-person-fill"></i></span><div class="falt-person-copy"><span>Coordenador</span><b>'+esc(p.name)+'</b>'+
-    '<small>'+fmt(p.found)+' no físico · '+fmt(p.treated)+' tratado(s) no inventário</small></div><strong>'+fmt(p.qty)+'</strong></article>'
+    '<small>Encontrados no Físico: '+fmt(p.found)+' '+(p.found===1?'pacote':'pacotes')+' - '+fmt(p.treated)+' '+(p.treated===1?'pacote':'pacotes')+' no inventário</small></div><strong>'+fmt(p.qty)+'</strong></article>'
   ).join(""):'<p>Cadastre os Coordenadores no Editor de Dados para exibir o saldo.</p>';
   const options=['<option value="">Todos os lados</option>'].concat(state.sides.map(s=>
     '<option value="'+esc(s.label)+'">'+esc(s.title)+'</option>'));
