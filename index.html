@@ -12188,7 +12188,7 @@ body.editor-open .global-theme-toggle {
   <script src="firebase-config.js"></script>
   <script src="ondas-dados.js"></script>
   <script src="aduana-xlsx.js?v=20261024-r4"></script>
-  <script src="aduana-conferencia.js?v=20261030-cards-legibilidade-2"></script>
+  <script src="aduana-conferencia.js?v=20261104-descricao-produtos"></script>
   <script src="faltantes-am1.js?v=20261030-encontrados-pacotes-inventario"></script>
   <script>
     const storageKey = "ondas-dados";
@@ -13896,7 +13896,8 @@ body.editor-open .global-theme-toggle {
           const oldRow=previous.get(String(row.id));
           const additional={};
           for(const key of ["inventoryUpdatedAt","inventoryUpdatedBy",
-                            "inventoryValueUpdatedAt","inventoryValueUpdatedBy"]){
+                            "inventoryValueUpdatedAt","inventoryValueUpdatedBy",
+                             "inventoryDescriptionUpdatedAt","inventoryDescriptionUpdatedBy"]){
             if(oldRow?.[key]!==undefined&&oldRow?.[key]!==null)
               additional[key]=oldRow[key];
           }
@@ -13904,12 +13905,14 @@ body.editor-open .global-theme-toggle {
             ...row,...additional,
             inventoryStatus:normalizedAduanaInventory(oldRow?.inventoryStatus,row.found),
             inventoryValueCents:oldRow?.inventoryValueCents===undefined
-              ? null:normalizedAduanaValueCents(oldRow.inventoryValueCents)
+              ? null:normalizedAduanaValueCents(oldRow.inventoryValueCents),
+            inventoryDescription:typeof oldRow?.inventoryDescription==="string"
+              ? oldRow.inventoryDescription.slice(0,240):""
           };
         });
         const record={
           kind:"aduana-am1-ids",date:ids.date,operation:"AM1",facility:"SSP15",
-          totals:ids.totals,shipments,version:5,
+          totals:ids.totals,shipments,version:6,
           updatedAt:cloudState.tools.serverTimestamp(),
           updatedBy:cloudState.user.email||"administrador"
         };
@@ -13952,7 +13955,9 @@ body.editor-open .global-theme-toggle {
       return archived.shipments.map(row=>({
         id:String(row.id),
         inventoryStatus:normalizedAduanaInventory(row.inventoryStatus,row.found),
-        inventoryValueCents:normalizedAduanaValueCents(row.inventoryValueCents)
+        inventoryValueCents:normalizedAduanaValueCents(row.inventoryValueCents),
+        inventoryDescription:typeof row.inventoryDescription==="string"
+          ? row.inventoryDescription.slice(0,240):""
       }));
     }
     // Uma transacao por alteracao (individual ou em massa). Para lote, so
@@ -14068,6 +14073,58 @@ body.editor-open .global-theme-toggle {
         });
       });
       return {id:key,valueCents:cents};
+    }
+    // Descricao livre por produto: armazenada apenas no historico privado de Aduana.
+    async function updateAduanaInventoryDescription(day,id,rawDescription){
+      if(!cloudState.ready||!cloudState.db||!cloudState.user||!isAdmin())
+        throw new Error("Entre como administrador para editar descrições de produtos.");
+      checkAduanaHistoryDay(day);
+      const key=String(id??"").trim();
+      if(!key||key.length>90)throw new Error("Shipment ID inválido.");
+      if(typeof rawDescription!=="string")throw new Error("Descrição inválida.");
+      const description=rawDescription.replace(/\s+/g," ").trim();
+      if(description.length>240)throw new Error("A descrição deve ter até 240 caracteres.");
+      const ref=aduanaPrivateIdsDoc(day);
+      if(aduanaHistorySaving)await aduanaHistorySaving;
+      const first=await cloudState.tools.getDoc(ref);
+      if(!first.exists()){
+        const saved=await saveAduanaHistorySnapshot(data);
+        if(!saved||saved.date!==day)
+          throw new Error("Salve o fechamento da data correta antes de informar a descrição.");
+      }
+      if(aduanaHistorySaving)await aduanaHistorySaving;
+      await cloudState.tools.runTransaction(cloudState.db,async transaction=>{
+        const doc=await transaction.get(ref);
+        if(!doc.exists())throw new Error("Histórico individual ainda não disponível.");
+        const record=doc.data();
+        if(record?.kind!=="aduana-am1-ids"||record.date!==day||
+           record.operation!=="AM1"||record.facility!=="SSP15"||
+           !Array.isArray(record.shipments))
+          throw new Error("Histórico de Aduana inválido.");
+        let matches=0;
+        const timestamp=new Date().toISOString();
+        const shipments=record.shipments.map(row=>{
+          if(String(row.id)!==key)return row;
+          matches++;
+          if(row.found)throw new Error("ID encontrado no físico: descrição não editável.");
+          if(!String(row.route||"").toUpperCase().endsWith("_AM1"))
+            throw new Error("Somente Shipment IDs de rotas AM1.");
+          const status=normalizedAduanaInventory(row.inventoryStatus,row.found);
+          if(status!=="Pendente"&&status!=="Não encontrado")
+            throw new Error("Descrição disponível somente para IDs pendentes ou não encontrados.");
+          return {...row,inventoryDescription:description,
+            inventoryDescriptionUpdatedAt:timestamp,
+            inventoryDescriptionUpdatedBy:cloudState.user.email||"administrador"};
+        });
+        if(matches!==1)throw new Error("Shipment ID não localizado ou duplicado no histórico.");
+        if(serializedByteLength({...record,shipments,updatedAt:null})>780*1024)
+          throw new Error("O histórico da data atingiu o limite de armazenamento.");
+        transaction.update(ref,{
+          shipments,version:6,updatedAt:cloudState.tools.serverTimestamp(),
+          updatedBy:cloudState.user.email||"administrador"
+        });
+      });
+      return {id:key,description};
     }
     async function readIndividualAduanaIds(day){
       if(!cloudState.user||!isAdmin())
@@ -19162,6 +19219,7 @@ body.editor-open .global-theme-toggle {
       window.ControleAduana.onSetInventory = updateAduanaInventory;
       window.ControleAduana.onSetInventoryBatch = updateAduanaInventoryBatch;
       window.ControleAduana.onSetInventoryValue = updateAduanaInventoryValue;
+       window.ControleAduana.onSetInventoryDescription = updateAduanaInventoryDescription;
       window.ControleAduana.canEditInventory = () => Boolean(cloudState.ready&&cloudState.user&&isAdmin());
       window.ControleAduana.onImportPhysical = async file => {
         if (!requireAdminAction()) throw new Error("Entre com o usuário administrador para importar IDs Físicos.");

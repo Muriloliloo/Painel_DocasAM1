@@ -49,6 +49,8 @@
       ).join("")+'</optgroup>';
   let inventoryDay="",inventoryLoaded=false,inventoryLoading=false,inventoryById=Object.create(null);
   let inventoryValueById=Object.create(null),inventoryValueEditingId="";
+  let inventoryDescriptionById=Object.create(null),inventoryDescriptionEditingId="";
+  const MAX_DESCRIPTION=240;
   let inventoryMessage="",inventorySaving="",inventoryBulkStatus="";
   const formatReaisCents=cents=>cents===null||cents===undefined
     ?"—":new Intl.NumberFormat("pt-BR",{style:"currency",currency:"BRL"}).format(cents/100);
@@ -102,6 +104,17 @@
       for(const row of historyGlobalResult.matches)
         if(row.date===inventoryDay&&matches(row))row.inventoryValueCents=cents;
   }
+  function syncInventoryDescriptionHistory(id,description) {
+    const matches=row=>String(row.id)===String(id);
+    if(historyRecord?.date===inventoryDay&&Array.isArray(historyRecord.shipments))
+      for(const row of historyRecord.shipments)if(matches(row))row.inventoryDescription=description;
+    if(Array.isArray(historyRecords))
+      for(const day of historyRecords)if(day.date===inventoryDay&&Array.isArray(day.shipments))
+        for(const row of day.shipments)if(matches(row))row.inventoryDescription=description;
+    if(Array.isArray(historyGlobalResult?.matches))
+      for(const row of historyGlobalResult.matches)
+        if(row.date===inventoryDay&&matches(row))row.inventoryDescription=description;
+  }
   function syncInventoryHistory(ids,status) {
     const keys=new Set(ids.map(String));
     if(historyRecord?.date===inventoryDay&&Array.isArray(historyRecord.shipments)){
@@ -123,11 +136,13 @@
     if(!window.ControleAduana?.canEditInventory?.()){
       inventoryLoaded=false;inventoryById=Object.create(null);
       inventoryValueById=Object.create(null);inventoryValueEditingId="";
+       inventoryDescriptionById=Object.create(null);inventoryDescriptionEditingId="";
       inventorySelected.clear();
     }
     if(inventoryDay!==day){
       inventoryDay=day;inventoryLoaded=false;inventoryLoading=false;
       inventoryById=Object.create(null);inventoryValueById=Object.create(null);
+      inventoryDescriptionById=Object.create(null);inventoryDescriptionEditingId="";
       inventoryMessage="";inventorySaving="";inventoryValueEditingId="";
       inventorySelected.clear();
     }
@@ -138,14 +153,15 @@
     Promise.resolve().then(()=>window.ControleAduana.onReadInventory(requested)).then(rows=>{
       if(inventoryDay!==requested||!window.ControleAduana?.canEditInventory?.())return;
       if(!Array.isArray(rows))return;
-      const next=Object.create(null),amounts=Object.create(null);
+      const next=Object.create(null),amounts=Object.create(null),descriptions=Object.create(null);
       for(const row of rows){
         if(!row?.id)continue;
         next[String(row.id)]=inventoryState(row.inventoryStatus,row.found);
         const cents=row.inventoryValueCents;
         amounts[String(row.id)]=Number.isSafeInteger(cents)&&cents>=0?cents:null;
+         descriptions[String(row.id)]=text(row.inventoryDescription).slice(0,MAX_DESCRIPTION);
       }
-      inventoryById=next;inventoryValueById=amounts;inventoryLoaded=true;inventoryMessage="";
+      inventoryById=next;inventoryValueById=amounts;inventoryDescriptionById=descriptions;inventoryLoaded=true;inventoryMessage="";
       renderRows();
     }).catch(err=>{
       if(inventoryDay!==requested)return;
@@ -528,6 +544,15 @@
     ".aduana-value-edit{display:flex;align-items:center;gap:4px;flex-wrap:wrap;min-width:185px}",
     ".aduana-value-edit input{max-width:105px;width:95px;padding:5px 6px;border:1px solid #8eacbf;border-radius:5px;font-size:12px}",
     "body.dark-mode .aduana-value-cell button,body.dark-mode .aduana-value-edit button{background:#213e56;color:#fff;border-color:#6a889e}",
+    ".aduana-description-cell{display:flex;align-items:center;gap:7px;min-width:180px;max-width:320px}",
+    ".aduana-description-view{display:block;overflow-wrap:anywhere;line-height:1.35;font-weight:650;color:#173952}",
+    ".aduana-description-cell button,.aduana-description-edit button{flex:none;padding:5px 7px;background:#fff;border:1px solid #9eb9cf;border-radius:5px;color:#063354;font-weight:750;cursor:pointer}",
+    ".aduana-description-cell button:disabled,.aduana-description-edit button:disabled{opacity:.55;cursor:not-allowed}",
+    ".aduana-description-edit{display:flex;flex-direction:column;gap:5px;min-width:220px}",
+    ".aduana-description-edit textarea{width:100%;min-height:54px;resize:vertical;padding:6px;border:1px solid #8eacbf;border-radius:5px;font:12px/1.4 'Segoe UI',Arial,sans-serif;background:#fff;color:#152c40}",
+    ".aduana-description-actions{display:flex;gap:5px}",
+    "body.dark-mode .aduana-description-view{color:#e4f3ff}",
+    "body.dark-mode .aduana-description-cell button,body.dark-mode .aduana-description-edit button{background:#213e56;color:#fff;border-color:#6a889e}",
     ".aduana-inventory-overview{display:flex;flex-wrap:wrap;gap:7px;margin-top:12px;align-items:center}",
     ".aduana-inventory-summary-item{padding:5px 9px;border:1px solid #cbdbe5;border-radius:7px;background:#f4f8fb;color:#153954;font-size:12px;font-weight:650}",
     "body.dark-mode .aduana-inventory-summary-item{background:#234257;color:#ecf4fc;border-color:#476478}",
@@ -698,6 +723,29 @@
       (editable?'':' disabled')+' aria-label="'+(cents===null?'Informar':'Editar')+
       ' valor do Shipment ID '+esc(id)+'">'+(cents===null?'Informar':'Editar')+'</button></div>';
   }
+  function inventoryDescriptionMarkup(row) {
+    if(!window.ControleAduana?.canEditInventory?.())return "—";
+    const id=String(row.id),description=text(inventoryDescriptionById[id]);
+    const allowed=canEditValue(row);
+    const editable=allowed&&inventoryLoaded&&!inventorySaving;
+    if(inventoryDescriptionEditingId===id&&allowed){
+      return '<div class="aduana-description-edit">'+
+        '<textarea rows="2" maxlength="'+MAX_DESCRIPTION+'" '+
+        'data-aduana-description-input="'+esc(id)+'" aria-label="Descrição do produto do Shipment ID '+esc(id)+'" '+
+        'placeholder="Ex.: tênis esportivo preto, tamanho 40">'+esc(description)+'</textarea>'+
+        '<div class="aduana-description-actions">'+
+        '<button type="button" data-aduana-description-save="'+esc(id)+'"'+(editable?'':' disabled')+'>Salvar</button>'+
+        '<button type="button" data-aduana-description-cancel="'+esc(id)+'">Cancelar</button></div></div>';
+    }
+    const summary=description
+      ? '<span class="aduana-description-view" title="'+esc(description)+'">'+esc(description)+'</span>'
+      : '<span class="aduana-muted">—</span>';
+    if(!allowed)return summary;
+    return '<div class="aduana-description-cell">'+summary+
+      '<button type="button" data-aduana-description-edit="'+esc(id)+'"'+
+      (editable?'':' disabled')+' aria-label="'+(description?'Editar':'Adicionar')+
+      ' descrição do produto do Shipment ID '+esc(id)+'">'+(description?'Editar':'Adicionar')+'</button></div>';
+  }
   // Todo status diferente de Pendente ou Nao encontrado desconta do saldo,
   // sem alterar a informacao de encontro FISICO preservada nos arquivos.
   function resolved(row){return !!row.match||INVENTORY_RESOLVED_STATUSES.has(inventoryForId(row.id));}
@@ -739,7 +787,7 @@
   function shown(row){
     if(mode==="encontrados"&&!resolved(row))return false;
     if(mode==="faltantes"&&resolved(row))return false;
-    return !query||[row.id,row.rota,row.side,row.ladoFisico,row.origem]
+    return !query||[row.id,row.rota,row.side,row.ladoFisico,row.origem,inventoryDescriptionById[String(row.id)]]
       .some(value=>norm(value).includes(norm(query)));
   }
   function inventoryCounters(rows) {
@@ -811,8 +859,8 @@
         '</td><td>'+
         (editable?selector("tipo",row.id,row.tipo,TYPES):"—")+'</td><td>'+
         (editable?colorInput(row):"—")+'</td><td>'+
-        inventorySelector(row)+'</td><td>'+inventoryValueMarkup(row)+'</td></tr>';
-    }).join(""):'<tr><td colspan="11" style="padding:24px;text-align:center">Nenhum registro para os filtros selecionados.</td></tr>';
+        inventorySelector(row)+'</td><td>'+inventoryValueMarkup(row)+'</td><td>'+inventoryDescriptionMarkup(row)+'</td></tr>';
+    }).join(""):'<tr><td colspan="12" style="padding:24px;text-align:center">Nenhum registro para os filtros selecionados.</td></tr>';
   }
   // Snapshot compacto: não grava Shipment IDs, nomes de motoristas nem linhas brutas
   // em documentos históricos potencialmente acessíveis a leitores do painel.
@@ -890,11 +938,11 @@
         '<td>'+esc(row.physicalSide?sideDisplay(row.physicalSide):"—")+'</td>'+
         '<td>'+esc(row.type||"—")+'</td><td>'+esc(row.color||"—")+'</td>'+
         '<td>'+esc(inventoryState(row.inventoryStatus,row.found))+'</td>'+
-        '<td>'+esc(formatReaisCents(row.inventoryValueCents))+'</td></tr>';
+        '<td>'+esc(formatReaisCents(row.inventoryValueCents))+'</td><td>'+esc(row.inventoryDescription||'—')+'</td></tr>';
     }).join("");
     return caption+'<div class="aduana-history-table"><table class="aduana-table"><thead><tr>'+
       '<th>Data</th><th>Shipment ID</th><th>Situação</th><th>Rota AM1</th><th>Doca</th>'+
-      '<th>Lado sistema</th><th>Lado físico</th><th>Tipo</th><th>Cor</th><th>Inventário</th><th>Valor (R$)</th></tr></thead>'+
+      '<th>Lado sistema</th><th>Lado físico</th><th>Tipo</th><th>Cor</th><th>Inventário</th><th>Valor (R$)</th><th>Descrição do produto</th></tr></thead>'+
       '<tbody>'+rows+'</tbody></table></div>';
   }
   // A consulta por periodo recebe resumos e IDs privados apenas em memoria.
@@ -909,7 +957,7 @@
     const filtered=all.filter(row=>{
       if(historyRangeIdFilter==="encontrados"&&!row.found)return false;
       if(historyRangeIdFilter==="faltantes"&&row.found)return false;
-      return !search||[row.id,row.date,row.route,row.dock,row.systemSide,row.physicalSide,row.type,row.color]
+      return !search||[row.id,row.date,row.route,row.dock,row.systemSide,row.physicalSide,row.type,row.color,row.inventoryDescription]
         .some(value=>norm(value).includes(search));
     });
     return {all,filtered};
@@ -941,7 +989,7 @@
         '<td>'+esc(row.physicalSide?sideDisplay(row.physicalSide):"—")+'</td>'+
         '<td>'+esc(row.type||"—")+'</td><td>'+esc(row.color||"—")+'</td>'+
         '<td>'+esc(inventoryState(row.inventoryStatus,row.found))+'</td>'+
-        '<td>'+esc(formatReaisCents(row.inventoryValueCents))+'</td></tr>';
+        '<td>'+esc(formatReaisCents(row.inventoryValueCents))+'</td><td>'+esc(row.inventoryDescription||'—')+'</td></tr>';
     }).join("");
     return '<section class="aduana-history-ids"><h4>SHIPMENT IDs DO PERÍODO — '+all.length+' OCORRÊNCIAS</h4>'+
       '<p class="aduana-muted">'+unique+' Shipment ID(s) distinto(s) · '+availableDays+
@@ -956,8 +1004,8 @@
       '–'+Math.min(start+pageSize,filtered.length)+' · página '+(historyRangeIdPage+1)+' de '+pages+'</p>'+
       '<div class="aduana-history-table"><table class="aduana-table"><thead><tr>'+
       '<th>Data</th><th>Shipment ID</th><th>Situação</th><th>Rota AM1</th><th>Doca</th>'+
-      '<th>Lado sistema</th><th>Lado físico</th><th>Tipo</th><th>Cor</th><th>Inventário</th><th>Valor (R$)</th></tr></thead>'+
-      '<tbody>'+(rows||'<tr><td colspan="11">Nenhum ID corresponde ao filtro.</td></tr>')+'</tbody></table></div>'+
+      '<th>Lado sistema</th><th>Lado físico</th><th>Tipo</th><th>Cor</th><th>Inventário</th><th>Valor (R$)</th><th>Descrição do produto</th></tr></thead>'+
+      '<tbody>'+(rows||'<tr><td colspan="12">Nenhum ID corresponde ao filtro.</td></tr>')+'</tbody></table></div>'+
       '<div class="aduana-history-actions" style="margin-top:10px">'+
       '<button type="button" class="aduana-btn" id="aduanaHistoryRangePrev"'+
       (historyRangeIdPage===0?' disabled':'')+'>Página anterior</button>'+
@@ -981,11 +1029,11 @@
   function exportHistoryPeriodIdsCsv() {
     const {filtered}=historyPeriodIdEntries();
     if(!filtered.length)return;
-    const header=["Data","Shipment ID","Situação","Rota AM1","Doca","Lado Sistema","Lado Físico","Tipo","Cor","Inventário","Valor (R$)"];
+    const header=["Data","Shipment ID","Situação","Rota AM1","Doca","Lado Sistema","Lado Físico","Tipo","Cor","Inventário","Valor (R$)","Descrição do produto"];
     const cell=value=>'"'+String(value??"").replace(/^[=+@-]/,"'").replace(/"/g,'""')+'"';
     const rows=[header,...filtered.map(row=>[
       row.date,row.id,row.status,row.route,row.dock,row.systemSide,row.physicalSide,row.type,row.color,
-      inventoryState(row.inventoryStatus,row.found),formatReaisCents(row.inventoryValueCents)
+      inventoryState(row.inventoryStatus,row.found),formatReaisCents(row.inventoryValueCents),row.inventoryDescription||""
     ])].map(row=>row.map(cell).join(";")).join("\r\n");
     const blob=new Blob(["\uFEFF"+rows],{type:"text/csv;charset=utf-8"});
     const url=URL.createObjectURL(blob);
@@ -1065,7 +1113,7 @@
       if(historyIdFilter==="encontrados"&&!row.found)return false;
       if(historyIdFilter==="faltantes"&&row.found)return false;
       const term=norm(historyIdSearch);
-      return !term||[row.id,row.route,row.dock,row.systemSide,row.physicalSide].some(val=>norm(val).includes(term));
+      return !term||[row.id,row.route,row.dock,row.systemSide,row.physicalSide,row.inventoryDescription].some(val=>norm(val).includes(term));
     });
     const rows=visible.slice(0,250).map(row=>
       '<tr><td>'+esc(row.id)+'</td><td>'+esc(row.status)+'</td><td>'+esc(row.route)+'</td>'+
@@ -1073,7 +1121,7 @@
       '<td>'+esc(row.physicalSide?sideDisplay(row.physicalSide):"—")+'</td>'+
       '<td>'+esc(row.type||"—")+'</td><td>'+esc(row.color||"—")+'</td>'+
        '<td>'+esc(inventoryState(row.inventoryStatus,row.found))+'</td>'+
-        '<td>'+esc(formatReaisCents(row.inventoryValueCents))+'</td></tr>').join("");
+        '<td>'+esc(formatReaisCents(row.inventoryValueCents))+'</td><td>'+esc(row.inventoryDescription||'—')+'</td></tr>').join("");
     return '<section class="aduana-history-ids"><h4>SHIPMENT IDs DO DIA — '+valid.length+' REGISTROS</h4>'+
       '<div class="aduana-filters">'+
       '<select id="aduanaHistoryIdFilter" aria-label="Filtrar situação dos Shipment IDs">'+
@@ -1082,16 +1130,16 @@
       '<input id="aduanaHistoryIdSearch" type="search" aria-label="Buscar Shipment ID histórico" placeholder="Buscar ID, rota ou lado..." value="'+esc(historyIdSearch)+'">'+
       '<button type="button" class="aduana-btn" id="aduanaHistoryExportIds">Exportar IDs CSV</button></div>'+
       '<p class="aduana-muted">'+visible.length+' ID(s) no filtro'+(visible.length>250?' · mostrando os primeiros 250; utilize a pesquisa ou exporte o CSV':'')+'</p>'+
-      '<div class="aduana-history-table"><table class="aduana-table"><thead><tr><th>Shipment ID</th><th>Situação</th><th>Rota AM1</th><th>Doca</th><th>Lado sistema</th><th>Lado físico</th><th>Tipo</th><th>Cor</th><th>Inventário</th><th>Valor (R$)</th></tr></thead><tbody>'+
-      (rows||'<tr><td colspan="10">Nenhum ID corresponde ao filtro.</td></tr>')+'</tbody></table></div></section>';
+      '<div class="aduana-history-table"><table class="aduana-table"><thead><tr><th>Shipment ID</th><th>Situação</th><th>Rota AM1</th><th>Doca</th><th>Lado sistema</th><th>Lado físico</th><th>Tipo</th><th>Cor</th><th>Inventário</th><th>Valor (R$)</th><th>Descrição do produto</th></tr></thead><tbody>'+
+      (rows||'<tr><td colspan="11">Nenhum ID corresponde ao filtro.</td></tr>')+'</tbody></table></div></section>';
   }
   function downloadHistoryIdsCsv() {
     if(!historyRecord||!Array.isArray(historyRecord.shipments))return;
-    const header=["Shipment ID","Situação","Rota","Doca","Lado Sistema","Lado Físico","Tipo","Cor","Inventário","Valor (R$)"];
+    const header=["Shipment ID","Situação","Rota","Doca","Lado Sistema","Lado Físico","Tipo","Cor","Inventário","Valor (R$)","Descrição do produto"];
     const escapeCsv=value=>'"'+String(value??"").replace(/^[=+\-@\t\r]/,"'").replace(/"/g,'""')+'"';
     const lines=[header,...historyRecord.shipments.map(row=>[
       row.id,row.status,row.route,row.dock,row.systemSide,row.physicalSide,row.type,row.color,
-      inventoryState(row.inventoryStatus,row.found),formatReaisCents(row.inventoryValueCents)
+      inventoryState(row.inventoryStatus,row.found),formatReaisCents(row.inventoryValueCents),row.inventoryDescription||""
     ])].map(row=>row.map(escapeCsv).join(";")).join("\r\n");
     const url=URL.createObjectURL(new Blob(["\uFEFF"+lines],{type:"text/csv;charset=utf-8"}));
     const link=document.createElement("a");
@@ -1299,7 +1347,7 @@
         '<option value="'+esc(color)+'"></option>').join("")+'</datalist>'+
       '<div class="aduana-scroll"><table class="aduana-detail"><thead><tr><th>Shipment ID</th><th>Origem</th><th>Lado Sistema</th><th>Lado Físico</th><th>Rota</th><th>Doca</th><th>Situação atual</th><th>Tipo</th><th>Cor</th><th>Inventário'+
       '<label class="aduana-inventory-head" title="Selecionar pendentes sem conferência física no filtro atual">'+
-      '<input type="checkbox" id="aduanaInventorySelectAll" aria-label="Selecionar todos os pendentes do filtro"> Selecionar pendentes</label></th><th>Valor (R$)</th></tr></thead><tbody id="aduanaDetails"></tbody></table></div>'+
+      '<input type="checkbox" id="aduanaInventorySelectAll" aria-label="Selecionar todos os pendentes do filtro"> Selecionar pendentes</label></th><th>Valor (R$)</th><th>Descrição do produto</th></tr></thead><tbody id="aduanaDetails"></tbody></table></div>'+
       '<div class="aduana-exports"><button type="button" class="aduana-btn primary" data-aduana-export="confronto">Baixar confronto CSV</button>'+
       '<button type="button" class="aduana-btn" data-aduana-export="sistema">Baixar CSV Sistema</button>'+
       '<button type="button" class="aduana-btn" data-aduana-export="fisico">Baixar CSV IDs Físicos</button>'+
@@ -1493,6 +1541,55 @@
         }
       }
     }
+    async function commitInventoryDescription(id){
+      if(inventorySaving||!inventoryLoaded||inventoryDescriptionEditingId!==id)return;
+      const row=current?.systemRows?.find(r=>String(r.id)===id);
+      if(!canEditValue(row)){inventoryMessage="Descrição editável apenas para pendentes/não encontrados.";inventoryDescriptionEditingId="";renderRows();return;}
+      const input=[...$("aduanaDetails").querySelectorAll("[data-aduana-description-input]")]
+        .find(node=>node.dataset.aduanaDescriptionInput===id);
+      if(!input)return;
+      const description=String(input.value||"").replace(/\s+/g," ").trim();
+      if(description.length>MAX_DESCRIPTION){
+        inventoryMessage="A descrição pode ter no máximo "+MAX_DESCRIPTION+" caracteres.";
+        $("aduanaInventoryStatus").textContent=inventoryMessage;input.focus();return;
+      }
+      const day=inventoryDay;
+      inventorySaving="DESCRICAO:"+id;
+      inventoryMessage="Salvando descrição do ID "+id+" no Firebase...";
+      $("aduanaInventoryStatus").textContent=inventoryMessage;
+      let saved=false;
+      try{
+        if(!window.ControleAduana?.onSetInventoryDescription)
+          throw new Error("Integração de descrição com Firebase indisponível. Atualize a página.");
+        await window.ControleAduana.onSetInventoryDescription(day,id,description);
+        if(inventoryDay!==day)return;
+        inventoryDescriptionById[id]=description;
+        syncInventoryDescriptionHistory(id,description);
+        inventoryDescriptionEditingId="";
+        inventoryMessage="Descrição do produto do ID "+id+" salva no Firebase.";
+        saved=true;
+      }catch(err){inventoryMessage="Erro ao salvar a descrição do ID "+id+": "+(err?.message||String(err));}
+      finally{if(inventoryDay===day){inventorySaving="";if(saved){renderRows();if(historyOpen)renderHistoryRecord();}
+        else $("aduanaInventoryStatus").textContent=inventoryMessage;}}
+    }
+    $("aduanaDetails")?.addEventListener("click",event=>{
+      const button=event.target.closest("button[data-aduana-description-edit],button[data-aduana-description-save],button[data-aduana-description-cancel]");
+      if(!button||inventorySaving)return;
+      if(button.hasAttribute("data-aduana-description-cancel")){inventoryDescriptionEditingId="";renderRows();return;}
+      if(button.hasAttribute("data-aduana-description-save")){commitInventoryDescription(button.dataset.aduanaDescriptionSave);return;}
+      const id=button.dataset.aduanaDescriptionEdit;
+      const row=current?.systemRows?.find(r=>String(r.id)===id);
+      if(!inventoryLoaded||!canEditValue(row))return;
+      inventoryDescriptionEditingId=id;renderRows();
+      [...$("aduanaDetails").querySelectorAll("[data-aduana-description-input]")]
+        .find(node=>node.dataset.aduanaDescriptionInput===id)?.focus();
+    });
+    $("aduanaDetails")?.addEventListener("keydown",event=>{
+      const input=event.target.closest("textarea[data-aduana-description-input]");
+      if(!input)return;
+      if(event.key==="Enter"&&(event.ctrlKey||event.metaKey)){event.preventDefault();commitInventoryDescription(input.dataset.aduanaDescriptionInput);}
+      if(event.key==="Escape"){event.preventDefault();inventoryDescriptionEditingId="";renderRows();}
+    });
     $("aduanaDetails")?.addEventListener("click",event=>{
       const button=event.target.closest("button[data-aduana-value-edit],button[data-aduana-value-save],button[data-aduana-value-cancel]");
       if(!button||inventorySaving)return;
@@ -1546,6 +1643,7 @@
           if(inventoryDay!==day)return;
           inventoryById[id]=selected;
           if(inventoryValueEditingId===id)inventoryValueEditingId="";
+           if(inventoryDescriptionEditingId===id)inventoryDescriptionEditingId="";
           inventorySelected.delete(id);
           inventoryLoaded=true;
           syncInventoryHistory([id],selected);
@@ -1585,13 +1683,13 @@
       data=[["Shipment ID","Origem","Conciliação com sistema por ID","Lado Físico","Tipo","Cor"],...m.physicalRows.map(r=>[r.id,"Físico",r.match?"SIM":"NÃO",r.ladoFisico,r.tipo,r.cor])];
       file="IDs_Fisicos";
     } else {
-      data=[["Shipment ID","Origem","Lado Sistema","Lado Físico","Rota","Doca","Situação por ID (CSV)","Tipo","Cor","Inventário","Resultado consolidado","Confirmado por","Valor (R$)"],...m.rows.map(r=>
+      data=[["Shipment ID","Origem","Lado Sistema","Lado Físico","Rota","Doca","Situação por ID (CSV)","Tipo","Cor","Inventário","Resultado consolidado","Confirmado por","Valor (R$)","Descrição do produto"],...m.rows.map(r=>
          [r.id,r.origem,r.side,r.ladoFisico,r.rota,r.doca,r.situacao,r.tipo,r.cor,
           inventoryForId(r.id,r.match),
           !resolved(r)?"Não encontrado":r.match||inventoryForId(r.id)==="Encontrado"
             ?"Encontrado":"Tratado: "+inventoryForId(r.id),
           r.match?"CSV físico":resolved(r)?"Status inventário: "+inventoryForId(r.id):"—",
-          formatReaisCents(storedValueCents(r.id))])];
+          formatReaisCents(storedValueCents(r.id)),inventoryDescriptionById[String(r.id)]||""])];
       file="Confronto_Aduana";
     }
     const content="\uFEFF"+data.map(row=>row.map(csvCell).join(";")).join("\r\n");
