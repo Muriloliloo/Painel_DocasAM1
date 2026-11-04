@@ -1,7 +1,7 @@
 /* Faltantes AM1 — somente leitura, reutilizando as informações do Editor de Dados. */
 (function () {
 "use strict";
-const state = { date:"", final:false, physicalReady:false, physicalFile:"", items:[], sides:[], side:"", statusFilter:"todos", search:"", initialized:false, inventoryDay:"", inventoryAdmin:false, inventoryLoaded:false, inventoryLoading:false, inventorySaving:false, inventoryError:"", inventoryMap:Object.create(null), selected:new Set(), bulkStatus:"", editingValue:"", payload:null };
+const state = { date:"", final:false, physicalReady:false, physicalFile:"", items:[], sides:[], side:"", statusFilter:"todos", search:"", initialized:false, inventoryDay:"", inventoryAdmin:false, inventoryLoaded:false, inventoryLoading:false, inventorySaving:false, inventoryError:"", inventoryMap:Object.create(null), selected:new Set(), bulkStatus:"", editingValue:"", editingDescription:"", payload:null };
 const el = id => document.getElementById(id);
 const esc = value => String(value == null ? "" : value).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const norm = value => String(value == null ? "" : value).normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().trim();
@@ -23,6 +23,7 @@ const dateKey = value => {
 const INVENTORY_OPTIONS=["Pendente","Encontrado","Não encontrado","Devolvido","Vinculado","Atrelado","Em rota","Entregue","Envio cancelado","Avaria","Solução de problemas"];
 const RESOLVED=new Set(["Encontrado","Devolvido","Vinculado","Atrelado","Em rota","Entregue","Envio cancelado","Avaria","Solução de problemas"]);
 const canAdmin=()=>Boolean(window.FaltantesAm1?.canEditInventory?.());
+const MAX_DESCRIPTION=240;
 const itemInventory=row=>state.inventoryMap[idKey(row.id)]||{};
 const itemStatus=row=>row.found?"Encontrado":(INVENTORY_OPTIONS.includes(itemInventory(row).inventoryStatus)?itemInventory(row).inventoryStatus:"Pendente");
 const manualResolved=row=>!row.found&&RESOLVED.has(itemStatus(row));
@@ -68,11 +69,11 @@ function initialize(){
       '<section class="falt-panel"><header class="falt-panel-header"><div><h3><i class="bi bi-table"></i> Detalhamento dos Faltantes <span id="faltantesRowCount"></span></h3>',
         '<p id="faltantesTableSub"></p></div></header>',
         '<div class="falt-panel-content"><div class="falt-filters">',
-        '<input id="faltantesSearch" type="search" placeholder="Buscar rota, doca, Shipment ID ou responsável" aria-label="Buscar nos faltantes">',
+        '<input id="faltantesSearch" type="search" placeholder="Buscar rota, doca, Shipment ID, descrição ou responsável" aria-label="Buscar nos faltantes">',
         '<select id="faltantesSideFilter" aria-label="Filtrar por lado"><option value="">Todos os lados</option></select>',
         '<select id="faltantesStatusFilter" aria-label="Filtrar situação"><option value="todos">Todos os faltantes</option><option value="pendentes">Pendentes</option><option value="encontrados">Encontrados no físico</option><option value="tratados">Tratados no inventário</option></select>',
         '</div><div class="falt-inventory-actions"><strong>Inventário dos faltantes:</strong><select id="faltBulkStatus" aria-label="Status para atualização em massa"><option value="">Escolha o status...</option>'+inventoryOptionHtml("")+'</select><button type="button" id="faltBulkApply" class="falt-action primary" disabled>Aplicar aos 0 selecionado(s)</button><small>Selecione somente IDs pendentes.</small></div><p class="falt-inventory-feedback" id="faltInventoryFeedback" role="status"></p></div><div class="falt-table-wrap"><table class="falt-table">',
-        '<thead><tr><th>Lado</th><th>Rota AM1</th><th>Doca</th><th>Coordenador</th><th>PS</th><th>Shipment ID</th><th>Lado Físico</th><th>Quantidade</th><th>Situação</th><th>Inventário <label class="falt-th-check"><input id="faltSelectAll" type="checkbox" aria-label="Selecionar pendentes visíveis"> Selecionar pendentes</label></th><th>Valor (R$)</th></tr></thead>',
+        '<thead><tr><th>Lado</th><th>Rota AM1</th><th>Doca</th><th>Coordenador</th><th>PS</th><th>Shipment ID</th><th>Lado Físico</th><th>Quantidade</th><th>Situação</th><th>Inventário <label class="falt-th-check"><input id="faltSelectAll" type="checkbox" aria-label="Selecionar pendentes visíveis"> Selecionar pendentes</label></th><th>Valor (R$)</th><th>Descrição do produto</th></tr></thead>',
         '<tbody id="faltantesRows"></tbody></table></div></section>',
       '<p class="falt-note" id="faltantesNote"></p>',
     '</div>'
@@ -105,6 +106,20 @@ function initialize(){
   root.addEventListener("click",e=>{
     if(e.target.closest("#faltantesExportBtn")){exportCsv();return;}
     if(e.target.closest("#faltBulkApply")){saveBulkInventory();return;}
+    const descriptionSave=e.target.closest("[data-falt-description-save]");
+    if(descriptionSave){saveInventoryDescription(descriptionSave.dataset.faltDescriptionSave);return;}
+    const descriptionCancel=e.target.closest("[data-falt-description-cancel]");
+    if(descriptionCancel){state.editingDescription="";renderTable();return;}
+    const descriptionEdit=e.target.closest("[data-falt-description-edit]");
+    if(descriptionEdit){
+      const id=idKey(descriptionEdit.dataset.faltDescriptionEdit);
+      const row=state.items.find(row=>idKey(row.id)===id);
+      if(!canChange(row)||!canEditValue(row))return;
+      state.editingDescription=id;renderTable();
+      [...el("faltantesRows").querySelectorAll("[data-falt-description-input]")]
+        .find(input=>idKey(input.dataset.faltDescriptionInput)===id)?.focus();
+      return;
+    }
     const save=e.target.closest("[data-falt-value-save]");
     if(save){saveInventoryValue(save.dataset.faltValueSave);return;}
     const cancel=e.target.closest("[data-falt-value-cancel]");
@@ -121,6 +136,14 @@ function initialize(){
     }
   });
   root.addEventListener("keydown",e=>{
+    const descriptionInput=e.target.closest("[data-falt-description-input]");
+    if(descriptionInput){
+      if(e.key==="Enter"&&(e.ctrlKey||e.metaKey)){
+        e.preventDefault();saveInventoryDescription(descriptionInput.dataset.faltDescriptionInput);
+      }
+      if(e.key==="Escape"){e.preventDefault();state.editingDescription="";renderTable();}
+      return;
+    }
     const input=e.target.closest("[data-falt-value-input]");
     if(!input)return;
     if(e.key==="Enter"){e.preventDefault();saveInventoryValue(input.dataset.faltValueInput);}
@@ -134,7 +157,7 @@ function selectedRows(){
     (state.statusFilter==="todos"||
       (state.statusFilter==="encontrados"?row.found:
         state.statusFilter==="tratados"?manualResolved(row):pending(row)))&&
-    (!state.search||norm([row.lado,row.titulo,row.rota,row.doca,row.coord,row.ps,row.id,row.ladoFisico].join(" ")).includes(norm(state.search))));
+    (!state.search||norm([row.lado,row.titulo,row.rota,row.doca,row.coord,row.ps,row.id,row.ladoFisico,itemInventory(row).description].join(" ")).includes(norm(state.search))));
 }
 function inventoryCell(row){
   if(row.found)return '<span class="falt-tag found" title="Conferido no arquivo físico">✓ Encontrado</span>';
@@ -163,6 +186,28 @@ function valueCell(row){
   return '<div class="falt-value-cell">'+amount+
     '<button data-falt-value-edit="'+esc(row.id)+'" type="button"'+(busy?' disabled':'')+'>'+(cents==null?'Informar':'Editar')+'</button></div>';
 }
+function descriptionCell(row){
+  if(!row.id||!canAdmin())return "—";
+  const id=idKey(row.id),description=String(itemInventory(row).description||"");
+  const allowed=canEditValue(row);
+  const disabled=state.inventorySaving||!state.inventoryLoaded;
+  if(state.editingDescription===id&&allowed)
+    return '<div class="falt-description-edit">'+
+      '<textarea rows="2" maxlength="'+MAX_DESCRIPTION+'" data-falt-description-input="'+esc(id)+'" '+
+      'aria-label="Descrição do produto do Shipment ID '+esc(id)+'" '+
+      'placeholder="Ex.: celular preto, 128 GB">'+esc(description)+'</textarea>'+
+      '<div class="falt-description-actions">'+
+      '<button type="button" data-falt-description-save="'+esc(id)+'"'+(disabled?' disabled':'')+'>Salvar</button>'+
+      '<button type="button" data-falt-description-cancel="'+esc(id)+'">Cancelar</button></div></div>';
+  const label=description
+    ? '<span class="falt-description-text" title="'+esc(description)+'">'+esc(description)+'</span>'
+    : '<span class="falt-muted">—</span>';
+  if(!allowed)return label;
+  return '<div class="falt-description-cell">'+label+
+    '<button type="button" data-falt-description-edit="'+esc(id)+'"'+(disabled?' disabled':'')+
+    ' aria-label="'+(description?'Editar':'Adicionar')+' descrição do produto '+esc(id)+'">'+
+    (description?'Editar':'Adicionar')+'</button></div>';
+}
 function renderTable(){
   if(!el("faltantesRows"))return;
   const rows=selectedRows(),editable=canAdmin()&&state.inventoryLoaded&&!state.inventorySaving;
@@ -173,8 +218,8 @@ function renderTable(){
       '</td><td>'+esc(r.coord)+'</td><td>'+esc(r.ps)+'</td><td>'+esc(r.id||"—")+'</td>'+
       '<td>'+esc(r.ladoFisico||"—")+'</td><td><b>'+fmt(r.qty)+'</b></td>'+
       '<td><span class="falt-tag'+(r.found?' found':manualResolved(r)?' treated':'')+'">'+esc(situacao)+'</span></td>'+
-      '<td>'+inventoryCell(r)+'</td><td>'+valueCell(r)+'</td></tr>';
-  }).join(""):'<tr><td colspan="11" class="falt-empty">Nenhum faltante AM1 corresponde aos filtros selecionados.</td></tr>';
+      '<td>'+inventoryCell(r)+'</td><td>'+valueCell(r)+'</td><td>'+descriptionCell(r)+'</td></tr>';
+  }).join(""):'<tr><td colspan="12" class="falt-empty">Nenhum faltante AM1 corresponde aos filtros selecionados.</td></tr>';
   const eligible=new Set(rows.filter(r=>r.id&&itemStatus(r)==="Pendente"&&!r.found).map(r=>idKey(r.id)));
   const allEligible=new Set(state.items.filter(r=>r.id&&itemStatus(r)==="Pendente"&&!r.found).map(r=>idKey(r.id)));
   for(const id of state.selected)if(!allEligible.has(id))state.selected.delete(id);
@@ -190,16 +235,16 @@ function renderTable(){
   const info=el("faltInventoryFeedback");
   if(info)info.textContent=state.inventoryError||
     (state.inventoryLoading?"Consultando inventário privado no Firebase...":
-    !canAdmin()?"Entre como administrador no Firebase para visualizar e editar Inventário e Valores.":
+    !canAdmin()?"Entre como administrador no Firebase para visualizar e editar Inventário, Valores e Descrições.":
     !state.final?"Aplique o CSV final da AM1 para editar os dados do inventário.":
     !state.inventoryLoaded?"Carregando inventário do dia...":
-    "Inventário e valores salvos no Firebase privado, separados da aba Aduana A Mais.");
+    "Inventário, valores e descrições salvos no Firebase privado, separados da aba Aduana A Mais.");
 }
 
 function resetInventory(day,admin){
   state.inventoryDay=day;state.inventoryAdmin=admin;state.inventoryLoaded=false;
   state.inventoryLoading=false;state.inventoryMap=Object.create(null);state.inventoryError="";
-  state.selected.clear();state.editingValue="";state.bulkStatus="";
+  state.selected.clear();state.editingValue="";state.editingDescription="";state.bulkStatus="";
 }
 function loadInventoryForDay(){
   const day=state.final?inventoryIso(state.date):"";
@@ -215,7 +260,8 @@ function loadInventoryForDay(){
     for(const row of rows){
       const id=idKey(row?.id);
       if(id)next[id]={inventoryStatus:INVENTORY_OPTIONS.includes(row.inventoryStatus)?row.inventoryStatus:"Pendente",
-        inventoryValueCents:Number.isSafeInteger(row.inventoryValueCents)&&row.inventoryValueCents>=0?row.inventoryValueCents:null};
+        inventoryValueCents:Number.isSafeInteger(row.inventoryValueCents)&&row.inventoryValueCents>=0?row.inventoryValueCents:null,
+        description:typeof row.description==="string"?row.description.slice(0,MAX_DESCRIPTION):""};
     }
     state.inventoryMap=next;state.inventoryLoaded=true;state.inventoryError="";
     if(state.payload)render(state.payload);
@@ -324,7 +370,7 @@ function render(payload){
   el("faltantesSearch").value=state.search;
   el("faltantesStatusFilter").value=state.statusFilter;
   el("faltantesTableSub").textContent=state.final?
-    "Pendentes, encontrados no físico e tratados no inventário juntos. Situação e valores registrados por Shipment ID.":
+    "Pendentes, encontrados no físico e tratados no inventário juntos. Situação, valores e descrição do produto registrados por Shipment ID.":
     "Ainda sem CSV final desta data: contagens por rota, sem Shipment IDs individuais.";
   const notice=state.final
     ? state.physicalReady
@@ -363,7 +409,7 @@ async function saveInventoryStatus(rawId,status){
     await window.FaltantesAm1.onSetInventory(day,id,status);
     if(state.inventoryDay!==day)return;
     state.inventoryMap[id]={...itemInventory(row),inventoryStatus:status};
-    state.editingValue="";state.selected.delete(id);
+    state.editingValue="";state.editingDescription="";state.selected.delete(id);
     state.inventoryError="Inventário do Shipment ID "+id+" salvo: "+status+".";
   }catch(error){
     state.inventoryError="Falha ao salvar ID "+id+": "+(error?.message||String(error));
@@ -388,6 +434,47 @@ async function saveBulkInventory(){
     state.inventoryError="Falha na atualização em massa: "+(error?.message||String(error));
   }finally{
     if(state.inventoryDay===day){state.inventorySaving=false;redraw();}
+  }
+}
+async function saveInventoryDescription(rawId){
+  const id=idKey(rawId);
+  const row=state.items.find(r=>idKey(r.id)===id);
+  if(!canChange(row)||!canEditValue(row)||state.editingDescription!==id)return;
+  const input=[...el("faltantesRows").querySelectorAll("[data-falt-description-input]")]
+    .find(node=>idKey(node.dataset.faltDescriptionInput)===id);
+  if(!input)return;
+  const description=String(input.value||"").replace(/\s+/g," ").trim();
+  if(description.length>MAX_DESCRIPTION){
+    state.inventoryError="Descrição limitada a "+MAX_DESCRIPTION+" caracteres.";
+    el("faltInventoryFeedback").textContent=state.inventoryError;input.focus();return;
+  }
+  const day=state.inventoryDay;
+  state.inventorySaving=true;
+  state.inventoryError="Salvando descrição do ID "+id+" no Firebase...";
+  el("faltInventoryFeedback").textContent=state.inventoryError;
+  const button=el("faltantesRows").querySelector('[data-falt-description-save="'+id+'"]');
+  if(button)button.disabled=true;
+  let saved=false;
+  try{
+    if(!window.FaltantesAm1?.onSetInventoryDescription)
+      throw Error("Serviço de descrições indisponível. Atualize a página.");
+    await window.FaltantesAm1.onSetInventoryDescription(day,id,description);
+    if(state.inventoryDay!==day)return;
+    state.inventoryMap[id]={...itemInventory(row),description};
+    state.editingDescription="";
+    state.inventoryError="Descrição do produto do ID "+id+" salva no Firebase.";
+    saved=true;
+  }catch(error){
+    state.inventoryError="Falha ao salvar descrição do ID "+id+": "+(error?.message||String(error));
+  }finally{
+    if(state.inventoryDay===day){
+      state.inventorySaving=false;
+      if(saved)redraw();
+      else{
+        el("faltInventoryFeedback").textContent=state.inventoryError;
+        if(button)button.disabled=false;
+      }
+    }
   }
 }
 async function saveInventoryValue(rawId){
@@ -426,13 +513,13 @@ function csvCell(v){
   return '"'+s.replace(/"/g,'""')+'"';
 }
 function exportCsv(){
-  const lines=[["Data","Lado Sistema","Rota AM1","Doca","Coordenador","PS","Shipment ID","Lado Físico","Quantidade","Estado no Sistema","Situação Física","Inventário","Valor (R$)"]];
+  const lines=[["Data","Lado Sistema","Rota AM1","Doca","Coordenador","PS","Shipment ID","Lado Físico","Quantidade","Estado no Sistema","Situação Física","Inventário","Valor (R$)","Descrição do produto"]];
   selectedRows().forEach(r=>{
     const inventory=canAdmin()?itemStatus(r):r.found?"Encontrado":"Acesso restrito";
     const value=canAdmin()?real(itemInventory(r).inventoryValueCents):"—";
     const situacao=r.found?"Encontrado no físico":manualResolved(r)?"Tratado no inventário":state.physicalReady?"Pendente":"Aguardando físico";
     lines.push([state.date,r.titulo,r.rota,r.doca,r.coord,r.ps,r.id,r.ladoFisico,r.qty,
-      "FALTANTE",situacao,inventory,value]);
+      "FALTANTE",situacao,inventory,value,canAdmin()?String(itemInventory(r).description||""):""]);
   });
   const blob=new Blob(["\uFEFF"+lines.map(row=>row.map(csvCell).join(";")).join("\r\n")],{type:"text/csv;charset=utf-8"});
   const url=URL.createObjectURL(blob),link=document.createElement("a");

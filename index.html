@@ -11457,7 +11457,7 @@ body.editor-open .global-theme-toggle {
       }
     }
   </style>
-  <link rel="stylesheet" href="faltantes-am1.css?v=20261030-equipe-lados-fonte-14">
+  <link rel="stylesheet" href="faltantes-am1.css?v=20261104-descricao-produto">
 </head>
 <body>
   <main class="app">
@@ -12189,7 +12189,7 @@ body.editor-open .global-theme-toggle {
   <script src="ondas-dados.js"></script>
   <script src="aduana-xlsx.js?v=20261024-r4"></script>
   <script src="aduana-conferencia.js?v=20261104-descricao-produtos"></script>
-  <script src="faltantes-am1.js?v=20261030-encontrados-pacotes-inventario"></script>
+  <script src="faltantes-am1.js?v=20261104-descricao-produto"></script>
   <script>
     const storageKey = "ondas-dados";
     const syncMetaKey = `${storageKey}-sync-meta-v1`;
@@ -19147,7 +19147,8 @@ body.editor-open .global-theme-toggle {
         throw new Error("Registro privado de Faltantes inválido.");
       return Object.entries(record.entries).filter(([id])=>ids.has(id)).map(([id,entry])=>({
         id,inventoryStatus:ADUANA_INVENTORY_STATUSES.includes(entry?.status)?entry.status:"Pendente",
-        inventoryValueCents:normalizedAduanaValueCents(entry?.valueCents)
+        inventoryValueCents:normalizedAduanaValueCents(entry?.valueCents),
+        description:typeof entry?.description==="string"?entry.description.slice(0,240):""
       }));
     }
     async function writeFaltantesInventory(day,ids,option,kind,bulk=false){
@@ -19160,9 +19161,16 @@ body.editor-open .global-theme-toggle {
         throw new Error("IDs inválidos, duplicados ou ausentes dos FALTANTES AM1 no sistema.");
       if(keys.some(id=>faltanteEstaNoFisico(day,id)))
         throw new Error("ID encontrado no arquivo físico: inventário bloqueado.");
+      if(!["status","valor","descricao"].includes(kind)||(bulk&&kind!=="status"))
+        throw new Error("Tipo de atualização de Faltantes inválido.");
       if(kind==="status"&&(!ADUANA_INVENTORY_STATUSES.includes(option)||
         (bulk&&option==="Pendente")))throw new Error("Situação de inventário inválida.");
       const value=kind==="valor"?normalizedAduanaValueCents(option):null;
+      if(kind==="descricao"&&typeof option!=="string")
+        throw new Error("Descrição do produto inválida.");
+      const description=kind==="descricao"?option.replace(/\s+/g," ").trim():null;
+      if(description!==null&&description.length>240)
+        throw new Error("Descrição do produto limitada a 240 caracteres.");
       const ref=faltantesInventoryRef(day);
       await cloudState.tools.runTransaction(cloudState.db,async transaction=>{
         const doc=await transaction.get(ref);
@@ -19181,13 +19189,18 @@ body.editor-open .global-theme-toggle {
             entries[id]={...old,status:option,updatedAt:dateStamp,updatedBy:cloudState.user.email||"administrador"};
           }else{
             if(!["Pendente","Não encontrado"].includes(status))
-              throw new Error("Valor permitido apenas para Pendente ou Não encontrado: "+id+".");
-            entries[id]={...old,status,valueCents:value,valueUpdatedAt:dateStamp,
-              valueUpdatedBy:cloudState.user.email||"administrador"};
+              throw new Error("Valor ou descrição permitido apenas para Pendente ou Não encontrado: "+id+".");
+            if(kind==="valor"){
+              entries[id]={...old,status,valueCents:value,valueUpdatedAt:dateStamp,
+                valueUpdatedBy:cloudState.user.email||"administrador"};
+            }else{
+              entries[id]={...old,status,description,descriptionUpdatedAt:dateStamp,
+                descriptionUpdatedBy:cloudState.user.email||"administrador"};
+            }
           }
         }
         const record={
-          kind:FALTANTES_INVENTORY_KIND,date:day,operation:"AM1",facility:"SSP15",version:1,entries,
+          kind:FALTANTES_INVENTORY_KIND,date:day,operation:"AM1",facility:"SSP15",version:2,entries,
           updatedAt:cloudState.tools.serverTimestamp(),updatedBy:cloudState.user.email||"administrador"
         };
         if(serializedByteLength({...record,updatedAt:null})>780*1024)
@@ -19195,7 +19208,8 @@ body.editor-open .global-theme-toggle {
         transaction.set(ref,record);
       });
       requestAduanaCleanup();
-      return kind==="valor"?{count:keys.length,valueCents:value}:{count:keys.length,status:option};
+      return kind==="valor"?{count:keys.length,valueCents:value}:
+        kind==="descricao"?{count:keys.length,description}:{count:keys.length,status:option};
     }
     if(window.FaltantesAm1){
       window.FaltantesAm1.canEditInventory=()=>Boolean(cloudState.ready&&cloudState.user&&isAdmin());
@@ -19203,6 +19217,7 @@ body.editor-open .global-theme-toggle {
       window.FaltantesAm1.onSetInventory=(day,id,status)=>writeFaltantesInventory(day,[id],status,"status");
       window.FaltantesAm1.onSetInventoryBatch=(day,ids,status)=>writeFaltantesInventory(day,ids,status,"status",true);
       window.FaltantesAm1.onSetInventoryValue=(day,id,cents)=>writeFaltantesInventory(day,[id],cents,"valor");
+      window.FaltantesAm1.onSetInventoryDescription=(day,id,description)=>writeFaltantesInventory(day,[id],description,"descricao");
     }
 
     if (window.ControleAduana) {
